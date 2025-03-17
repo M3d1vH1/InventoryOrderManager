@@ -40,7 +40,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import dynamic from 'next/dynamic'; //Import dynamic
+import { ImportProducts } from '@/components/products/ImportProducts'; //Import dynamic
 
 
 interface Product {
@@ -76,7 +76,7 @@ const Products = () => {
     setCurrentPage("Products");
   }, [setCurrentPage]);
 
-  const ImportProducts = dynamic(() => import('@/components/products/ImportProducts'), { ssr: false }); //Dynamic import
+  // ImportProducts is now directly imported //Dynamic import
 
   const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: ['/api/products'],

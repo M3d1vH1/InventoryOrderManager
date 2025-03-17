@@ -97,9 +97,9 @@ const Orders = () => {
     const matchesSearch = searchTerm === "" || 
       order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.customerName.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -108,6 +108,15 @@ const Orders = () => {
       orderId, 
       status: newStatus as 'pending' | 'picked' | 'shipped' | 'cancelled' 
     });
+  };
+
+  const formatDate = (date: string) => {
+    if (!date) return '';
+    try {
+      return new Date(date).toLocaleDateString();
+    } catch (e) {
+      return '';
+    }
   };
 
   return (
@@ -184,7 +193,7 @@ const Orders = () => {
                   <TableRow key={order.id}>
                     <TableCell>{order.orderNumber}</TableCell>
                     <TableCell>{order.customerName}</TableCell>
-                    <TableCell>{format(new Date(order.orderDate), "MMM dd, yyyy")}</TableCell>
+                    <TableCell>{formatDate(order.orderDate)}</TableCell>
                     <TableCell>
                       <Select 
                         value={order.status} 

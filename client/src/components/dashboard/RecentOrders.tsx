@@ -66,11 +66,11 @@ const RecentOrders = () => {
     return orders.map((order) => (
       <tr key={order.id} className="hover:bg-slate-50">
         <td className="py-3 px-4">{order.orderNumber}</td>
-        <td className="py-3 px-4">{order.customerName}</td>
+        <td className="py-3 px-4">{order.customerName || '?'}</td>
         <td className="py-3 px-4">{format(new Date(order.orderDate), 'MMM dd, yyyy')}</td>
         <td className="py-3 px-4">
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(order.status)}`}>
-            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+            {order.status?.charAt(0)?.toUpperCase() + order.status?.slice(1) || '?'}
           </span>
         </td>
         <td className="py-3 px-4">{order.items?.length || 0}</td>
