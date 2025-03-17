@@ -16,8 +16,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import PickList from "@/components/orders/PickList";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 
 interface OrderItem {
   id: number;
@@ -54,20 +55,33 @@ const OrderPicking = () => {
   }, [setCurrentPage]);
 
   // Fetch all orders
-  const { data: orders = [], isLoading } = useQuery<Order[]>({
+  const { data: orders = [], isLoading: isLoadingOrders } = useQuery<Order[]>({
     queryKey: ['/api/orders'],
+  });
+
+  // Fetch specific order if ID is provided
+  const { data: specificOrder, isLoading: isLoadingSpecificOrder } = useQuery<Order>({
+    queryKey: ['/api/orders', selectedOrderId],
+    enabled: !!selectedOrderId,
   });
 
   // Filter orders that can be picked (pending status)
   const pickableOrders = orders.filter(order => order.status === 'pending');
   
-  // Get the selected order details
-  const selectedOrder = orders.find(order => order.id.toString() === selectedOrderId);
+  // Get the selected order details - either from the specific query or from all orders
+  const selectedOrder = specificOrder || orders.find(order => order.id.toString() === selectedOrderId);
+  
+  // Combined loading state
+  const isLoading = isLoadingOrders || isLoadingSpecificOrder;
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Order Picking</h1>
+        <Button variant="outline" onClick={() => window.location.href = '/orders'}>
+          <i className="fas fa-arrow-left mr-2"></i>
+          Back to Orders
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

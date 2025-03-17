@@ -209,6 +209,11 @@ const Orders = () => {
                         <button className="text-slate-600 hover:text-primary">
                           <i className="fas fa-edit"></i>
                         </button>
+                        {order.status === 'pending' && (
+                          <a href={`/order-picking/${order.id}`} className="text-slate-600 hover:text-green-600">
+                            <i className="fas fa-clipboard-check"></i>
+                          </a>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
