@@ -60,7 +60,7 @@ const Orders = () => {
   const { setCurrentPage } = useSidebar();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [showOrderForm, setShowOrderForm] = useState(false);
 
   const { data: orders, isLoading } = useQuery<Order[]>({
@@ -97,7 +97,7 @@ const Orders = () => {
       order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.customerName.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === "" || order.status === statusFilter;
+    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
@@ -143,7 +143,7 @@ const Orders = () => {
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="picked">Picked</SelectItem>
                 <SelectItem value="shipped">Shipped</SelectItem>

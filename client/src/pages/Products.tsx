@@ -66,7 +66,7 @@ const Products = () => {
   const { setCurrentPage } = useSidebar();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
@@ -199,7 +199,7 @@ const Products = () => {
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.sku.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesCategory = categoryFilter === "" || product.category === categoryFilter;
+    const matchesCategory = categoryFilter === "all" || product.category === categoryFilter;
     
     return matchesSearch && matchesCategory;
   });
@@ -241,7 +241,7 @@ const Products = () => {
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 <SelectItem value="widgets">Widgets</SelectItem>
                 <SelectItem value="connectors">Connectors</SelectItem>
                 <SelectItem value="brackets">Brackets</SelectItem>
