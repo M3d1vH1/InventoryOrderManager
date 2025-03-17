@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSidebar } from "@/context/SidebarContext";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
@@ -64,9 +64,8 @@ const Orders = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [showOrderForm, setShowOrderForm] = useState(false);
 
-  const { data: orders, isLoading } = useQuery({
+  const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ['/api/orders'],
-    queryFn: () => apiRequest('GET', '/api/orders'), //Added queryFn to handle the request.  This assumes apiRequest is defined elsewhere and correctly handles API calls.
   });
 
   const updateStatusMutation = useMutation({
@@ -98,9 +97,9 @@ const Orders = () => {
     const matchesSearch = searchTerm === "" || 
       order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.customerName.toLowerCase().includes(searchTerm.toLowerCase());
-
+    
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-
+    
     return matchesSearch && matchesStatus;
   });
 
@@ -109,17 +108,6 @@ const Orders = () => {
       orderId, 
       status: newStatus as 'pending' | 'picked' | 'shipped' | 'cancelled' 
     });
-  };
-
-  const formatDate = (dateString: string | null): string => {
-    if (!dateString) return 'N/A';
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString();
-    } catch (error) {
-      console.error("Error parsing date:", error);
-      return 'N/A';
-    }
   };
 
   return (
@@ -195,12 +183,8 @@ const Orders = () => {
                 filteredOrders?.map((order) => (
                   <TableRow key={order.id}>
                     <TableCell>{order.orderNumber}</TableCell>
-                    <TableCell>
-                      <Link href={`/orders/${order.id}`} className="text-primary hover:underline">
-                        {order.customerName}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{formatDate(order.orderDate)}</TableCell>
+                    <TableCell>{order.customerName}</TableCell>
+                    <TableCell>{format(new Date(order.orderDate), "MMM dd, yyyy")}</TableCell>
                     <TableCell>
                       <Select 
                         value={order.status} 

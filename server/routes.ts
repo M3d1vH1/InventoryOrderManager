@@ -90,32 +90,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message });
     }
   });
-
-  app.post('/api/products/import', async (req, res) => {
-    try {
-      const csvData = req.body;
-      const products = csvData.split('\n').slice(1) // Skip header row
-        .map(line => {
-          const [name, sku, category, description, minStockLevel, currentStock] = line.split(',');
-          return {
-            name: name.trim(),
-            sku: sku.trim(),
-            category: category.trim(),
-            description: description?.trim(),
-            minStockLevel: parseInt(minStockLevel) || 10,
-            currentStock: parseInt(currentStock) || 0
-          };
-        });
-
-      for (const product of products) {
-        await storage.createProduct(product);
-      }
-
-      res.status(201).json({ message: `Imported ${products.length} products` });
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
   
 
   
@@ -179,7 +153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const order = await storage.createOrder({
         ...validatedOrder,
-        orderDate: validatedOrder.orderDate ? new Date(validatedOrder.orderDate) : new Date(),
+        orderDate: validatedOrder.orderDate || new Date(),
       });
       
       // Add order items if provided
