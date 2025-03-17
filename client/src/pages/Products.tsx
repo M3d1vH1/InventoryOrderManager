@@ -74,6 +74,8 @@ const Products = () => {
     setCurrentPage("Products");
   }, [setCurrentPage]);
 
+  const { ImportProducts } = require('@/components/products/ImportProducts');
+
   const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: ['/api/products'],
   });
