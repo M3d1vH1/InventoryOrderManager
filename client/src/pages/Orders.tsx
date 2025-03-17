@@ -4,6 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 
 import {
   Table,
@@ -203,16 +204,18 @@ const Orders = () => {
                     <TableCell>{order.items?.length || 0}</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <button className="text-slate-600 hover:text-primary">
+                        <button className="text-slate-600 hover:text-primary" title="View Order Details">
                           <i className="fas fa-eye"></i>
                         </button>
-                        <button className="text-slate-600 hover:text-primary">
+                        <button className="text-slate-600 hover:text-primary" title="Edit Order">
                           <i className="fas fa-edit"></i>
                         </button>
                         {order.status === 'pending' && (
-                          <a href={`/order-picking/${order.id}`} className="text-slate-600 hover:text-green-600">
-                            <i className="fas fa-clipboard-check"></i>
-                          </a>
+                          <Link href={`/order-picking/${order.id}`}>
+                            <a className="text-slate-600 hover:text-green-600" title="Pick Order">
+                              <i className="fas fa-clipboard-check"></i>
+                            </a>
+                          </Link>
                         )}
                       </div>
                     </TableCell>

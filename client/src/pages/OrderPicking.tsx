@@ -78,10 +78,12 @@ const OrderPicking = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Order Picking</h1>
-        <Button variant="outline" onClick={() => window.location.href = '/orders'}>
-          <i className="fas fa-arrow-left mr-2"></i>
-          Back to Orders
-        </Button>
+        <Link href="/orders">
+          <Button variant="outline">
+            <i className="fas fa-arrow-left mr-2"></i>
+            Back to Orders
+          </Button>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
