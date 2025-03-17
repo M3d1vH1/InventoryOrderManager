@@ -7,6 +7,8 @@ import Dashboard from "@/pages/Dashboard";
 import Orders from "@/pages/Orders";
 import Products from "@/pages/Products";
 import Inventory from "@/pages/Inventory";
+import Reports from "@/pages/Reports";
+import Settings from "@/pages/Settings";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { SidebarProvider } from "@/context/SidebarContext";
@@ -18,6 +20,8 @@ function Router() {
       <Route path="/orders" component={Orders} />
       <Route path="/products" component={Products} />
       <Route path="/inventory" component={Inventory} />
+      <Route path="/reports" component={Reports} />
+      <Route path="/settings" component={Settings} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>
