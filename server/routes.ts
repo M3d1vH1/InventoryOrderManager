@@ -172,6 +172,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  app.patch('/api/orders/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const orderData = insertOrderSchema.partial().parse(req.body);
+      const updatedOrder = await storage.updateOrder(id, orderData);
+      
+      if (!updatedOrder) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      
+      res.json(updatedOrder);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Validation error', errors: error.errors });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.patch('/api/orders/:id/status', async (req, res) => {
     try {
       const id = parseInt(req.params.id);

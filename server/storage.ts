@@ -222,6 +222,15 @@ export class MemStorage implements IStorage {
     this.orders.set(id, updatedOrder);
     return updatedOrder;
   }
+
+  async updateOrder(id: number, orderData: Partial<InsertOrder>): Promise<Order | undefined> {
+    const existingOrder = this.orders.get(id);
+    if (!existingOrder) return undefined;
+    
+    const updatedOrder = { ...existingOrder, ...orderData };
+    this.orders.set(id, updatedOrder);
+    return updatedOrder;
+  }
   
   // Order Item methods
   async getOrderItems(orderId: number): Promise<OrderItem[]> {
