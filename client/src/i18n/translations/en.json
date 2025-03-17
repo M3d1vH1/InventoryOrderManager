@@ -1,0 +1,28 @@
+
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "stats": {
+      "pendingOrders": "Pending Orders",
+      "itemsToPick": "Items to Pick",
+      "shippingToday": "Shipping Today"
+    },
+    "recentOrders": "Recent Orders"
+  },
+  "orders": {
+    "title": "Orders",
+    "status": {
+      "pending": "Pending",
+      "processing": "Processing",
+      "shipped": "Shipped",
+      "delivered": "Delivered"
+    }
+  },
+  "products": {
+    "title": "Products",
+    "addProduct": "Add Product",
+    "category": "Category",
+    "price": "Price",
+    "stock": "Stock"
+  }
+}
