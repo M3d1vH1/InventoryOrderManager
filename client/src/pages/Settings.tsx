@@ -199,6 +199,28 @@ const Settings = () => {
                   
                   <div className="flex items-center justify-between">
                     <div>
+                      <h4 className="font-medium">Language Settings</h4>
+                      <p className="text-sm text-slate-500">Choose your preferred language</p>
+                    </div>
+                    <select 
+                      className="w-40 rounded-md border border-slate-300 py-2 px-3"
+                      onChange={(e) => {
+                        const i18n = require('i18next').default;
+                        i18n.changeLanguage(e.target.value);
+                        toast({
+                          title: "Language Changed",
+                          description: "Your language preference has been updated.",
+                        });
+                      }}
+                      defaultValue="en"
+                    >
+                      <option value="en">English</option>
+                      <option value="el">Ελληνικά</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
                       <h4 className="font-medium">Default Order Status</h4>
                       <p className="text-sm text-slate-500">Set the default status for new orders</p>
                     </div>
