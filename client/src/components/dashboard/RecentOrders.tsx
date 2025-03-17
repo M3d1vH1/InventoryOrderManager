@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { getStatusColor } from "@/lib/utils";
 import type { Order } from "@/lib/types";
 
+import { useQuery } from "@tanstack/react-query";
+
 const RecentOrders = () => {
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['/api/orders/recent'],

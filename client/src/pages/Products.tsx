@@ -78,8 +78,9 @@ const Products = () => {
 
   // ImportProducts is now directly imported //Dynamic import
 
-  const { data: products, isLoading } = useQuery<Product[]>({
+  const { data: products, isLoading } = useQuery({
     queryKey: ['/api/products'],
+    queryFn: () => apiRequest('GET', '/api/products')
   });
 
   const form = useForm<ProductFormValues>({
