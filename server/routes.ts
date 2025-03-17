@@ -179,7 +179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const order = await storage.createOrder({
         ...validatedOrder,
-        orderDate: validatedOrder.orderDate || new Date(),
+        orderDate: validatedOrder.orderDate ? new Date(validatedOrder.orderDate) : new Date(),
       });
       
       // Add order items if provided

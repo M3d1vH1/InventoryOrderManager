@@ -40,6 +40,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import dynamic from 'next/dynamic'; //Import dynamic
+
 
 interface Product {
   id: number;
@@ -74,7 +76,7 @@ const Products = () => {
     setCurrentPage("Products");
   }, [setCurrentPage]);
 
-  const { ImportProducts } = require('@/components/products/ImportProducts');
+  const ImportProducts = dynamic(() => import('@/components/products/ImportProducts'), { ssr: false }); //Dynamic import
 
   const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: ['/api/products'],
@@ -200,9 +202,9 @@ const Products = () => {
     const matchesSearch = searchTerm === "" || 
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.sku.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesCategory = categoryFilter === "all" || product.category === categoryFilter;
-    
+
     return matchesSearch && matchesCategory;
   });
 
@@ -341,7 +343,7 @@ const Products = () => {
           <DialogHeader>
             <DialogTitle>{editingProduct ? "Edit Product" : "Add New Product"}</DialogTitle>
           </DialogHeader>
-          
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -358,7 +360,7 @@ const Products = () => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="sku"
@@ -373,7 +375,7 @@ const Products = () => {
                   )}
                 />
               </div>
-              
+
               <FormField
                 control={form.control}
                 name="category"
@@ -401,7 +403,7 @@ const Products = () => {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="description"
@@ -415,7 +417,7 @@ const Products = () => {
                   </FormItem>
                 )}
               />
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -430,7 +432,7 @@ const Products = () => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="currentStock"
@@ -445,7 +447,7 @@ const Products = () => {
                   )}
                 />
               </div>
-              
+
               <DialogFooter>
                 <Button 
                   type="button" 
