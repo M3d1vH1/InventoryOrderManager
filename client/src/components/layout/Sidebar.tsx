@@ -44,6 +44,16 @@ const Sidebar = () => {
             </Link>
           </li>
           <li className="mb-1">
+            <Link href="/order-picking" onClick={() => setCurrentPage("OrderPicking")}>
+              <button 
+                className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-picking") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+              >
+                <i className="fas fa-clipboard-check w-5"></i>
+                <span className="ml-2">Order Picking</span>
+              </button>
+            </Link>
+          </li>
+          <li className="mb-1">
             <Link href="/products" onClick={() => setCurrentPage("Products")}>
               <button 
                 className={`flex items-center w-full p-2 text-left rounded ${isActive("/products") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
