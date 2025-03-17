@@ -70,7 +70,7 @@ export const insertOrderSchema = createInsertSchema(orders)
   .extend({
     customerName: z.string().min(2),
     notes: z.string().optional(),
-    orderDate: z.date().optional(),
+    orderDate: z.string().optional().transform(val => val ? new Date(val) : new Date()),
   });
 
 export type InsertOrder = z.infer<typeof insertOrderSchema>;

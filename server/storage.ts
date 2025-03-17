@@ -205,7 +205,8 @@ export class MemStorage implements IStorage {
     const orderNumber = `ORD-${String(id).padStart(4, '0')}`;
     
     const order: Order = { 
-      ...insertOrder, 
+      ...insertOrder,
+      orderDate: new Date(insertOrder.orderDate || Date.now()),
       id, 
       orderNumber
     };
