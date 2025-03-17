@@ -1,0 +1,269 @@
+import { useEffect } from "react";
+import { useSidebar } from "@/context/SidebarContext";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+interface Product {
+  id: number;
+  name: string;
+  sku: string;
+  category: string;
+  description?: string;
+  minStockLevel: number;
+  currentStock: number;
+}
+
+const Inventory = () => {
+  const { setCurrentPage } = useSidebar();
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    setCurrentPage("Inventory");
+  }, [setCurrentPage]);
+
+  const { data: products, isLoading } = useQuery<Product[]>({
+    queryKey: ['/api/products'],
+  });
+
+  const updateStockMutation = useMutation({
+    mutationFn: async ({ id, stock }: { id: number; stock: number }) => {
+      return apiRequest('PATCH', `/api/products/${id}`, { currentStock: stock });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      toast({
+        title: "Stock updated",
+        description: "Inventory has been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to update stock",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleStockChange = (id: number, currentStock: number) => {
+    updateStockMutation.mutate({ id, stock: currentStock });
+  };
+
+  const getLowStockProducts = () => {
+    return products?.filter(product => product.currentStock <= product.minStockLevel) || [];
+  };
+
+  const getStockStatusClass = (currentStock: number, minStockLevel: number) => {
+    if (currentStock === 0) return "text-red-600";
+    if (currentStock <= minStockLevel) return "text-amber-600";
+    return "text-green-600";
+  };
+
+  const getStockStatus = (currentStock: number, minStockLevel: number) => {
+    if (currentStock === 0) return "Out of Stock";
+    if (currentStock <= minStockLevel) return "Low Stock";
+    return "In Stock";
+  };
+
+  return (
+    <div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-lg shadow p-4 flex items-center">
+          <div className="rounded-full bg-blue-100 p-3 mr-4">
+            <i className="fas fa-box text-primary text-xl"></i>
+          </div>
+          <div>
+            <h3 className="text-sm text-slate-500 font-medium">Total Products</h3>
+            <p className="text-2xl font-semibold">{products?.length || 0}</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 flex items-center">
+          <div className="rounded-full bg-green-100 p-3 mr-4">
+            <i className="fas fa-check-circle text-green-500 text-xl"></i>
+          </div>
+          <div>
+            <h3 className="text-sm text-slate-500 font-medium">In Stock</h3>
+            <p className="text-2xl font-semibold">
+              {products?.filter(p => p.currentStock > p.minStockLevel).length || 0}
+            </p>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 flex items-center">
+          <div className="rounded-full bg-amber-100 p-3 mr-4">
+            <i className="fas fa-exclamation-circle text-amber-500 text-xl"></i>
+          </div>
+          <div>
+            <h3 className="text-sm text-slate-500 font-medium">Low Stock</h3>
+            <p className="text-2xl font-semibold">
+              {products?.filter(p => p.currentStock > 0 && p.currentStock <= p.minStockLevel).length || 0}
+            </p>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 flex items-center">
+          <div className="rounded-full bg-red-100 p-3 mr-4">
+            <i className="fas fa-times-circle text-red-500 text-xl"></i>
+          </div>
+          <div>
+            <h3 className="text-sm text-slate-500 font-medium">Out of Stock</h3>
+            <p className="text-2xl font-semibold">
+              {products?.filter(p => p.currentStock === 0).length || 0}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow mb-6">
+        <div className="p-4 border-b border-slate-200">
+          <h2 className="font-semibold text-lg">Low Stock Alert</h2>
+        </div>
+        <div className="p-4">
+          {isLoading ? (
+            <div className="py-4 text-center">
+              <span className="text-slate-500">Loading inventory data...</span>
+            </div>
+          ) : getLowStockProducts().length === 0 ? (
+            <div className="py-4 text-center">
+              <i className="fas fa-check-circle text-green-500 text-3xl mb-2"></i>
+              <p className="text-green-600">No low stock items. All inventory levels are healthy.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {getLowStockProducts().map(product => {
+                const borderColor = product.currentStock === 0 ? 'border-red-500 bg-red-50' : 'border-amber-500 bg-amber-50';
+                const textColor = product.currentStock === 0 ? 'text-red-600' : 'text-amber-600';
+
+                return (
+                  <div key={product.id} className={`border-l-4 ${borderColor} p-3 rounded-r`}>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-medium">{product.name}</h3>
+                        <p className="text-sm text-slate-600">
+                          Stock: <span className={`font-medium ${textColor}`}>{product.currentStock}</span> (Min: {product.minStockLevel})
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">SKU: {product.sku}</p>
+                      </div>
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStockChange(product.id, product.minStockLevel * 2)}
+                        disabled={updateStockMutation.isPending}
+                      >
+                        Restock
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow">
+        <div className="p-4 border-b border-slate-200 flex justify-between items-center">
+          <h2 className="font-semibold text-lg">Inventory Management</h2>
+        </div>
+        <div className="p-4">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Product</TableHead>
+                  <TableHead>SKU</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Min Stock</TableHead>
+                  <TableHead>Current Stock</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      Loading inventory data...
+                    </TableCell>
+                  </TableRow>
+                ) : products?.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      No products found in inventory.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  products?.map(product => (
+                    <TableRow key={product.id}>
+                      <TableCell>{product.name}</TableCell>
+                      <TableCell>{product.sku}</TableCell>
+                      <TableCell>{product.category}</TableCell>
+                      <TableCell>{product.minStockLevel}</TableCell>
+                      <TableCell>
+                        <span className={`font-medium ${getStockStatusClass(product.currentStock, product.minStockLevel)}`}>
+                          {product.currentStock}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          product.currentStock === 0 ? 'bg-red-100 text-red-800' :
+                          product.currentStock <= product.minStockLevel ? 'bg-amber-100 text-amber-800' :
+                          'bg-green-100 text-green-800'
+                        }`}>
+                          {getStockStatus(product.currentStock, product.minStockLevel)}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Input 
+                            type="number" 
+                            min="0" 
+                            className="w-20" 
+                            defaultValue={product.currentStock}
+                            onBlur={(e) => {
+                              const newValue = parseInt(e.target.value);
+                              if (newValue !== product.currentStock) {
+                                handleStockChange(product.id, newValue);
+                              }
+                            }}
+                          />
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleStockChange(product.id, product.currentStock + 10)}
+                          >
+                            +10
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Inventory;
