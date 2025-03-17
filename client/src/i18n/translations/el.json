@@ -1,0 +1,28 @@
+
+{
+  "dashboard": {
+    "title": "Πίνακας Ελέγχου",
+    "stats": {
+      "pendingOrders": "Εκκρεμείς Παραγγελίες",
+      "itemsToPick": "Αντικείμενα για Παραλαβή",
+      "shippingToday": "Αποστολή Σήμερα"
+    },
+    "recentOrders": "Πρόσφατες Παραγγελίες"
+  },
+  "orders": {
+    "title": "Παραγγελίες",
+    "status": {
+      "pending": "Σε Εκκρεμότητα",
+      "processing": "Σε Επεξεργασία",
+      "shipped": "Απεστάλη",
+      "delivered": "Παραδόθηκε"
+    }
+  },
+  "products": {
+    "title": "Προϊόντα",
+    "addProduct": "Προσθήκη Προϊόντος",
+    "category": "Κατηγορία",
+    "price": "Τιμή",
+    "stock": "Απόθεμα"
+  }
+}

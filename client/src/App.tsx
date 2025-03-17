@@ -13,6 +13,7 @@ import OrderPicking from "@/pages/OrderPicking";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { SidebarProvider } from "@/context/SidebarContext";
+import { useTranslation } from 'react-i18next';
 
 function Router() {
   return (
