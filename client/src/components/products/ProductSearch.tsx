@@ -21,8 +21,8 @@ interface ProductSearchProps {
 
 const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [category, setCategory] = useState("");
-  const [stockStatus, setStockStatus] = useState("");
+  const [category, setCategory] = useState("all");
+  const [stockStatus, setStockStatus] = useState("all");
 
   const { data: products, isLoading, refetch } = useQuery<Product[]>({
     queryKey: ['/api/products', searchTerm, category, stockStatus],
@@ -76,29 +76,33 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
           </div>
           <div className="flex items-center mt-2 text-sm">
             <span className="text-slate-600 mr-2">Filter by:</span>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="w-auto">
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="widgets">Widgets</SelectItem>
-                <SelectItem value="connectors">Connectors</SelectItem>
-                <SelectItem value="brackets">Brackets</SelectItem>
-                <SelectItem value="mounts">Mounts</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={stockStatus} onValueChange={setStockStatus} className="ml-2">
-              <SelectTrigger className="w-auto">
-                <SelectValue placeholder="All Stock Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All Stock Status</SelectItem>
-                <SelectItem value="in-stock">In Stock</SelectItem>
-                <SelectItem value="low-stock">Low Stock</SelectItem>
-                <SelectItem value="out-stock">Out of Stock</SelectItem>
-              </SelectContent>
-            </Select>
+            <div>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger className="w-auto">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="widgets">Widgets</SelectItem>
+                  <SelectItem value="connectors">Connectors</SelectItem>
+                  <SelectItem value="brackets">Brackets</SelectItem>
+                  <SelectItem value="mounts">Mounts</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="ml-2">
+              <Select value={stockStatus} onValueChange={setStockStatus}>
+                <SelectTrigger className="w-auto">
+                  <SelectValue placeholder="All Stock Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Stock Status</SelectItem>
+                  <SelectItem value="in-stock">In Stock</SelectItem>
+                  <SelectItem value="low-stock">Low Stock</SelectItem>
+                  <SelectItem value="out-stock">Out of Stock</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-4">
