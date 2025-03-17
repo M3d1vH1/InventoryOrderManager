@@ -4,23 +4,37 @@ import QuickStats from "@/components/dashboard/QuickStats";
 import RecentOrders from "@/components/dashboard/RecentOrders";
 import InventoryAlerts from "@/components/dashboard/InventoryAlerts";
 import OrderForm from "@/components/orders/OrderForm";
-import { Line } from 'react-chartjs-2'; // Added import for chart
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-const OrderTrends = () => { // New component for order trends
-  const data = {
-    labels: ['January', 'February', 'March', 'April', 'May', 'June'],
-    datasets: [{
-      label: 'Order Count',
-      data: [12, 19, 3, 5, 2, 3],
-      fill: false,
-      borderColor: 'rgb(75, 192, 192)',
-      tension: 0.1
-    }]
-  };
+const OrderTrends = () => {
+  const { data: orders } = useQuery({
+    queryKey: ['/api/orders'],
+  });
+
+  const data = React.useMemo(() => {
+    if (!orders) return [];
+    const grouped = orders.reduce((acc: any, order: any) => {
+      const date = new Date(order.orderDate).toLocaleDateString();
+      acc[date] = (acc[date] || 0) + 1;
+      return acc;
+    }, {});
+    return Object.entries(grouped).map(([date, count]) => ({ date, count }));
+  }, [orders]);
+
   return (
-    <div>
-        <h2>Order Trends</h2>
-        <Line data={data} />
+    <div className="bg-white p-4 rounded-lg shadow">
+      <h2 className="text-lg font-semibold mb-4">Order Trends</h2>
+      <div className="h-[300px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Line type="monotone" dataKey="count" stroke="#8884d8" />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };

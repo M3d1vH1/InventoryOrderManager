@@ -35,7 +35,7 @@ const getStatusBadgeClass = (status: string) => {
 };
 
 const RecentOrders = () => {
-  const { data: orders, isLoading } = useQuery<Order[]>({
+  const { data: orders = [], isLoading } = useQuery({
     queryKey: ['/api/orders/recent'],
   });
 
