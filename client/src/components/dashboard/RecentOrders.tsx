@@ -57,7 +57,7 @@ const RecentOrders = () => {
       return (
         <tr>
           <td colSpan={6} className="py-6 text-center text-slate-500">
-            No orders found
+            No recent orders found
           </td>
         </tr>
       );
@@ -101,6 +101,11 @@ const RecentOrders = () => {
             View All
           </button>
         </Link>
+      </div>
+      {/* Added chart placeholder */}
+      <div className="p-4">
+        {/*  Replace this with your actual chart component */}
+        <div>Order Trend Chart (Implementation Needed)</div> 
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full">
