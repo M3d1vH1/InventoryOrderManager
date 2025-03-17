@@ -22,6 +22,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  app.get('/api/products/low-stock', async (req, res) => {
+    try {
+      const products = await storage.getLowStockProducts();
+      res.json(products);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
   app.get('/api/products/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -82,14 +91,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get('/api/products/low-stock', async (req, res) => {
-    try {
-      const products = await storage.getLowStockProducts();
-      res.json(products);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
+
   
   // Order routes
   app.get('/api/orders', async (req, res) => {

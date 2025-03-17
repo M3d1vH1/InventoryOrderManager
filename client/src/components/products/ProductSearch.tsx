@@ -81,7 +81,7 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 <SelectItem value="widgets">Widgets</SelectItem>
                 <SelectItem value="connectors">Connectors</SelectItem>
                 <SelectItem value="brackets">Brackets</SelectItem>
