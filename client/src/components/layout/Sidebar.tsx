@@ -64,20 +64,24 @@ const Sidebar = () => {
             </Link>
           </li>
           <li className="mb-1">
-            <button 
-              className={`flex items-center w-full p-2 text-left rounded hover:bg-slate-700 transition-colors`}
-            >
-              <i className="fas fa-chart-bar w-5"></i>
-              <span className="ml-2">Reports</span>
-            </button>
+            <Link href="/reports" onClick={() => setCurrentPage("Reports")}>
+              <button 
+                className={`flex items-center w-full p-2 text-left rounded ${isActive("/reports") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+              >
+                <i className="fas fa-chart-bar w-5"></i>
+                <span className="ml-2">Reports</span>
+              </button>
+            </Link>
           </li>
           <li className="mb-1">
-            <button 
-              className={`flex items-center w-full p-2 text-left rounded hover:bg-slate-700 transition-colors`}
-            >
-              <i className="fas fa-cog w-5"></i>
-              <span className="ml-2">Settings</span>
-            </button>
+            <Link href="/settings" onClick={() => setCurrentPage("Settings")}>
+              <button 
+                className={`flex items-center w-full p-2 text-left rounded ${isActive("/settings") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+              >
+                <i className="fas fa-cog w-5"></i>
+                <span className="ml-2">Settings</span>
+              </button>
+            </Link>
           </li>
         </ul>
       </nav>
