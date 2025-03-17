@@ -43,8 +43,9 @@ interface OrderItemInput {
 // Extended schema based on backend schema
 const orderFormSchema = z.object({
   customerName: z.string().min(2, { message: "Please select a customer" }),
-  orderDate: z.string().min(1, { message: "Order date is required" }),
   notes: z.string().optional(),
+  // Add these fields but we'll handle them separately from the API request
+  orderDate: z.string().min(1, { message: "Order date is required" }),
   items: z.array(z.object({ 
     productId: z.number(), 
     quantity: z.number().min(1) 
@@ -82,7 +83,12 @@ const OrderForm = () => {
 
   const orderMutation = useMutation({
     mutationFn: async (values: OrderFormValues) => {
-      return apiRequest('POST', '/api/orders', values);
+      // Send only the data that the server expects
+      return apiRequest('POST', '/api/orders', {
+        customerName: values.customerName,
+        notes: values.notes,
+        items: values.items
+      });
     },
     onSuccess: () => {
       toast({
@@ -98,15 +104,17 @@ const OrderForm = () => {
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
     },
     onError: (error) => {
+      console.error("Order creation error:", error);
       toast({
         title: "Error creating order",
-        description: error.message,
+        description: error.message || "Failed to create order. Please try again.",
         variant: "destructive",
       });
     }
   });
 
   const onSubmit = (values: OrderFormValues) => {
+    console.log("Submitting order:", values);
     orderMutation.mutate(values);
   };
 
@@ -293,8 +301,15 @@ const OrderForm = () => {
             />
             
             <div className="flex justify-end space-x-3">
-              <Button type="button" variant="outline">
-                Cancel
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={() => {
+                  form.reset();
+                  setOrderItems([]);
+                }}
+              >
+                Clear Form
               </Button>
               <Button 
                 type="submit" 
