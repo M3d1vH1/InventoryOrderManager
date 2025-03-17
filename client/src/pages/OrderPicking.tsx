@@ -41,7 +41,7 @@ const OrderPicking = () => {
   const { setCurrentPage } = useSidebar();
   const [location] = useLocation();
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  
+
   // Extract order ID from URL if it exists
   useEffect(() => {
     const orderId = location.split('/').pop();
@@ -49,7 +49,7 @@ const OrderPicking = () => {
       setSelectedOrderId(orderId);
     }
   }, [location]);
-  
+
   useEffect(() => {
     setCurrentPage("OrderPicking");
   }, [setCurrentPage]);
@@ -67,10 +67,10 @@ const OrderPicking = () => {
 
   // Filter orders that can be picked (pending status)
   const pickableOrders = orders.filter(order => order.status === 'pending');
-  
+
   // Get the selected order details - either from the specific query or from all orders
   const selectedOrder = specificOrder || orders.find(order => order.id.toString() === selectedOrderId);
-  
+
   // Combined loading state
   const isLoading = isLoadingOrders || isLoadingSpecificOrder;
 
@@ -103,7 +103,7 @@ const OrderPicking = () => {
               ) : (
                 <div className="space-y-4">
                   <Select 
-                    value={selectedOrderId || ""} 
+                    value={selectedOrderId || undefined} 
                     onValueChange={setSelectedOrderId}
                   >
                     <SelectTrigger>
@@ -111,7 +111,10 @@ const OrderPicking = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {pickableOrders.map(order => (
-                        <SelectItem key={order.id} value={order.id.toString()}>
+                        <SelectItem 
+                          key={order.id} 
+                          value={String(order.id)}
+                        >
                           {order.orderNumber} - {order.customerName}
                         </SelectItem>
                       ))}

@@ -141,7 +141,7 @@ const PickList = ({ order }: { order: Order }) => {
           </Badge>
         </CardTitle>
         <CardDescription>
-          Customer: {order.customerName} | Order Date: {new Date(order.orderDate).toLocaleDateString()}
+          Customer: {order.customerName} | Order Date: {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'N/A'}
         </CardDescription>
       </CardHeader>
       <CardContent>
