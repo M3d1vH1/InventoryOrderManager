@@ -64,8 +64,9 @@ const Orders = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [showOrderForm, setShowOrderForm] = useState(false);
 
-  const { data: orders, isLoading } = useQuery<Order[]>({
+  const { data: orders, isLoading } = useQuery({
     queryKey: ['/api/orders'],
+    queryFn: () => apiRequest('GET', '/api/orders'), //Added queryFn to handle the request.  This assumes apiRequest is defined elsewhere and correctly handles API calls.
   });
 
   const updateStatusMutation = useMutation({
@@ -193,7 +194,11 @@ const Orders = () => {
                 filteredOrders?.map((order) => (
                   <TableRow key={order.id}>
                     <TableCell>{order.orderNumber}</TableCell>
-                    <TableCell>{order.customerName}</TableCell>
+                    <TableCell>
+                      <Link href={`/orders/${order.id}`} className="text-primary hover:underline">
+                        {order.customerName}
+                      </Link>
+                    </TableCell>
                     <TableCell>{formatDate(order.orderDate)}</TableCell>
                     <TableCell>
                       <Select 

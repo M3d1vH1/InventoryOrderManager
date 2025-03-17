@@ -127,13 +127,13 @@ const OrderForm = () => {
       });
       return;
     }
-    
+
     setOrderItems([...orderItems, { 
       productId: product.id, 
       product,
       quantity: 1 
     }]);
-    
+
     setIsProductSearchOpen(false);
   };
 
@@ -186,7 +186,7 @@ const OrderForm = () => {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="orderDate"
@@ -201,7 +201,7 @@ const OrderForm = () => {
                 )}
               />
             </div>
-            
+
             <div className="mb-6">
               <div className="flex justify-between items-center mb-2">
                 <FormLabel>Products</FormLabel>
@@ -213,7 +213,7 @@ const OrderForm = () => {
                   <i className="fas fa-plus mr-1"></i> Add Product
                 </Button>
               </div>
-              
+
               <div className="bg-slate-50 p-4 rounded-md">
                 {orderItems.length > 0 ? (
                   <div className="overflow-x-auto">
@@ -274,14 +274,14 @@ const OrderForm = () => {
                   </div>
                 )}
               </div>
-              
+
               {form.formState.errors.items && (
                 <p className="text-sm font-medium text-red-500 mt-2">
                   {form.formState.errors.items.message}
                 </p>
               )}
             </div>
-            
+
             <FormField
               control={form.control}
               name="notes"
@@ -299,7 +299,7 @@ const OrderForm = () => {
                 </FormItem>
               )}
             />
-            
+
             <div className="flex justify-end space-x-3">
               <Button 
                 type="button" 
@@ -321,7 +321,7 @@ const OrderForm = () => {
           </form>
         </Form>
       </div>
-      
+
       <ProductSearch 
         isOpen={isProductSearchOpen} 
         onClose={() => setIsProductSearchOpen(false)}
