@@ -97,7 +97,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/orders', async (req, res) => {
     try {
       const orders = await storage.getAllOrders();
-      res.json(orders);
+      const ordersWithItems = await Promise.all(
+        orders.map(async (order) => {
+          const items = await storage.getOrderItems(order.id);
+          return { ...order, items };
+        })
+      );
+      res.json(ordersWithItems);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

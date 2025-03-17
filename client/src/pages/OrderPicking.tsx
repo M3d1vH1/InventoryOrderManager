@@ -54,15 +54,25 @@ const OrderPicking = () => {
     setCurrentPage("OrderPicking");
   }, [setCurrentPage]);
 
-  // Fetch all orders
+  // Fetch all orders with items
   const { data: orders = [], isLoading: isLoadingOrders } = useQuery<Order[]>({
     queryKey: ['/api/orders'],
+    queryFn: async () => {
+      const response = await fetch('/api/orders');
+      const data = await response.json();
+      return data;
+    }
   });
 
-  // Fetch specific order if ID is provided
+  // Fetch specific order with items if ID is provided
   const { data: specificOrder, isLoading: isLoadingSpecificOrder } = useQuery<Order>({
     queryKey: ['/api/orders', selectedOrderId],
     enabled: !!selectedOrderId,
+    queryFn: async () => {
+      const response = await fetch(`/api/orders/${selectedOrderId}`);
+      const data = await response.json();
+      return data;
+    }
   });
 
   // Filter orders that can be picked (pending status)
