@@ -3,6 +3,25 @@
 @tailwind utilities;
 
 @layer base {
+  input, select, button {
+    @apply min-h-[44px] touch-manipulation;
+  }
+  
+  th, td {
+    @apply p-4;
+  }
+}
+
+/* Prevent zoom on inputs on iOS */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="number"],
+  select {
+    font-size: 16px;
+  }
+}
+
+@layer base {
   * {
     @apply border-border;
   }
