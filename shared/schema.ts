@@ -66,10 +66,11 @@ export const orders = pgTable("orders", {
 });
 
 export const insertOrderSchema = createInsertSchema(orders)
-  .omit({ id: true, orderNumber: true })
+  .omit({ id: true, orderNumber: true, orderDate: true })
   .extend({
     customerName: z.string().min(2),
     notes: z.string().optional(),
+    orderDate: z.date().optional(),
   });
 
 export type InsertOrder = z.infer<typeof insertOrderSchema>;

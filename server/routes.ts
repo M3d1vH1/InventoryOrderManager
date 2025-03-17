@@ -142,12 +142,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post('/api/orders', async (req, res) => {
     try {
-      const orderData = insertOrderSchema.parse(req.body);
-      const order = await storage.createOrder(orderData);
+      const { items, ...orderData } = req.body;
+      const validatedOrder = insertOrderSchema.parse(orderData);
+      
+      const order = await storage.createOrder({
+        ...validatedOrder,
+        orderDate: validatedOrder.orderDate || new Date(),
+      });
       
       // Add order items if provided
-      if (req.body.items && Array.isArray(req.body.items)) {
-        for (const item of req.body.items) {
+      if (items && Array.isArray(items)) {
+        for (const item of items) {
           const orderItem = {
             orderId: order.id,
             productId: item.productId,
