@@ -205,11 +205,12 @@ const Settings = () => {
                     <select 
                       className="w-40 rounded-md border border-slate-300 py-2 px-3"
                       onChange={(e) => {
-                        const i18n = require('i18next').default;
-                        i18n.changeLanguage(e.target.value);
-                        toast({
-                          title: "Language Changed",
-                          description: "Your language preference has been updated.",
+                        import('i18next').then(({default: i18n}) => {
+                          i18n.changeLanguage(e.target.value);
+                          toast({
+                            title: "Language Changed",
+                            description: "Your language preference has been updated.",
+                          });
                         });
                       }}
                       defaultValue="en"
