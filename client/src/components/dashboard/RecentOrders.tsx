@@ -34,6 +34,8 @@ const getStatusBadgeClass = (status: string) => {
   }
 };
 
+import { useQuery } from '@tanstack/react-query';
+
 const RecentOrders = () => {
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['/api/orders/recent'],

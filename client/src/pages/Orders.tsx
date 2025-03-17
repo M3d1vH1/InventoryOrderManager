@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSidebar } from "@/context/SidebarContext";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
@@ -110,12 +110,13 @@ const Orders = () => {
     });
   };
 
-  const formatDate = (date: string) => {
-    if (!date) return '';
+  const formatDate = (dateString: string): string => {
     try {
-      return new Date(date).toLocaleDateString();
-    } catch (e) {
-      return '';
+      const date = parseISO(dateString);
+      return format(date, 'yyyy-MM-dd');
+    } catch (error) {
+      console.error("Error parsing date:", error);
+      return ''; // or a default value, e.g., "N/A"
     }
   };
 

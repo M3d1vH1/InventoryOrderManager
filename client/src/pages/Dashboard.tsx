@@ -6,8 +6,10 @@ import InventoryAlerts from "@/components/dashboard/InventoryAlerts";
 import OrderForm from "@/components/orders/OrderForm";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
+import { useQuery } from '@tanstack/react-query';
+
 const OrderTrends = () => {
-  const { data: orders } = useQuery({
+  const { data: orders = [] } = useQuery({
     queryKey: ['/api/orders'],
   });
 
