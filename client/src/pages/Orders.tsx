@@ -111,13 +111,14 @@ const Orders = () => {
     });
   };
 
-  const formatDate = (dateString: string): string => {
+  const formatDate = (dateString: string | null): string => {
+    if (!dateString) return 'N/A';
     try {
-      const date = parseISO(dateString);
-      return format(date, 'yyyy-MM-dd');
+      const date = new Date(dateString);
+      return date.toLocaleDateString();
     } catch (error) {
       console.error("Error parsing date:", error);
-      return ''; // or a default value, e.g., "N/A"
+      return 'N/A';
     }
   };
 
