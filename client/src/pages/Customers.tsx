@@ -82,6 +82,7 @@ const customerFormSchema = z.object({
   phone: z.string().optional(),
   contactPerson: z.string().optional(),
   preferredShippingCompany: z.enum(['dhl', 'fedex', 'ups', 'usps', 'royal_mail', 'other']).optional(),
+  customShippingCompany: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -241,6 +242,8 @@ const Customers = () => {
       email: '',
       phone: '',
       contactPerson: '',
+      preferredShippingCompany: undefined,
+      customShippingCompany: '',
       notes: '',
     },
   });
@@ -259,6 +262,8 @@ const Customers = () => {
       email: '',
       phone: '',
       contactPerson: '',
+      preferredShippingCompany: undefined,
+      customShippingCompany: '',
       notes: '',
     },
   });
@@ -292,6 +297,7 @@ const Customers = () => {
       phone: customer.phone || undefined,
       contactPerson: customer.contactPerson || undefined,
       preferredShippingCompany: customer.preferredShippingCompany || undefined,
+      customShippingCompany: customer.customShippingCompany || undefined,
       notes: customer.notes || undefined,
     });
     
@@ -575,27 +581,53 @@ const Customers = () => {
                     <FormItem>
                       <FormLabel>Preferred Shipping Company</FormLabel>
                       <Select
-                        onValueChange={field.onChange}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          // Reset custom shipping when not "other"
+                          if (value !== "other") {
+                            createForm.setValue("customShippingCompany", "");
+                          }
+                        }}
                         defaultValue={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="h-12 text-base">
                             <SelectValue placeholder="Select shipping company" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="dhl">DHL</SelectItem>
-                          <SelectItem value="fedex">FedEx</SelectItem>
-                          <SelectItem value="ups">UPS</SelectItem>
-                          <SelectItem value="usps">USPS</SelectItem>
-                          <SelectItem value="royal_mail">Royal Mail</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
+                          <SelectItem value="dhl" className="h-10 text-base">DHL</SelectItem>
+                          <SelectItem value="fedex" className="h-10 text-base">FedEx</SelectItem>
+                          <SelectItem value="ups" className="h-10 text-base">UPS</SelectItem>
+                          <SelectItem value="usps" className="h-10 text-base">USPS</SelectItem>
+                          <SelectItem value="royal_mail" className="h-10 text-base">Royal Mail</SelectItem>
+                          <SelectItem value="other" className="h-10 text-base">Other</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                
+                {createForm.watch("preferredShippingCompany") === "other" && (
+                  <FormField
+                    control={createForm.control}
+                    name="customShippingCompany"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Custom Shipping Company</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter shipping company name" 
+                            className="h-12 text-base" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
               
               <div className="pt-2">
@@ -796,27 +828,53 @@ const Customers = () => {
                     <FormItem>
                       <FormLabel>Preferred Shipping Company</FormLabel>
                       <Select
-                        onValueChange={field.onChange}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          // Reset custom shipping when not "other"
+                          if (value !== "other") {
+                            editForm.setValue("customShippingCompany", "");
+                          }
+                        }}
                         defaultValue={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="h-12 text-base">
                             <SelectValue placeholder="Select shipping company" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="dhl">DHL</SelectItem>
-                          <SelectItem value="fedex">FedEx</SelectItem>
-                          <SelectItem value="ups">UPS</SelectItem>
-                          <SelectItem value="usps">USPS</SelectItem>
-                          <SelectItem value="royal_mail">Royal Mail</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
+                          <SelectItem value="dhl" className="h-10 text-base">DHL</SelectItem>
+                          <SelectItem value="fedex" className="h-10 text-base">FedEx</SelectItem>
+                          <SelectItem value="ups" className="h-10 text-base">UPS</SelectItem>
+                          <SelectItem value="usps" className="h-10 text-base">USPS</SelectItem>
+                          <SelectItem value="royal_mail" className="h-10 text-base">Royal Mail</SelectItem>
+                          <SelectItem value="other" className="h-10 text-base">Other</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                
+                {editForm.watch("preferredShippingCompany") === "other" && (
+                  <FormField
+                    control={editForm.control}
+                    name="customShippingCompany"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Custom Shipping Company</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter shipping company name" 
+                            className="h-12 text-base" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
               
               <div className="pt-2">
