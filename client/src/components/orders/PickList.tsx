@@ -24,7 +24,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, QrCode, ScanBarcode as BarcodeIcon, Truck, RefreshCcw, CheckCircle2 } from "lucide-react";
+import { MapPin, QrCode, ScanBarcode, Truck, RefreshCcw, CheckCircle2 } from "lucide-react";
 import { BarcodeScanner } from "@/components/barcode";
 
 interface OrderItem {
@@ -260,7 +260,7 @@ const PickList = ({ order }: { order: Order }) => {
         {/* Last scanned barcode notification */}
         {lastScannedBarcode && (
           <Alert className="mb-4 bg-slate-50">
-            <BarcodeIcon className="h-4 w-4" />
+            <ScanBarcode className="h-4 w-4" />
             <AlertDescription>
               Last scanned: <span className="font-mono font-medium">{lastScannedBarcode}</span>
             </AlertDescription>
@@ -362,13 +362,13 @@ const PickList = ({ order }: { order: Order }) => {
           size="lg"
         >
           {updateOrderStatusMutation.isPending ? (
-            t('pickList.updating')
+            "Updating..."
           ) : (
             <>
               <CheckCircle2 className="mr-2 h-5 w-5" />
-              {t('pickList.complete')}
+              Complete Pick List
               {allItemsPicked && order.status === 'pending' && (
-                <span className="ml-1">({order.items?.length} {t('pickList.items')})</span>
+                <span className="ml-1">({order.items?.length} items)</span>
               )}
             </>
           )}
