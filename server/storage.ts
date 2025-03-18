@@ -36,8 +36,12 @@ export interface IStorage {
   
   // Customer methods
   getCustomer(id: number): Promise<Customer | undefined>;
+  getCustomerByVatNumber(vatNumber: string): Promise<Customer | undefined>;
   getAllCustomers(): Promise<Customer[]>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
+  updateCustomer(id: number, customer: Partial<InsertCustomer>): Promise<Customer | undefined>;
+  deleteCustomer(id: number): Promise<boolean>;
+  searchCustomers(query: string): Promise<Customer[]>;
   
   // Stats methods
   getDashboardStats(): Promise<{
@@ -317,15 +321,63 @@ export class MemStorage implements IStorage {
     return this.customers.get(id);
   }
   
+  async getCustomerByVatNumber(vatNumber: string): Promise<Customer | undefined> {
+    return Array.from(this.customers.values()).find(
+      (customer) => customer.vatNumber === vatNumber
+    );
+  }
+  
   async getAllCustomers(): Promise<Customer[]> {
     return Array.from(this.customers.values());
   }
   
   async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
     const id = this.customerIdCounter++;
-    const customer: Customer = { ...insertCustomer, id };
+    // Create a complete customer with all fields (handling nulls correctly)
+    const customer: Customer = { 
+      ...insertCustomer, 
+      id,
+      vatNumber: insertCustomer.vatNumber || null,
+      address: insertCustomer.address || null,
+      city: insertCustomer.city || null,
+      state: insertCustomer.state || null,
+      postalCode: insertCustomer.postalCode || null,
+      country: insertCustomer.country || null,
+      email: insertCustomer.email || null,
+      phone: insertCustomer.phone || null,
+      contactPerson: insertCustomer.contactPerson || null,
+      preferredShippingCompany: insertCustomer.preferredShippingCompany || null,
+      notes: insertCustomer.notes || null,
+      createdAt: new Date()
+    };
+    
     this.customers.set(id, customer);
     return customer;
+  }
+  
+  async updateCustomer(id: number, customerUpdate: Partial<InsertCustomer>): Promise<Customer | undefined> {
+    const existingCustomer = this.customers.get(id);
+    if (!existingCustomer) return undefined;
+    
+    const updatedCustomer = { ...existingCustomer, ...customerUpdate };
+    this.customers.set(id, updatedCustomer);
+    return updatedCustomer;
+  }
+  
+  async deleteCustomer(id: number): Promise<boolean> {
+    return this.customers.delete(id);
+  }
+  
+  async searchCustomers(query: string): Promise<Customer[]> {
+    if (!query) return this.getAllCustomers();
+    
+    const lowercaseQuery = query.toLowerCase();
+    return Array.from(this.customers.values()).filter(customer => 
+      customer.name.toLowerCase().includes(lowercaseQuery) || 
+      (customer.vatNumber && customer.vatNumber.toLowerCase().includes(lowercaseQuery)) ||
+      (customer.email && customer.email.toLowerCase().includes(lowercaseQuery)) ||
+      (customer.contactPerson && customer.contactPerson.toLowerCase().includes(lowercaseQuery))
+    );
   }
   
   // Stats methods
@@ -656,11 +708,66 @@ export class MemStorage implements IStorage {
   
   // Initialize with sample data
   private initSampleData() {
-    // Sample customers
-    this.createCustomer({ name: "John Smith" });
-    this.createCustomer({ name: "Sarah Johnson" });
-    this.createCustomer({ name: "Mike Williams" });
-    this.createCustomer({ name: "Emma Davis" });
+    // Sample customers with extended data
+    this.createCustomer({ 
+      name: "Acme Corporation", 
+      vatNumber: "GB123456789",
+      address: "123 Business Park",
+      city: "London",
+      state: "",
+      postalCode: "E1 6AN",
+      country: "United Kingdom",
+      email: "orders@acmecorp.example",
+      phone: "+44 20 1234 5678",
+      contactPerson: "John Smith",
+      preferredShippingCompany: "royal_mail",
+      notes: "Major account - priority shipping"
+    });
+    
+    this.createCustomer({ 
+      name: "TechStart Inc.", 
+      vatNumber: "US987654321",
+      address: "456 Innovation Avenue",
+      city: "San Francisco",
+      state: "CA",
+      postalCode: "94107",
+      country: "United States",
+      email: "purchasing@techstart.example",
+      phone: "+1 415 555 1234",
+      contactPerson: "Sarah Johnson",
+      preferredShippingCompany: "fedex",
+      notes: "Requires special packaging"
+    });
+    
+    this.createCustomer({ 
+      name: "Euro Distributors GmbH", 
+      vatNumber: "DE567891234",
+      address: "789 Industrie Strasse",
+      city: "Berlin",
+      state: "",
+      postalCode: "10115",
+      country: "Germany",
+      email: "info@eurodistributors.example",
+      phone: "+49 30 9876 5432",
+      contactPerson: "Klaus Mueller",
+      preferredShippingCompany: "dhl",
+      notes: ""
+    });
+    
+    this.createCustomer({ 
+      name: "Pacific Traders Ltd", 
+      vatNumber: "AU123789456",
+      address: "10 Harbor Road",
+      city: "Sydney",
+      state: "NSW",
+      postalCode: "2000",
+      country: "Australia",
+      email: "orders@pacifictraders.example",
+      phone: "+61 2 8765 4321",
+      contactPerson: "Emma Davis",
+      preferredShippingCompany: "ups",
+      notes: "Bulk orders only"
+    });
     
     // Sample products
     this.createProduct({

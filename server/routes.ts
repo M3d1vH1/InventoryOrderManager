@@ -346,8 +346,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Customer routes
   app.get('/api/customers', async (req, res) => {
     try {
+      const query = req.query.q as string;
+      
+      if (query) {
+        const searchResults = await storage.searchCustomers(query);
+        return res.json(searchResults);
+      }
+      
       const customers = await storage.getAllCustomers();
       res.json(customers);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.get('/api/customers/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const customer = await storage.getCustomer(id);
+      
+      if (!customer) {
+        return res.status(404).json({ message: 'Customer not found' });
+      }
+      
+      res.json(customer);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.post('/api/customers', async (req, res) => {
+    try {
+      const customerData = insertCustomerSchema.parse(req.body);
+      const customer = await storage.createCustomer(customerData);
+      
+      res.status(201).json(customer);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Validation error', errors: error.errors });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.patch('/api/customers/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const customerData = insertCustomerSchema.partial().parse(req.body);
+      
+      const updatedCustomer = await storage.updateCustomer(id, customerData);
+      
+      if (!updatedCustomer) {
+        return res.status(404).json({ message: 'Customer not found' });
+      }
+      
+      res.json(updatedCustomer);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Validation error', errors: error.errors });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.delete('/api/customers/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Check if customer exists first
+      const customer = await storage.getCustomer(id);
+      if (!customer) {
+        return res.status(404).json({ message: 'Customer not found' });
+      }
+      
+      // Check if customer has associated orders
+      // Note: In a real implementation, we'd need to check for associated orders
+      // and prevent deletion if they exist
+      
+      const result = await storage.deleteCustomer(id);
+      
+      if (!result) {
+        return res.status(404).json({ message: 'Customer not found' });
+      }
+      
+      res.status(204).send();
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

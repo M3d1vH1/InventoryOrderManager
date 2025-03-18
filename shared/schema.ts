@@ -101,14 +101,50 @@ export const insertOrderItemSchema = createInsertSchema(orderItems)
 export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 export type OrderItem = typeof orderItems.$inferSelect;
 
-// Customer Schema (simplified)
+// Shipping Companies Enum
+export const shippingCompanyEnum = pgEnum('shipping_company', [
+  'dhl',
+  'fedex',
+  'ups',
+  'usps',
+  'royal_mail',
+  'other'
+]);
+
+// Customer Schema (enhanced)
 export const customers = pgTable("customers", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  vatNumber: text("vat_number"),
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  postalCode: text("postal_code"),
+  country: text("country"),
+  email: text("email"),
+  phone: text("phone"),
+  contactPerson: text("contact_person"),
+  preferredShippingCompany: shippingCompanyEnum("preferred_shipping_company"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const insertCustomerSchema = createInsertSchema(customers)
-  .omit({ id: true });
+  .omit({ id: true, createdAt: true })
+  .extend({
+    name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+    vatNumber: z.string().optional(),
+    address: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    postalCode: z.string().optional(),
+    country: z.string().optional(),
+    email: z.string().email({ message: "Invalid email address" }).optional(),
+    phone: z.string().optional(),
+    contactPerson: z.string().optional(),
+    preferredShippingCompany: z.enum(['dhl', 'fedex', 'ups', 'usps', 'royal_mail', 'other']).optional(),
+    notes: z.string().optional(),
+  });
 
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
 export type Customer = typeof customers.$inferSelect;
