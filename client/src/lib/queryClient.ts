@@ -7,20 +7,33 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(
-  method: string,
-  url: string,
-  data?: unknown | undefined,
-): Promise<Response> {
-  const res = await fetch(url, {
-    method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
+export async function apiRequest<T = any>(
+  urlOrOptions: string | RequestInit & { url: string },
+  options?: RequestInit
+): Promise<T> {
+  let url: string;
+  let fetchOptions: RequestInit;
 
+  if (typeof urlOrOptions === 'string') {
+    url = urlOrOptions;
+    fetchOptions = options || {};
+    fetchOptions.method = fetchOptions.method || 'GET';
+  } else {
+    url = urlOrOptions.url;
+    fetchOptions = urlOrOptions;
+  }
+
+  fetchOptions.credentials = 'include';
+
+  const res = await fetch(url, fetchOptions);
   await throwIfResNotOk(res);
-  return res;
+  
+  // For non-JSON responses (like DELETE which often returns no content)
+  if (res.status === 204 || res.headers.get('content-length') === '0') {
+    return null as T;
+  }
+  
+  return res.json() as Promise<T>;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

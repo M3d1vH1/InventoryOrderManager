@@ -116,22 +116,28 @@ const Customers = () => {
   const queryClient = useQueryClient();
 
   // Query to fetch all customers
-  const { data: customers = [], isLoading, isError } = useQuery({
+  const { data: customers = [], isLoading, isError } = useQuery<Customer[]>({
     queryKey: ['/api/customers', searchQuery],
     queryFn: async () => {
       const url = searchQuery 
         ? `/api/customers?q=${encodeURIComponent(searchQuery)}`
         : '/api/customers';
-      return apiRequest<Customer[]>(url);
+      return apiRequest<Customer[]>({
+        url: url,
+        method: 'GET'
+      });
     }
   });
 
   // Query to fetch a single customer details
-  const { data: customerDetails } = useQuery({
+  const { data: customerDetails } = useQuery<Customer | null>({
     queryKey: ['/api/customers', viewDetailsId],
     queryFn: async () => {
       if (!viewDetailsId) return null;
-      return apiRequest<Customer>(`/api/customers/${viewDetailsId}`);
+      return apiRequest<Customer>({
+        url: `/api/customers/${viewDetailsId}`,
+        method: 'GET'
+      });
     },
     enabled: viewDetailsId !== null,
   });
@@ -139,7 +145,8 @@ const Customers = () => {
   // Mutation for creating a new customer
   const createCustomerMutation = useMutation({
     mutationFn: async (values: CustomerFormValues) => {
-      return apiRequest('/api/customers', {
+      return apiRequest<Customer>({
+        url: '/api/customers',
         method: 'POST',
         body: JSON.stringify(values),
         headers: {
@@ -167,7 +174,8 @@ const Customers = () => {
   // Mutation for updating an existing customer
   const updateCustomerMutation = useMutation({
     mutationFn: async ({ id, values }: { id: number; values: CustomerFormValues }) => {
-      return apiRequest(`/api/customers/${id}`, {
+      return apiRequest<Customer>({
+        url: `/api/customers/${id}`,
         method: 'PATCH',
         body: JSON.stringify(values),
         headers: {
@@ -195,7 +203,8 @@ const Customers = () => {
   // Mutation for deleting a customer
   const deleteCustomerMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/customers/${id}`, {
+      return apiRequest<void>({
+        url: `/api/customers/${id}`,
         method: 'DELETE',
       });
     },

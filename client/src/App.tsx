@@ -11,6 +11,7 @@ import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
 import OrderPicking from "@/pages/OrderPicking";
 import ProductBarcode from "@/pages/ProductBarcode";
+import Customers from "@/pages/Customers";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { SidebarProvider } from "@/context/SidebarContext";
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/orders" component={Orders} />
       <Route path="/products" component={Products} />
+      <Route path="/customers" component={Customers} />
       <Route path="/inventory" component={Inventory} />
       <Route path="/reports" component={Reports} />
       <Route path="/settings" component={Settings} />
