@@ -46,6 +46,53 @@ export interface IStorage {
     shippedToday: number;
     lowStockItems: number;
   }>;
+
+  // Advanced Analytics Methods
+  getInventoryTrendData(weeks?: number): Promise<{
+    name: string;
+    inStock: number;
+    lowStock: number;
+    outOfStock: number;
+  }[]>;
+
+  getOrdersTrendData(months?: number): Promise<{
+    name: string;
+    pending: number;
+    picked: number;
+    shipped: number;
+    cancelled: number;
+  }[]>;
+
+  getProductCategoryData(): Promise<{
+    name: string;
+    value: number;
+  }[]>;
+
+  getTopSellingProducts(limit?: number): Promise<{
+    id: number;
+    name: string;
+    sku: string;
+    soldQuantity: number;
+  }[]>;
+
+  getInventoryValueReport(): Promise<{
+    totalValue: number;
+    categoryBreakdown: {
+      category: string;
+      productCount: number;
+      totalValue: number;
+      percentageOfTotal: number;
+    }[];
+  }>;
+  
+  getPickingEfficiencyReport(): Promise<{
+    averagePickingTimeMinutes: number;
+    pickingEfficiency: {
+      date: string;
+      ordersProcessed: number;
+      avgTimeMinutes: number;
+    }[];
+  }>;
 }
 
 export class MemStorage implements IStorage {
@@ -308,6 +355,291 @@ export class MemStorage implements IStorage {
       itemsToPick,
       shippedToday,
       lowStockItems
+    };
+  }
+
+  // Advanced Analytics Methods
+  async getInventoryTrendData(weeks: number = 6): Promise<{
+    name: string;
+    inStock: number;
+    lowStock: number;
+    outOfStock: number;
+  }[]> {
+    // In a real system, we would query historical data
+    // For now, we'll generate some realistic sample data
+    const products = Array.from(this.products.values());
+    const totalProducts = products.length;
+    
+    const result = [];
+    for (let i = 0; i < weeks; i++) {
+      const weekName = `Week ${i + 1}`;
+      
+      // Calculate actual current figures for the latest week
+      let inStock = 0;
+      let lowStock = 0;
+      let outOfStock = 0;
+      
+      if (i === weeks - 1) {
+        // Use actual current data for the last week
+        inStock = products.filter(p => p.currentStock > p.minStockLevel).length;
+        lowStock = products.filter(p => p.currentStock > 0 && p.currentStock <= p.minStockLevel).length;
+        outOfStock = products.filter(p => p.currentStock === 0).length;
+      } else {
+        // Generate realistic variations for historical weeks
+        // This simulates historical data while maintaining realistic patterns
+        const baseInStock = Math.floor(totalProducts * 0.7);
+        const baseLowStock = Math.floor(totalProducts * 0.2);
+        const baseOutOfStock = Math.floor(totalProducts * 0.1);
+        
+        // Add random variations to simulate changes over time
+        inStock = baseInStock + Math.floor(Math.random() * 10) - 5;
+        lowStock = baseLowStock + Math.floor(Math.random() * 6) - 3;
+        outOfStock = baseOutOfStock + Math.floor(Math.random() * 4) - 2;
+        
+        // Ensure positive values and correct total
+        inStock = Math.max(0, inStock);
+        lowStock = Math.max(0, lowStock);
+        outOfStock = Math.max(0, outOfStock);
+        
+        // Adjust to match total
+        const total = inStock + lowStock + outOfStock;
+        if (total !== totalProducts) {
+          inStock += (totalProducts - total);
+        }
+      }
+      
+      result.push({
+        name: weekName,
+        inStock,
+        lowStock,
+        outOfStock
+      });
+    }
+    
+    return result;
+  }
+
+  async getOrdersTrendData(months: number = 6): Promise<{
+    name: string;
+    pending: number;
+    picked: number;
+    shipped: number;
+    cancelled: number;
+  }[]> {
+    const allOrders = Array.from(this.orders.values());
+    const result = [];
+    
+    // Get current month and year
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    // Generate data for each month
+    for (let i = 0; i < months; i++) {
+      const monthIndex = (currentMonth - i + 12) % 12; // Go back i months
+      const year = currentYear - Math.floor((i - (currentMonth + 1)) / 12);
+      const monthName = new Date(year, monthIndex, 1).toLocaleString('default', { month: 'short' });
+      
+      // Calculate start and end dates for this month
+      const startDate = new Date(year, monthIndex, 1);
+      const endDate = new Date(year, monthIndex + 1, 0, 23, 59, 59);
+      
+      // Filter orders for this month
+      const monthOrders = allOrders.filter(order => {
+        const orderDate = new Date(order.orderDate);
+        return orderDate >= startDate && orderDate <= endDate;
+      });
+      
+      // Count by status
+      const pending = monthOrders.filter(order => order.status === 'pending').length;
+      const picked = monthOrders.filter(order => order.status === 'picked').length;
+      const shipped = monthOrders.filter(order => order.status === 'shipped').length;
+      const cancelled = monthOrders.filter(order => order.status === 'cancelled').length;
+      
+      result.unshift({
+        name: monthName,
+        pending,
+        picked,
+        shipped,
+        cancelled
+      });
+    }
+    
+    return result;
+  }
+
+  async getProductCategoryData(): Promise<{
+    name: string;
+    value: number;
+  }[]> {
+    const products = Array.from(this.products.values());
+    const categories = {} as Record<string, number>;
+    
+    // Count products by category
+    products.forEach(product => {
+      const category = product.category;
+      if (!categories[category]) {
+        categories[category] = 0;
+      }
+      categories[category]++;
+    });
+    
+    // Convert to array format
+    return Object.entries(categories).map(([name, value]) => ({
+      name: name.charAt(0).toUpperCase() + name.slice(1), // Capitalize first letter
+      value
+    }));
+  }
+
+  async getTopSellingProducts(limit: number = 5): Promise<{
+    id: number;
+    name: string;
+    sku: string;
+    soldQuantity: number;
+  }[]> {
+    const allOrderItems = Array.from(this.orderItems.values());
+    const productSales = {} as Record<number, number>;
+    
+    // Calculate total quantity sold for each product
+    allOrderItems.forEach(item => {
+      if (!productSales[item.productId]) {
+        productSales[item.productId] = 0;
+      }
+      productSales[item.productId] += item.quantity;
+    });
+    
+    // Convert to array and sort by quantity sold
+    const sortedProducts = Object.entries(productSales)
+      .map(([productId, soldQuantity]) => {
+        const product = this.products.get(parseInt(productId));
+        return {
+          id: parseInt(productId),
+          name: product?.name || 'Unknown Product',
+          sku: product?.sku || 'N/A',
+          soldQuantity
+        };
+      })
+      .sort((a, b) => b.soldQuantity - a.soldQuantity)
+      .slice(0, limit);
+    
+    return sortedProducts;
+  }
+
+  async getInventoryValueReport(): Promise<{
+    totalValue: number;
+    categoryBreakdown: {
+      category: string;
+      productCount: number;
+      totalValue: number;
+      percentageOfTotal: number;
+    }[];
+  }> {
+    const products = Array.from(this.products.values());
+    
+    // Calculate individual product values (simulated as we don't have price in the model)
+    const productValues = products.map(product => {
+      // Simulate product price based on category and stock level
+      let basePrice = 0;
+      switch (product.category) {
+        case 'widgets': basePrice = 12.99; break;
+        case 'connectors': basePrice = 8.50; break;
+        case 'brackets': basePrice = 15.75; break;
+        case 'mounts': basePrice = 22.50; break;
+        default: basePrice = 10.00;
+      }
+      
+      // Calculate total value
+      return {
+        product,
+        value: basePrice * product.currentStock
+      };
+    });
+    
+    // Calculate total inventory value
+    const totalValue = productValues.reduce((sum, item) => sum + item.value, 0);
+    
+    // Calculate category breakdown
+    const categories = {} as Record<string, {
+      productCount: number;
+      totalValue: number;
+    }>;
+    
+    productValues.forEach(({ product, value }) => {
+      const category = product.category;
+      if (!categories[category]) {
+        categories[category] = {
+          productCount: 0,
+          totalValue: 0
+        };
+      }
+      categories[category].productCount++;
+      categories[category].totalValue += value;
+    });
+    
+    // Convert to array with percentage
+    const categoryBreakdown = Object.entries(categories).map(([category, data]) => ({
+      category: category.charAt(0).toUpperCase() + category.slice(1),
+      productCount: data.productCount,
+      totalValue: data.totalValue,
+      percentageOfTotal: (data.totalValue / totalValue) * 100
+    }));
+    
+    return {
+      totalValue,
+      categoryBreakdown: categoryBreakdown.sort((a, b) => b.totalValue - a.totalValue)
+    };
+  }
+
+  async getPickingEfficiencyReport(): Promise<{
+    averagePickingTimeMinutes: number;
+    pickingEfficiency: {
+      date: string;
+      ordersProcessed: number;
+      avgTimeMinutes: number;
+    }[];
+  }> {
+    const allOrders = Array.from(this.orders.values());
+    const pickedOrders = allOrders.filter(order => 
+      order.status === 'picked' || order.status === 'shipped'
+    );
+    
+    // Simulate picking efficiency data (in real system, would use actual timestamps)
+    const pickingData: {date: string; ordersProcessed: number; avgTimeMinutes: number}[] = [];
+    
+    // Get dates for the last 7 days
+    const dates: Date[] = [];
+    const today = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      dates.push(date);
+    }
+    
+    // Generate data for each day
+    let totalTime = 0;
+    let totalOrders = 0;
+    
+    dates.forEach(date => {
+      // Simulate orders processed on this day
+      const ordersProcessed = Math.floor(Math.random() * 5) + 1;
+      // Simulate average picking time (10-25 minutes)
+      const avgTimeMinutes = 10 + Math.floor(Math.random() * 15);
+      
+      totalOrders += ordersProcessed;
+      totalTime += avgTimeMinutes * ordersProcessed;
+      
+      pickingData.push({
+        date: date.toISOString().split('T')[0],
+        ordersProcessed,
+        avgTimeMinutes
+      });
+    });
+    
+    const averagePickingTimeMinutes = totalOrders > 0 ? totalTime / totalOrders : 0;
+    
+    return {
+      averagePickingTimeMinutes,
+      pickingEfficiency: pickingData
     };
   }
   
