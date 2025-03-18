@@ -73,7 +73,10 @@ const Orders = () => {
       return apiRequest({
         url: `/api/orders/${orderId}/status`,
         method: 'PATCH',
-        body: JSON.stringify({ status })
+        body: JSON.stringify({ status }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
     },
     onSuccess: () => {

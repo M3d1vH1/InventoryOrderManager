@@ -74,8 +74,13 @@ const PickList = ({ order }: { order: Order }) => {
 
   const updateOrderStatusMutation = useMutation({
     mutationFn: async (status: 'pending' | 'picked' | 'shipped' | 'cancelled') => {
-      return apiRequest('PATCH', `/api/orders/${order.id}/status`, {
-        status
+      return apiRequest({
+        url: `/api/orders/${order.id}/status`,
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
     },
     onSuccess: () => {
