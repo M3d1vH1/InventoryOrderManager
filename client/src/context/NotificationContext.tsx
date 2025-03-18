@@ -40,28 +40,46 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   // Calculate unread count
   const unreadCount = notifications.filter(n => !n.read).length;
   
+  // Pre-load audio elements
+  const [successAudio] = useState(new Audio('/sounds/notification-success.mp3'));
+  const [warningAudio] = useState(new Audio('/sounds/notification-warning.mp3'));
+  const [errorAudio] = useState(new Audio('/sounds/notification-error.mp3'));
+  
   // Function to play notification sound
   const playNotificationSound = (type: 'success' | 'warning' | 'error' = 'success') => {
-    const audio = new Audio();
-    
-    switch (type) {
-      case 'success':
-        audio.src = '/sounds/notification-success.mp3';
-        break;
-      case 'warning':
-        audio.src = '/sounds/notification-warning.mp3';
-        break;
-      case 'error':
-        audio.src = '/sounds/notification-error.mp3';
-        break;
-      default:
-        audio.src = '/sounds/notification-success.mp3';
-    }
-    
-    // Play the sound
-    audio.play().catch(error => {
+    try {
+      // Reset audio to beginning in case it was already playing
+      let audioToPlay;
+      
+      switch (type) {
+        case 'success':
+          audioToPlay = successAudio;
+          break;
+        case 'warning':
+          audioToPlay = warningAudio;
+          break;
+        case 'error':
+          audioToPlay = errorAudio;
+          break;
+        default:
+          audioToPlay = successAudio;
+      }
+      
+      // Reset time to beginning
+      audioToPlay.currentTime = 0;
+      
+      // Play the sound
+      const playPromise = audioToPlay.play();
+      
+      // Handle play promise (modern browsers return a promise from play())
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error('Error playing notification sound:', error);
+        });
+      }
+    } catch (error) {
       console.error('Error playing notification sound:', error);
-    });
+    }
   };
   
   // Mark notification as read
@@ -102,7 +120,30 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         const data = JSON.parse(event.data);
         
         // Handle different types of notifications
-        if (data.type === 'orderStatusChange') {
+        if (data.type === 'notification' && data.notification) {
+          // Handle direct notification messages (typically from test notifications)
+          const notification = data.notification;
+          
+          // Ensure timestamp is a Date object
+          if (typeof notification.timestamp === 'string') {
+            notification.timestamp = new Date(notification.timestamp);
+          }
+          
+          // Add notification
+          setNotifications(prev => [notification, ...prev]);
+          
+          // Show toast
+          toast({
+            title: notification.title,
+            description: notification.message,
+            variant: notification.type === 'error' ? 'destructive' : 'default',
+          });
+          
+          // Play notification sound if type is specified
+          if (notification.type === 'success' || notification.type === 'warning' || notification.type === 'error') {
+            playNotificationSound(notification.type);
+          }
+        } else if (data.type === 'orderStatusChange') {
           // Generate unique ID
           const id = `order-${data.orderId}-${Date.now()}`;
           
