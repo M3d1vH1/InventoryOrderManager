@@ -168,9 +168,41 @@ const Products = () => {
     }
   }, [editingProduct, form]);
 
+  // State to track file uploads
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  
   const createProductMutation = useMutation({
     mutationFn: async (values: ProductFormValues) => {
-      return apiRequest('POST', '/api/products', values);
+      // If there's an image file, use FormData to handle multipart/form-data
+      if (imageFile) {
+        const formData = new FormData();
+        
+        // Add file to formData
+        formData.append('image', imageFile);
+        
+        // Add other form values
+        Object.entries(values).forEach(([key, value]) => {
+          if (key !== 'imagePath' && value !== undefined && value !== null) {
+            formData.append(key, value.toString());
+          }
+        });
+        
+        // Use fetch directly as apiRequest doesn't support FormData
+        const response = await fetch('/api/products', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to create product');
+        }
+        
+        return await response.json();
+      } else {
+        // No file upload, use regular API request
+        return apiRequest('POST', '/api/products', values);
+      }
     },
     onSuccess: () => {
       toast({
@@ -178,6 +210,7 @@ const Products = () => {
         description: "The product has been created successfully.",
       });
       setIsDialogOpen(false);
+      setImageFile(null); // Clear the file state
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
     },
     onError: (error) => {
@@ -191,7 +224,36 @@ const Products = () => {
 
   const updateProductMutation = useMutation({
     mutationFn: async ({ id, values }: { id: number; values: ProductFormValues }) => {
-      return apiRequest('PATCH', `/api/products/${id}`, values);
+      // If there's an image file, use FormData to handle multipart/form-data
+      if (imageFile) {
+        const formData = new FormData();
+        
+        // Add file to formData
+        formData.append('image', imageFile);
+        
+        // Add other form values
+        Object.entries(values).forEach(([key, value]) => {
+          if (key !== 'imagePath' && value !== undefined && value !== null) {
+            formData.append(key, value.toString());
+          }
+        });
+        
+        // Use fetch directly as apiRequest doesn't support FormData
+        const response = await fetch(`/api/products/${id}`, {
+          method: 'PATCH',
+          body: formData,
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to update product');
+        }
+        
+        return await response.json();
+      } else {
+        // No file upload, use regular API request
+        return apiRequest('PATCH', `/api/products/${id}`, values);
+      }
     },
     onSuccess: () => {
       toast({
@@ -200,6 +262,7 @@ const Products = () => {
       });
       setIsDialogOpen(false);
       setEditingProduct(null);
+      setImageFile(null); // Clear the file state
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
     },
     onError: (error) => {
@@ -600,19 +663,41 @@ const Products = () => {
                   )}
                 />
                 
-                <FormField
-                  control={form.control}
-                  name="imageUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Product Image URL</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="https://example.com/image.jpg" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="col-span-2">
+                  <FormField
+                    control={form.control}
+                    name="imagePath"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Product Image</FormLabel>
+                        <FormControl>
+                          <div className="flex flex-col gap-2">
+                            <Input 
+                              type="file" 
+                              accept="image/*"
+                              onChange={(e) => {
+                                // Store the file for upload when form is submitted
+                                if (e.target.files && e.target.files[0]) {
+                                  // Set the file in state for later upload
+                                  setImageFile(e.target.files[0]);
+                                  // Just store the filename in the form field
+                                  field.onChange(e.target.files[0]?.name || "");
+                                }
+                              }}
+                              className="cursor-pointer"
+                            />
+                            {editingProduct?.imagePath && (
+                              <div className="text-sm text-gray-600">
+                                Current image: {editingProduct.imagePath.split('/').pop()}
+                              </div>
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
               
               <DialogFooter>
@@ -666,13 +751,13 @@ const Products = () => {
                 
                 <TabsContent value="info" className="mt-4">
                   <div className="flex flex-col md:flex-row gap-6">
-                    {viewingProduct.imageUrl && (
+                    {viewingProduct.imagePath && (
                       <div className="md:w-1/3">
                         <Card>
                           <CardContent className="p-4">
                             <div className="relative aspect-square rounded-md overflow-hidden">
                               <img 
-                                src={viewingProduct.imageUrl} 
+                                src={viewingProduct.imagePath} 
                                 alt={viewingProduct.name}
                                 className="object-cover w-full h-full"
                                 onError={(e) => {
@@ -686,7 +771,7 @@ const Products = () => {
                       </div>
                     )}
                     
-                    <div className={viewingProduct.imageUrl ? "md:w-2/3" : "w-full"}>
+                    <div className={viewingProduct.imagePath ? "md:w-2/3" : "w-full"}>
                       <Card>
                         <CardHeader>
                           <CardTitle className="text-xl">Product Details</CardTitle>
