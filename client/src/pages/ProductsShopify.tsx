@@ -595,72 +595,74 @@ const Products = () => {
                   Upload a high-quality image that clearly shows your product. Images help customers make purchase decisions.
                 </p>
                 
-                <FormField
-                  control={form.control}
-                  name="imagePath"
-                  render={({ field }) => (
-                    <FormItem className="mb-4">
-                      <div className="flex flex-col items-center justify-center">
-                        {/* Image Preview */}
-                        <div className="w-full flex justify-center mb-3">
-                          {(imageFile || editingProduct?.imagePath) && (
-                            <div className="relative w-full h-40 border rounded-md overflow-hidden">
-                              <img 
-                                src={
-                                  imageFile 
-                                    ? URL.createObjectURL(imageFile) 
-                                    : editingProduct?.imagePath 
-                                      ? `/uploads/${editingProduct?.imagePath.split('/').pop()}`
-                                      : ''
-                                } 
-                                alt="Product preview" 
-                                className="w-full h-full object-cover"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setImageFile(null);
-                                  field.onChange("");
-                                }}
-                                className="absolute top-1 right-1 bg-white p-1 rounded-full shadow-md"
-                                title="Remove Image"
-                              >
-                                <X size={14} />
-                              </button>
-                            </div>
-                          )}
-                          {!imageFile && !editingProduct?.imagePath && (
-                            <div className="w-full h-40 border-2 border-dashed rounded-md flex flex-col items-center justify-center text-gray-400">
-                              <Image size={40} />
-                              <span className="mt-2 text-sm">No image</span>
-                            </div>
-                          )}
-                        </div>
-                        
-                        {/* Upload Button */}
-                        <label htmlFor="product-image" className="cursor-pointer w-full">
-                          <div className="flex items-center justify-center gap-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-md w-full">
-                            <Upload size={16} />
-                            <span>{(imageFile || editingProduct?.imagePath) ? "Change Image" : "Upload Image"}</span>
+                <Form {...form}>
+                  <FormField
+                    control={form.control}
+                    name="imagePath"
+                    render={({ field }) => (
+                      <FormItem className="mb-4">
+                        <div className="flex flex-col items-center justify-center">
+                          {/* Image Preview */}
+                          <div className="w-full flex justify-center mb-3">
+                            {(imageFile || editingProduct?.imagePath) && (
+                              <div className="relative w-full h-40 border rounded-md overflow-hidden">
+                                <img 
+                                  src={
+                                    imageFile 
+                                      ? URL.createObjectURL(imageFile) 
+                                      : editingProduct?.imagePath 
+                                        ? `/uploads/${editingProduct?.imagePath.split('/').pop()}`
+                                        : ''
+                                  } 
+                                  alt="Product preview" 
+                                  className="w-full h-full object-cover"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setImageFile(null);
+                                    field.onChange("");
+                                  }}
+                                  className="absolute top-1 right-1 bg-white p-1 rounded-full shadow-md"
+                                  title="Remove Image"
+                                >
+                                  <X size={14} />
+                                </button>
+                              </div>
+                            )}
+                            {!imageFile && !editingProduct?.imagePath && (
+                              <div className="w-full h-40 border-2 border-dashed rounded-md flex flex-col items-center justify-center text-gray-400">
+                                <Image size={40} />
+                                <span className="mt-2 text-sm">No image</span>
+                              </div>
+                            )}
                           </div>
-                          <input 
-                            id="product-image"
-                            type="file" 
-                            accept="image/*"
-                            onChange={(e) => {
-                              if (e.target.files && e.target.files[0]) {
-                                setImageFile(e.target.files[0]);
-                                field.onChange(e.target.files[0]?.name || "");
-                              }
-                            }}
-                            className="hidden"
-                          />
-                        </label>
-                        <FormMessage />
-                      </div>
-                    </FormItem>
-                  )}
-                />
+                          
+                          {/* Upload Button */}
+                          <label htmlFor="product-image" className="cursor-pointer w-full">
+                            <div className="flex items-center justify-center gap-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-md w-full">
+                              <Upload size={16} />
+                              <span>{(imageFile || editingProduct?.imagePath) ? "Change Image" : "Upload Image"}</span>
+                            </div>
+                            <input 
+                              id="product-image"
+                              type="file" 
+                              accept="image/*"
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                  setImageFile(e.target.files[0]);
+                                  field.onChange(e.target.files[0]?.name || "");
+                                }
+                              }}
+                              className="hidden"
+                            />
+                          </label>
+                          <FormMessage />
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </Form>
               </div>
             </div>
             
