@@ -628,6 +628,18 @@ const Orders = () => {
                         <Edit className="h-4 w-4" />
                         <span>Edit</span>
                       </Button>
+                      
+                      {/* Document view button in dialog */}
+                      {orderDetails.status === 'shipped' && orderDetails.hasShippingDocument && (
+                        <Button
+                          onClick={() => handleViewDocument(orderDetails.id)}
+                          variant="outline"
+                          className="flex items-center gap-2"
+                        >
+                          <FileText className="h-4 w-4" />
+                          <span>View TΔA</span>
+                        </Button>
+                      )}
                     </div>
                     
                     <Button onClick={handleCloseDialog}>
