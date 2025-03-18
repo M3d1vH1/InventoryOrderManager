@@ -50,56 +50,64 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
   return (
     <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[80vh] flex flex-col">
-        <div className="p-4 border-b border-slate-200 flex justify-between items-center">
-          <h2 className="font-semibold text-lg">Search Products</h2>
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-700">
-            <i className="fas fa-times"></i>
+        <div className="p-5 border-b border-slate-200 flex justify-between items-center">
+          <h2 className="font-semibold text-xl">Search Products</h2>
+          <button 
+            onClick={onClose} 
+            className="flex items-center justify-center p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 min-h-[44px] min-w-[44px]"
+            aria-label="Close"
+          >
+            <i className="fas fa-times text-lg"></i>
           </button>
         </div>
         <div className="p-4 border-b border-slate-200">
           <div className="flex items-center">
             <div className="relative flex-1">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                <i className="fas fa-search text-slate-400"></i>
+                <i className="fas fa-search text-slate-400 text-lg"></i>
               </span>
               <Input
                 placeholder="Search by product name or SKU"
-                className="pl-10"
+                className="pl-10 h-12 text-base"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
-            <Button onClick={handleSearch} className="ml-2">
-              Search
+            <Button 
+              onClick={handleSearch} 
+              className="ml-3 h-12 px-5 text-base"
+            >
+              <i className="fas fa-search mr-2"></i> Search
             </Button>
           </div>
-          <div className="flex items-center mt-2 text-sm">
-            <span className="text-slate-600 mr-2">Filter by:</span>
-            <div>
+          <div className="flex flex-wrap items-center mt-4 gap-3">
+            <div className="flex items-center">
+              <span className="text-base font-medium text-slate-600 mr-3">Category:</span>
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="w-auto">
+                <SelectTrigger className="w-48 h-12 text-base">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="widgets">Widgets</SelectItem>
-                  <SelectItem value="connectors">Connectors</SelectItem>
-                  <SelectItem value="brackets">Brackets</SelectItem>
-                  <SelectItem value="mounts">Mounts</SelectItem>
+                  <SelectItem value="all" className="h-10 text-base">All Categories</SelectItem>
+                  <SelectItem value="widgets" className="h-10 text-base">Widgets</SelectItem>
+                  <SelectItem value="connectors" className="h-10 text-base">Connectors</SelectItem>
+                  <SelectItem value="brackets" className="h-10 text-base">Brackets</SelectItem>
+                  <SelectItem value="mounts" className="h-10 text-base">Mounts</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="ml-2">
+            <div className="flex items-center">
+              <span className="text-base font-medium text-slate-600 mr-3">Stock:</span>
               <Select value={stockStatus} onValueChange={setStockStatus}>
-                <SelectTrigger className="w-auto">
+                <SelectTrigger className="w-48 h-12 text-base">
                   <SelectValue placeholder="All Stock Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Stock Status</SelectItem>
-                  <SelectItem value="in-stock">In Stock</SelectItem>
-                  <SelectItem value="low-stock">Low Stock</SelectItem>
-                  <SelectItem value="out-stock">Out of Stock</SelectItem>
+                  <SelectItem value="all" className="h-10 text-base">All Stock Status</SelectItem>
+                  <SelectItem value="in-stock" className="h-10 text-base">In Stock</SelectItem>
+                  <SelectItem value="low-stock" className="h-10 text-base">Low Stock</SelectItem>
+                  <SelectItem value="out-stock" className="h-10 text-base">Out of Stock</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -107,42 +115,53 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
         </div>
         <div className="flex-1 overflow-y-auto p-4">
           {isLoading ? (
-            <div className="py-4 text-center">
-              <span className="text-slate-500">Loading products...</span>
+            <div className="py-10 text-center">
+              <div className="inline-flex flex-col items-center justify-center">
+                <i className="fas fa-spinner fa-spin text-4xl text-slate-400 mb-4"></i>
+                <span className="text-slate-500 text-lg">Loading products...</span>
+              </div>
             </div>
           ) : products?.length === 0 ? (
-            <div className="py-4 text-center">
-              <span className="text-slate-500">No products found matching your criteria</span>
+            <div className="py-10 text-center">
+              <div className="inline-flex flex-col items-center justify-center">
+                <i className="fas fa-search text-4xl text-slate-300 mb-4"></i>
+                <span className="text-slate-500 text-lg">No products found matching your criteria</span>
+                <p className="text-slate-400 mt-2">Try adjusting your search terms or filters</p>
+              </div>
             </div>
           ) : (
             <table className="min-w-full">
-              <thead className="bg-slate-50 text-slate-500 text-sm">
+              <thead className="bg-slate-100">
                 <tr>
-                  <th className="py-2 px-3 text-left font-medium">Product</th>
-                  <th className="py-2 px-3 text-left font-medium">SKU</th>
-                  <th className="py-2 px-3 text-left font-medium">Category</th>
-                  <th className="py-2 px-3 text-left font-medium">Stock</th>
-                  <th className="py-2 px-3 text-left font-medium">Actions</th>
+                  <th className="py-3 px-4 text-left font-semibold text-base">Product</th>
+                  <th className="py-3 px-4 text-left font-semibold text-base">SKU</th>
+                  <th className="py-3 px-4 text-left font-semibold text-base">Category</th>
+                  <th className="py-3 px-4 text-left font-semibold text-base">Stock</th>
+                  <th className="py-3 px-4 text-left font-semibold text-base">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {products?.map((product) => (
                   <tr key={product.id} className="hover:bg-slate-50">
-                    <td className="py-2 px-3">{product.name}</td>
-                    <td className="py-2 px-3">{product.sku}</td>
-                    <td className="py-2 px-3">{product.category}</td>
-                    <td className="py-2 px-3">
-                      <span className={`font-medium ${getStockStatusClass(product.currentStock, product.minStockLevel)}`}>
+                    <td className="py-4 px-4 text-base">{product.name}</td>
+                    <td className="py-4 px-4 text-base">{product.sku}</td>
+                    <td className="py-4 px-4 text-base">{product.category}</td>
+                    <td className="py-4 px-4">
+                      <span className={`text-base font-medium ${getStockStatusClass(product.currentStock, product.minStockLevel)}`}>
                         {product.currentStock}
                       </span>
                     </td>
-                    <td className="py-2 px-3">
+                    <td className="py-4 px-4">
                       <Button
                         onClick={() => onSelectProduct(product)}
-                        size="sm"
+                        className="h-10 px-5 text-base min-w-[100px]"
                         disabled={product.currentStock === 0}
                       >
-                        Select
+                        {product.currentStock === 0 ? 
+                          <i className="fas fa-ban mr-2"></i> : 
+                          <i className="fas fa-plus mr-2"></i>
+                        }
+                        {product.currentStock === 0 ? "Out of Stock" : "Select"}
                       </Button>
                     </td>
                   </tr>
@@ -151,22 +170,30 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
             </table>
           )}
         </div>
-        <div className="p-4 border-t border-slate-200 flex justify-between items-center">
-          <span className="text-sm text-slate-600">
-            {isLoading ? "Loading..." : products ? `Showing ${products.length} products` : "No products found"}
+        <div className="p-5 border-t border-slate-200 flex flex-wrap justify-between items-center gap-4">
+          <span className="text-base text-slate-600">
+            {isLoading ? (
+              <div className="flex items-center">
+                <i className="fas fa-spinner fa-spin mr-2"></i> Loading products...
+              </div>
+            ) : products ? (
+              `Showing ${products.length} products`
+            ) : (
+              "No products found"
+            )}
           </span>
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-3">
             <button 
-              className="px-3 py-1 rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50" 
+              className="flex items-center justify-center h-10 px-4 rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 text-base" 
               disabled
             >
-              <i className="fas fa-chevron-left"></i>
+              <i className="fas fa-chevron-left mr-2"></i> Previous
             </button>
             <button 
-              className="px-3 py-1 rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50" 
+              className="flex items-center justify-center h-10 px-4 rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 text-base" 
               disabled
             >
-              <i className="fas fa-chevron-right"></i>
+              Next <i className="fas fa-chevron-right ml-2"></i>
             </button>
           </div>
         </div>
