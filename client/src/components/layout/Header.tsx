@@ -1,7 +1,8 @@
 import { useSidebar } from "@/context/SidebarContext";
 import { useAuth } from "@/context/AuthContext";
+import { useNotifications } from "@/context/NotificationContext";
 import { apiRequest } from "@/lib/queryClient";
-import { Menu } from "lucide-react";
+import { Menu, Bell } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,11 +13,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { format } from "date-fns";
 
 const Header = () => {
   const { toggleSidebar, currentPage } = useSidebar();
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
 
   const handleLogout = async () => {
     try {
@@ -45,12 +49,58 @@ const Header = () => {
         <h2 className="text-xl font-semibold ml-2">{currentPage}</h2>
       </div>
       <div className="flex items-center gap-4">
-        <div className="relative">
-          <button className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-full relative">
-            <i className="fas fa-bell"></i>
-            <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">3</span>
-          </button>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                  {unreadCount}
+                </span>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuLabel className="flex justify-between items-center">
+              <span>Notifications</span>
+              {notifications.length > 0 && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={markAllAsRead}
+                  className="text-xs text-blue-500 hover:text-blue-700"
+                >
+                  Mark all as read
+                </Button>
+              )}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <ScrollArea className="h-[300px]">
+              {notifications.length === 0 ? (
+                <div className="py-4 px-2 text-center text-sm text-gray-500">
+                  No notifications
+                </div>
+              ) : (
+                notifications.map(notification => (
+                  <div 
+                    key={notification.id} 
+                    className={`p-3 border-b border-gray-100 ${notification.read ? 'bg-white' : 'bg-blue-50'} hover:bg-gray-50 cursor-pointer`}
+                    onClick={() => markAsRead(notification.id)}
+                  >
+                    <div className="flex justify-between items-start mb-1">
+                      <h5 className="font-medium text-sm">{notification.title}</h5>
+                      <span className="text-[10px] text-gray-500">{format(new Date(notification.timestamp), 'HH:mm')}</span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-1">{notification.message}</p>
+                    {notification.orderNumber && (
+                      <div className="text-xs text-blue-500">Order: {notification.orderNumber}</div>
+                    )}
+                  </div>
+                ))
+              )}
+            </ScrollArea>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <div className="flex items-center gap-2 cursor-pointer p-1 rounded-md hover:bg-slate-100">

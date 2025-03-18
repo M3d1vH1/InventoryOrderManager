@@ -17,6 +17,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { SidebarProvider } from "@/context/SidebarContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { NotificationProvider } from "@/context/NotificationContext";
 import { useTranslation } from 'react-i18next';
 
 function AuthenticatedRouter() {
@@ -114,10 +115,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <SidebarProvider>
-          <Layout />
-          <Toaster />
-        </SidebarProvider>
+        <NotificationProvider>
+          <SidebarProvider>
+            <Layout />
+            <Toaster />
+          </SidebarProvider>
+        </NotificationProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
