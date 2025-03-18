@@ -40,56 +40,44 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   // Calculate unread count
   const unreadCount = notifications.filter(n => !n.read).length;
   
-  // Pre-load audio elements - use useEffect to create audio elements after component mounts
-  const [successAudio, setSuccessAudio] = useState<HTMLAudioElement | null>(null);
-  const [warningAudio, setWarningAudio] = useState<HTMLAudioElement | null>(null);
-  const [errorAudio, setErrorAudio] = useState<HTMLAudioElement | null>(null);
-  
-  // Initialize audio elements after component is mounted
-  useEffect(() => {
-    setSuccessAudio(new Audio('/sounds/notification-success.mp3'));
-    setWarningAudio(new Audio('/sounds/notification-warning.mp3'));
-    setErrorAudio(new Audio('/sounds/notification-error.mp3'));
-  }, []);
-  
-  // Function to play notification sound
+  // Function to play notification sound - create a new audio element each time
   const playNotificationSound = (type: 'success' | 'warning' | 'error' = 'success') => {
     try {
-      // Reset audio to beginning in case it was already playing
-      let audioToPlay;
+      let soundUrl = '';
       
+      // Determine which sound file to play
       switch (type) {
         case 'success':
-          audioToPlay = successAudio;
+          soundUrl = '/sounds/notification-success.mp3';
           break;
         case 'warning':
-          audioToPlay = warningAudio;
+          soundUrl = '/sounds/notification-warning.mp3';
           break;
         case 'error':
-          audioToPlay = errorAudio;
+          soundUrl = '/sounds/notification-error.mp3';
           break;
         default:
-          audioToPlay = successAudio;
+          soundUrl = '/sounds/notification-success.mp3';
       }
       
-      // Check if audio is available
-      if (!audioToPlay) {
-        console.warn('Audio not initialized yet for type:', type);
-        return;
-      }
+      // Create a new audio element each time
+      const audio = new Audio(soundUrl);
       
-      // Reset time to beginning
-      audioToPlay.currentTime = 0;
-      
-      // Play the sound
-      const playPromise = audioToPlay.play();
-      
-      // Handle play promise (modern browsers return a promise from play())
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
+      // Add event listeners for debugging
+      audio.addEventListener('canplaythrough', () => {
+        // Play when audio is loaded and can play through
+        audio.play().catch(error => {
           console.error('Error playing notification sound:', error);
         });
-      }
+      });
+      
+      audio.addEventListener('error', (e) => {
+        console.error('Audio loading error:', e);
+      });
+      
+      // This triggers the loading of the audio file
+      audio.load();
+      
     } catch (error) {
       console.error('Error playing notification sound:', error);
     }
