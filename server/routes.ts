@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from 'zod';
-import { insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCustomerSchema, insertUserSchema, insertCategorySchema } from "@shared/schema";
+import { insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCustomerSchema, insertUserSchema, insertCategorySchema, type Product } from "@shared/schema";
 import { isAuthenticated, hasRole } from "./auth";
 import { hashPassword } from "./auth";
 import { UploadedFile } from "express-fileupload";
@@ -478,6 +478,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(customer);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Add endpoint to get previous products for a customer
+  app.get('/api/customers/:customerName/previous-products', async (req, res) => {
+    try {
+      const { customerName } = req.params;
+      if (!customerName) {
+        return res.status(400).json({ message: "Customer name is required" });
+      }
+      
+      // Get all orders for this customer
+      const allOrders = await storage.getAllOrders();
+      
+      // Filter orders by customer name
+      const customerOrders = allOrders.filter(order => 
+        order.customerName.toLowerCase() === decodeURIComponent(customerName).toLowerCase());
+      
+      if (customerOrders.length === 0) {
+        return res.json([]);
+      }
+      
+      // Get all order items for each order
+      const productPromises = customerOrders.map(async order => {
+        const orderItems = await storage.getOrderItems(order.id);
+        return orderItems;
+      });
+      
+      const orderItemsArrays = await Promise.all(productPromises);
+      const allOrderItems = orderItemsArrays.flat();
+      
+      // Count product frequency and get details
+      const productCounts: Record<number, number> = {};
+      const productDetails: Record<number, any> = {};
+      
+      // Process all items to count frequency
+      for (const item of allOrderItems) {
+        if (productCounts[item.productId]) {
+          productCounts[item.productId] += 1;
+        } else {
+          productCounts[item.productId] = 1;
+          // Get product details if we haven't fetched it yet
+          if (!productDetails[item.productId]) {
+            const product = await storage.getProduct(item.productId);
+            if (product) {
+              productDetails[item.productId] = product;
+            }
+          }
+        }
+      }
+      
+      // Format the result - products sorted by frequency
+      const frequentProducts = Object.keys(productCounts)
+        .map(key => parseInt(key))
+        .filter(productId => productDetails[productId]) // Ensure we have product details
+        .map(productId => ({
+          ...productDetails[productId],
+          orderCount: productCounts[productId]
+        }))
+        .sort((a, b) => b.orderCount - a.orderCount); // Sort by most ordered first
+      
+      res.json(frequentProducts);
+    } catch (error: any) {
+      console.error("Error fetching previous products:", error);
+      res.status(500).json({ message: `Error fetching previous products: ${error.message}` });
     }
   });
   

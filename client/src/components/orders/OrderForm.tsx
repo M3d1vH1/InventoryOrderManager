@@ -106,6 +106,7 @@ const OrderForm = ({
   const [orderItems, setOrderItems] = useState<OrderItemInput[]>([]);
   const [isNewCustomerDialogOpen, setIsNewCustomerDialogOpen] = useState(false);
   const [currentSearchValue, setCurrentSearchValue] = useState("");
+  const [previousProducts, setPreviousProducts] = useState<Product[]>([]);
 
   const { data: customers, isLoading: isLoadingCustomers } = useQuery<Customer[]>({
     queryKey: ['/api/customers'],
