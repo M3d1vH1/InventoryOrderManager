@@ -54,7 +54,7 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[80vh] flex flex-col">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
         <div className="p-5 border-b border-slate-200 flex justify-between items-center">
           <h2 className="font-semibold text-xl">Search Products</h2>
           <button 

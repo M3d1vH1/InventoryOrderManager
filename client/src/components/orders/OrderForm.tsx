@@ -106,7 +106,12 @@ const OrderForm = ({
   const [orderItems, setOrderItems] = useState<OrderItemInput[]>([]);
   const [isNewCustomerDialogOpen, setIsNewCustomerDialogOpen] = useState(false);
   const [currentSearchValue, setCurrentSearchValue] = useState("");
-  const [previousProducts, setPreviousProducts] = useState<Product[]>([]);
+  // Extended Product type to include orderCount from API response
+  interface ProductWithOrderCount extends Product {
+    orderCount: number;
+  }
+  
+  const [previousProducts, setPreviousProducts] = useState<ProductWithOrderCount[]>([]);
 
   const { data: customers, isLoading: isLoadingCustomers } = useQuery<Customer[]>({
     queryKey: ['/api/customers'],

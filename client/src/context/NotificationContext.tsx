@@ -40,10 +40,17 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   // Calculate unread count
   const unreadCount = notifications.filter(n => !n.read).length;
   
-  // Pre-load audio elements
-  const [successAudio] = useState(new Audio('/sounds/notification-success.mp3'));
-  const [warningAudio] = useState(new Audio('/sounds/notification-warning.mp3'));
-  const [errorAudio] = useState(new Audio('/sounds/notification-error.mp3'));
+  // Pre-load audio elements - use useEffect to create audio elements after component mounts
+  const [successAudio, setSuccessAudio] = useState<HTMLAudioElement | null>(null);
+  const [warningAudio, setWarningAudio] = useState<HTMLAudioElement | null>(null);
+  const [errorAudio, setErrorAudio] = useState<HTMLAudioElement | null>(null);
+  
+  // Initialize audio elements after component is mounted
+  useEffect(() => {
+    setSuccessAudio(new Audio('/sounds/notification-success.mp3'));
+    setWarningAudio(new Audio('/sounds/notification-warning.mp3'));
+    setErrorAudio(new Audio('/sounds/notification-error.mp3'));
+  }, []);
   
   // Function to play notification sound
   const playNotificationSound = (type: 'success' | 'warning' | 'error' = 'success') => {
@@ -63,6 +70,12 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
           break;
         default:
           audioToPlay = successAudio;
+      }
+      
+      // Check if audio is available
+      if (!audioToPlay) {
+        console.warn('Audio not initialized yet for type:', type);
+        return;
       }
       
       // Reset time to beginning
