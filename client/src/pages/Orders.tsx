@@ -218,10 +218,8 @@ const Orders = () => {
                           <i className="fas fa-edit"></i>
                         </button>
                         {order.status === 'pending' && (
-                          <Link href={`/order-picking/${order.id}`}>
-                            <a className="text-slate-600 hover:text-green-600" title="Pick Order">
-                              <i className="fas fa-clipboard-check"></i>
-                            </a>
+                          <Link href={`/order-picking/${order.id}`} className="text-slate-600 hover:text-green-600" title="Pick Order">
+                            <i className="fas fa-clipboard-check"></i>
                           </Link>
                         )}
                       </div>
