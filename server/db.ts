@@ -3,6 +3,7 @@ import pg from 'pg';
 const { Client } = pg;
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { log } from './vite';
+import { existsSync } from 'fs';
 
 // Create the connection string from environment variables
 const connectionString = process.env.DATABASE_URL;
@@ -24,9 +25,8 @@ export async function initDatabase() {
     
     // Run migrations - skip if migrations folder doesn't exist yet
     try {
-      const fs = require('fs');
       // Check if migrations folder exists with required structure
-      if (fs.existsSync('migrations/meta/_journal.json')) {
+      if (existsSync('migrations/meta/_journal.json')) {
         await migrate(db, { migrationsFolder: 'migrations' });
         log('Database migrations applied successfully', 'database');
       } else {
