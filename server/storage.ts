@@ -347,7 +347,7 @@ export class MemStorage implements IStorage {
       phone: insertCustomer.phone || null,
       contactPerson: insertCustomer.contactPerson || null,
       preferredShippingCompany: insertCustomer.preferredShippingCompany || null,
-      customShippingCompany: insertCustomer.customShippingCompany || null,
+      customShippingCompany: insertCustomer.customShippingCompany || "",
       notes: insertCustomer.notes || null,
       createdAt: new Date()
     };
@@ -722,7 +722,7 @@ export class MemStorage implements IStorage {
       phone: "+44 20 1234 5678",
       contactPerson: "John Smith",
       preferredShippingCompany: "royal_mail",
-      customShippingCompany: null,
+      customShippingCompany: "",
       notes: "Major account - priority shipping"
     });
     
@@ -738,7 +738,7 @@ export class MemStorage implements IStorage {
       phone: "+1 415 555 1234",
       contactPerson: "Sarah Johnson",
       preferredShippingCompany: "fedex",
-      customShippingCompany: null,
+      customShippingCompany: "",
       notes: "Requires special packaging"
     });
     
@@ -754,6 +754,7 @@ export class MemStorage implements IStorage {
       phone: "+49 30 9876 5432",
       contactPerson: "Klaus Mueller",
       preferredShippingCompany: "dhl",
+      customShippingCompany: "",
       notes: ""
     });
     
@@ -769,6 +770,7 @@ export class MemStorage implements IStorage {
       phone: "+61 2 8765 4321",
       contactPerson: "Emma Davis",
       preferredShippingCompany: "ups",
+      customShippingCompany: "",
       notes: "Bulk orders only"
     });
     

@@ -144,7 +144,7 @@ export const insertCustomerSchema = createInsertSchema(customers)
     phone: z.string().optional(),
     contactPerson: z.string().optional(),
     preferredShippingCompany: z.enum(['dhl', 'fedex', 'ups', 'usps', 'royal_mail', 'other']).optional(),
-    customShippingCompany: z.string().optional(),
+    customShippingCompany: z.string().nullish(),
     notes: z.string().optional(),
   });
 

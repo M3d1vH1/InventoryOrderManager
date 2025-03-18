@@ -323,7 +323,7 @@ const Customers = () => {
   };
 
   // Function to format shipping company names for display
-  const formatShippingCompany = (company: string | null) => {
+  const formatShippingCompany = (company: string | null, customCompany?: string | null) => {
     if (!company) return 'None';
     
     const lookup: Record<string, string> = {
@@ -332,7 +332,7 @@ const Customers = () => {
       ups: 'UPS',
       usps: 'USPS',
       royal_mail: 'Royal Mail',
-      other: 'Other'
+      other: customCompany && customCompany.trim() !== '' ? customCompany : 'Other'
     };
     
     return lookup[company] || company;
@@ -362,7 +362,7 @@ const Customers = () => {
       Email: customer.email || '',
       Phone: customer.phone || '',
       'Contact Person': customer.contactPerson || '',
-      'Preferred Shipping': formatShippingCompany(customer.preferredShippingCompany),
+      'Preferred Shipping': formatShippingCompany(customer.preferredShippingCompany, customer.customShippingCompany),
       Notes: customer.notes || '',
       'Created': new Date(customer.createdAt).toLocaleDateString()
     }));
@@ -453,7 +453,7 @@ const Customers = () => {
                       <TableCell>{customer.vatNumber || '-'}</TableCell>
                       <TableCell>{customer.contactPerson || '-'}</TableCell>
                       <TableCell>{customer.country || '-'}</TableCell>
-                      <TableCell>{formatShippingCompany(customer.preferredShippingCompany)}</TableCell>
+                      <TableCell>{formatShippingCompany(customer.preferredShippingCompany, customer.customShippingCompany)}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
