@@ -149,9 +149,96 @@ const Reports = () => {
 
   // Function to handle exporting reports
   const handleExport = (reportType: string) => {
-    // In a real application, this would generate a file for download
-    // For now, we'll just show an alert
-    alert(`Exporting ${reportType} report as ${exportFormat.toUpperCase()}`);
+    let data: any[] = [];
+    let title = `${reportType}_report`;
+    
+    // Determine which data to export based on the report type
+    switch (reportType) {
+      case 'inventory':
+        // Prepare inventory data for export
+        data = products.map(product => ({
+          ID: product.id,
+          Name: product.name,
+          SKU: product.sku,
+          Category: product.category,
+          'Current Stock': product.currentStock,
+          'Min Stock Level': product.minStockLevel,
+          Status: product.currentStock > product.minStockLevel 
+            ? 'In Stock' 
+            : product.currentStock === 0 
+              ? 'Out of Stock' 
+              : 'Low Stock',
+          Description: product.description || ''
+        }));
+        title = 'Inventory_Report';
+        break;
+        
+      case 'orders':
+        // Prepare orders data for export
+        data = orders.map(order => ({
+          ID: order.id,
+          'Order Number': order.orderNumber,
+          'Customer Name': order.customerName,
+          'Order Date': new Date(order.orderDate).toLocaleDateString(),
+          Status: order.status,
+          Notes: order.notes || ''
+        }));
+        title = 'Orders_Report';
+        break;
+        
+      case 'categories':
+        // Prepare category data for export
+        if (categoriesData.length > 0) {
+          data = categoriesData.map(category => ({
+            Category: category.name,
+            'Product Count': category.value,
+            'Percentage': ((category.value / categoriesData.reduce((acc, curr) => acc + curr.value, 0)) * 100).toFixed(1) + '%'
+          }));
+        }
+        title = 'Categories_Report';
+        break;
+        
+      case 'value':
+        // Prepare inventory value data for export
+        if (inventoryValue) {
+          data = inventoryValue.categoryBreakdown.map(category => ({
+            Category: category.category,
+            'Product Count': category.productCount,
+            'Total Value': formatCurrency(category.totalValue),
+            'Percentage': category.percentageOfTotal.toFixed(1) + '%'
+          }));
+        }
+        title = 'Inventory_Value_Report';
+        break;
+        
+      case 'efficiency':
+        // Prepare efficiency data for export
+        if (pickingEfficiency) {
+          data = pickingEfficiency.pickingEfficiency.map(item => ({
+            Date: new Date(item.date).toLocaleDateString(),
+            'Orders Processed': item.ordersProcessed,
+            'Average Time (mins)': item.avgTimeMinutes.toFixed(1),
+            'Total Time (mins)': (item.ordersProcessed * item.avgTimeMinutes).toFixed(1)
+          }));
+        }
+        title = 'Picking_Efficiency_Report';
+        break;
+        
+      default:
+        console.error('Unknown report type:', reportType);
+        return;
+    }
+    
+    // Check if we have data to export
+    if (data.length === 0) {
+      alert('No data available to export');
+      return;
+    }
+    
+    // Use the exportData utility to generate and download the file
+    import('@/lib/utils').then(utils => {
+      utils.exportData(data, exportFormat, title);
+    });
   };
 
   // Function to format currency
@@ -177,11 +264,19 @@ const Reports = () => {
               <SelectItem value="excel">Excel</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => handleExport(document.querySelector('[data-state="active"][role="tab"]')?.getAttribute('value') || 'inventory')}
+          >
             <i className="fas fa-download"></i>
             Export
           </Button>
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => window.print()}
+          >
             <i className="fas fa-print"></i>
             Print
           </Button>
