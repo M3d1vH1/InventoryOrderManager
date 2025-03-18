@@ -43,6 +43,26 @@ interface OrderItemInput {
   quantity: number;
 }
 
+interface OrderFormProps {
+  initialData?: {
+    id?: number;
+    orderNumber?: string;
+    customerName: string;
+    orderDate: string;
+    notes?: string;
+    status?: 'pending' | 'picked' | 'shipped' | 'cancelled';
+    items?: {
+      id: number;
+      productId: number;
+      quantity: number;
+      product?: Product;
+    }[];
+  };
+  isEditMode?: boolean;
+  onCancel?: () => void;
+  onSuccess?: () => void;
+}
+
 // Extended schema based on backend schema
 const orderFormSchema = z.object({
   customerName: z.string().min(2, { message: "Please select a customer" }),
@@ -75,7 +95,12 @@ const customerFormSchema = z.object({
 
 type CustomerFormValues = z.infer<typeof customerFormSchema>;
 
-const OrderForm = () => {
+const OrderForm = ({ 
+  initialData, 
+  isEditMode = false, 
+  onCancel, 
+  onSuccess 
+}: OrderFormProps = {}) => {
   const { toast } = useToast();
   const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
   const [orderItems, setOrderItems] = useState<OrderItemInput[]>([]);
@@ -145,12 +170,26 @@ const OrderForm = () => {
   const form = useForm<OrderFormValues>({
     resolver: zodResolver(orderFormSchema),
     defaultValues: {
-      customerName: "",
-      orderDate: format(new Date(), "yyyy-MM-dd"),
-      notes: "",
-      items: []
+      customerName: initialData?.customerName || "",
+      orderDate: initialData?.orderDate || format(new Date(), "yyyy-MM-dd"),
+      notes: initialData?.notes || "",
+      items: initialData?.items?.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity
+      })) || []
     }
   });
+
+  // Initialize orderItems from initialData if provided
+  useEffect(() => {
+    if (initialData?.items && initialData.items.length > 0 && orderItems.length === 0) {
+      setOrderItems(initialData.items.map(item => ({
+        productId: item.productId,
+        product: item.product,
+        quantity: item.quantity
+      })));
+    }
+  }, [initialData]);
 
   useEffect(() => {
     // Update form items field when orderItems changes
@@ -160,7 +199,7 @@ const OrderForm = () => {
     })));
   }, [orderItems, form]);
 
-  const orderMutation = useMutation({
+  const createOrderMutation = useMutation({
     mutationFn: async (values: OrderFormValues) => {
       // Send only the data that the server expects
       return apiRequest({
@@ -188,6 +227,10 @@ const OrderForm = () => {
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       queryClient.invalidateQueries({ queryKey: ['/api/orders/recent'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
     },
     onError: (error) => {
       console.error("Order creation error:", error);
@@ -199,9 +242,55 @@ const OrderForm = () => {
     }
   });
 
+  const updateOrderMutation = useMutation({
+    mutationFn: async ({ id, values }: { id: number; values: OrderFormValues }) => {
+      // Send only the data that the server expects
+      return apiRequest({
+        url: `/api/orders/${id}`,
+        method: 'PATCH',
+        body: JSON.stringify({
+          customerName: values.customerName,
+          notes: values.notes,
+          items: values.items
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Order updated",
+        description: "Order has been updated successfully.",
+      });
+      // Refresh queries
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/orders', initialData?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/orders/recent'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
+    },
+    onError: (error) => {
+      console.error("Order update error:", error);
+      toast({
+        title: "Error updating order",
+        description: error.message || "Failed to update order. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
   const onSubmit = (values: OrderFormValues) => {
-    console.log("Submitting order:", values);
-    orderMutation.mutate(values);
+    if (isEditMode && initialData?.id) {
+      console.log("Updating order:", initialData.id, values);
+      updateOrderMutation.mutate({ id: initialData.id, values });
+    } else {
+      console.log("Creating order:", values);
+      createOrderMutation.mutate(values);
+    }
   };
 
   const addProduct = (product: Product) => {
@@ -238,7 +327,9 @@ const OrderForm = () => {
   return (
     <div className="bg-white rounded-lg shadow">
       <div className="p-4 border-b border-slate-200">
-        <h2 className="font-semibold text-lg">Create New Order</h2>
+        <h2 className="font-semibold text-lg">
+          {isEditMode ? `Edit Order${initialData?.orderNumber ? ` ${initialData.orderNumber}` : ''}` : "Create New Order"}
+        </h2>
       </div>
       <div className="p-4">
         <Form {...form}>
@@ -423,27 +514,38 @@ const OrderForm = () => {
             />
             
             <div className="flex justify-end space-x-4">
-              <Link href="/orders">
+              {isEditMode && onCancel ? (
                 <Button 
                   type="button" 
                   variant="outline"
                   className="h-12 text-base px-6"
+                  onClick={onCancel}
                 >
-                  <i className="fas fa-arrow-left mr-2"></i> Back to Orders
+                  <i className="fas fa-times mr-2"></i> Cancel
                 </Button>
-              </Link>
+              ) : (
+                <Link href="/orders">
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    className="h-12 text-base px-6"
+                  >
+                    <i className="fas fa-arrow-left mr-2"></i> Back to Orders
+                  </Button>
+                </Link>
+              )}
               <Button 
                 type="submit" 
                 className="h-12 text-base px-6"
-                disabled={orderMutation.isPending}
+                disabled={createOrderMutation.isPending || updateOrderMutation.isPending}
               >
-                {orderMutation.isPending ? (
+                {createOrderMutation.isPending || updateOrderMutation.isPending ? (
                   <>
-                    <i className="fas fa-spinner fa-spin mr-2"></i> Creating...
+                    <i className="fas fa-spinner fa-spin mr-2"></i> {isEditMode ? "Updating..." : "Creating..."}
                   </>
                 ) : (
                   <>
-                    <i className="fas fa-check mr-2"></i> Create Order
+                    <i className="fas fa-check mr-2"></i> {isEditMode ? "Update Order" : "Create Order"}
                   </>
                 )}
               </Button>
