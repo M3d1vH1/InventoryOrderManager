@@ -100,6 +100,8 @@ const productFormSchema = z.object({
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
 
+import { useTranslation } from 'react-i18next';
+
 const Products = () => {
   const { t } = useTranslation();
   const { setCurrentPage } = useSidebar();
