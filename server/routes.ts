@@ -1,8 +1,11 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from 'zod';
 import { insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCustomerSchema } from "@shared/schema";
+import { UploadedFile } from "express-fileupload";
+import path from "path";
+import fs from "fs";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes
@@ -48,7 +51,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post('/api/products', async (req, res) => {
     try {
-      const productData = insertProductSchema.parse(req.body);
+      let imagePath = null;
+      
+      // Handle file upload if present
+      if (req.files && req.files.image) {
+        const imageFile = req.files.image as UploadedFile;
+        const uploadDir = path.join(process.cwd(), 'public/uploads/products');
+        
+        // Ensure upload directory exists
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        
+        // Generate unique filename
+        const filename = `${Date.now()}-${imageFile.name.replace(/\s+/g, '-')}`;
+        const filePath = path.join(uploadDir, filename);
+        
+        // Move file to uploads directory
+        await imageFile.mv(filePath);
+        
+        // Set image path for storage
+        imagePath = `/uploads/products/${filename}`;
+      }
+      
+      // Parse and validate product data
+      const productData = insertProductSchema.parse({
+        ...req.body,
+        imagePath: imagePath || req.body.imagePath
+      });
+      
       const product = await storage.createProduct(productData);
       res.status(201).json(product);
     } catch (error: any) {
@@ -62,7 +93,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/products/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const updateData = req.body;
+      let updateData = req.body;
+      
+      // Handle file upload if present
+      if (req.files && req.files.image) {
+        const imageFile = req.files.image as UploadedFile;
+        const uploadDir = path.join(process.cwd(), 'public/uploads/products');
+        
+        // Ensure upload directory exists
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        
+        // Generate unique filename
+        const filename = `${Date.now()}-${imageFile.name.replace(/\s+/g, '-')}`;
+        const filePath = path.join(uploadDir, filename);
+        
+        // Move file to uploads directory
+        await imageFile.mv(filePath);
+        
+        // Set image path for update
+        updateData = {
+          ...updateData,
+          imagePath: `/uploads/products/${filename}`
+        };
+        
+        // If there's an existing image file, we could delete it here
+        // Get the current product to find the old image path
+        const existingProduct = await storage.getProduct(id);
+        if (existingProduct && existingProduct.imagePath) {
+          const oldImagePath = path.join(process.cwd(), 'public', existingProduct.imagePath);
+          if (fs.existsSync(oldImagePath)) {
+            // Optional: Delete the old image file
+            // fs.unlinkSync(oldImagePath);
+          }
+        }
+      }
       
       const updatedProduct = await storage.updateProduct(id, updateData);
       
@@ -79,6 +145,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/products/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // First get the product to check if it has an image
+      const product = await storage.getProduct(id);
+      if (product && product.imagePath) {
+        // Delete the image file if it exists
+        const imagePath = path.join(process.cwd(), 'public', product.imagePath);
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+        }
+      }
+      
       const result = await storage.deleteProduct(id);
       
       if (!result) {
@@ -86,6 +163,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Dedicated product image upload endpoint
+  app.post('/api/products/:id/image', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Check if product exists
+      const product = await storage.getProduct(id);
+      if (!product) {
+        return res.status(404).json({ message: 'Product not found' });
+      }
+      
+      if (!req.files || !req.files.image) {
+        return res.status(400).json({ message: 'No image file uploaded' });
+      }
+      
+      const imageFile = req.files.image as UploadedFile;
+      const uploadDir = path.join(process.cwd(), 'public/uploads/products');
+      
+      // Ensure upload directory exists
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      
+      // Generate unique filename
+      const filename = `${Date.now()}-${imageFile.name.replace(/\s+/g, '-')}`;
+      const filePath = path.join(uploadDir, filename);
+      
+      // Move file to uploads directory
+      await imageFile.mv(filePath);
+      
+      // Delete old image if it exists
+      if (product.imagePath) {
+        const oldImagePath = path.join(process.cwd(), 'public', product.imagePath);
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
+        }
+      }
+      
+      // Update product with new image path
+      const imagePath = `/uploads/products/${filename}`;
+      const updatedProduct = await storage.updateProduct(id, { imagePath });
+      
+      res.json(updatedProduct);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
