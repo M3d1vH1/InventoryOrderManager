@@ -634,6 +634,9 @@ export async function initStorage() {
     return storage;
   } catch (error) {
     log(`Failed to initialize database storage: ${error instanceof Error ? error.message : String(error)}`, 'database');
+    
+    // Instead of failing completely, we'll re-throw the error to let useDatabase() in storage.ts
+    // handle the fallback to in-memory storage
     throw error;
   }
 }

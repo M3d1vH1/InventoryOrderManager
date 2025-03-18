@@ -22,10 +22,16 @@ export async function initDatabase() {
     // Create a Drizzle instance
     const db = drizzle(client);
     
-    // Run migrations
+    // Run migrations - skip if migrations folder doesn't exist yet
     try {
-      await migrate(db, { migrationsFolder: 'migrations' });
-      log('Database migrations applied successfully', 'database');
+      const fs = require('fs');
+      // Check if migrations folder exists with required structure
+      if (fs.existsSync('migrations/meta/_journal.json')) {
+        await migrate(db, { migrationsFolder: 'migrations' });
+        log('Database migrations applied successfully', 'database');
+      } else {
+        log('No migrations to apply yet - skipping migration step', 'database');
+      }
     } catch (error) {
       log(`Migration error: ${error instanceof Error ? error.message : String(error)}`, 'database');
       // Continue even if migrations fail - they might not be set up yet
