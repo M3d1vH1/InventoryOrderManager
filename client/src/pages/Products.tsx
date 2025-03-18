@@ -14,46 +14,16 @@ import BarcodeScanner from "@/components/barcode/BarcodeScanner";
 import BarcodeGenerator from "@/components/barcode/BarcodeGenerator";
 
 // UI Components
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  Checkbox,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-  Textarea,
-} from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 
 // Icons
 import {
@@ -149,12 +119,12 @@ const Products = () => {
   });
   
   // Queries
-  const { data: products = [], isLoading } = useQuery({
+  const { data: products = [] as Product[], isLoading } = useQuery<Product[]>({
     queryKey: ['/api/products'],
     staleTime: 15000,
   });
   
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [] as string[] } = useQuery<string[]>({
     queryKey: ['/api/products/categories'],
     staleTime: Infinity,
     initialData: ["Electronics", "Clothing", "Food & Beverage", "Furniture", "Books", "Other"],
@@ -428,7 +398,7 @@ const Products = () => {
                   placeholder="Search products..."
                   className="pl-10"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                 />
               </div>
               
@@ -699,7 +669,7 @@ const Products = () => {
                 <FormField
                   control={form.control}
                   name="imagePath"
-                  render={({ field }) => (
+                  render={({ field }: { field: any }) => (
                     <FormItem>
                       <div className="flex flex-col items-center justify-center py-4 border-2 border-dashed rounded-md border-slate-300 bg-white mb-4">
                         <div className="mb-2">
