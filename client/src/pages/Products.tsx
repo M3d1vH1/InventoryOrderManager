@@ -734,42 +734,6 @@ const Products = () => {
                     </FormItem>
                   )}
                 />
-                
-                <div className="col-span-2">
-                  <FormField
-                    control={form.control}
-                    name="imagePath"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Product Image</FormLabel>
-                        <FormControl>
-                          <div className="flex flex-col gap-2">
-                            <Input 
-                              type="file" 
-                              accept="image/*"
-                              onChange={(e) => {
-                                // Store the file for upload when form is submitted
-                                if (e.target.files && e.target.files[0]) {
-                                  // Set the file in state for later upload
-                                  setImageFile(e.target.files[0]);
-                                  // Just store the filename in the form field
-                                  field.onChange(e.target.files[0]?.name || "");
-                                }
-                              }}
-                              className="cursor-pointer"
-                            />
-                            {editingProduct?.imagePath && (
-                              <div className="text-sm text-gray-600">
-                                Current image: {editingProduct.imagePath.split('/').pop()}
-                              </div>
-                            )}
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
               </div>
               
               <DialogFooter>
@@ -829,7 +793,7 @@ const Products = () => {
                           <CardContent className="p-4">
                             <div className="relative aspect-square rounded-md overflow-hidden">
                               <img 
-                                src={viewingProduct.imagePath} 
+                                src={`/uploads/${viewingProduct.imagePath.split('/').pop()}`} 
                                 alt={viewingProduct.name}
                                 className="object-cover w-full h-full"
                                 onError={(e) => {
