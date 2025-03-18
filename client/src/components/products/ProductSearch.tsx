@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Box, QrCode, MapPin } from "lucide-react";
 
 interface Product {
   id: number;
@@ -11,6 +12,10 @@ interface Product {
   category: string;
   currentStock: number;
   minStockLevel: number;
+  barcode?: string;
+  location?: string;
+  imagePath?: string;
+  unitsPerBox?: number;
 }
 
 interface ProductSearchProps {
@@ -130,31 +135,65 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
               </div>
             </div>
           ) : (
-            <table className="min-w-full">
-              <thead className="bg-slate-100">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
                 <tr>
-                  <th className="py-3 px-4 text-left font-semibold text-base">Product</th>
-                  <th className="py-3 px-4 text-left font-semibold text-base">SKU</th>
-                  <th className="py-3 px-4 text-left font-semibold text-base">Category</th>
-                  <th className="py-3 px-4 text-left font-semibold text-base">Stock</th>
-                  <th className="py-3 px-4 text-left font-semibold text-base">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Product</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">SKU</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Category</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Stock</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {products?.map((product) => (
                   <tr key={product.id} className="hover:bg-slate-50">
-                    <td className="py-4 px-4 text-base">{product.name}</td>
-                    <td className="py-4 px-4 text-base">{product.sku}</td>
-                    <td className="py-4 px-4 text-base">{product.category}</td>
-                    <td className="py-4 px-4">
-                      <span className={`text-base font-medium ${getStockStatusClass(product.currentStock, product.minStockLevel)}`}>
-                        {product.currentStock}
-                      </span>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="h-10 w-10 flex-shrink-0 rounded bg-slate-100 flex items-center justify-center">
+                          {product.imagePath ? (
+                            <img 
+                              src={product.imagePath} 
+                              alt={product.name} 
+                              className="h-10 w-10 object-cover rounded"
+                            />
+                          ) : (
+                            <Box className="h-5 w-5 text-slate-400" />
+                          )}
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-slate-900">{product.name}</div>
+                          {product.barcode && (
+                            <div className="text-xs text-slate-500">
+                              <QrCode className="h-3 w-3 inline-block mr-1" />
+                              {product.barcode}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-500">
+                      {product.sku}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-500">
+                      {product.category}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className={`text-sm font-medium ${getStockStatusClass(product.currentStock, product.minStockLevel)}`}>
+                        {product.currentStock} 
+                        <span className="text-slate-400 ml-1">/ {product.minStockLevel} min</span>
+                      </div>
+                      {product.location && (
+                        <div className="text-xs text-slate-500">
+                          <MapPin className="h-3 w-3 inline-block mr-1" />
+                          {product.location}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Button
                         onClick={() => onSelectProduct(product)}
-                        className="h-10 px-5 text-base min-w-[100px]"
+                        className="h-9 min-w-[100px]"
                         disabled={product.currentStock === 0}
                       >
                         {product.currentStock === 0 ? 
