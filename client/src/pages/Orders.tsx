@@ -91,6 +91,13 @@ const Orders = () => {
 
   useEffect(() => {
     setCurrentPage("Orders");
+    
+    // Check URL parameters for filters
+    const params = new URLSearchParams(window.location.search);
+    const statusParam = params.get("status");
+    if (statusParam && ["pending", "picked", "shipped", "cancelled"].includes(statusParam)) {
+      setStatusFilter(statusParam);
+    }
   }, [setCurrentPage]);
 
   const filteredOrders = orders?.filter(order => {

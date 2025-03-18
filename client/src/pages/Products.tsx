@@ -67,11 +67,19 @@ const Products = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [stockFilter, setStockFilter] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     setCurrentPage("Products");
+    
+    // Check URL parameters for filters
+    const params = new URLSearchParams(window.location.search);
+    const stockParam = params.get("stock");
+    if (stockParam && ["in", "low", "out"].includes(stockParam)) {
+      setStockFilter(stockParam);
+    }
   }, [setCurrentPage]);
 
   const { data: products, isLoading } = useQuery<Product[]>({

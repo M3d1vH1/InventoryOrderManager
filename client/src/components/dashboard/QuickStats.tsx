@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 
 interface Stats {
   pendingOrders: number;
@@ -27,45 +28,60 @@ const QuickStats = () => {
       </div>
     );
   }
+  
+  const statCards = [
+    {
+      title: "Pending Orders",
+      value: stats?.pendingOrders || 0,
+      icon: "fas fa-shopping-cart",
+      bgColor: "bg-blue-100",
+      textColor: "text-primary",
+      path: "/orders",
+      filter: "?status=pending"
+    },
+    {
+      title: "Items to Pick",
+      value: stats?.itemsToPick || 0,
+      icon: "fas fa-box",
+      bgColor: "bg-amber-100",
+      textColor: "text-amber-500",
+      path: "/order-picking"
+    },
+    {
+      title: "Shipped Today",
+      value: stats?.shippedToday || 0,
+      icon: "fas fa-check-circle",
+      bgColor: "bg-green-100",
+      textColor: "text-green-500",
+      path: "/orders",
+      filter: "?status=shipped"
+    },
+    {
+      title: "Low Stock Items",
+      value: stats?.lowStockItems || 0,
+      icon: "fas fa-exclamation-triangle",
+      bgColor: "bg-red-100",
+      textColor: "text-red-500",
+      path: "/products",
+      filter: "?stock=low"
+    }
+  ];
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div className="bg-white rounded-lg shadow p-4 flex items-center">
-        <div className="rounded-full bg-blue-100 p-3 mr-4">
-          <i className="fas fa-shopping-cart text-primary text-xl"></i>
-        </div>
-        <div>
-          <h3 className="text-sm text-slate-500 font-medium">Pending Orders</h3>
-          <p className="text-2xl font-semibold">{stats?.pendingOrders || 0}</p>
-        </div>
-      </div>
-      <div className="bg-white rounded-lg shadow p-4 flex items-center">
-        <div className="rounded-full bg-amber-100 p-3 mr-4">
-          <i className="fas fa-box text-amber-500 text-xl"></i>
-        </div>
-        <div>
-          <h3 className="text-sm text-slate-500 font-medium">Items to Pick</h3>
-          <p className="text-2xl font-semibold">{stats?.itemsToPick || 0}</p>
-        </div>
-      </div>
-      <div className="bg-white rounded-lg shadow p-4 flex items-center">
-        <div className="rounded-full bg-green-100 p-3 mr-4">
-          <i className="fas fa-check-circle text-green-500 text-xl"></i>
-        </div>
-        <div>
-          <h3 className="text-sm text-slate-500 font-medium">Shipped Today</h3>
-          <p className="text-2xl font-semibold">{stats?.shippedToday || 0}</p>
-        </div>
-      </div>
-      <div className="bg-white rounded-lg shadow p-4 flex items-center">
-        <div className="rounded-full bg-red-100 p-3 mr-4">
-          <i className="fas fa-exclamation-triangle text-red-500 text-xl"></i>
-        </div>
-        <div>
-          <h3 className="text-sm text-slate-500 font-medium">Low Stock Items</h3>
-          <p className="text-2xl font-semibold">{stats?.lowStockItems || 0}</p>
-        </div>
-      </div>
+      {statCards.map((card, index) => (
+        <Link key={index} href={card.path + (card.filter || "")}>
+          <div className="bg-white rounded-lg shadow p-4 flex items-center hover:bg-slate-50 transition-colors cursor-pointer group">
+            <div className={`rounded-full ${card.bgColor} p-3 mr-4 group-hover:scale-110 transition-transform`}>
+              <i className={`${card.icon} ${card.textColor} text-xl`}></i>
+            </div>
+            <div>
+              <h3 className="text-sm text-slate-500 font-medium">{card.title}</h3>
+              <p className="text-2xl font-semibold">{card.value}</p>
+            </div>
+          </div>
+        </Link>
+      ))}
     </div>
   );
 };
