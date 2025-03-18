@@ -63,6 +63,28 @@ export const orderStatusEnum = pgEnum('order_status', [
   'cancelled'
 ]);
 
+// Shipping Documents Schema
+export const shippingDocuments = pgTable("shipping_documents", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull().unique(),
+  documentPath: text("document_path").notNull(),
+  documentType: text("document_type").notNull(),
+  uploadDate: timestamp("upload_date").notNull().defaultNow(),
+  notes: text("notes"),
+});
+
+export const insertShippingDocumentSchema = createInsertSchema(shippingDocuments)
+  .omit({ id: true, uploadDate: true })
+  .extend({
+    orderId: z.number(),
+    documentPath: z.string().min(1),
+    documentType: z.string().min(1),
+    notes: z.string().optional(),
+  });
+
+export type InsertShippingDocument = z.infer<typeof insertShippingDocumentSchema>;
+export type ShippingDocument = typeof shippingDocuments.$inferSelect;
+
 // Orders Schema
 export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
@@ -71,6 +93,7 @@ export const orders = pgTable("orders", {
   orderDate: timestamp("order_date").notNull().defaultNow(),
   status: orderStatusEnum("status").notNull().default('pending'),
   notes: text("notes"),
+  hasShippingDocument: boolean("has_shipping_document").default(false),
 });
 
 export const insertOrderSchema = createInsertSchema(orders)

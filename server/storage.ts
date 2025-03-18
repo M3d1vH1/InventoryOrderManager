@@ -3,7 +3,8 @@ import {
   products, type Product, type InsertProduct,
   orders, type Order, type InsertOrder,
   orderItems, type OrderItem, type InsertOrderItem,
-  customers, type Customer, type InsertCustomer
+  customers, type Customer, type InsertCustomer,
+  shippingDocuments, type ShippingDocument, type InsertShippingDocument
 } from "@shared/schema";
 import { DatabaseStorage, initStorage } from './storage.postgresql';
 import { log } from './vite';
@@ -30,12 +31,17 @@ export interface IStorage {
   getAllOrders(): Promise<Order[]>;
   getRecentOrders(limit: number): Promise<Order[]>;
   createOrder(order: InsertOrder): Promise<Order>;
-  updateOrderStatus(id: number, status: 'pending' | 'picked' | 'shipped' | 'cancelled'): Promise<Order | undefined>;
+  updateOrderStatus(id: number, status: 'pending' | 'picked' | 'shipped' | 'cancelled', documentInfo?: {documentPath: string, documentType: string, notes?: string}): Promise<Order | undefined>;
   updateOrder(id: number, orderData: Partial<InsertOrder>): Promise<Order | undefined>;
   
   // Order Item methods
   getOrderItems(orderId: number): Promise<OrderItem[]>;
   addOrderItem(orderItem: InsertOrderItem): Promise<OrderItem>;
+  
+  // Shipping Document methods
+  getShippingDocument(orderId: number): Promise<ShippingDocument | undefined>;
+  addShippingDocument(document: InsertShippingDocument): Promise<ShippingDocument>;
+  updateShippingDocument(id: number, document: Partial<InsertShippingDocument>): Promise<ShippingDocument | undefined>;
   
   // Customer methods
   getCustomer(id: number): Promise<Customer | undefined>;
@@ -109,6 +115,7 @@ export class MemStorage implements IStorage {
   private orders: Map<number, Order>;
   private orderItems: Map<number, OrderItem>;
   private customers: Map<number, Customer>;
+  private shippingDocuments: Map<number, ShippingDocument>;
   
   private userIdCounter: number;
   private productIdCounter: number;
@@ -122,6 +129,7 @@ export class MemStorage implements IStorage {
     this.orders = new Map();
     this.orderItems = new Map();
     this.customers = new Map();
+    this.shippingDocuments = new Map();
     
     this.userIdCounter = 1;
     this.productIdCounter = 1;
@@ -281,13 +289,50 @@ export class MemStorage implements IStorage {
     return order;
   }
   
-  async updateOrderStatus(id: number, status: 'pending' | 'picked' | 'shipped' | 'cancelled'): Promise<Order | undefined> {
+  async updateOrderStatus(
+    id: number, 
+    status: 'pending' | 'picked' | 'shipped' | 'cancelled',
+    documentInfo?: { documentPath: string, documentType: string, notes?: string }
+  ): Promise<Order | undefined> {
     const existingOrder = this.orders.get(id);
     if (!existingOrder) return undefined;
     
-    const updatedOrder = { ...existingOrder, status };
-    this.orders.set(id, updatedOrder);
-    return updatedOrder;
+    // If status is 'shipped' and documentInfo is provided, create or update shipping document
+    if (status === 'shipped' && documentInfo) {
+      // Check if shipping document already exists
+      const existingDoc = await this.getShippingDocument(id);
+      
+      if (existingDoc) {
+        // Update existing document
+        await this.updateShippingDocument(existingDoc.id, {
+          documentPath: documentInfo.documentPath,
+          documentType: documentInfo.documentType,
+          notes: documentInfo.notes
+        });
+      } else {
+        // Create new document
+        await this.addShippingDocument({
+          orderId: id,
+          documentPath: documentInfo.documentPath,
+          documentType: documentInfo.documentType,
+          notes: documentInfo.notes
+        });
+      }
+      
+      // Update order with shipping document flag
+      const updatedOrder = { 
+        ...existingOrder, 
+        status,
+        hasShippingDocument: true 
+      };
+      this.orders.set(id, updatedOrder);
+      return updatedOrder;
+    } else {
+      // Just update status
+      const updatedOrder = { ...existingOrder, status };
+      this.orders.set(id, updatedOrder);
+      return updatedOrder;
+    }
   }
 
   async updateOrder(id: number, orderData: Partial<InsertOrder>): Promise<Order | undefined> {
@@ -318,6 +363,35 @@ export class MemStorage implements IStorage {
     
     this.orderItems.set(id, orderItem);
     return orderItem;
+  }
+  
+  // Shipping Document methods
+  async getShippingDocument(orderId: number): Promise<ShippingDocument | undefined> {
+    return Array.from(this.shippingDocuments.values()).find(
+      (doc) => doc.orderId === orderId
+    );
+  }
+  
+  async addShippingDocument(document: InsertShippingDocument): Promise<ShippingDocument> {
+    const id = this.orderIdCounter++; // Reuse the orderIdCounter
+    const shippingDocument: ShippingDocument = { 
+      ...document, 
+      id,
+      uploadDate: new Date(),
+      notes: document.notes || null
+    };
+    
+    this.shippingDocuments.set(id, shippingDocument);
+    return shippingDocument;
+  }
+  
+  async updateShippingDocument(id: number, document: Partial<InsertShippingDocument>): Promise<ShippingDocument | undefined> {
+    const existingDocument = this.shippingDocuments.get(id);
+    if (!existingDocument) return undefined;
+    
+    const updatedDocument = { ...existingDocument, ...document };
+    this.shippingDocuments.set(id, updatedDocument);
+    return updatedDocument;
   }
   
   // Customer methods
