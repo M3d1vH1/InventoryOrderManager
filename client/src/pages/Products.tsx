@@ -4,13 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { 
   Card, 
   CardContent, 
+  CardDescription,
   CardFooter, 
   CardHeader, 
   CardTitle 
-} from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { useToast } from '../components/ui/use-toast'; 
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -22,10 +23,17 @@ import JsBarcode from "jsbarcode";
 import BarcodeScanner from "@/components/barcode/BarcodeScanner";
 import BarcodeGenerator from "@/components/barcode/BarcodeGenerator";
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
+} from "@/components/ui/tabs";
+import {
   ArrowDown,
   ArrowUp,
   Box,
   ChevronDown,
+  ClipboardList,
   Download,
   Edit,
   Filter,
@@ -99,8 +107,6 @@ const productFormSchema = z.object({
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
-
-import { useTranslation } from 'react-i18next';
 
 const Products = () => {
   const { t } = useTranslation();
@@ -325,6 +331,20 @@ const Products = () => {
     if (currentStock === 0) return "text-red-600";
     if (currentStock <= minStockLevel) return "text-amber-600";
     return "text-green-600";
+  };
+  
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      // Toggle sort direction if clicking the same field
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      // Set new sort field and default to ascending
+      setSortField(field);
+      setSortDirection("asc");
+    }
+    
+    // We could also implement actual sorting logic here
+    // For now we'll assume it's handled by the UI based on sortField and sortDirection
   };
 
   return (
