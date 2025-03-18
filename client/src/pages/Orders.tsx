@@ -70,7 +70,11 @@ const Orders = () => {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: number; status: string }) => {
-      return apiRequest('PATCH', `/api/orders/${orderId}/status`, { status });
+      return apiRequest({
+        url: `/api/orders/${orderId}/status`,
+        method: 'PATCH',
+        body: JSON.stringify({ status })
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
