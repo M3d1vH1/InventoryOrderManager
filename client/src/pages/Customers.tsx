@@ -106,6 +106,9 @@ interface Customer {
   createdAt: Date;
 }
 
+// CSS styles for making form elements touch-friendly
+const touchFriendlyStyle = "h-12 text-base";
+
 const Customers = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -418,6 +421,7 @@ const Customers = () => {
           <div className="flex w-full max-w-sm items-center space-x-2 mt-2">
             <Input 
               placeholder="Search customers..." 
+              className={touchFriendlyStyle}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -727,9 +731,10 @@ const Customers = () => {
                 <Button 
                   type="submit" 
                   disabled={createCustomerMutation.isPending}
+                  className="h-12 text-lg"
                 >
                   {createCustomerMutation.isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   )}
                   Create Customer
                 </Button>
@@ -974,9 +979,10 @@ const Customers = () => {
                 <Button 
                   type="submit" 
                   disabled={updateCustomerMutation.isPending}
+                  className="h-12 text-lg"
                 >
                   {updateCustomerMutation.isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   )}
                   Update Customer
                 </Button>
@@ -1053,7 +1059,11 @@ const Customers = () => {
               </div>
               
               <DialogFooter>
-                <Button variant="outline" onClick={() => handleEditCustomer(customerDetails)}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleEditCustomer(customerDetails)}
+                  className="h-12 text-lg"
+                >
                   Edit Customer
                 </Button>
               </DialogFooter>
