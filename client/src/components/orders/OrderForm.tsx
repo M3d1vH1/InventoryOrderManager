@@ -7,6 +7,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import ProductSearch from "@/components/products/ProductSearch";
 import { format } from "date-fns";
+import { Link } from "wouter";
 
 import {
   Form,
@@ -19,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Customer {
@@ -169,30 +171,43 @@ const OrderForm = () => {
                 control={form.control}
                 name="customerName"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex flex-col">
                     <FormLabel className="text-base font-medium">Customer</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      disabled={isLoadingCustomers}
-                    >
+                    <div className="relative">
                       <FormControl>
-                        <SelectTrigger className="h-12 text-base">
-                          <SelectValue placeholder="Select a customer" />
-                        </SelectTrigger>
+                        <Command className="rounded-lg border border-input">
+                          <CommandInput
+                            placeholder="Type customer name..."
+                            className="h-12 text-base"
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            disabled={isLoadingCustomers}
+                          />
+                          {field.value.length > 0 && (
+                            <CommandList>
+                              <CommandEmpty>No customers found</CommandEmpty>
+                              <CommandGroup>
+                                {customers
+                                  ?.filter(customer => 
+                                    customer.name.toLowerCase().includes(field.value.toLowerCase()))
+                                  .map(customer => (
+                                    <CommandItem
+                                      key={customer.id}
+                                      value={customer.name}
+                                      className="h-10 text-base"
+                                      onSelect={(value) => {
+                                        field.onChange(value);
+                                      }}
+                                    >
+                                      {customer.name}
+                                    </CommandItem>
+                                  ))}
+                              </CommandGroup>
+                            </CommandList>
+                          )}
+                        </Command>
                       </FormControl>
-                      <SelectContent>
-                        {customers?.map(customer => (
-                          <SelectItem 
-                            key={customer.id} 
-                            value={customer.name}
-                            className="h-10 text-base"
-                          >
-                            {customer.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -319,17 +334,15 @@ const OrderForm = () => {
             />
             
             <div className="flex justify-end space-x-4">
-              <Button 
-                type="button" 
-                variant="outline"
-                className="h-12 text-base px-6"
-                onClick={() => {
-                  form.reset();
-                  setOrderItems([]);
-                }}
-              >
-                <i className="fas fa-undo mr-2"></i> Clear Form
-              </Button>
+              <Link href="/orders">
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  className="h-12 text-base px-6"
+                >
+                  <i className="fas fa-arrow-left mr-2"></i> Back to Orders
+                </Button>
+              </Link>
               <Button 
                 type="submit" 
                 className="h-12 text-base px-6"
