@@ -143,11 +143,15 @@ const Products = () => {
     queryKey: ['/api/products'],
     staleTime: 15000,
   });
-  const { data: categories = [] as string[] } = useQuery<string[]>({
-    queryKey: ['/api/products/categories'],
+  const { data: categoriesData = [] } = useQuery({
+    queryKey: ['/api/categories'],
     staleTime: Infinity,
-    initialData: ["Electronics", "Clothing", "Food & Beverage", "Furniture", "Books", "Other"],
   });
+  
+  // Transform category objects to an array of names for backward compatibility
+  const categories = React.useMemo(() => {
+    return categoriesData.map((category: {id: number, name: string}) => category.name);
+  }, [categoriesData]);
   const [filteredProducts, setFilteredProducts] = useState(products);
 
   useEffect(() => {
