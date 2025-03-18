@@ -122,9 +122,15 @@ export class DatabaseStorage implements IStorage {
     
     // Add category filter if provided
     if (category && category !== 'all') {
-      // Need to cast the category to the correct enum type
-      const categoryValue = category as 'widgets' | 'connectors' | 'brackets' | 'mounts' | 'other';
-      conditions.push(eq(products.category, categoryValue));
+      try {
+        // Get category ID from categories table
+        const categoryResult = await this.db.select().from(categories).where(eq(categories.name, category)).limit(1);
+        if (categoryResult.length > 0) {
+          conditions.push(eq(products.categoryId, categoryResult[0].id));
+        }
+      } catch (error) {
+        console.error('Error filtering by category:', error);
+      }
     }
     
     // Add stock status filter if provided
@@ -542,13 +548,21 @@ export class DatabaseStorage implements IStorage {
     value: number;
   }[]> {
     const allProducts = await this.getAllProducts();
+    const allCategories = await this.getAllCategories();
+    
+    // Create a map of categoryId to category name
+    const categoryMap = new Map<number, string>();
+    for (const category of allCategories) {
+      categoryMap.set(category.id, category.name);
+    }
     
     // Group products by category
     const categoryCount = new Map<string, number>();
     
     for (const product of allProducts) {
-      const category = product.category;
-      categoryCount.set(category, (categoryCount.get(category) || 0) + 1);
+      // Get category name from map, or use 'Unknown' if not found
+      const categoryName = categoryMap.get(product.categoryId) || 'Unknown';
+      categoryCount.set(categoryName, (categoryCount.get(categoryName) || 0) + 1);
     }
     
     // Convert to required format
