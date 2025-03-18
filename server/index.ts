@@ -51,6 +51,13 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Import the useDatabase function
+  const { useDatabase } = await import("./storage");
+  
+  // Attempt to switch to database storage
+  // This will fall back to in-memory storage if database connection fails
+  await useDatabase();
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

@@ -5,7 +5,7 @@ import {
   orderItems, type OrderItem, type InsertOrderItem,
   customers, type Customer, type InsertCustomer
 } from "@shared/schema";
-import { initStorage } from './storage.postgresql';
+import { DatabaseStorage, initStorage } from './storage.postgresql';
 import { log } from './vite';
 
 export interface IStorage {
@@ -31,6 +31,7 @@ export interface IStorage {
   getRecentOrders(limit: number): Promise<Order[]>;
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrderStatus(id: number, status: 'pending' | 'picked' | 'shipped' | 'cancelled'): Promise<Order | undefined>;
+  updateOrder(id: number, orderData: Partial<InsertOrder>): Promise<Order | undefined>;
   
   // Order Item methods
   getOrderItems(orderId: number): Promise<OrderItem[]>;
@@ -816,4 +817,25 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Initialize storage based on environment or configuration
+// For development or testing, use MemStorage
+// For production, use DatabaseStorage
+export let storage: IStorage = new MemStorage();
+
+// This function switches to database storage when called
+export async function useDatabase() {
+  try {
+    // Initialize database storage
+    const dbStorage = await initStorage();
+    
+    // Switch the storage implementation
+    storage = dbStorage;
+    
+    log('Successfully switched to database storage', 'database');
+    return true;
+  } catch (error) {
+    log(`Failed to switch to database storage: ${error instanceof Error ? error.message : String(error)}`, 'database');
+    log('Falling back to in-memory storage', 'database');
+    return false;
+  }
+}

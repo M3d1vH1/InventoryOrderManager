@@ -91,7 +91,9 @@ export class DatabaseStorage implements IStorage {
     
     // Add category filter if provided
     if (category && category !== 'all') {
-      conditions.push(eq(products.category, category));
+      // Need to cast the category to the correct enum type
+      const categoryValue = category as 'widgets' | 'connectors' | 'brackets' | 'mounts' | 'other';
+      conditions.push(eq(products.category, categoryValue));
     }
     
     // Add stock status filter if provided
