@@ -305,6 +305,32 @@ const Orders = () => {
   const handleGoToPickList = (orderId: number) => {
     setLocation(`/order-picking/${orderId}`);
   };
+  
+  // Handler for viewing document
+  const handleViewDocument = async (orderId: number) => {
+    try {
+      const document = await apiRequest({
+        url: `/api/orders/${orderId}/documents`,
+      });
+      
+      if (document && document.documentPath) {
+        // Open document in a new tab
+        window.open(document.documentPath, '_blank');
+      } else {
+        toast({
+          title: "Document not found",
+          description: "The document could not be found.",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error loading document",
+        description: error.message || "Failed to load the document",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div>
@@ -421,6 +447,17 @@ const Orders = () => {
                             title="Pick Order"
                           >
                             <ClipboardCheck className="h-4 w-4" />
+                          </button>
+                        )}
+                        
+                        {/* Document view button - only for shipped orders with document */}
+                        {order.status === 'shipped' && order.hasShippingDocument && (
+                          <button
+                            onClick={() => handleViewDocument(order.id)}
+                            className="text-slate-600 hover:text-blue-600 p-1 rounded-full hover:bg-slate-100" 
+                            title="View TΔA Document"
+                          >
+                            <FileText className="h-4 w-4" />
                           </button>
                         )}
                       </div>

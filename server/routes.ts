@@ -396,6 +396,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get shipping document for an order
+  app.get('/api/orders/:id/documents', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Get shipping document for this order
+      const document = await storage.getShippingDocument(id);
+      
+      if (!document) {
+        return res.status(404).json({ message: 'No shipping document found for this order' });
+      }
+      
+      res.json(document);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
   // Customer routes
   app.get('/api/customers', async (req, res) => {
     try {
