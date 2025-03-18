@@ -113,24 +113,31 @@ const OrderPicking = () => {
                 <div className="text-center p-4 text-slate-500">No pending orders to pick</div>
               ) : (
                 <div className="space-y-4">
-                  <Select 
-                    value={selectedOrderId || undefined} 
-                    onValueChange={setSelectedOrderId}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select an order" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {pickableOrders.map(order => (
-                        <SelectItem 
-                          key={order.id} 
-                          value={String(order.id)}
-                        >
-                          {order.orderNumber} - {order.customerName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-3">
+                    {pickableOrders.map(order => (
+                      <div 
+                        key={order.id}
+                        className={`p-3 rounded-lg border cursor-pointer transition-colors
+                          ${selectedOrderId === String(order.id) 
+                            ? 'bg-primary/10 border-primary' 
+                            : 'border-slate-200 hover:border-primary/50 hover:bg-slate-50'}`}
+                        onClick={() => setSelectedOrderId(String(order.id))}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium">{order.orderNumber}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {order.items?.length || 0} items
+                          </Badge>
+                        </div>
+                        <div className="text-sm text-slate-600">
+                          {order.customerName}
+                        </div>
+                        <div className="text-xs text-slate-500 mt-1">
+                          Created: {new Date(order.orderDate).toLocaleDateString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
 
                   <div className="space-y-2">
                     <h3 className="text-sm font-medium">Order Status Legend:</h3>
