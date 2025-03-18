@@ -128,7 +128,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
         size={buttonSize}
         onClick={handleOpen}
       >
-        <i className="fas fa-barcode mr-2"></i>
+        <ScanBarcode className="mr-2 h-4 w-4" />
         {buttonText}
       </Button>
       

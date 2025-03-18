@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import PickList from "@/components/orders/PickList";
 import { useLocation, Link } from "wouter";
+import { ArrowLeft, Clipboard } from "lucide-react";
 
 interface OrderItem {
   id: number;
@@ -90,7 +91,7 @@ const OrderPicking = () => {
         <h1 className="text-2xl font-bold">Order Picking</h1>
         <Link href="/orders">
           <Button variant="outline">
-            <i className="fas fa-arrow-left mr-2"></i>
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Orders
           </Button>
         </Link>
@@ -181,20 +182,7 @@ const OrderPicking = () => {
             <Card>
               <CardContent className="pt-6 pb-6">
                 <div className="text-center text-slate-500">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className="mx-auto h-12 w-12 text-slate-400"
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={1.5}
-                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" 
-                    />
-                  </svg>
+                  <Clipboard className="mx-auto h-12 w-12 text-slate-400" />
                   <h3 className="mt-2 text-sm font-medium text-slate-900">No order selected</h3>
                   <p className="mt-1 text-sm text-slate-500">
                     Select an order from the list to create a pick list.
