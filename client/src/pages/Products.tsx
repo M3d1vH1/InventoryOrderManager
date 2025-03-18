@@ -332,7 +332,7 @@ const Products = () => {
       name: "",
       sku: "",
       barcode: "",
-      category: "",
+      categoryId: 0,
       description: "",
       minStockLevel: 5,
       currentStock: 0,
@@ -522,11 +522,11 @@ const Products = () => {
                       </th>
                       <th 
                         className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer"
-                        onClick={() => handleSort("category")}
+                        onClick={() => handleSort("categoryId")}
                       >
                         <div className="flex items-center">
                           {t('products.category')}
-                          {sortField === "category" && (
+                          {sortField === "categoryId" && (
                             sortDirection === "asc" ? 
                               <ArrowUp className="h-3 w-3 ml-1" /> : 
                               <ArrowDown className="h-3 w-3 ml-1" />
@@ -733,13 +733,13 @@ const Products = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
-                      name="category"
+                      name="categoryId"
                       render={({ field }: { field: any }) => (
                         <FormItem>
                           <FormLabel>{t('products.category')}</FormLabel>
                           <Select 
-                            onValueChange={field.onChange} 
-                            defaultValue={field.value}
+                            onValueChange={(value) => field.onChange(parseInt(value))} 
+                            defaultValue={field.value?.toString() || ""}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -747,9 +747,9 @@ const Products = () => {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {categories.map((category: string) => (
-                                <SelectItem key={category} value={category}>
-                                  {category}
+                              {categoriesData.map((category) => (
+                                <SelectItem key={category.id} value={category.id.toString()}>
+                                  {category.name}
                                 </SelectItem>
                               ))}
                             </SelectContent>
