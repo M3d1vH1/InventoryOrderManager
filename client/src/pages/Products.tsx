@@ -475,7 +475,7 @@ const Products = () => {
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {filteredProducts.map((product) => (
+                {filteredProducts?.map((product) => (
                   <div 
                     key={product.id} 
                     className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer"
@@ -579,7 +579,7 @@ const Products = () => {
               
               <div className="mt-6 border-t border-slate-200 pt-5 text-sm flex items-center justify-between">
                 <span className="text-slate-600">
-                  Showing {filteredProducts.length} of {products?.length} products
+                  Showing {filteredProducts?.length || 0} of {products?.length || 0} products
                 </span>
                 <div className="flex items-center space-x-2">
                   <button className="px-3 py-1 rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50" disabled>
