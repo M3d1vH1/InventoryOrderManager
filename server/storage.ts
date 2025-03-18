@@ -5,7 +5,7 @@ import {
   orderItems, type OrderItem, type InsertOrderItem,
   customers, type Customer, type InsertCustomer
 } from "@shared/schema";
-import { storage as databaseStorage, initStorage } from './storage.postgresql';
+import { initStorage } from './storage.postgresql';
 import { log } from './vite';
 
 export interface IStorage {
