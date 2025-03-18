@@ -1,9 +1,11 @@
 import { useEffect } from "react";
 import { useSidebar } from "@/context/SidebarContext";
+import { useNotifications } from "@/context/NotificationContext";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 import {
   Card,
@@ -47,6 +49,28 @@ const notificationSettingsSchema = z.object({
 const Settings = () => {
   const { setCurrentPage } = useSidebar();
   const { toast } = useToast();
+  const { playNotificationSound } = useNotifications();
+  
+  // Function to test notifications
+  const sendTestNotification = async (type: 'success' | 'warning' | 'error') => {
+    try {
+      await apiRequest('/api/test-notification', {
+        method: 'POST',
+        body: JSON.stringify({ type }),
+      });
+      toast({
+        title: "Test Notification Sent",
+        description: `A test notification with ${type} sound has been sent.`,
+      });
+    } catch (error) {
+      console.error("Error sending test notification:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send test notification.",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     setCurrentPage("Settings");
@@ -374,6 +398,62 @@ const Settings = () => {
                   </div>
                 </form>
               </Form>
+              
+              <Separator className="my-6" />
+              
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Test Notification Sounds</h3>
+                <p className="text-sm text-slate-500">
+                  Test different notification sounds to ensure they are working correctly
+                </p>
+                
+                <div className="flex flex-wrap gap-3">
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      playNotificationSound('success');
+                      toast({
+                        title: "Success Sound",
+                        description: "Success notification sound played.",
+                      });
+                    }}
+                  >
+                    Test Success Sound
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      playNotificationSound('warning');
+                      toast({
+                        title: "Warning Sound",
+                        description: "Warning notification sound played.",
+                      });
+                    }}
+                  >
+                    Test Warning Sound
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      playNotificationSound('error');
+                      toast({
+                        title: "Error Sound",
+                        description: "Error notification sound played.",
+                      });
+                    }}
+                  >
+                    Test Error Sound
+                  </Button>
+                  
+                  <Button 
+                    onClick={() => sendTestNotification('success')}
+                  >
+                    Send Test Notification
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

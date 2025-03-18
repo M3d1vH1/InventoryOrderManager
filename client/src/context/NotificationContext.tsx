@@ -106,12 +106,30 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
           // Generate unique ID
           const id = `order-${data.orderId}-${Date.now()}`;
           
+          // Determine notification type based on status change
+          let notificationType: 'info' | 'success' | 'warning' | 'error' = 'info';
+          let soundType: 'success' | 'warning' | 'error' = 'success';
+          
+          if (data.newStatus === 'shipped') {
+            notificationType = 'success';
+            soundType = 'success';
+          } else if (data.newStatus === 'cancelled') {
+            notificationType = 'error';
+            soundType = 'error';
+          } else if (data.newStatus === 'picked') {
+            notificationType = 'info';
+            soundType = 'success';
+          } else if (data.newStatus === 'pending' && data.previousStatus === 'picked') {
+            notificationType = 'warning';
+            soundType = 'warning';
+          }
+          
           // Create notification
           const newNotification: Notification = {
             id,
             title: 'Order Status Updated',
             message: `Order ${data.orderNumber} changed to ${data.newStatus}`,
-            type: 'info',
+            type: notificationType,
             timestamp: new Date(),
             read: false,
             orderId: data.orderId,
@@ -125,10 +143,11 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
           toast({
             title: newNotification.title,
             description: newNotification.message,
+            variant: notificationType === 'error' ? 'destructive' : 'default',
           });
           
           // Play notification sound
-          playNotificationSound('success');
+          playNotificationSound(soundType);
         }
       } catch (error) {
         console.error('Error parsing WebSocket message:', error);
