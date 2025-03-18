@@ -125,6 +125,7 @@ export const customers = pgTable("customers", {
   phone: text("phone"),
   contactPerson: text("contact_person"),
   preferredShippingCompany: shippingCompanyEnum("preferred_shipping_company"),
+  customShippingCompany: text("custom_shipping_company"),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
@@ -143,6 +144,7 @@ export const insertCustomerSchema = createInsertSchema(customers)
     phone: z.string().optional(),
     contactPerson: z.string().optional(),
     preferredShippingCompany: z.enum(['dhl', 'fedex', 'ups', 'usps', 'royal_mail', 'other']).optional(),
+    customShippingCompany: z.string().optional(),
     notes: z.string().optional(),
   });
 

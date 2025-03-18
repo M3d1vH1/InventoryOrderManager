@@ -100,6 +100,7 @@ interface Customer {
   phone: string | null;
   contactPerson: string | null;
   preferredShippingCompany: 'dhl' | 'fedex' | 'ups' | 'usps' | 'royal_mail' | 'other' | null;
+  customShippingCompany: string | null;
   notes: string | null;
   createdAt: Date;
 }
