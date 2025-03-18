@@ -1,8 +1,10 @@
-import type { Express, Request } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from 'zod';
-import { insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCustomerSchema } from "@shared/schema";
+import { insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCustomerSchema, insertUserSchema } from "@shared/schema";
+import { isAuthenticated, hasRole } from "./auth";
+import { hashPassword } from "./auth";
 import { UploadedFile } from "express-fileupload";
 import path from "path";
 import fs from "fs";
@@ -645,6 +647,218 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
   // Set up WebSocket server
+  // User management routes
+  // Get all users (admin only)
+  app.get('/api/users', isAuthenticated, hasRole(['admin']), async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      // Don't send password hashes in response
+      const safeUsers = users.map(({ password, ...user }) => user);
+      res.json(safeUsers);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Get user by ID (admin only)
+  app.get('/api/users/:id', isAuthenticated, hasRole(['admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = await storage.getUser(id);
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Don't send password hash in response
+      const { password, ...safeUser } = user;
+      res.json(safeUser);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Create new user (admin only)
+  app.post('/api/users', isAuthenticated, hasRole(['admin']), async (req, res) => {
+    try {
+      // Parse and validate user data
+      const userData = insertUserSchema.parse(req.body);
+      
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(userData.username);
+      if (existingUser) {
+        return res.status(400).json({ message: 'Username already exists' });
+      }
+      
+      // Hash the password
+      const hashedPassword = await hashPassword(userData.password);
+      
+      // Create the user with hashed password
+      const user = await storage.createUser({
+        ...userData,
+        password: hashedPassword
+      });
+      
+      // Don't return password hash in response
+      const { password, ...safeUser } = user;
+      res.status(201).json(safeUser);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Validation error', errors: error.errors });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Update user (admin only)
+  app.patch('/api/users/:id', isAuthenticated, hasRole(['admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userData = insertUserSchema.partial().parse(req.body);
+      
+      // If password is being updated, hash it
+      if (userData.password) {
+        userData.password = await hashPassword(userData.password);
+      }
+      
+      // If username is being updated, check that it doesn't conflict
+      if (userData.username) {
+        const existingUser = await storage.getUserByUsername(userData.username);
+        if (existingUser && existingUser.id !== id) {
+          return res.status(400).json({ message: 'Username already exists' });
+        }
+      }
+      
+      const updatedUser = await storage.updateUser(id, userData);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Don't return password hash in response
+      const { password, ...safeUser } = updatedUser;
+      res.json(safeUser);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Validation error', errors: error.errors });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Delete user (admin only)
+  app.delete('/api/users/:id', isAuthenticated, hasRole(['admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Don't allow deleting the current user
+      if (req.user && (req.user as any).id === id) {
+        return res.status(400).json({ message: 'Cannot delete your own account' });
+      }
+      
+      const result = await storage.deleteUser(id);
+      
+      if (!result) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Category management routes
+  app.get('/api/categories', async (req, res) => {
+    try {
+      const categories = await storage.getAllCategories();
+      res.json(categories);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.get('/api/categories/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const category = await storage.getCategory(id);
+      
+      if (!category) {
+        return res.status(404).json({ message: 'Category not found' });
+      }
+      
+      res.json(category);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.post('/api/categories', isAuthenticated, hasRole(['admin']), async (req, res) => {
+    try {
+      const categoryData = insertCategorySchema.parse(req.body);
+      
+      // Check if category name already exists
+      const existingCategory = await storage.getCategoryByName(categoryData.name);
+      if (existingCategory) {
+        return res.status(400).json({ message: 'Category name already exists' });
+      }
+      
+      const category = await storage.createCategory(categoryData);
+      res.status(201).json(category);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Validation error', errors: error.errors });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.patch('/api/categories/:id', isAuthenticated, hasRole(['admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const categoryData = insertCategorySchema.partial().parse(req.body);
+      
+      // If name is being updated, check that it doesn't conflict
+      if (categoryData.name) {
+        const existingCategory = await storage.getCategoryByName(categoryData.name);
+        if (existingCategory && existingCategory.id !== id) {
+          return res.status(400).json({ message: 'Category name already exists' });
+        }
+      }
+      
+      const updatedCategory = await storage.updateCategory(id, categoryData);
+      
+      if (!updatedCategory) {
+        return res.status(404).json({ message: 'Category not found' });
+      }
+      
+      res.json(updatedCategory);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Validation error', errors: error.errors });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.delete('/api/categories/:id', isAuthenticated, hasRole(['admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      const result = await storage.deleteCategory(id);
+      
+      if (!result) {
+        return res.status(400).json({ 
+          message: 'Cannot delete this category because it is in use by one or more products' 
+        });
+      }
+      
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
   wss.on('connection', (ws: WebSocket) => {
