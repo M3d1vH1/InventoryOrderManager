@@ -122,6 +122,7 @@ export class MemStorage implements IStorage {
   private orderIdCounter: number;
   private orderItemIdCounter: number;
   private customerIdCounter: number;
+  private shippingDocumentIdCounter: number;
   
   constructor() {
     this.users = new Map();
@@ -136,6 +137,7 @@ export class MemStorage implements IStorage {
     this.orderIdCounter = 1;
     this.orderItemIdCounter = 1;
     this.customerIdCounter = 1;
+    this.shippingDocumentIdCounter = 1;
     
     // Initialize with sample data
     this.initSampleData();
@@ -374,7 +376,7 @@ export class MemStorage implements IStorage {
   }
   
   async addShippingDocument(document: InsertShippingDocument): Promise<ShippingDocument> {
-    const id = this.orderIdCounter++; // Reuse the orderIdCounter
+    const id = this.shippingDocumentIdCounter++;
     const shippingDocument: ShippingDocument = { 
       ...document, 
       id,

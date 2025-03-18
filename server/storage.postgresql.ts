@@ -169,7 +169,59 @@ export class DatabaseStorage implements IStorage {
     return order;
   }
   
-  async updateOrderStatus(id: number, status: 'pending' | 'picked' | 'shipped' | 'cancelled'): Promise<Order | undefined> {
+  // Shipping Document methods
+  async getShippingDocument(orderId: number): Promise<ShippingDocument | undefined> {
+    const result = await this.db
+      .select()
+      .from(shippingDocuments)
+      .where(eq(shippingDocuments.orderId, orderId));
+    
+    return result[0];
+  }
+  
+  async addShippingDocument(document: InsertShippingDocument): Promise<ShippingDocument> {
+    // Insert the document
+    const [shippingDocument] = await this.db
+      .insert(shippingDocuments)
+      .values(document)
+      .returning();
+    
+    // Update the order to indicate it has a shipping document
+    await this.db
+      .update(orders)
+      .set({ hasShippingDocument: true })
+      .where(eq(orders.id, document.orderId));
+    
+    return shippingDocument;
+  }
+  
+  async updateShippingDocument(id: number, document: Partial<InsertShippingDocument>): Promise<ShippingDocument | undefined> {
+    const [updatedDocument] = await this.db
+      .update(shippingDocuments)
+      .set(document)
+      .where(eq(shippingDocuments.id, id))
+      .returning();
+    
+    return updatedDocument;
+  }
+
+  async updateOrderStatus(
+    id: number, 
+    status: 'pending' | 'picked' | 'shipped' | 'cancelled',
+    documentInfo?: {documentPath: string, documentType: string, notes?: string}
+  ): Promise<Order | undefined> {
+    
+    // If status is 'shipped' and document info is provided, add shipping document
+    if (status === 'shipped' && documentInfo) {
+      await this.addShippingDocument({
+        orderId: id,
+        documentPath: documentInfo.documentPath,
+        documentType: documentInfo.documentType,
+        notes: documentInfo.notes || undefined,
+        uploadDate: new Date()
+      });
+    }
+    
     const [updatedOrder] = await this.db
       .update(orders)
       .set({ status })
