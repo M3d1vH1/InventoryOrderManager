@@ -45,19 +45,27 @@ interface Product {
   id: number;
   name: string;
   sku: string;
+  barcode?: string;
   category: string;
   description?: string;
   minStockLevel: number;
   currentStock: number;
+  location?: string;
+  unitsPerBox?: number;
+  imageUrl?: string;
 }
 
 const productFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   sku: z.string().min(3, { message: "SKU must be at least 3 characters" }),
+  barcode: z.string().optional(),
   category: z.string().min(1, { message: "Please select a category" }),
   description: z.string().optional(),
   minStockLevel: z.coerce.number().min(0, { message: "Minimum stock level must be 0 or greater" }),
-  currentStock: z.coerce.number().min(0, { message: "Current stock must be 0 or greater" })
+  currentStock: z.coerce.number().min(0, { message: "Current stock must be 0 or greater" }),
+  location: z.string().optional(),
+  unitsPerBox: z.coerce.number().min(0).optional(),
+  imageUrl: z.string().optional()
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
@@ -103,19 +111,27 @@ const Products = () => {
       form.reset({
         name: editingProduct.name,
         sku: editingProduct.sku,
+        barcode: editingProduct.barcode || "",
         category: editingProduct.category,
         description: editingProduct.description || "",
         minStockLevel: editingProduct.minStockLevel,
-        currentStock: editingProduct.currentStock
+        currentStock: editingProduct.currentStock,
+        location: editingProduct.location || "",
+        unitsPerBox: editingProduct.unitsPerBox || 0,
+        imageUrl: editingProduct.imageUrl || ""
       });
     } else {
       form.reset({
         name: "",
         sku: "",
+        barcode: "",
         category: "",
         description: "",
         minStockLevel: 10,
-        currentStock: 0
+        currentStock: 0,
+        location: "",
+        unitsPerBox: 0,
+        imageUrl: ""
       });
     }
   }, [editingProduct, form]);
@@ -460,6 +476,36 @@ const Products = () => {
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
+                  name="barcode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Barcode</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Storage Location</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="e.g., Aisle 5, Bin B3" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
                   name="minStockLevel"
                   render={({ field }) => (
                     <FormItem>
@@ -480,6 +526,36 @@ const Products = () => {
                       <FormLabel>Current Stock</FormLabel>
                       <FormControl>
                         <Input type="number" min="0" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="unitsPerBox"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Units Per Box</FormLabel>
+                      <FormControl>
+                        <Input type="number" min="0" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="imageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Product Image URL</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="https://example.com/image.jpg" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

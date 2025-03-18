@@ -31,10 +31,14 @@ export const products = pgTable("products", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   sku: text("sku").notNull().unique(),
+  barcode: text("barcode"),
   category: categoryEnum("category").notNull(),
   description: text("description"),
   minStockLevel: integer("min_stock_level").notNull().default(10),
   currentStock: integer("current_stock").notNull().default(0),
+  location: text("location"),
+  unitsPerBox: integer("units_per_box"),
+  imageUrl: text("image_url"),
 });
 
 export const insertProductSchema = createInsertSchema(products)
