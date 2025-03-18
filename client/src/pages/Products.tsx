@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSidebar } from "@/context/SidebarContext";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -6,6 +6,18 @@ import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { BarcodeGenerator } from "@/components/barcode";
+import { 
+  MapPin, 
+  Package, 
+  Info, 
+  Edit, 
+  Trash2, 
+  Eye, 
+  Box, 
+  Layers,
+  Camera
+} from "lucide-react";
 
 import {
   Table,
@@ -30,6 +42,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -40,6 +53,20 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+  CardDescription,
+} from "@/components/ui/card";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 interface Product {
   id: number;
@@ -78,6 +105,11 @@ const Products = () => {
   const [stockFilter, setStockFilter] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  
+  // State for product details view
+  const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [selectedTab, setSelectedTab] = useState("info");
 
   useEffect(() => {
     setCurrentPage("Products");
@@ -215,7 +247,18 @@ const Products = () => {
   const handleDeleteProduct = (id: number) => {
     if (confirm("Are you sure you want to delete this product?")) {
       deleteProductMutation.mutate(id);
+      
+      // Close details dialog if deleting the product being viewed
+      if (viewingProduct && viewingProduct.id === id) {
+        setIsDetailsDialogOpen(false);
+      }
     }
+  };
+  
+  const handleViewProduct = (product: Product) => {
+    setViewingProduct(product);
+    setIsDetailsDialogOpen(true);
+    setSelectedTab("info");
   };
 
   const filteredProducts = products?.filter(product => {
@@ -353,16 +396,25 @@ const Products = () => {
                     <TableCell>
                       <div className="flex space-x-2">
                         <button 
+                          className="text-slate-600 hover:text-blue-500"
+                          onClick={() => handleViewProduct(product)}
+                          title="View Details"
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button 
                           className="text-slate-600 hover:text-primary"
                           onClick={() => handleEditProduct(product)}
+                          title="Edit Product"
                         >
-                          <i className="fas fa-edit"></i>
+                          <Edit size={16} />
                         </button>
                         <button 
                           className="text-slate-600 hover:text-red-500"
                           onClick={() => handleDeleteProduct(product.id)}
+                          title="Delete Product"
                         >
-                          <i className="fas fa-trash"></i>
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </TableCell>
@@ -583,6 +635,253 @@ const Products = () => {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Product Details Dialog */}
+      <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-auto">
+          {viewingProduct && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold">{viewingProduct.name}</DialogTitle>
+                <DialogDescription>SKU: {viewingProduct.sku}</DialogDescription>
+              </DialogHeader>
+              
+              <Tabs value={selectedTab} onValueChange={setSelectedTab} className="mt-4">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="info">
+                    <Info className="mr-2 h-4 w-4" />
+                    Information
+                  </TabsTrigger>
+                  <TabsTrigger value="barcode">
+                    <Package className="mr-2 h-4 w-4" />
+                    Barcode
+                  </TabsTrigger>
+                  <TabsTrigger value="inventory">
+                    <Box className="mr-2 h-4 w-4" />
+                    Inventory
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="info" className="mt-4">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    {viewingProduct.imageUrl && (
+                      <div className="md:w-1/3">
+                        <Card>
+                          <CardContent className="p-4">
+                            <div className="relative aspect-square rounded-md overflow-hidden">
+                              <img 
+                                src={viewingProduct.imageUrl} 
+                                alt={viewingProduct.name}
+                                className="object-cover w-full h-full"
+                                onError={(e) => {
+                                  // On error, show a placeholder
+                                  e.currentTarget.src = 'https://via.placeholder.com/400?text=Product+Image';
+                                }}
+                              />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
+                    
+                    <div className={viewingProduct.imageUrl ? "md:w-2/3" : "w-full"}>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-xl">Product Details</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <h3 className="text-sm font-medium text-slate-500">Category</h3>
+                              <p className="capitalize">{viewingProduct.category}</p>
+                            </div>
+                            {viewingProduct.location && (
+                              <div>
+                                <h3 className="text-sm font-medium text-slate-500 flex items-center">
+                                  <MapPin className="mr-1 h-4 w-4" />
+                                  Location
+                                </h3>
+                                <p>{viewingProduct.location}</p>
+                              </div>
+                            )}
+                            {viewingProduct.barcode && (
+                              <div>
+                                <h3 className="text-sm font-medium text-slate-500">Barcode</h3>
+                                <p>{viewingProduct.barcode}</p>
+                              </div>
+                            )}
+                            {viewingProduct.unitsPerBox !== undefined && viewingProduct.unitsPerBox > 0 && (
+                              <div>
+                                <h3 className="text-sm font-medium text-slate-500 flex items-center">
+                                  <Layers className="mr-1 h-4 w-4" />
+                                  Units Per Box
+                                </h3>
+                                <p>{viewingProduct.unitsPerBox}</p>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {viewingProduct.description && (
+                            <div>
+                              <h3 className="text-sm font-medium text-slate-500">Description</h3>
+                              <p className="text-slate-700 whitespace-pre-line">{viewingProduct.description}</p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="barcode" className="mt-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Product Barcode</CardTitle>
+                      <CardDescription>Scan this barcode to identify the product</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col items-center">
+                      {viewingProduct.barcode ? (
+                        <div className="flex flex-col items-center">
+                          <div className="bg-white p-6 border border-slate-200 rounded-lg">
+                            <BarcodeGenerator value={viewingProduct.barcode} />
+                          </div>
+                          <p className="mt-4 text-center font-mono">{viewingProduct.barcode}</p>
+                        </div>
+                      ) : (
+                        <div className="text-center py-10">
+                          <p className="text-slate-500">No barcode available for this product.</p>
+                          <Button 
+                            className="mt-4"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedTab("info");
+                              setTimeout(() => {
+                                setIsDetailsDialogOpen(false);
+                                handleEditProduct(viewingProduct);
+                              }, 100);
+                            }}
+                          >
+                            Add Barcode
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                    <CardFooter className="flex justify-center border-t pt-4">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => window.open(`/product-barcode/${viewingProduct.id}`, '_blank')}
+                      >
+                        <i className="fas fa-print mr-2"></i> 
+                        Print Barcode
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="inventory" className="mt-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Inventory Status</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                          <div>
+                            <h3 className="text-sm font-medium text-slate-500">Current Stock</h3>
+                            <p className={`text-xl font-semibold ${getStockStatusClass(viewingProduct.currentStock, viewingProduct.minStockLevel)}`}>
+                              {viewingProduct.currentStock} units
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <h3 className="text-sm font-medium text-slate-500">Minimum Stock Level</h3>
+                            <p className="text-xl font-semibold">{viewingProduct.minStockLevel} units</p>
+                          </div>
+                          
+                          {viewingProduct.unitsPerBox && viewingProduct.unitsPerBox > 0 && (
+                            <div>
+                              <h3 className="text-sm font-medium text-slate-500">Box Count</h3>
+                              <p className="text-xl font-semibold">
+                                {Math.floor(viewingProduct.currentStock / viewingProduct.unitsPerBox)}
+                                <span className="text-sm font-normal text-slate-500"> boxes</span>
+                                {viewingProduct.currentStock % viewingProduct.unitsPerBox > 0 && (
+                                  <span className="text-sm font-normal text-slate-500">
+                                    {" + "}{viewingProduct.currentStock % viewingProduct.unitsPerBox} units
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <div className="h-full flex flex-col justify-center">
+                            <div className="mb-2 flex items-center justify-between">
+                              <span className="text-sm font-medium text-slate-700">
+                                Stock Level
+                              </span>
+                              <span className={`text-xs font-semibold ${getStockStatusClass(viewingProduct.currentStock, viewingProduct.minStockLevel)}`}>
+                                {viewingProduct.currentStock === 0 ? "Out of Stock" :
+                                  viewingProduct.currentStock <= viewingProduct.minStockLevel ? "Low Stock" : "In Stock"}
+                              </span>
+                            </div>
+                            <div className="h-4 w-full bg-slate-100 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full ${
+                                  viewingProduct.currentStock === 0 ? "bg-red-500" :
+                                  viewingProduct.currentStock <= viewingProduct.minStockLevel ? "bg-amber-500" : "bg-green-500"
+                                }`}
+                                style={{ 
+                                  width: `${Math.min(100, (viewingProduct.currentStock / (viewingProduct.minStockLevel * 2)) * 100)}%` 
+                                }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="flex justify-between border-t pt-4">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setIsDetailsDialogOpen(false);
+                          handleEditProduct(viewingProduct);
+                        }}
+                      >
+                        <Edit className="mr-2 h-4 w-4" />
+                        Update Inventory
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+              
+              <DialogFooter className="mt-4 gap-2">
+                <Button 
+                  variant="default" 
+                  onClick={() => {
+                    setIsDetailsDialogOpen(false);
+                    handleEditProduct(viewingProduct);
+                  }}
+                >
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Product
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={() => {
+                    setIsDetailsDialogOpen(false);
+                    handleDeleteProduct(viewingProduct.id);
+                  }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Product
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>
