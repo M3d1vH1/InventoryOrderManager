@@ -210,7 +210,10 @@ const PickList = ({ order }: { order: Order }) => {
     <Card>
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
-          <span>Pick List: {order.orderNumber}</span>
+          <div className="flex items-center">
+            <Truck className="h-5 w-5 mr-2 text-blue-500" />
+            <span>Pick List: {order.orderNumber}</span>
+          </div>
           <Badge variant={order.status === 'pending' ? "default" : "outline"} className={order.status !== 'pending' ? "border-green-500 text-green-700 bg-green-50" : ""}>
             {order.status === 'pending' ? "Pending" : "Picked"}
           </Badge>
@@ -222,10 +225,24 @@ const PickList = ({ order }: { order: Order }) => {
       <CardContent>
         <div className="mb-4">
           <div className="flex justify-between mb-1">
-            <span className="text-sm font-medium">Picking Progress</span>
-            <span className="text-sm font-medium">{progress}%</span>
+            <div className="flex items-center">
+              <CheckCircle2 className="h-4 w-4 mr-1 text-slate-500" />
+              <span className="text-sm font-medium">Picking Progress</span>
+            </div>
+            <span className="text-sm font-medium text-blue-600">{progress}%</span>
           </div>
-          <Progress value={progress} className="h-2" />
+          <div className="w-full h-3 bg-blue-100 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-blue-500 transition-all duration-500 ease-in-out"
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+          {progress === 100 && (
+            <p className="text-xs text-green-600 mt-1 flex items-center">
+              <CheckCircle2 className="h-3 w-3 mr-1" />
+              All items have been picked
+            </p>
+          )}
         </div>
         
         {/* Controls */}
@@ -265,13 +282,15 @@ const PickList = ({ order }: { order: Order }) => {
         
         {/* Last scanned barcode notification */}
         {lastScannedBarcode && (
-          <Alert className="mb-4 bg-slate-50">
-            <ScanBarcode className="h-4 w-4" />
-            <AlertTitle>Barcode Scanned</AlertTitle>
-            <AlertDescription>
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div className="flex items-center mb-1">
+              <ScanBarcode className="h-4 w-4 mr-2 text-blue-500" />
+              <p className="text-sm font-medium text-blue-700">Barcode Scanned</p>
+            </div>
+            <p className="text-sm text-blue-600">
               Last scanned: <span className="font-mono font-medium">{lastScannedBarcode}</span>
-            </AlertDescription>
-          </Alert>
+            </p>
+          </div>
         )}
 
         <Table>
@@ -302,19 +321,14 @@ const PickList = ({ order }: { order: Order }) => {
                 <TableCell>
                   <div className="font-medium">{item.product?.name || "Unknown Product"}</div>
                   {item.product?.currentStock !== undefined && item.product.currentStock < item.quantity && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="text-xs text-red-500 mt-1 flex items-center cursor-help">
-                            <Info className="h-3 w-3 mr-1" />
-                            Low stock: {item.product?.currentStock} available
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Ordered quantity ({item.quantity}) exceeds available stock ({item.product?.currentStock}).</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <div className="flex items-center mt-1">
+                      <div className="rounded-full bg-red-100 p-1 mr-1">
+                        <Info className="h-3 w-3 text-red-500" />
+                      </div>
+                      <span className="text-xs text-red-500">
+                        Low stock: {item.product?.currentStock} of {item.quantity} needed
+                      </span>
+                    </div>
                   )}
                 </TableCell>
                 <TableCell>
