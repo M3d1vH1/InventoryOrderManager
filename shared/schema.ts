@@ -38,7 +38,7 @@ export const products = pgTable("products", {
   currentStock: integer("current_stock").notNull().default(0),
   location: text("location"),
   unitsPerBox: integer("units_per_box"),
-  imageUrl: text("image_url"),
+  imagePath: text("image_path"),
 });
 
 export const insertProductSchema = createInsertSchema(products)
