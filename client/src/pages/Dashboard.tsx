@@ -1,23 +1,16 @@
 import { useState, useEffect } from "react";
 import { useSidebar } from "@/context/SidebarContext";
-import { useNotifications } from "@/context/NotificationContext";
 import QuickStats from "@/components/dashboard/QuickStats";
 import RecentOrders from "@/components/dashboard/RecentOrders";
 import InventoryAlerts from "@/components/dashboard/InventoryAlerts";
 import OrderForm from "@/components/orders/OrderForm";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { PlusCircle, Bell } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 
 const Dashboard = () => {
   const { setCurrentPage } = useSidebar();
-  const { playNotificationSound } = useNotifications();
   const [showOrderForm, setShowOrderForm] = useState(false);
-
-  // Function to test notification sounds
-  const testNotificationSound = (type: 'success' | 'warning' | 'error') => {
-    playNotificationSound(type);
-  };
 
   useEffect(() => {
     setCurrentPage("Dashboard");
@@ -41,40 +34,6 @@ const Dashboard = () => {
                 onClick={() => setShowOrderForm(true)}
               >
                 Create Order
-              </Button>
-            </div>
-          </Card>
-          
-          {/* Test Notification Card */}
-          <Card className="p-6 mb-6">
-            <div className="flex items-center mb-4">
-              <Bell className="h-5 w-5 mr-2 text-primary" />
-              <h3 className="text-lg font-semibold">Test Notifications</h3>
-            </div>
-            <div className="space-y-3">
-              <Button 
-                variant="outline" 
-                className="w-full justify-start"
-                onClick={() => testNotificationSound('success')}
-              >
-                <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                Success Sound
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full justify-start"
-                onClick={() => testNotificationSound('warning')}
-              >
-                <div className="w-3 h-3 rounded-full bg-amber-500 mr-2"></div>
-                Warning Sound
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full justify-start"
-                onClick={() => testNotificationSound('error')}
-              >
-                <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                Error Sound
               </Button>
             </div>
           </Card>
