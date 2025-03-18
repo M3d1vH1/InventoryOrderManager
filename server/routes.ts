@@ -549,25 +549,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Test notification endpoint (for development only)
-  app.post('/api/test-notification', async (req, res) => {
-    try {
-      const { type = 'success' } = req.body;
-      
-      // Send test notification via WebSocket
-      broadcastMessage({
-        type: 'orderStatusChange',
-        orderId: 999,
-        orderNumber: 'TEST-123',
-        newStatus: 'shipped',
-        previousStatus: 'picked'
-      });
-      
-      res.json({ success: true, message: 'Test notification sent' });
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
+  // Endpoint handled below
   
   // Advanced Analytics Routes
   app.get('/api/analytics/inventory-trend', async (req, res) => {
