@@ -457,25 +457,17 @@ const Orders = () => {
                   </div>
                 </div>
               ) : (
-                // Edit mode - To be implemented with OrderForm
-                <div className="p-4 bg-slate-50 rounded-md border border-slate-200">
-                  <p className="text-center text-slate-500">
-                    Edit mode is available but form needs to be implemented.
-                  </p>
-                </div>
+                // Edit mode with OrderForm
+                <OrderForm 
+                  initialData={orderDetails}
+                  isEditMode={true}
+                  onCancel={handleCloseDialog}
+                  onSuccess={handleCloseDialog}
+                />
               )}
               
               <DialogFooter className="flex justify-between sm:justify-between gap-2">
-                {isEditMode ? (
-                  <>
-                    <Button variant="outline" onClick={handleCloseDialog}>
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled>
-                      Save Changes
-                    </Button>
-                  </>
-                ) : (
+                {!isEditMode && (
                   <>
                     <div className="flex gap-2">
                       {orderDetails.status === 'pending' && (
