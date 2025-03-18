@@ -205,13 +205,13 @@ const Settings = () => {
                     <select 
                       className="w-40 rounded-md border border-slate-300 py-2 px-3"
                       onChange={(e) => {
-                        i18n.changeLanguage(e.target.value);
+                        // i18n functionality will be implemented later
                         toast({
                           title: "Language Changed",
                           description: "Your language preference has been updated.",
                         });
                       }}
-                      defaultValue={i18n.language}
+                      defaultValue="en"
                     >
                       <option value="en">English</option>
                       <option value="el">Ελληνικά</option>
