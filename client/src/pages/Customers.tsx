@@ -349,7 +349,7 @@ const Customers = () => {
     }
 
     // Transform customers for export (clean up nulls)
-    const exportData = customers.map(customer => ({
+    const customersForExport = customers.map((customer: Customer) => ({
       ID: customer.id,
       Name: customer.name,
       'VAT Number': customer.vatNumber || '',
@@ -366,7 +366,7 @@ const Customers = () => {
       'Created': new Date(customer.createdAt).toLocaleDateString()
     }));
 
-    exportData(exportData, format, 'Customers');
+    exportData(customersForExport, format, 'Customers');
   };
 
   return (
@@ -446,7 +446,7 @@ const Customers = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {customers.map((customer) => (
+                  {customers.map((customer: Customer) => (
                     <TableRow key={customer.id}>
                       <TableCell className="font-medium">{customer.name}</TableCell>
                       <TableCell>{customer.vatNumber || '-'}</TableCell>
