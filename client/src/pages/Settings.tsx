@@ -1,67 +1,28 @@
-import { useEffect, useState } from "react";
-import { useSidebar } from "@/context/SidebarContext";
-import { useNotifications } from "@/context/NotificationContext";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAuth } from "@/context/AuthContext";
-import { Plus, Edit, Trash2, UserCog, UserCheck, UserX } from "lucide-react";
+import { useState } from 'react';
+import { Form } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+import { useNotifications } from '@/context/NotificationContext';
+import { Bell, Cog, Edit, HelpCircle, Plus, Save, Trash2, UserCog, Volume2, VolumeX } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
-const generalSettingsSchema = z.object({
+const companySettingsSchema = z.object({
   companyName: z.string().min(2, { message: "Company name must be at least 2 characters" }),
-  email: z.string().email({ message: "Please enter a valid email address" }),
+  email: z.string().email({ message: "Invalid email address" }),
   phone: z.string().min(10, { message: "Please enter a valid phone number" }),
   address: z.string().min(5, { message: "Address must be at least 5 characters" }),
 });
@@ -74,46 +35,568 @@ const notificationSettingsSchema = z.object({
   weeklyReports: z.boolean(),
 });
 
-const Settings = () => {
-  const { setCurrentPage } = useSidebar();
+// User form schema
+const userFormSchema = z.object({
+  username: z.string().min(3, { message: "Username must be at least 3 characters" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }).optional(),
+  fullName: z.string().min(2, { message: "Full name is required" }),
+  role: z.enum(['admin', 'front_office', 'warehouse']),
+  email: z.string().email({ message: "Invalid email address" }).optional().or(z.literal('')),
+  active: z.boolean().default(true),
+});
+
+type UserType = {
+  id: number;
+  username: string;
+  fullName: string;
+  role: 'admin' | 'front_office' | 'warehouse';
+  email: string | null;
+  active: boolean;
+  createdAt: string;
+  lastLogin: string | null;
+};
+
+// User Management Component
+const UserManagement = () => {
   const { toast } = useToast();
-  const { playNotificationSound } = useNotifications();
-  
-  // Function to test notifications
-  const sendTestNotification = async (type: 'success' | 'warning' | 'error') => {
-    try {
-      await apiRequest('/api/test-notification', {
-        method: 'POST',
-        body: JSON.stringify({ type }),
-      });
-      toast({
-        title: "Test Notification Sent",
-        description: `A test notification with ${type} sound has been sent.`,
-      });
-    } catch (error) {
-      console.error("Error sending test notification:", error);
-      toast({
-        title: "Error",
-        description: "Failed to send test notification.",
-        variant: "destructive",
-      });
-    }
-  };
+  const { hasPermission } = useAuth();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
 
-  useEffect(() => {
-    setCurrentPage("Settings");
-  }, [setCurrentPage]);
-
-  const generalForm = useForm<z.infer<typeof generalSettingsSchema>>({
-    resolver: zodResolver(generalSettingsSchema),
+  // User form with default values
+  const userForm = useForm<z.infer<typeof userFormSchema>>({
+    resolver: zodResolver(userFormSchema),
     defaultValues: {
-      companyName: "Warehouse Pro",
-      email: "info@warehousepro.example",
-      phone: "555-123-4567",
-      address: "123 Main St, Suite 100, Anytown USA 12345",
+      username: '',
+      password: '',
+      fullName: '',
+      role: 'front_office',
+      email: '',
+      active: true,
     },
   });
 
+  // Query to fetch users
+  const { data: users, isLoading, error } = useQuery<UserType[]>({
+    queryKey: ['/api/users']
+  });
+
+  // Create user mutation
+  const createUserMutation = useMutation({
+    mutationFn: async (values: z.infer<typeof userFormSchema>) => {
+      return apiRequest('/api/users', {
+        method: 'POST',
+        body: JSON.stringify(values),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "User Created",
+        description: "The user has been created successfully.",
+      });
+      setIsCreateDialogOpen(false);
+      userForm.reset();
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to create user. " + (error instanceof Error ? error.message : String(error)),
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Update user mutation
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ id, values }: { id: number; values: z.infer<typeof userFormSchema> }) => {
+      return apiRequest(`/api/users/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(values),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "User Updated",
+        description: "The user has been updated successfully.",
+      });
+      setIsEditDialogOpen(false);
+      setSelectedUser(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update user. " + (error instanceof Error ? error.message : String(error)),
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest(`/api/users/${id}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "User Deleted",
+        description: "The user has been deleted successfully.",
+      });
+      setIsDeleteDialogOpen(false);
+      setSelectedUser(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete user. " + (error instanceof Error ? error.message : String(error)),
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Handler for creating a new user
+  const handleCreateUser = (values: z.infer<typeof userFormSchema>) => {
+    createUserMutation.mutate(values);
+  };
+
+  // Handler for editing a user
+  const handleEditUser = (user: UserType) => {
+    setSelectedUser(user);
+    userForm.reset({
+      username: user.username,
+      fullName: user.fullName,
+      role: user.role,
+      email: user.email || '',
+      active: user.active,
+      password: '', // Don't include password in edit form
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  // Handler for updating a user
+  const handleUpdateUser = (values: z.infer<typeof userFormSchema>) => {
+    if (selectedUser) {
+      // Remove password if it's empty string
+      if (values.password === '') {
+        const { password, ...dataWithoutPassword } = values;
+        updateUserMutation.mutate({ id: selectedUser.id, values: dataWithoutPassword });
+      } else {
+        updateUserMutation.mutate({ id: selectedUser.id, values });
+      }
+    }
+  };
+
+  // Handler for deleting a user
+  const handleDeleteUser = (user: UserType) => {
+    setSelectedUser(user);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Handler for confirming user deletion
+  const confirmDeleteUser = () => {
+    if (selectedUser) {
+      deleteUserMutation.mutate(selectedUser.id);
+    }
+  };
+
+  // Helper to get role display name and color
+  const getRoleDisplay = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return { name: 'Admin', bgColor: 'bg-blue-100', textColor: 'text-blue-800' };
+      case 'front_office':
+        return { name: 'Front Office', bgColor: 'bg-purple-100', textColor: 'text-purple-800' };
+      case 'warehouse':
+        return { name: 'Warehouse', bgColor: 'bg-amber-100', textColor: 'text-amber-800' };
+      default:
+        return { name: role, bgColor: 'bg-slate-100', textColor: 'text-slate-800' };
+    }
+  };
+
+  // If user doesn't have admin permission
+  if (!hasPermission(['admin'])) {
+    return (
+      <div className="text-center p-6 space-y-2">
+        <UserCog size={48} className="mx-auto text-slate-400" />
+        <h3 className="text-lg font-medium">Admin Access Required</h3>
+        <p className="text-slate-500">You need administrator privileges to manage users</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">System Users</h3>
+        <Button 
+          size="sm" 
+          onClick={() => {
+            userForm.reset({
+              username: '',
+              password: '',
+              fullName: '',
+              role: 'front_office',
+              email: '',
+              active: true,
+            });
+            setIsCreateDialogOpen(true);
+          }}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add User
+        </Button>
+      </div>
+      
+      {isLoading ? (
+        <div className="text-center p-6">Loading users...</div>
+      ) : error ? (
+        <div className="text-center p-6 text-red-500">Error loading users</div>
+      ) : users && users.length > 0 ? (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="py-3 px-4 text-left text-sm font-medium text-slate-600">Name</th>
+                <th className="py-3 px-4 text-left text-sm font-medium text-slate-600">Username</th>
+                <th className="py-3 px-4 text-left text-sm font-medium text-slate-600">Email</th>
+                <th className="py-3 px-4 text-left text-sm font-medium text-slate-600">Role</th>
+                <th className="py-3 px-4 text-left text-sm font-medium text-slate-600">Status</th>
+                <th className="py-3 px-4 text-left text-sm font-medium text-slate-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {users.map((user) => {
+                const roleDisplay = getRoleDisplay(user.role);
+                return (
+                  <tr key={user.id}>
+                    <td className="py-3 px-4">{user.fullName}</td>
+                    <td className="py-3 px-4">{user.username}</td>
+                    <td className="py-3 px-4">{user.email || "-"}</td>
+                    <td className="py-3 px-4">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${roleDisplay.bgColor} ${roleDisplay.textColor}`}>
+                        {roleDisplay.name}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.active ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'}`}>
+                        {user.active ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex space-x-2">
+                        <Button variant="ghost" size="sm" onClick={() => handleEditUser(user)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteUser(user)} 
+                                disabled={user.username === 'admin'} 
+                                className={user.username === 'admin' ? 'opacity-50 cursor-not-allowed' : ''}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="text-center p-6">No users found</div>
+      )}
+
+      {/* Create User Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Create New User</DialogTitle>
+            <DialogDescription>
+              Add a new user to the system with specific role and permissions.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...userForm}>
+            <form onSubmit={userForm.handleSubmit(handleCreateUser)} className="space-y-4">
+              <FormField
+                control={userForm.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Username</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={userForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={userForm.control}
+                name="fullName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={userForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={userForm.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="front_office">Front Office</SelectItem>
+                        <SelectItem value="warehouse">Warehouse</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={userForm.control}
+                name="active"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <FormLabel>Active</FormLabel>
+                      <FormDescription>
+                        User can log in when active
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="submit" disabled={createUserMutation.isPending}>
+                  {createUserMutation.isPending ? "Creating..." : "Create User"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>
+              Update user information and permissions.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...userForm}>
+            <form onSubmit={userForm.handleSubmit(handleUpdateUser)} className="space-y-4">
+              <FormField
+                control={userForm.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Username</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        disabled={selectedUser?.username === 'admin'}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={userForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="password" 
+                        placeholder="Leave empty to keep current password" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Leave empty to keep the current password
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={userForm.control}
+                name="fullName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={userForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={userForm.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                      disabled={selectedUser?.username === 'admin'}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="front_office">Front Office</SelectItem>
+                        <SelectItem value="warehouse">Warehouse</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={userForm.control}
+                name="active"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <FormLabel>Active</FormLabel>
+                      <FormDescription>
+                        User can log in when active
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={selectedUser?.username === 'admin'}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="submit" disabled={updateUserMutation.isPending}>
+                  {updateUserMutation.isPending ? "Updating..." : "Update User"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the user {selectedUser?.fullName}. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteUser}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleteUserMutation.isPending}
+            >
+              {deleteUserMutation.isPending ? "Deleting..." : "Delete User"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+};
+
+const Settings = () => {
+  const { toast } = useToast();
+  const { playNotificationSound } = useNotifications();
+  const [activeTab, setActiveTab] = useState('general');
+
+  // Company settings form
+  const companyForm = useForm<z.infer<typeof companySettingsSchema>>({
+    resolver: zodResolver(companySettingsSchema),
+    defaultValues: {
+      companyName: "Warehouse Systems Inc.",
+      email: "info@warehousesys.com",
+      phone: "1234567890",
+      address: "123 Inventory Street, Logistics City",
+    },
+  });
+
+  // Notification settings form
   const notificationForm = useForm<z.infer<typeof notificationSettingsSchema>>({
     resolver: zodResolver(notificationSettingsSchema),
     defaultValues: {
@@ -125,53 +608,93 @@ const Settings = () => {
     },
   });
 
-  const onGeneralSubmit = (values: z.infer<typeof generalSettingsSchema>) => {
-    toast({
-      title: "Settings updated",
-      description: "Your general settings have been updated successfully.",
-    });
+  // Handle company settings form submission
+  const onCompanySubmit = (values: z.infer<typeof companySettingsSchema>) => {
     console.log(values);
+    toast({
+      title: "Settings Updated",
+      description: "Company settings have been saved.",
+    });
   };
 
+  // Handle notification settings form submission
   const onNotificationSubmit = (values: z.infer<typeof notificationSettingsSchema>) => {
-    toast({
-      title: "Notification preferences updated",
-      description: "Your notification preferences have been updated successfully.",
-    });
     console.log(values);
+    toast({
+      title: "Settings Updated",
+      description: "Notification settings have been saved.",
+    });
+  };
+
+  // Helper function to send a test notification
+  const sendTestNotification = (type: 'success' | 'warning' | 'error' = 'success') => {
+    const messages = {
+      success: "This is a test success notification.",
+      warning: "This is a test warning notification.",
+      error: "This is a test error notification.",
+    };
+    
+    playNotificationSound(type);
+    
+    toast({
+      title: "Test Notification",
+      description: messages[type],
+      variant: type === 'error' ? 'destructive' : 'default',
+    });
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Settings</h1>
-      </div>
-
-      <Tabs defaultValue="general">
+    <div className="container mx-auto py-6">
+      <h1 className="text-3xl font-bold mb-6">Settings</h1>
+      
+      <Tabs defaultValue="general" onValueChange={setActiveTab} value={activeTab}>
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="users">Users & Permissions</TabsTrigger>
+          <TabsTrigger value="general">
+            <Cog className="h-4 w-4 mr-2" />
+            General
+          </TabsTrigger>
+          <TabsTrigger value="notifications">
+            <Bell className="h-4 w-4 mr-2" />
+            Notifications
+          </TabsTrigger>
+          <TabsTrigger value="users">
+            <UserCog className="h-4 w-4 mr-2" />
+            Users & Permissions
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="general" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>General Settings</CardTitle>
+              <CardTitle>Company Information</CardTitle>
               <CardDescription>
-                Manage your company information and system settings
+                Update your company details and preferences
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Form {...generalForm}>
-                <form onSubmit={generalForm.handleSubmit(onGeneralSubmit)} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Form {...companyForm}>
+                <form onSubmit={companyForm.handleSubmit(onCompanySubmit)} className="space-y-6">
+                  <FormField
+                    control={companyForm.control}
+                    name="companyName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Company Name</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
-                      control={generalForm.control}
-                      name="companyName"
+                      control={companyForm.control}
+                      name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Company Name</FormLabel>
+                          <FormLabel>Email</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -181,21 +704,7 @@ const Settings = () => {
                     />
                     
                     <FormField
-                      control={generalForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input {...field} type="email" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={generalForm.control}
+                      control={companyForm.control}
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
@@ -210,21 +719,24 @@ const Settings = () => {
                   </div>
                   
                   <FormField
-                    control={generalForm.control}
+                    control={companyForm.control}
                     name="address"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Address</FormLabel>
                         <FormControl>
-                          <Textarea {...field} />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   
-                  <div>
-                    <Button type="submit">Save Changes</Button>
+                  <div className="flex justify-end">
+                    <Button type="submit">
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Changes
+                    </Button>
                   </div>
                 </form>
               </Form>
@@ -232,62 +744,32 @@ const Settings = () => {
               <Separator className="my-6" />
               
               <div className="space-y-4">
-                <h3 className="text-lg font-medium">System Preferences</h3>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-medium">System Information</h3>
+                    <p className="text-sm text-slate-500">Details about your current installation</p>
+                  </div>
+                </div>
                 
-                <div className="grid gap-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Low Stock Threshold Percentage</h4>
-                      <p className="text-sm text-slate-500">Set the default percentage for low stock alerts</p>
-                    </div>
-                    <Input
-                      type="number"
-                      className="w-24"
-                      min={1}
-                      max={100}
-                      defaultValue={20}
-                    />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-slate-50 rounded-md">
+                    <p className="text-sm font-medium">Software Version</p>
+                    <p className="text-sm text-slate-500">1.0.0</p>
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Language Settings</h4>
-                      <p className="text-sm text-slate-500">Choose your preferred language</p>
-                    </div>
-                    <select 
-                      className="w-40 rounded-md border border-slate-300 py-2 px-3"
-                      onChange={(e) => {
-                        // i18n functionality will be implemented later
-                        toast({
-                          title: "Language Changed",
-                          description: "Your language preference has been updated.",
-                        });
-                      }}
-                      defaultValue="en"
-                    >
-                      <option value="en">English</option>
-                      <option value="el">Ελληνικά</option>
-                    </select>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Default Order Status</h4>
-                      <p className="text-sm text-slate-500">Set the default status for new orders</p>
-                    </div>
-                    <select className="w-40 rounded-md border border-slate-300 py-2 px-3">
-                      <option value="pending">Pending</option>
-                      <option value="processing">Processing</option>
-                      <option value="shipped">Shipped</option>
-                    </select>
+                  <div className="p-4 bg-slate-50 rounded-md">
+                    <p className="text-sm font-medium">Database</p>
+                    <p className="text-sm text-slate-500">PostgreSQL</p>
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Enable Barcode Scanning</h4>
-                      <p className="text-sm text-slate-500">Allow warehouse staff to use barcode scanners</p>
-                    </div>
-                    <Switch defaultChecked />
+                  <div className="p-4 bg-slate-50 rounded-md">
+                    <p className="text-sm font-medium">Last Backup</p>
+                    <p className="text-sm text-slate-500">Never</p>
+                  </div>
+                  
+                  <div className="p-4 bg-slate-50 rounded-md">
+                    <p className="text-sm font-medium">Server Time</p>
+                    <p className="text-sm text-slate-500">{new Date().toLocaleString()}</p>
                   </div>
                 </div>
               </div>
@@ -298,26 +780,26 @@ const Settings = () => {
         <TabsContent value="notifications" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Notification Settings</CardTitle>
+              <CardTitle>Notification Preferences</CardTitle>
               <CardDescription>
-                Manage your notification preferences
+                Configure how and when you receive notifications
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...notificationForm}>
                 <form onSubmit={notificationForm.handleSubmit(onNotificationSubmit)} className="space-y-6">
                   <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Email Notifications</h3>
+                    <h3 className="text-lg font-medium">System Alerts</h3>
                     
                     <FormField
                       control={notificationForm.control}
                       name="lowStockAlerts"
                       render={({ field }) => (
-                        <FormItem className="flex justify-between items-center">
-                          <div>
-                            <FormLabel>Low Stock Alerts</FormLabel>
+                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Low Stock Alerts</FormLabel>
                             <FormDescription>
-                              Receive alerts when items fall below minimum stock level
+                              Receive notifications when products are running low
                             </FormDescription>
                           </div>
                           <FormControl>
@@ -330,13 +812,15 @@ const Settings = () => {
                       )}
                     />
                     
+                    <h3 className="text-lg font-medium pt-4">Order Notifications</h3>
+                    
                     <FormField
                       control={notificationForm.control}
                       name="orderConfirmation"
                       render={({ field }) => (
-                        <FormItem className="flex justify-between items-center">
-                          <div>
-                            <FormLabel>Order Confirmations</FormLabel>
+                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Order Confirmations</FormLabel>
                             <FormDescription>
                               Receive notifications when new orders are placed
                             </FormDescription>
@@ -355,11 +839,11 @@ const Settings = () => {
                       control={notificationForm.control}
                       name="shippingUpdates"
                       render={({ field }) => (
-                        <FormItem className="flex justify-between items-center">
-                          <div>
-                            <FormLabel>Shipping Updates</FormLabel>
+                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Shipping Updates</FormLabel>
                             <FormDescription>
-                              Receive notifications when orders are shipped
+                              Receive notifications when order status changes
                             </FormDescription>
                           </div>
                           <FormControl>
@@ -371,22 +855,18 @@ const Settings = () => {
                         </FormItem>
                       )}
                     />
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Report Scheduling</h3>
+                    
+                    <h3 className="text-lg font-medium pt-4">Reports</h3>
                     
                     <FormField
                       control={notificationForm.control}
                       name="dailyReports"
                       render={({ field }) => (
-                        <FormItem className="flex justify-between items-center">
-                          <div>
-                            <FormLabel>Daily Reports</FormLabel>
+                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Daily Reports</FormLabel>
                             <FormDescription>
-                              Receive daily inventory and order reports
+                              Receive daily summary reports
                             </FormDescription>
                           </div>
                           <FormControl>
@@ -403,9 +883,9 @@ const Settings = () => {
                       control={notificationForm.control}
                       name="weeklyReports"
                       render={({ field }) => (
-                        <FormItem className="flex justify-between items-center">
-                          <div>
-                            <FormLabel>Weekly Reports</FormLabel>
+                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Weekly Reports</FormLabel>
                             <FormDescription>
                               Receive weekly summary reports
                             </FormDescription>
@@ -421,8 +901,11 @@ const Settings = () => {
                     />
                   </div>
                   
-                  <div>
-                    <Button type="submit">Save Preferences</Button>
+                  <div className="flex justify-end">
+                    <Button type="submit">
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Preferences
+                    </Button>
                   </div>
                 </form>
               </Form>
@@ -430,12 +913,20 @@ const Settings = () => {
               <Separator className="my-6" />
               
               <div className="space-y-4">
-                <h3 className="text-lg font-medium">Test Notification Sounds</h3>
-                <p className="text-sm text-slate-500">
-                  Test different notification sounds to ensure they are working correctly
-                </p>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-medium">Notification Sounds</h3>
+                    <p className="text-sm text-slate-500">Test and manage notification sounds</p>
+                  </div>
+                  <div>
+                    <Button variant="outline" size="sm">
+                      <Volume2 className="h-4 w-4 mr-2" />
+                      Enable Sounds
+                    </Button>
+                  </div>
+                </div>
                 
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-2">
                   <Button 
                     variant="outline"
                     onClick={() => {
@@ -495,164 +986,87 @@ const Settings = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              <UserManagement />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="help" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Help & Support</CardTitle>
+              <CardDescription>
+                Get help and support for using the system
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-medium">System Users</h3>
-                  <Button size="sm">
-                    <i className="fas fa-plus mr-2"></i>
-                    Add User
-                  </Button>
-                </div>
-                
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-slate-200">
-                    <thead className="bg-slate-50">
-                      <tr>
-                        <th className="py-3 px-4 text-left text-sm font-medium text-slate-600">Name</th>
-                        <th className="py-3 px-4 text-left text-sm font-medium text-slate-600">Email</th>
-                        <th className="py-3 px-4 text-left text-sm font-medium text-slate-600">Role</th>
-                        <th className="py-3 px-4 text-left text-sm font-medium text-slate-600">Status</th>
-                        <th className="py-3 px-4 text-left text-sm font-medium text-slate-600">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200">
-                      <tr>
-                        <td className="py-3 px-4">John Smith</td>
-                        <td className="py-3 px-4">john@example.com</td>
-                        <td className="py-3 px-4">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            Admin
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Active
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex space-x-2">
-                            <button className="text-slate-600 hover:text-primary">
-                              <i className="fas fa-edit"></i>
-                            </button>
-                            <button className="text-slate-600 hover:text-red-500">
-                              <i className="fas fa-trash"></i>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="py-3 px-4">Sarah Johnson</td>
-                        <td className="py-3 px-4">sarah@example.com</td>
-                        <td className="py-3 px-4">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            Manager
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Active
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex space-x-2">
-                            <button className="text-slate-600 hover:text-primary">
-                              <i className="fas fa-edit"></i>
-                            </button>
-                            <button className="text-slate-600 hover:text-red-500">
-                              <i className="fas fa-trash"></i>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="py-3 px-4">Robert Lee</td>
-                        <td className="py-3 px-4">robert@example.com</td>
-                        <td className="py-3 px-4">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                            Staff
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
-                            Inactive
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex space-x-2">
-                            <button className="text-slate-600 hover:text-primary">
-                              <i className="fas fa-edit"></i>
-                            </button>
-                            <button className="text-slate-600 hover:text-red-500">
-                              <i className="fas fa-trash"></i>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">
+                        Documentation
+                      </CardTitle>
+                      <HelpCircle className="h-4 w-4 text-slate-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-sm">
+                        <p>Access the complete system documentation</p>
+                        <Button variant="link" className="p-0 h-auto mt-2">
+                          View Documentation
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">
+                        Support
+                      </CardTitle>
+                      <HelpCircle className="h-4 w-4 text-slate-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-sm">
+                        <p>Contact our support team for assistance</p>
+                        <Button variant="link" className="p-0 h-auto mt-2">
+                          Contact Support
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
                 
                 <Separator />
                 
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Role Permissions</h3>
+                <div>
+                  <h3 className="text-lg font-medium mb-4">Frequently Asked Questions</h3>
                   
-                  <Card className="border border-slate-200">
-                    <CardHeader className="px-4 py-3">
-                      <CardTitle className="text-base">Admin</CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-4 py-3 pt-0">
-                      <p className="text-sm text-slate-500 mb-2">Full access to all system features and settings</p>
-                      <div className="flex flex-wrap gap-1">
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-800">Dashboard</span>
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-800">Products</span>
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-800">Orders</span>
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-800">Inventory</span>
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-800">Reports</span>
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-800">Settings</span>
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-800">Users</span>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="px-4 py-3 border-t border-slate-200 flex justify-end">
-                      <Button size="sm" variant="outline">Edit Role</Button>
-                    </CardFooter>
-                  </Card>
-                  
-                  <Card className="border border-slate-200">
-                    <CardHeader className="px-4 py-3">
-                      <CardTitle className="text-base">Manager</CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-4 py-3 pt-0">
-                      <p className="text-sm text-slate-500 mb-2">Access to manage inventory and orders, view reports</p>
-                      <div className="flex flex-wrap gap-1">
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-800">Dashboard</span>
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-800">Products</span>
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-800">Orders</span>
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-800">Inventory</span>
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-800">Reports</span>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="px-4 py-3 border-t border-slate-200 flex justify-end">
-                      <Button size="sm" variant="outline">Edit Role</Button>
-                    </CardFooter>
-                  </Card>
-                  
-                  <Card className="border border-slate-200">
-                    <CardHeader className="px-4 py-3">
-                      <CardTitle className="text-base">Staff</CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-4 py-3 pt-0">
-                      <p className="text-sm text-slate-500 mb-2">Limited access to process orders and update inventory</p>
-                      <div className="flex flex-wrap gap-1">
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-800">Dashboard</span>
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-800">Orders</span>
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-800">Inventory</span>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="px-4 py-3 border-t border-slate-200 flex justify-end">
-                      <Button size="sm" variant="outline">Edit Role</Button>
-                    </CardFooter>
-                  </Card>
+                  <div className="space-y-4">
+                    <div className="border rounded-md p-4">
+                      <h4 className="font-medium">How do I create a new order?</h4>
+                      <p className="text-sm text-slate-500 mt-1">
+                        Navigate to the Orders page and click on the "Create Order" button. 
+                        Fill in the required information and click "Save".
+                      </p>
+                    </div>
+                    
+                    <div className="border rounded-md p-4">
+                      <h4 className="font-medium">How can I update product inventory?</h4>
+                      <p className="text-sm text-slate-500 mt-1">
+                        Go to the Products page, find the product you want to update, 
+                        and click the edit button. Update the current stock and save changes.
+                      </p>
+                    </div>
+                    
+                    <div className="border rounded-md p-4">
+                      <h4 className="font-medium">Can I export reports?</h4>
+                      <p className="text-sm text-slate-500 mt-1">
+                        Yes, on the Reports page you can export data in various formats 
+                        including CSV, Excel, and PDF.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
