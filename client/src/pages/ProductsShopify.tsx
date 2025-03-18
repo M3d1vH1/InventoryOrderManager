@@ -19,21 +19,9 @@ import {
   Upload,
   Image,
   X,
-  Search,
-  Plus,
-  Filter,
-  ArrowLeft,
-  ArrowRight
+  Plus
 } from "lucide-react";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -119,6 +107,9 @@ const Products = () => {
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState("info");
 
+  // State to track file uploads
+  const [imageFile, setImageFile] = useState<File | null>(null);
+
   useEffect(() => {
     setCurrentPage("Products");
     
@@ -176,9 +167,6 @@ const Products = () => {
     }
   }, [editingProduct, form]);
 
-  // State to track file uploads
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  
   const createProductMutation = useMutation({
     mutationFn: async (values: ProductFormValues) => {
       // If there's an image file, use FormData to handle multipart/form-data
@@ -388,7 +376,7 @@ const Products = () => {
             }}
             className="bg-green-600 hover:bg-green-700 py-2 px-4 h-auto"
           >
-            <i className="fas fa-plus mr-2"></i> Add product
+            <Plus className="mr-2 h-4 w-4" /> Add product
           </Button>
         </div>
 
@@ -475,7 +463,7 @@ const Products = () => {
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {filteredProducts.map((product) => (
+                {filteredProducts && filteredProducts.map((product) => (
                   <div 
                     key={product.id} 
                     className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer"
@@ -579,7 +567,7 @@ const Products = () => {
               
               <div className="mt-6 border-t border-slate-200 pt-5 text-sm flex items-center justify-between">
                 <span className="text-slate-600">
-                  Showing {filteredProducts.length} of {products?.length} products
+                  Showing {filteredProducts ? filteredProducts.length : 0} of {products?.length || 0} products
                 </span>
                 <div className="flex items-center space-x-2">
                   <button className="px-3 py-1 rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50" disabled>
@@ -595,6 +583,7 @@ const Products = () => {
         </div>
       </div>
 
+      {/* Add/Edit Product Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[720px] p-0 overflow-hidden">
           <div className="flex h-full">
@@ -677,182 +666,183 @@ const Products = () => {
             
             {/* Main content area */}
             <div className="w-2/3 max-h-[80vh] overflow-y-auto">
-              <DialogHeader className="p-6 pb-0">
+              <DialogHeader className="p-6 pb-2">
                 <DialogTitle className="text-xl">{editingProduct ? "Edit Product" : "Add New Product"}</DialogTitle>
                 <DialogDescription>Fill in the product details below.</DialogDescription>
               </DialogHeader>
               
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-6">
-              
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Product Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="sku"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>SKU</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={!!editingProduct} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="widgets">Widgets</SelectItem>
-                        <SelectItem value="connectors">Connectors</SelectItem>
-                        <SelectItem value="brackets">Brackets</SelectItem>
-                        <SelectItem value="mounts">Mounts</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="barcode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Barcode</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Storage Location</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="e.g., Aisle 5, Bin B3" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 pt-2 space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Product Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="sku"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>SKU</FormLabel>
+                          <FormControl>
+                            <Input {...field} disabled={!!editingProduct} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Category</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="widgets">Widgets</SelectItem>
+                            <SelectItem value="connectors">Connectors</SelectItem>
+                            <SelectItem value="brackets">Brackets</SelectItem>
+                            <SelectItem value="mounts">Mounts</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="barcode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Barcode</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="location"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Storage Location</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="e.g., Aisle 5, Bin B3" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="minStockLevel"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Minimum Stock Level</FormLabel>
-                      <FormControl>
-                        <Input type="number" min="0" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="currentStock"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Current Stock</FormLabel>
-                      <FormControl>
-                        <Input type="number" min="0" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="unitsPerBox"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Units Per Box</FormLabel>
-                      <FormControl>
-                        <Input type="number" min="0" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit"
-                  disabled={createProductMutation.isPending || updateProductMutation.isPending}
-                >
-                  {(createProductMutation.isPending || updateProductMutation.isPending) 
-                    ? "Saving..." 
-                    : editingProduct ? "Update Product" : "Add Product"
-                  }
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="minStockLevel"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Minimum Stock Level</FormLabel>
+                          <FormControl>
+                            <Input type="number" min="0" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="currentStock"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Current Stock</FormLabel>
+                          <FormControl>
+                            <Input type="number" min="0" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="unitsPerBox"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Units Per Box</FormLabel>
+                          <FormControl>
+                            <Input type="number" min="0" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <DialogFooter>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setIsDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit"
+                      disabled={createProductMutation.isPending || updateProductMutation.isPending}
+                    >
+                      {(createProductMutation.isPending || updateProductMutation.isPending) 
+                        ? "Saving..." 
+                        : editingProduct ? "Update Product" : "Add Product"
+                      }
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -1035,50 +1025,72 @@ const Products = () => {
                         </div>
                         
                         <div>
-                          <div className="h-full flex flex-col justify-center">
-                            <div className="mb-2 flex items-center justify-between">
-                              <span className="text-sm font-medium text-slate-700">
-                                Stock Level
+                          <div className="h-32 flex flex-col justify-center">
+                            <div className={`p-4 rounded-lg flex flex-col items-center justify-center ${
+                              viewingProduct.currentStock === 0
+                                ? "bg-red-50 border border-red-100"
+                                : viewingProduct.currentStock <= viewingProduct.minStockLevel
+                                  ? "bg-amber-50 border border-amber-100"
+                                  : "bg-green-50 border border-green-100"
+                            }`}>
+                              <span className={`text-lg font-medium ${
+                                viewingProduct.currentStock === 0
+                                  ? "text-red-700"
+                                  : viewingProduct.currentStock <= viewingProduct.minStockLevel
+                                    ? "text-amber-700"
+                                    : "text-green-700"
+                              }`}>
+                                {viewingProduct.currentStock === 0
+                                  ? "Out of Stock"
+                                  : viewingProduct.currentStock <= viewingProduct.minStockLevel
+                                    ? "Low Stock"
+                                    : "In Stock"
+                                }
                               </span>
-                              <span className={`text-xs font-semibold ${getStockStatusClass(viewingProduct.currentStock, viewingProduct.minStockLevel)}`}>
-                                {viewingProduct.currentStock === 0 ? "Out of Stock" :
-                                  viewingProduct.currentStock <= viewingProduct.minStockLevel ? "Low Stock" : "In Stock"}
-                              </span>
+                              <p className={`text-sm mt-1 ${
+                                viewingProduct.currentStock === 0
+                                  ? "text-red-600"
+                                  : viewingProduct.currentStock <= viewingProduct.minStockLevel
+                                    ? "text-amber-600"
+                                    : "text-green-600"
+                              }`}>
+                                {viewingProduct.currentStock === 0
+                                  ? "Restock needed immediately"
+                                  : viewingProduct.currentStock <= viewingProduct.minStockLevel
+                                    ? `${viewingProduct.minStockLevel - viewingProduct.currentStock} more units needed to reach minimum stock level`
+                                    : `${viewingProduct.currentStock - viewingProduct.minStockLevel} units above minimum stock level`
+                                }
+                              </p>
                             </div>
-                            <div className="h-4 w-full bg-slate-100 rounded-full overflow-hidden">
-                              <div 
-                                className={`h-full ${
-                                  viewingProduct.currentStock === 0 ? "bg-red-500" :
-                                  viewingProduct.currentStock <= viewingProduct.minStockLevel ? "bg-amber-500" : "bg-green-500"
-                                }`}
-                                style={{ 
-                                  width: `${Math.min(100, (viewingProduct.currentStock / (viewingProduct.minStockLevel * 2)) * 100)}%` 
-                                }}
-                              ></div>
-                            </div>
+                          </div>
+                          <div className="mt-4 flex justify-end">
+                            <Button 
+                              variant="outline" 
+                              className="mr-2"
+                              onClick={() => {
+                                setIsDetailsDialogOpen(false);
+                                handleEditProduct(viewingProduct);
+                              }}
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Update Stock
+                            </Button>
                           </div>
                         </div>
                       </div>
                     </CardContent>
-                    <CardFooter className="flex justify-between border-t pt-4">
-                      <Button 
-                        variant="outline" 
-                        onClick={() => {
-                          setIsDetailsDialogOpen(false);
-                          handleEditProduct(viewingProduct);
-                        }}
-                      >
-                        <Edit className="mr-2 h-4 w-4" />
-                        Update Inventory
-                      </Button>
-                    </CardFooter>
                   </Card>
                 </TabsContent>
               </Tabs>
               
-              <DialogFooter className="mt-4 gap-2">
+              <div className="flex justify-between mt-6">
                 <Button 
-                  variant="default" 
+                  variant="outline" 
+                  onClick={() => setIsDetailsDialogOpen(false)}
+                >
+                  Close
+                </Button>
+                <Button
                   onClick={() => {
                     setIsDetailsDialogOpen(false);
                     handleEditProduct(viewingProduct);
@@ -1087,17 +1099,7 @@ const Products = () => {
                   <Edit className="mr-2 h-4 w-4" />
                   Edit Product
                 </Button>
-                <Button 
-                  variant="destructive" 
-                  onClick={() => {
-                    setIsDetailsDialogOpen(false);
-                    handleDeleteProduct(viewingProduct.id);
-                  }}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete Product
-                </Button>
-              </DialogFooter>
+              </div>
             </>
           )}
         </DialogContent>

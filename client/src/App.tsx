@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import Orders from "@/pages/Orders";
-import Products from "@/pages/Products";
+import ProductsShopify from "@/pages/ProductsShopify";
 import Inventory from "@/pages/Inventory";
 import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
@@ -22,7 +22,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/orders" component={Orders} />
-      <Route path="/products" component={Products} />
+      <Route path="/products" component={ProductsShopify} />
       <Route path="/customers" component={Customers} />
       <Route path="/inventory" component={Inventory} />
       <Route path="/reports" component={Reports} />
