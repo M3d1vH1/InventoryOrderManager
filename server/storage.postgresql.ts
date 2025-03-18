@@ -35,6 +35,36 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
   
+  async updateUserLastLogin(id: number): Promise<User | undefined> {
+    const [user] = await this.db
+      .update(users)
+      .set({ lastLogin: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+  
+  async getAllUsers(): Promise<User[]> {
+    return await this.db.select().from(users);
+  }
+  
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    const [user] = await this.db
+      .update(users)
+      .set(userData)
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+  
+  async deleteUser(id: number): Promise<boolean> {
+    const result = await this.db
+      .delete(users)
+      .where(eq(users.id, id))
+      .returning({ id: users.id });
+    return result.length > 0;
+  }
+  
   // Product methods
   async getProduct(id: number): Promise<Product | undefined> {
     const result = await this.db.select().from(products).where(eq(products.id, id));

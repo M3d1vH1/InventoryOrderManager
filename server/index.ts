@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import fileUpload from "express-fileupload";
 import path from "path";
+import { setupAuth } from "./auth";
 
 const app = express();
 app.use(express.json());
@@ -57,6 +58,10 @@ app.use((req, res, next) => {
   // Attempt to switch to database storage
   // This will fall back to in-memory storage if database connection fails
   await useDatabase();
+  
+  // Setup authentication system
+  setupAuth(app);
+  log('Authentication system initialized', 'auth');
   
   const server = await registerRoutes(app);
 
