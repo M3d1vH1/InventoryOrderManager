@@ -684,7 +684,7 @@ export class DatabaseStorage implements IStorage {
       totalValue += productValue;
       
       const currentData = categoryData.get(categoryName) || { productCount: 0, totalValue: 0 };
-      categoryData.set(category, {
+      categoryData.set(categoryName, {
         productCount: currentData.productCount + 1,
         totalValue: currentData.totalValue + productValue
       });

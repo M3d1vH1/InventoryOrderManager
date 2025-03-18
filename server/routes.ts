@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from 'zod';
-import { insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCustomerSchema, insertUserSchema } from "@shared/schema";
+import { insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCustomerSchema, insertUserSchema, insertCategorySchema } from "@shared/schema";
 import { isAuthenticated, hasRole } from "./auth";
 import { hashPassword } from "./auth";
 import { UploadedFile } from "express-fileupload";
