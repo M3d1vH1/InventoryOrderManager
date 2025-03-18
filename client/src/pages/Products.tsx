@@ -727,7 +727,7 @@ const Products = () => {
                     <FormField
                       control={form.control}
                       name="name"
-                      render={({ field }) => (
+                      render={({ field }: { field: any }) => (
                         <FormItem>
                           <FormLabel>Product Name</FormLabel>
                           <FormControl>
@@ -741,7 +741,7 @@ const Products = () => {
                     <FormField
                       control={form.control}
                       name="sku"
-                      render={({ field }) => (
+                      render={({ field }: { field: any }) => (
                         <FormItem>
                           <FormLabel>SKU</FormLabel>
                           <FormControl>
@@ -757,7 +757,7 @@ const Products = () => {
                     <FormField
                       control={form.control}
                       name="category"
-                      render={({ field }) => (
+                      render={({ field }: { field: any }) => (
                         <FormItem>
                           <FormLabel>Category</FormLabel>
                           <Select 
@@ -786,7 +786,7 @@ const Products = () => {
                       <FormField
                         control={form.control}
                         name="barcode"
-                        render={({ field }) => (
+                        render={({ field }: { field: any }) => (
                           <FormItem className="flex-1">
                             <FormLabel>Barcode</FormLabel>
                             <div className="flex gap-2">
@@ -809,7 +809,7 @@ const Products = () => {
                   <FormField
                     control={form.control}
                     name="description"
-                    render={({ field }) => (
+                    render={({ field }: { field: any }) => (
                       <FormItem>
                         <FormLabel>Description</FormLabel>
                         <FormControl>
@@ -824,7 +824,7 @@ const Products = () => {
                     <FormField
                       control={form.control}
                       name="currentStock"
-                      render={({ field }) => (
+                      render={({ field }: { field: any }) => (
                         <FormItem>
                           <FormLabel>Current Stock</FormLabel>
                           <FormControl>
@@ -838,7 +838,7 @@ const Products = () => {
                     <FormField
                       control={form.control}
                       name="minStockLevel"
-                      render={({ field }) => (
+                      render={({ field }: { field: any }) => (
                         <FormItem>
                           <FormLabel>Min Stock Level</FormLabel>
                           <FormControl>
@@ -857,7 +857,7 @@ const Products = () => {
                     <FormField
                       control={form.control}
                       name="location"
-                      render={({ field }) => (
+                      render={({ field }: { field: any }) => (
                         <FormItem>
                           <FormLabel>Storage Location</FormLabel>
                           <FormControl>
@@ -874,7 +874,7 @@ const Products = () => {
                     <FormField
                       control={form.control}
                       name="unitsPerBox"
-                      render={({ field }) => (
+                      render={({ field }: { field: any }) => (
                         <FormItem>
                           <FormLabel>Units per Box</FormLabel>
                           <FormControl>
