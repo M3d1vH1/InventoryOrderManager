@@ -7,7 +7,8 @@ import {
   orders, type Order, type InsertOrder,
   orderItems, type OrderItem, type InsertOrderItem,
   customers, type Customer, type InsertCustomer,
-  shippingDocuments, type ShippingDocument, type InsertShippingDocument
+  shippingDocuments, type ShippingDocument, type InsertShippingDocument,
+  categories, type Category, type InsertCategory
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { log } from './vite';
@@ -65,6 +66,40 @@ export class DatabaseStorage implements IStorage {
     return result.length > 0;
   }
   
+  // Category methods
+  async getCategory(id: number): Promise<Category | undefined> {
+    const result = await this.db.select().from(categories).where(eq(categories.id, id));
+    return result[0];
+  }
+  
+  async getCategoryByName(name: string): Promise<Category | undefined> {
+    const result = await this.db.select().from(categories).where(eq(categories.name, name));
+    return result[0];
+  }
+  
+  async getAllCategories(): Promise<Category[]> {
+    return await this.db.select().from(categories);
+  }
+  
+  async createCategory(insertCategory: InsertCategory): Promise<Category> {
+    const [category] = await this.db.insert(categories).values(insertCategory).returning();
+    return category;
+  }
+  
+  async updateCategory(id: number, categoryUpdate: Partial<InsertCategory>): Promise<Category | undefined> {
+    const [updatedCategory] = await this.db
+      .update(categories)
+      .set(categoryUpdate)
+      .where(eq(categories.id, id))
+      .returning();
+    return updatedCategory;
+  }
+  
+  async deleteCategory(id: number): Promise<boolean> {
+    const result = await this.db.delete(categories).where(eq(categories.id, id)).returning();
+    return result.length > 0;
+  }
+
   // Product methods
   async getProduct(id: number): Promise<Product | undefined> {
     const result = await this.db.select().from(products).where(eq(products.id, id));
@@ -628,7 +663,14 @@ export class DatabaseStorage implements IStorage {
     const averagePrice = 35.99;
     
     const allProducts = await this.getAllProducts();
+    const allCategories = await this.getAllCategories();
     let totalValue = 0;
+    
+    // Create a map of categoryId to category name
+    const categoryMap = new Map<number, string>();
+    for (const category of allCategories) {
+      categoryMap.set(category.id, category.name);
+    }
     
     // Group products by category
     const categoryData = new Map<string, { 
@@ -637,11 +679,11 @@ export class DatabaseStorage implements IStorage {
     }>();
     
     for (const product of allProducts) {
-      const category = product.category;
+      const categoryName = categoryMap.get(product.categoryId) || 'Uncategorized';
       const productValue = product.currentStock * averagePrice;
       totalValue += productValue;
       
-      const currentData = categoryData.get(category) || { productCount: 0, totalValue: 0 };
+      const currentData = categoryData.get(categoryName) || { productCount: 0, totalValue: 0 };
       categoryData.set(category, {
         productCount: currentData.productCount + 1,
         totalValue: currentData.totalValue + productValue
