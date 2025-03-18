@@ -37,11 +37,25 @@ import {
 } from "@/components/ui/dialog";
 import OrderForm from "@/components/orders/OrderForm";
 
+interface Product {
+  id: number;
+  name: string;
+  sku: string;
+  barcode?: string;
+  category: string;
+  description?: string;
+  minStockLevel: number;
+  currentStock: number;
+  location?: string;
+  unitsPerBox?: number;
+}
+
 interface OrderItem {
   id: number;
   orderId: number;
   productId: number;
   quantity: number;
+  product?: Product;
 }
 
 interface Order {
@@ -132,14 +146,34 @@ const Orders = () => {
     return matchesSearch && matchesStatus;
   });
 
-  // Fetch specific order details
-  const { data: orderDetails } = useQuery<Order>({
+  // Fetch specific order details with product details
+  const { data: orderDetails, isLoading: isOrderDetailsLoading } = useQuery<Order>({
     queryKey: ['/api/orders', selectedOrder?.id],
     enabled: !!selectedOrder,
     queryFn: async () => {
       const response = await apiRequest({
         url: `/api/orders/${selectedOrder?.id}`,
       });
+      
+      // If order has items, fetch product details for each item
+      if (response.items && response.items.length > 0) {
+        const itemsWithProducts = await Promise.all(
+          response.items.map(async (item: OrderItem) => {
+            try {
+              const productData = await apiRequest<Product>({
+                url: `/api/products/${item.productId}`,
+              });
+              return { ...item, product: productData };
+            } catch (error) {
+              console.error(`Failed to fetch product ${item.productId}:`, error);
+              return item;
+            }
+          })
+        );
+        
+        return { ...response, items: itemsWithProducts };
+      }
+      
       return response;
     },
   });
@@ -376,20 +410,43 @@ const Orders = () => {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Product</TableHead>
+                            <TableHead>SKU</TableHead>
                             <TableHead>Quantity</TableHead>
+                            <TableHead>Location</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {orderDetails.items && orderDetails.items.length > 0 ? (
+                          {isOrderDetailsLoading ? (
+                            <TableRow>
+                              <TableCell colSpan={4} className="text-center py-4">
+                                Loading order items...
+                              </TableCell>
+                            </TableRow>
+                          ) : orderDetails.items && orderDetails.items.length > 0 ? (
                             orderDetails.items.map((item) => (
                               <TableRow key={item.id}>
-                                <TableCell>Product ID: {item.productId}</TableCell>
-                                <TableCell>{item.quantity}</TableCell>
+                                <TableCell className="font-medium">
+                                  {item.product ? item.product.name : `Product #${item.productId}`}
+                                </TableCell>
+                                <TableCell>
+                                  {item.product ? item.product.sku : "N/A"}
+                                </TableCell>
+                                <TableCell>
+                                  <span className="font-medium">{item.quantity}</span>
+                                  {item.product?.unitsPerBox && (
+                                    <span className="text-xs text-slate-500 ml-1">
+                                      ({Math.ceil(item.quantity / item.product.unitsPerBox)} box{Math.ceil(item.quantity / item.product.unitsPerBox) !== 1 ? 'es' : ''})
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {item.product?.location || "Not specified"}
+                                </TableCell>
                               </TableRow>
                             ))
                           ) : (
                             <TableRow>
-                              <TableCell colSpan={2} className="text-center">
+                              <TableCell colSpan={4} className="text-center">
                                 No items found in this order.
                               </TableCell>
                             </TableRow>
