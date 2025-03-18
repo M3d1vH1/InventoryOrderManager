@@ -69,8 +69,7 @@ const customerFormSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }).optional().nullable(),
   phone: z.string().optional().nullable(),
   contactPerson: z.string().optional().nullable(),
-  preferredShippingCompany: z.enum(['dhl', 'fedex', 'ups', 'usps', 'royal_mail', 'other']).optional().nullable(),
-  customShippingCompany: z.string().optional().nullable(),
+  preferredShippingCompany: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
 });
 
@@ -102,7 +101,6 @@ const OrderForm = () => {
       phone: null,
       contactPerson: null,
       preferredShippingCompany: null,
-      customShippingCompany: null,
       notes: null,
     },
   });
@@ -631,45 +629,19 @@ const OrderForm = () => {
                   name="preferredShippingCompany"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base font-medium">Preferred Shipping</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value || undefined}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="h-12 text-base">
-                            <SelectValue placeholder="Select shipping company" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="dhl" className="h-10 text-base">DHL</SelectItem>
-                          <SelectItem value="fedex" className="h-10 text-base">FedEx</SelectItem>
-                          <SelectItem value="ups" className="h-10 text-base">UPS</SelectItem>
-                          <SelectItem value="usps" className="h-10 text-base">USPS</SelectItem>
-                          <SelectItem value="royal_mail" className="h-10 text-base">Royal Mail</SelectItem>
-                          <SelectItem value="other" className="h-10 text-base">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormLabel className="text-base font-medium">Preferred Shipping Company</FormLabel>
+                      <FormControl>
+                        <Input 
+                          className="h-12 text-base" 
+                          placeholder="Enter shipping company name" 
+                          {...field} 
+                          value={field.value || ''} 
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
-                {customerForm.watch('preferredShippingCompany') === 'other' && (
-                  <FormField
-                    control={customerForm.control}
-                    name="customShippingCompany"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-medium">Custom Shipping Company</FormLabel>
-                        <FormControl>
-                          <Input className="h-12 text-base" {...field} value={field.value || ''} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
                 
                 <FormField
                   control={customerForm.control}
