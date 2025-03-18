@@ -1,36 +1,25 @@
-
 {
+  "app": {
+    "title": "Warehouse Management",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "back": "Back"
+  },
   "dashboard": {
     "title": "Dashboard",
     "stats": {
       "pendingOrders": "Pending Orders",
       "itemsToPick": "Items to Pick",
-      "shippingToday": "Shipping Today"
+      "shippedOrders": "Shipped Orders",
+      "lowStock": "Low Stock Items"
     },
-    "recentOrders": "Recent Orders"
-  },
-  "orders": {
-    "title": "Orders",
-    "status": {
-      "pending": "Pending",
-      "processing": "Processing",
-      "shipped": "Shipped",
-      "delivered": "Delivered"
-    }
-  },
-  "products": {
-    "title": "Products",
-    "addProduct": "Add Product",
-    "category": "Category",
-    "price": "Price",
-    "stock": "Stock"
-  },
-  "pickList": {
-    "title": "Pick List",
-    "customer": "Customer",
-    "orderDate": "Order Date",
-    "complete": "Complete Pick List",
-    "updating": "Updating...",
-    "items": "items"
+    "recentOrders": "Recent Orders",
+    "lowStockItems": "Low Stock Items"
   }
 }
