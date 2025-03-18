@@ -310,7 +310,7 @@ export class MemStorage implements IStorage {
         await this.updateShippingDocument(existingDoc.id, {
           documentPath: documentInfo.documentPath,
           documentType: documentInfo.documentType,
-          notes: documentInfo.notes
+          notes: documentInfo.notes || undefined
         });
       } else {
         // Create new document
@@ -318,7 +318,7 @@ export class MemStorage implements IStorage {
           orderId: id,
           documentPath: documentInfo.documentPath,
           documentType: documentInfo.documentType,
-          notes: documentInfo.notes
+          notes: documentInfo.notes || undefined
         });
       }
       

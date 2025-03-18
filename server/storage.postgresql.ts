@@ -180,10 +180,15 @@ export class DatabaseStorage implements IStorage {
   }
   
   async addShippingDocument(document: InsertShippingDocument): Promise<ShippingDocument> {
-    // Insert the document
+    // Insert the document - make sure we're consistent with schema by using undefined for optional notes
+    const documentToInsert = {
+      ...document,
+      notes: document.notes ?? undefined
+    };
+    
     const [shippingDocument] = await this.db
       .insert(shippingDocuments)
-      .values(document)
+      .values(documentToInsert)
       .returning();
     
     // Update the order to indicate it has a shipping document
@@ -217,8 +222,7 @@ export class DatabaseStorage implements IStorage {
         orderId: id,
         documentPath: documentInfo.documentPath,
         documentType: documentInfo.documentType,
-        notes: documentInfo.notes || undefined,
-        uploadDate: new Date()
+        notes: documentInfo.notes || undefined
       });
     }
     
