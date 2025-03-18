@@ -24,5 +24,13 @@
     "category": "Category",
     "price": "Price",
     "stock": "Stock"
+  },
+  "pickList": {
+    "title": "Pick List",
+    "customer": "Customer",
+    "orderDate": "Order Date",
+    "complete": "Complete Pick List",
+    "updating": "Updating...",
+    "items": "items"
   }
 }

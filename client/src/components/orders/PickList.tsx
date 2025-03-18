@@ -362,13 +362,13 @@ const PickList = ({ order }: { order: Order }) => {
           size="lg"
         >
           {updateOrderStatusMutation.isPending ? (
-            "Updating..."
+            t('pickList.updating')
           ) : (
             <>
               <CheckCircle2 className="mr-2 h-5 w-5" />
-              Complete Pick List
+              {t('pickList.complete')}
               {allItemsPicked && order.status === 'pending' && (
-                <span className="ml-1">({order.items?.length} items)</span>
+                <span className="ml-1">({order.items?.length} {t('pickList.items')})</span>
               )}
             </>
           )}
