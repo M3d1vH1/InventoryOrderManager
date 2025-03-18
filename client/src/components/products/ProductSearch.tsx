@@ -54,7 +54,7 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-6xl max-h-[95vh] flex flex-col">
         <div className="p-5 border-b border-slate-200 flex justify-between items-center">
           <h2 className="font-semibold text-xl">Search Products</h2>
           <button 
@@ -138,62 +138,62 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Product</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">SKU</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Category</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Stock</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-500 uppercase tracking-wider">Product</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-500 uppercase tracking-wider">SKU</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-500 uppercase tracking-wider">Category</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-500 uppercase tracking-wider">Stock</th>
+                  <th className="px-4 py-3 text-right text-sm font-medium text-slate-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {products?.map((product) => (
                   <tr key={product.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-4 whitespace-nowrap">
+                    <td className="px-4 py-5 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="h-10 w-10 flex-shrink-0 rounded bg-slate-100 flex items-center justify-center">
+                        <div className="h-12 w-12 flex-shrink-0 rounded bg-slate-100 flex items-center justify-center">
                           {product.imagePath ? (
                             <img 
                               src={product.imagePath} 
                               alt={product.name} 
-                              className="h-10 w-10 object-cover rounded"
+                              className="h-12 w-12 object-cover rounded"
                             />
                           ) : (
-                            <Box className="h-5 w-5 text-slate-400" />
+                            <Box className="h-6 w-6 text-slate-400" />
                           )}
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-slate-900">{product.name}</div>
+                          <div className="text-base font-medium text-slate-900">{product.name}</div>
                           {product.barcode && (
-                            <div className="text-xs text-slate-500">
-                              <QrCode className="h-3 w-3 inline-block mr-1" />
+                            <div className="text-sm text-slate-500">
+                              <QrCode className="h-4 w-4 inline-block mr-1" />
                               {product.barcode}
                             </div>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-500">
+                    <td className="px-4 py-5 whitespace-nowrap text-base text-slate-500">
                       {product.sku}
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-500">
+                    <td className="px-4 py-5 whitespace-nowrap text-base text-slate-500">
                       {product.category}
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className={`text-sm font-medium ${getStockStatusClass(product.currentStock, product.minStockLevel)}`}>
+                    <td className="px-4 py-5 whitespace-nowrap">
+                      <div className={`text-base font-medium ${getStockStatusClass(product.currentStock, product.minStockLevel)}`}>
                         {product.currentStock} 
                         <span className="text-slate-400 ml-1">/ {product.minStockLevel} min</span>
                       </div>
                       {product.location && (
-                        <div className="text-xs text-slate-500">
-                          <MapPin className="h-3 w-3 inline-block mr-1" />
+                        <div className="text-sm text-slate-500">
+                          <MapPin className="h-4 w-4 inline-block mr-1" />
                           {product.location}
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-4 py-5 whitespace-nowrap text-right">
                       <Button
                         onClick={() => onSelectProduct(product)}
-                        className="h-9 min-w-[100px]"
+                        className="h-10 min-w-[120px] text-base"
                         disabled={product.currentStock === 0}
                       >
                         {product.currentStock === 0 ? 
