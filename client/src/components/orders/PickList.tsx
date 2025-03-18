@@ -24,7 +24,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, QrCode, ScanBarcode as BarcodeIcon, Truck, RefreshCcw } from "lucide-react";
+import { MapPin, QrCode, ScanBarcode as BarcodeIcon, Truck, RefreshCcw, CheckCircle2 } from "lucide-react";
 import { BarcodeScanner } from "@/components/barcode";
 
 interface OrderItem {
@@ -358,11 +358,19 @@ const PickList = ({ order }: { order: Order }) => {
         <Button 
           onClick={completePickList} 
           disabled={!allItemsPicked || order.status !== 'pending' || updateOrderStatusMutation.isPending}
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto text-base py-6 px-8 font-medium"
+          size="lg"
         >
-          {updateOrderStatusMutation.isPending ? "Updating..." : "Complete Pick List"}
-          {allItemsPicked && order.status === 'pending' && !updateOrderStatusMutation.isPending && (
-            <span className="ml-1">({order.items?.length} items)</span>
+          {updateOrderStatusMutation.isPending ? (
+            "Updating..."
+          ) : (
+            <>
+              <CheckCircle2 className="mr-2 h-5 w-5" />
+              Complete Pick List
+              {allItemsPicked && order.status === 'pending' && (
+                <span className="ml-1">({order.items?.length} items)</span>
+              )}
+            </>
           )}
         </Button>
       </CardFooter>
