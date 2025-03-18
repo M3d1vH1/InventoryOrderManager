@@ -22,6 +22,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { MapPin, QrCode, BarcodeScan, Truck, RefreshCcw } from "lucide-react";
+import { BarcodeScanner } from "@/components/barcode";
 
 interface OrderItem {
   id: number;
@@ -36,10 +40,13 @@ interface Product {
   id: number;
   name: string;
   sku: string;
+  barcode?: string;
   category: string;
   minStockLevel: number;
   currentStock: number;
   description?: string;
+  location?: string;
+  unitsPerBox?: number;
 }
 
 interface Order {
@@ -57,6 +64,10 @@ const PickList = ({ order }: { order: Order }) => {
   const queryClient = useQueryClient();
   const [pickedItems, setPickedItems] = useState<Record<number, boolean>>({});
   const [progress, setProgress] = useState(0);
+  const [scanMode, setScanMode] = useState(false);
+  const [lastScannedBarcode, setLastScannedBarcode] = useState<string | null>(null);
+  const [sortByLocation, setSortByLocation] = useState(false);
+  const [searchSku, setSearchSku] = useState('');
 
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ['/api/products'],
