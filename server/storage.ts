@@ -156,8 +156,11 @@ export class MemStorage implements IStorage {
     this.customerIdCounter = 1;
     this.shippingDocumentIdCounter = 1;
     
-    // Initialize with sample data
-    this.initSampleData();
+    // Initialize with sample data (async)
+    // We're calling this in a non-blocking way since constructor can't be async
+    this.initSampleData().catch(err => 
+      console.error('Failed to initialize sample data:', err)
+    );
   }
   
   // User methods
@@ -321,9 +324,22 @@ export class MemStorage implements IStorage {
     }
     
     if (category && category !== 'all') {
-      filteredProducts = filteredProducts.filter(
-        product => product.category === category
-      );
+      // Try to find category by name first
+      const categoryObj = await this.getCategoryByName(category);
+      if (categoryObj) {
+        // Filter by category ID if found
+        filteredProducts = filteredProducts.filter(
+          product => product.categoryId === categoryObj.id
+        );
+      } else {
+        // Try to filter by categoryId if it's a number
+        const categoryId = parseInt(category, 10);
+        if (!isNaN(categoryId)) {
+          filteredProducts = filteredProducts.filter(
+            product => product.categoryId === categoryId
+          );
+        }
+      }
     }
     
     if (stockStatus) {
@@ -716,22 +732,27 @@ export class MemStorage implements IStorage {
     value: number;
   }[]> {
     const products = Array.from(this.products.values());
-    const categories = {} as Record<string, number>;
+    const allCategories = Array.from(this.categories.values());
+    const categoryCounts = {} as Record<number, number>;
     
-    // Count products by category
+    // Count products by categoryId
     products.forEach(product => {
-      const category = product.category;
-      if (!categories[category]) {
-        categories[category] = 0;
+      const categoryId = product.categoryId;
+      if (!categoryCounts[categoryId]) {
+        categoryCounts[categoryId] = 0;
       }
-      categories[category]++;
+      categoryCounts[categoryId]++;
     });
     
-    // Convert to array format
-    return Object.entries(categories).map(([name, value]) => ({
-      name: name.charAt(0).toUpperCase() + name.slice(1), // Capitalize first letter
-      value
-    }));
+    // Convert to array format with category names
+    return Object.entries(categoryCounts).map(([categoryIdStr, value]) => {
+      const categoryId = parseInt(categoryIdStr, 10);
+      const category = allCategories.find(c => c.id === categoryId);
+      return {
+        name: category ? category.name : `Category ${categoryId}`,
+        value
+      };
+    });
   }
 
   async getTopSellingProducts(limit: number = 5): Promise<{
@@ -778,22 +799,24 @@ export class MemStorage implements IStorage {
     }[];
   }> {
     const products = Array.from(this.products.values());
+    const allCategories = Array.from(this.categories.values());
     
     // Calculate individual product values (simulated as we don't have price in the model)
     const productValues = products.map(product => {
+      // Find the category name
+      const category = allCategories.find(c => c.id === product.categoryId);
+      const categoryName = category ? category.name : 'unknown';
+      
       // Simulate product price based on category and stock level
       let basePrice = 0;
-      switch (product.category) {
-        case 'widgets': basePrice = 12.99; break;
-        case 'connectors': basePrice = 8.50; break;
-        case 'brackets': basePrice = 15.75; break;
-        case 'mounts': basePrice = 22.50; break;
-        default: basePrice = 10.00;
-      }
+      // Use a default price for each product
+      basePrice = 10.00 + (Math.random() * 15); // Random price between 10 and 25
       
       // Calculate total value
       return {
         product,
+        categoryId: product.categoryId,
+        categoryName,
         value: basePrice * product.currentStock
       };
     });
@@ -802,26 +825,27 @@ export class MemStorage implements IStorage {
     const totalValue = productValues.reduce((sum, item) => sum + item.value, 0);
     
     // Calculate category breakdown
-    const categories = {} as Record<string, {
+    const categories = {} as Record<number, {
+      name: string;
       productCount: number;
       totalValue: number;
     }>;
     
-    productValues.forEach(({ product, value }) => {
-      const category = product.category;
-      if (!categories[category]) {
-        categories[category] = {
+    productValues.forEach(({ product, categoryId, categoryName, value }) => {
+      if (!categories[categoryId]) {
+        categories[categoryId] = {
+          name: categoryName,
           productCount: 0,
           totalValue: 0
         };
       }
-      categories[category].productCount++;
-      categories[category].totalValue += value;
+      categories[categoryId].productCount++;
+      categories[categoryId].totalValue += value;
     });
     
     // Convert to array with percentage
-    const categoryBreakdown = Object.entries(categories).map(([category, data]) => ({
-      category: category.charAt(0).toUpperCase() + category.slice(1),
+    const categoryBreakdown = Object.entries(categories).map(([categoryIdStr, data]) => ({
+      category: data.name,
       productCount: data.productCount,
       totalValue: data.totalValue,
       percentageOfTotal: (data.totalValue / totalValue) * 100
@@ -887,9 +911,9 @@ export class MemStorage implements IStorage {
   }
   
   // Initialize with sample data
-  private initSampleData() {
+  private async initSampleData() {
     // Sample customers with extended data
-    this.createCustomer({ 
+    await this.createCustomer({ 
       name: "Acme Corporation", 
       vatNumber: "GB123456789",
       address: "123 Business Park",
@@ -905,7 +929,7 @@ export class MemStorage implements IStorage {
       notes: "Major account - priority shipping"
     });
     
-    this.createCustomer({ 
+    await this.createCustomer({ 
       name: "TechStart Inc.", 
       vatNumber: "US987654321",
       address: "456 Innovation Avenue",
@@ -921,7 +945,7 @@ export class MemStorage implements IStorage {
       notes: "Requires special packaging"
     });
     
-    this.createCustomer({ 
+    await this.createCustomer({ 
       name: "Euro Distributors GmbH", 
       vatNumber: "DE567891234",
       address: "789 Industrie Strasse",
@@ -937,7 +961,7 @@ export class MemStorage implements IStorage {
       notes: ""
     });
     
-    this.createCustomer({ 
+    await this.createCustomer({ 
       name: "Pacific Traders Ltd", 
       vatNumber: "AU123789456",
       address: "10 Harbor Road",
@@ -953,38 +977,59 @@ export class MemStorage implements IStorage {
       notes: "Bulk orders only"
     });
     
-    // Sample products
-    this.createProduct({
+    // Create sample categories
+    const widgetsCategory = await this.createCategory({
+      name: "Widgets",
+      description: "Various widget products for industrial use"
+    });
+    
+    const connectorsCategory = await this.createCategory({
+      name: "Connectors",
+      description: "Connection components for various applications"
+    });
+    
+    const bracketsCategory = await this.createCategory({
+      name: "Brackets",
+      description: "Mounting brackets and supports"
+    });
+    
+    const mountsCategory = await this.createCategory({
+      name: "Mounts",
+      description: "Heavy duty mounting systems"
+    });
+    
+    // Sample products with categoryId
+    await this.createProduct({
       name: "Widget XL",
       sku: "WDG-001",
-      category: "widgets",
+      categoryId: widgetsCategory.id,
       description: "Extra large widget for industrial use",
       minStockLevel: 10,
       currentStock: 2
     });
     
-    this.createProduct({
+    await this.createProduct({
       name: "Premium Connector",
       sku: "CON-002",
-      category: "connectors",
+      categoryId: connectorsCategory.id,
       description: "High quality connector for professional applications",
       minStockLevel: 15,
       currentStock: 3
     });
     
-    this.createProduct({
+    await this.createProduct({
       name: "Standard Bracket",
       sku: "BKT-003",
-      category: "brackets",
+      categoryId: bracketsCategory.id,
       description: "Standard mounting bracket",
       minStockLevel: 20,
       currentStock: 12
     });
     
-    this.createProduct({
+    await this.createProduct({
       name: "Heavy Duty Mount",
       sku: "MNT-004",
-      category: "mounts",
+      categoryId: mountsCategory.id,
       description: "Heavy duty mounting system",
       minStockLevel: 10,
       currentStock: 45
