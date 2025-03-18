@@ -1,0 +1,25 @@
+{
+  "app": {
+    "title": "Warehouse Management",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "back": "Back"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "stats": {
+      "pendingOrders": "Pending Orders",
+      "itemsToPick": "Items to Pick",
+      "shippedOrders": "Shipped Orders",
+      "lowStock": "Low Stock Items"
+    },
+    "recentOrders": "Recent Orders",
+    "lowStockItems": "Low Stock Items"
+  }
+}
