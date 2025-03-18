@@ -627,6 +627,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Test notification endpoint
+  app.post('/api/test-notification', async (req, res) => {
+    try {
+      const { type } = req.body;
+      if (!type || !['success', 'warning', 'error'].includes(type)) {
+        return res.status(400).json({ message: 'Invalid notification type' });
+      }
+      
+      // Generate a random ID for the test notification
+      const id = Math.random().toString(36).substring(2, 15);
+      
+      // Create a test notification
+      const testNotification = {
+        id,
+        title: `Test ${type.charAt(0).toUpperCase() + type.slice(1)} Notification`,
+        message: `This is a test ${type} notification with sound alert.`,
+        type,
+        timestamp: new Date(),
+        read: false
+      };
+      
+      // Broadcast the notification to all connected clients
+      broadcastMessage({
+        type: 'notification',
+        notification: testNotification
+      });
+      
+      res.json({ success: true, message: 'Test notification sent' });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
   const httpServer = createServer(app);
   
   // Set up WebSocket server
