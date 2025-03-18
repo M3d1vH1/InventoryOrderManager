@@ -46,6 +46,10 @@ export const insertProductSchema = createInsertSchema(products)
   .extend({
     minStockLevel: z.number().min(0),
     currentStock: z.number().min(0),
+    imagePath: z.string().optional(),
+    barcode: z.string().optional(),
+    location: z.string().optional(),
+    unitsPerBox: z.number().optional(),
   });
 
 export type InsertProduct = z.infer<typeof insertProductSchema>;
