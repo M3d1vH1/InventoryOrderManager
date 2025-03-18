@@ -209,7 +209,18 @@ const Products = () => {
     
     const matchesCategory = categoryFilter === "all" || product.category === categoryFilter;
     
-    return matchesSearch && matchesCategory;
+    let matchesStock = true;
+    if (stockFilter !== "all") {
+      if (stockFilter === "low") {
+        matchesStock = product.currentStock > 0 && product.currentStock <= product.minStockLevel;
+      } else if (stockFilter === "out") {
+        matchesStock = product.currentStock === 0;
+      } else if (stockFilter === "in") {
+        matchesStock = product.currentStock > product.minStockLevel;
+      }
+    }
+    
+    return matchesSearch && matchesCategory && matchesStock;
   });
 
   const getStockStatusClass = (currentStock: number, minStockLevel: number) => {
@@ -257,6 +268,18 @@ const Products = () => {
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
+            
+            <Select value={stockFilter} onValueChange={setStockFilter}>
+              <SelectTrigger className="w-full md:w-48">
+                <SelectValue placeholder="Filter by stock" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Stock Levels</SelectItem>
+                <SelectItem value="in">In Stock</SelectItem>
+                <SelectItem value="low">Low Stock</SelectItem>
+                <SelectItem value="out">Out of Stock</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -282,7 +305,7 @@ const Products = () => {
               ) : filteredProducts?.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8">
-                    No products found. {searchTerm || categoryFilter ? "Try clearing your filters." : ""}
+                    No products found. {searchTerm || categoryFilter !== "all" || stockFilter !== "all" ? "Try clearing your filters." : ""}
                   </TableCell>
                 </TableRow>
               ) : (

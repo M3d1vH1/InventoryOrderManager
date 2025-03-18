@@ -105,9 +105,9 @@ const InventoryAlerts = () => {
     <div className="bg-white rounded-lg shadow">
       <div className="p-4 border-b border-slate-200 flex justify-between items-center">
         <h2 className="font-semibold text-lg">Inventory Alerts</h2>
-        <Link href="/inventory">
+        <Link href="/products?stock=low">
           <button className="text-primary hover:text-blue-700 text-sm font-medium">
-            View All
+            View All Low Stock Items
           </button>
         </Link>
       </div>
@@ -117,9 +117,9 @@ const InventoryAlerts = () => {
       <div className="p-4 border-t border-slate-200">
         <h3 className="font-medium text-sm mb-3">Quick Inventory Actions</h3>
         <div className="grid grid-cols-2 gap-2">
-          <Link href="/products/new">
+          <Link href="/products">
             <button className="bg-primary text-white py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center w-full">
-              <i className="fas fa-plus mr-2"></i> New Product
+              <i className="fas fa-plus mr-2"></i> Add New Product
             </button>
           </Link>
           <button className="bg-slate-200 text-slate-800 py-2 rounded-md hover:bg-slate-300 transition-colors flex items-center justify-center">
