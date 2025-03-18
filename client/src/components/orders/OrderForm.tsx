@@ -84,10 +84,17 @@ const OrderForm = () => {
   const orderMutation = useMutation({
     mutationFn: async (values: OrderFormValues) => {
       // Send only the data that the server expects
-      return apiRequest('POST', '/api/orders', {
-        customerName: values.customerName,
-        notes: values.notes,
-        items: values.items
+      return apiRequest({
+        url: '/api/orders',
+        method: 'POST',
+        body: JSON.stringify({
+          customerName: values.customerName,
+          notes: values.notes,
+          items: values.items
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
     },
     onSuccess: () => {
@@ -163,20 +170,24 @@ const OrderForm = () => {
                 name="customerName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Customer</FormLabel>
+                    <FormLabel className="text-base font-medium">Customer</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                       disabled={isLoadingCustomers}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-12 text-base">
                           <SelectValue placeholder="Select a customer" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {customers?.map(customer => (
-                          <SelectItem key={customer.id} value={customer.name}>
+                          <SelectItem 
+                            key={customer.id} 
+                            value={customer.name}
+                            className="h-10 text-base"
+                          >
                             {customer.name}
                           </SelectItem>
                         ))}
@@ -192,9 +203,13 @@ const OrderForm = () => {
                 name="orderDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Order Date</FormLabel>
+                    <FormLabel className="text-base font-medium">Order Date</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Input 
+                        type="date" 
+                        className="h-12 text-base"
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -204,13 +219,14 @@ const OrderForm = () => {
             
             <div className="mb-6">
               <div className="flex justify-between items-center mb-2">
-                <FormLabel>Products</FormLabel>
+                <FormLabel className="text-base font-medium">Products</FormLabel>
                 <Button
                   type="button"
-                  variant="link"
+                  variant="outline"
+                  className="h-12 text-base px-4"
                   onClick={() => setIsProductSearchOpen(true)}
                 >
-                  <i className="fas fa-plus mr-1"></i> Add Product
+                  <i className="fas fa-plus mr-2"></i> Add Product
                 </Button>
               </div>
               
@@ -218,32 +234,33 @@ const OrderForm = () => {
                 {orderItems.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="min-w-full">
-                      <thead className="text-slate-500 text-sm">
+                      <thead className="bg-slate-100">
                         <tr>
-                          <th className="py-2 px-3 text-left font-medium">Product</th>
-                          <th className="py-2 px-3 text-left font-medium w-24">Quantity</th>
-                          <th className="py-2 px-3 text-left font-medium">Stock</th>
-                          <th className="py-2 px-3 text-left font-medium w-20">Actions</th>
+                          <th className="py-3 px-4 text-left font-semibold text-base">Product</th>
+                          <th className="py-3 px-4 text-left font-semibold text-base w-24">Quantity</th>
+                          <th className="py-3 px-4 text-left font-semibold text-base">Stock</th>
+                          <th className="py-3 px-4 text-left font-semibold text-base w-20">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {orderItems.map((item, index) => (
                           <tr key={index} className="border-b border-slate-200">
-                            <td className="py-3 px-3">
-                              {item.product?.name} ({item.product?.sku})
+                            <td className="py-4 px-4">
+                              <div className="text-base font-medium">{item.product?.name}</div>
+                              <div className="text-sm text-slate-500">SKU: {item.product?.sku}</div>
                             </td>
-                            <td className="py-3 px-3">
+                            <td className="py-4 px-4">
                               <Input
                                 type="number"
                                 min="1"
                                 max={item.product?.currentStock || 999}
                                 value={item.quantity}
                                 onChange={(e) => updateQuantity(index, parseInt(e.target.value) || 1)}
-                                className="w-full p-1.5 text-sm"
+                                className="w-full h-12 text-base"
                               />
                             </td>
-                            <td className="py-3 px-3">
-                              <span className="text-sm">
+                            <td className="py-4 px-4">
+                              <span className="text-base">
                                 Available: {' '}
                                 <span className={`font-medium ${
                                   (item.product?.currentStock || 0) <= (item.product?.minStockLevel || 0) 
@@ -254,13 +271,13 @@ const OrderForm = () => {
                                 </span>
                               </span>
                             </td>
-                            <td className="py-3 px-3">
+                            <td className="py-4 px-4">
                               <button 
                                 type="button" 
-                                className="text-red-500 hover:text-red-700"
+                                className="flex items-center justify-center p-2 rounded-full bg-red-100 text-red-500 hover:bg-red-200 hover:text-red-700 min-h-[44px] min-w-[44px]"
                                 onClick={() => removeProduct(index)}
                               >
-                                <i className="fas fa-trash"></i>
+                                <i className="fas fa-trash text-lg"></i>
                               </button>
                             </td>
                           </tr>
@@ -287,10 +304,11 @@ const OrderForm = () => {
               name="notes"
               render={({ field }) => (
                 <FormItem className="mb-6">
-                  <FormLabel>Notes</FormLabel>
+                  <FormLabel className="text-base font-medium">Notes</FormLabel>
                   <FormControl>
                     <Textarea 
                       rows={3} 
+                      className="text-base p-4"
                       placeholder="Add any special instructions or notes about this order..."
                       {...field}
                     />
@@ -300,22 +318,32 @@ const OrderForm = () => {
               )}
             />
             
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-end space-x-4">
               <Button 
                 type="button" 
                 variant="outline"
+                className="h-12 text-base px-6"
                 onClick={() => {
                   form.reset();
                   setOrderItems([]);
                 }}
               >
-                Clear Form
+                <i className="fas fa-undo mr-2"></i> Clear Form
               </Button>
               <Button 
                 type="submit" 
+                className="h-12 text-base px-6"
                 disabled={orderMutation.isPending}
               >
-                {orderMutation.isPending ? "Creating..." : "Create Order"}
+                {orderMutation.isPending ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-2"></i> Creating...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-check mr-2"></i> Create Order
+                  </>
+                )}
               </Button>
             </div>
           </form>
