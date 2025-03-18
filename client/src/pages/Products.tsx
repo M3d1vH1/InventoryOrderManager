@@ -84,7 +84,8 @@ interface Product {
   name: string;
   sku: string;
   barcode?: string;
-  category: string;
+  categoryId: number;
+  category?: string; // For backward compatibility during transition
   description?: string;
   minStockLevel: number;
   currentStock: number;
@@ -97,7 +98,7 @@ const productFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   sku: z.string().min(2, "SKU must be at least 2 characters"),
   barcode: z.string().optional(),
-  category: z.string().min(1, "Category is required"),
+  categoryId: z.coerce.number().min(1, "Category is required"),
   description: z.string().optional(),
   minStockLevel: z.coerce.number().min(0, "Min stock level must be 0 or greater"),
   currentStock: z.coerce.number().min(0, "Current stock must be 0 or greater"),
@@ -130,7 +131,7 @@ const Products = () => {
       name: "",
       sku: "",
       barcode: "",
-      category: "",
+      categoryId: 0,
       description: "",
       minStockLevel: 5,
       currentStock: 0,
@@ -143,14 +144,20 @@ const Products = () => {
     queryKey: ['/api/products'],
     staleTime: 15000,
   });
-  const { data: categoriesData = [] } = useQuery({
+  interface CategoryType {
+    id: number;
+    name: string;
+    description?: string;
+  }
+
+  const { data: categoriesData = [] as CategoryType[] } = useQuery<CategoryType[]>({
     queryKey: ['/api/categories'],
     staleTime: Infinity,
   });
   
   // Transform category objects to an array of names for backward compatibility
   const categories = React.useMemo(() => {
-    return categoriesData.map((category: {id: number, name: string}) => category.name);
+    return categoriesData.map(category => category.name);
   }, [categoriesData]);
   const [filteredProducts, setFilteredProducts] = useState(products);
 
@@ -160,11 +167,16 @@ const Products = () => {
 
   useEffect(() => {
     if (editingProduct) {
+      // Find the categoryId from the category name for existing products
+      const foundCategory = categoriesData.find(
+        cat => cat.name === editingProduct.category
+      );
+      
       form.reset({
         name: editingProduct.name,
         sku: editingProduct.sku,
         barcode: editingProduct.barcode || "",
-        category: editingProduct.category,
+        categoryId: editingProduct.categoryId || (foundCategory ? foundCategory.id : 0),
         description: editingProduct.description || "",
         minStockLevel: editingProduct.minStockLevel,
         currentStock: editingProduct.currentStock,
@@ -173,7 +185,7 @@ const Products = () => {
         imagePath: editingProduct.imagePath || "",
       });
     }
-  }, [editingProduct, form]);
+  }, [editingProduct, form, categoriesData]);
 
   useEffect(() => {
     setFilteredProducts(products.filter(product => 
