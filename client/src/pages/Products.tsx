@@ -79,7 +79,7 @@ interface Product {
   currentStock: number;
   location?: string;
   unitsPerBox?: number;
-  imageUrl?: string;
+  imagePath?: string;
 }
 
 const productFormSchema = z.object({
@@ -92,7 +92,7 @@ const productFormSchema = z.object({
   currentStock: z.coerce.number().min(0, { message: "Current stock must be 0 or greater" }),
   location: z.string().optional(),
   unitsPerBox: z.coerce.number().min(0).optional(),
-  imageUrl: z.string().optional()
+  imagePath: z.string().optional()
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
@@ -150,7 +150,7 @@ const Products = () => {
         currentStock: editingProduct.currentStock,
         location: editingProduct.location || "",
         unitsPerBox: editingProduct.unitsPerBox || 0,
-        imageUrl: editingProduct.imageUrl || ""
+        imagePath: editingProduct.imagePath || ""
       });
     } else {
       form.reset({
@@ -163,7 +163,7 @@ const Products = () => {
         currentStock: 0,
         location: "",
         unitsPerBox: 0,
-        imageUrl: ""
+        imagePath: ""
       });
     }
   }, [editingProduct, form]);
