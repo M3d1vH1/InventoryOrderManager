@@ -11,6 +11,12 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Table,
   TableBody,
   TableCell,
@@ -23,8 +29,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, QrCode, ScanBarcode, Truck, RefreshCcw, CheckCircle2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { MapPin, QrCode, ScanBarcode, Truck, RefreshCcw, CheckCircle2, FileText, Info } from "lucide-react";
 import { BarcodeScanner } from "@/components/barcode";
 
 interface OrderItem {
@@ -261,6 +267,7 @@ const PickList = ({ order }: { order: Order }) => {
         {lastScannedBarcode && (
           <Alert className="mb-4 bg-slate-50">
             <ScanBarcode className="h-4 w-4" />
+            <AlertTitle>Barcode Scanned</AlertTitle>
             <AlertDescription>
               Last scanned: <span className="font-mono font-medium">{lastScannedBarcode}</span>
             </AlertDescription>
@@ -295,7 +302,19 @@ const PickList = ({ order }: { order: Order }) => {
                 <TableCell>
                   <div className="font-medium">{item.product?.name || "Unknown Product"}</div>
                   {item.product?.currentStock !== undefined && item.product.currentStock < item.quantity && (
-                    <div className="text-xs text-red-500 mt-1">Low stock: {item.product?.currentStock} available</div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="text-xs text-red-500 mt-1 flex items-center cursor-help">
+                            <Info className="h-3 w-3 mr-1" />
+                            Low stock: {item.product?.currentStock} available
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Ordered quantity ({item.quantity}) exceeds available stock ({item.product?.currentStock}).</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                 </TableCell>
                 <TableCell>
@@ -317,7 +336,10 @@ const PickList = ({ order }: { order: Order }) => {
 
         {order.notes && (
           <div className="mt-4 p-3 bg-slate-50 rounded-md border border-slate-200">
-            <p className="text-sm font-medium mb-1">Order Notes:</p>
+            <div className="flex items-center mb-1">
+              <FileText className="h-4 w-4 mr-1 text-slate-500" />
+              <p className="text-sm font-medium">Order Notes:</p>
+            </div>
             <p className="text-sm text-slate-600">{order.notes}</p>
           </div>
         )}
