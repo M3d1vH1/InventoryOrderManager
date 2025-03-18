@@ -192,6 +192,51 @@ const OrderForm = ({
     }
   }, [initialData]);
 
+  // Effect to fetch previous products when customer changes
+  useEffect(() => {
+    const customerName = form.watch('customerName');
+    
+    // Clear previous products when customer name changes
+    if (!customerName || customerName.trim() === '') {
+      setPreviousProducts([]);
+      return;
+    }
+    
+    // Don't fetch for very short names (likely just typing)
+    if (customerName.length < 3) {
+      return;
+    }
+    
+    // Check if this matches a known customer (not just typing a new name)
+    const matchedCustomer = customers?.find(c => 
+      c.name.toLowerCase() === customerName.toLowerCase()
+    );
+    
+    if (matchedCustomer) {
+      // Fetch previous products for this customer
+      const fetchPreviousProducts = async () => {
+        try {
+          const encodedName = encodeURIComponent(customerName);
+          const response = await fetch(`/api/customers/${encodedName}/previous-products`);
+          if (response.ok) {
+            const data = await response.json();
+            setPreviousProducts(data);
+          } else {
+            console.error("Failed to fetch previous products:", await response.text());
+            setPreviousProducts([]);
+          }
+        } catch (error) {
+          console.error("Error fetching previous products:", error);
+          setPreviousProducts([]);
+        }
+      };
+      
+      fetchPreviousProducts();
+    } else {
+      setPreviousProducts([]);
+    }
+  }, [form.watch('customerName'), customers]);
+
   useEffect(() => {
     // Update form items field when orderItems changes
     form.setValue('items', orderItems.map(item => ({
@@ -425,6 +470,53 @@ const OrderForm = ({
                   <i className="fas fa-plus mr-2"></i> Add Product
                 </Button>
               </div>
+              
+              {/* Product suggestions section */}
+              {previousProducts.length > 0 && (
+                <div className="mb-4">
+                  <div className="flex items-center text-base font-medium text-slate-700 mb-2">
+                    <i className="fas fa-history mr-2"></i> Previously ordered products
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {previousProducts.slice(0, 6).map((product) => (
+                      <div 
+                        key={product.id}
+                        className="bg-white border border-slate-200 rounded-md p-3 hover:border-primary cursor-pointer transition-colors"
+                        onClick={() => addProduct(product)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="font-medium text-sm">{product.name}</div>
+                            <div className="text-xs text-slate-500">SKU: {product.sku}</div>
+                          </div>
+                          <div className="text-xs bg-slate-100 px-2 py-1 rounded-full">
+                            {product.orderCount > 1 
+                              ? `Ordered ${product.orderCount} times` 
+                              : "Ordered once"}
+                          </div>
+                        </div>
+                        <div className="flex justify-between mt-2 text-xs">
+                          <span>
+                            Stock: <span className={`font-medium ${
+                              (product.currentStock || 0) <= (product.minStockLevel || 0) 
+                                ? 'text-red-600' 
+                                : 'text-green-600'
+                            }`}>{product.currentStock || 0}</span>
+                          </span>
+                          <Button 
+                            type="button" 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-6 px-2 py-0 text-xs hover:bg-primary hover:text-white"
+                          >
+                            <i className="fas fa-plus text-xs mr-1"></i> Add
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               <div className="bg-slate-50 p-4 rounded-md">
                 {orderItems.length > 0 ? (
