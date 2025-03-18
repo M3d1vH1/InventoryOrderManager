@@ -343,6 +343,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Document upload for orders
+  app.post('/api/orders/:id/documents', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Check if order exists
+      const order = await storage.getOrder(id);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      
+      if (!req.files || !req.files.document) {
+        return res.status(400).json({ message: 'No document file uploaded' });
+      }
+      
+      const documentFile = req.files.document as UploadedFile;
+      const documentType = req.body.documentType; 
+      const notes = req.body.notes;
+      
+      if (!documentType) {
+        return res.status(400).json({ message: 'Document type is required' });
+      }
+      
+      const uploadDir = path.join(process.cwd(), 'public/uploads/documents');
+      
+      // Ensure upload directory exists
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      
+      // Generate unique filename
+      const filename = `${Date.now()}-${documentFile.name.replace(/\s+/g, '-')}`;
+      const filePath = path.join(uploadDir, filename);
+      
+      // Move file to uploads directory
+      await documentFile.mv(filePath);
+      
+      // Document path for storage
+      const documentPath = `/uploads/documents/${filename}`;
+      
+      // Update order status with document info
+      const updatedOrder = await storage.updateOrderStatus(id, 'shipped', {
+        documentPath,
+        documentType,
+        notes
+      });
+      
+      res.json({ success: true, documentPath });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
   // Customer routes
   app.get('/api/customers', async (req, res) => {
     try {
