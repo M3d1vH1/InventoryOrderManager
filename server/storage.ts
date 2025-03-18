@@ -4,7 +4,8 @@ import {
   orders, type Order, type InsertOrder,
   orderItems, type OrderItem, type InsertOrderItem,
   customers, type Customer, type InsertCustomer,
-  shippingDocuments, type ShippingDocument, type InsertShippingDocument
+  shippingDocuments, type ShippingDocument, type InsertShippingDocument,
+  categories, type Category, type InsertCategory
 } from "@shared/schema";
 import { DatabaseStorage, initStorage } from './storage.postgresql';
 import { log } from './vite';
@@ -18,6 +19,14 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
+  
+  // Category methods
+  getCategory(id: number): Promise<Category | undefined>;
+  getCategoryByName(name: string): Promise<Category | undefined>;
+  getAllCategories(): Promise<Category[]>;
+  createCategory(category: InsertCategory): Promise<Category>;
+  updateCategory(id: number, category: Partial<InsertCategory>): Promise<Category | undefined>;
+  deleteCategory(id: number): Promise<boolean>;
   
   // Product methods
   getProduct(id: number): Promise<Product | undefined>;
@@ -115,6 +124,7 @@ export interface IStorage {
 // We're keeping the MemStorage class definition for fallback
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
+  private categories: Map<number, Category>;
   private products: Map<number, Product>;
   private orders: Map<number, Order>;
   private orderItems: Map<number, OrderItem>;
@@ -122,6 +132,7 @@ export class MemStorage implements IStorage {
   private shippingDocuments: Map<number, ShippingDocument>;
   
   private userIdCounter: number;
+  private categoryIdCounter: number;
   private productIdCounter: number;
   private orderIdCounter: number;
   private orderItemIdCounter: number;
@@ -130,6 +141,7 @@ export class MemStorage implements IStorage {
   
   constructor() {
     this.users = new Map();
+    this.categories = new Map();
     this.products = new Map();
     this.orders = new Map();
     this.orderItems = new Map();
@@ -137,6 +149,7 @@ export class MemStorage implements IStorage {
     this.shippingDocuments = new Map();
     
     this.userIdCounter = 1;
+    this.categoryIdCounter = 1;
     this.productIdCounter = 1;
     this.orderIdCounter = 1;
     this.orderItemIdCounter = 1;
@@ -195,6 +208,55 @@ export class MemStorage implements IStorage {
   
   async deleteUser(id: number): Promise<boolean> {
     return this.users.delete(id);
+  }
+  
+  // Category methods
+  async getCategory(id: number): Promise<Category | undefined> {
+    return this.categories.get(id);
+  }
+  
+  async getCategoryByName(name: string): Promise<Category | undefined> {
+    return Array.from(this.categories.values()).find(
+      (category) => category.name.toLowerCase() === name.toLowerCase()
+    );
+  }
+  
+  async getAllCategories(): Promise<Category[]> {
+    return Array.from(this.categories.values());
+  }
+  
+  async createCategory(insertCategory: InsertCategory): Promise<Category> {
+    const id = this.categoryIdCounter++;
+    const category: Category = {
+      ...insertCategory,
+      id,
+      description: insertCategory.description || null,
+      createdAt: new Date()
+    };
+    this.categories.set(id, category);
+    return category;
+  }
+  
+  async updateCategory(id: number, categoryUpdate: Partial<InsertCategory>): Promise<Category | undefined> {
+    const existingCategory = this.categories.get(id);
+    if (!existingCategory) return undefined;
+    
+    const updatedCategory = { ...existingCategory, ...categoryUpdate };
+    this.categories.set(id, updatedCategory);
+    return updatedCategory;
+  }
+  
+  async deleteCategory(id: number): Promise<boolean> {
+    // Check if there are products using this category
+    const productsWithCategory = Array.from(this.products.values()).filter(
+      (product) => product.categoryId === id
+    );
+    
+    if (productsWithCategory.length > 0) {
+      return false; // Can't delete a category that's in use
+    }
+    
+    return this.categories.delete(id);
   }
   
   // Product methods

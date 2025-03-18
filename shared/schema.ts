@@ -36,14 +36,23 @@ export const insertUserSchema = createInsertSchema(users)
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
-// Product Category Enum
-export const categoryEnum = pgEnum('category', [
-  'widgets',
-  'connectors',
-  'brackets',
-  'mounts',
-  'other'
-]);
+// Categories Schema
+export const categories = pgTable("categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertCategorySchema = createInsertSchema(categories)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    name: z.string().min(2, { message: "Category name must be at least 2 characters" }),
+    description: z.string().optional(),
+  });
+
+export type InsertCategory = z.infer<typeof insertCategorySchema>;
+export type Category = typeof categories.$inferSelect;
 
 // Products Schema
 export const products = pgTable("products", {
@@ -51,7 +60,7 @@ export const products = pgTable("products", {
   name: text("name").notNull(),
   sku: text("sku").notNull().unique(),
   barcode: text("barcode"),
-  category: categoryEnum("category").notNull(),
+  categoryId: integer("category_id").notNull(),
   description: text("description"),
   minStockLevel: integer("min_stock_level").notNull().default(10),
   currentStock: integer("current_stock").notNull().default(0),
@@ -63,6 +72,7 @@ export const products = pgTable("products", {
 export const insertProductSchema = createInsertSchema(products)
   .omit({ id: true })
   .extend({
+    categoryId: z.number(),
     minStockLevel: z.number().min(0),
     currentStock: z.number().min(0),
     imagePath: z.string().optional(),
