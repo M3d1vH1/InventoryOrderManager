@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Customer {
   id: number;
@@ -56,13 +57,91 @@ const orderFormSchema = z.object({
 
 type OrderFormValues = z.infer<typeof orderFormSchema>;
 
+// Define the new customer form schema
+const customerFormSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  vatNumber: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  state: z.string().optional().nullable(),
+  postalCode: z.string().optional().nullable(),
+  country: z.string().optional().nullable(),
+  email: z.string().email({ message: "Invalid email address" }).optional().nullable(),
+  phone: z.string().optional().nullable(),
+  contactPerson: z.string().optional().nullable(),
+  preferredShippingCompany: z.enum(['dhl', 'fedex', 'ups', 'usps', 'royal_mail', 'other']).optional().nullable(),
+  customShippingCompany: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+});
+
+type CustomerFormValues = z.infer<typeof customerFormSchema>;
+
 const OrderForm = () => {
   const { toast } = useToast();
   const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
   const [orderItems, setOrderItems] = useState<OrderItemInput[]>([]);
+  const [isNewCustomerDialogOpen, setIsNewCustomerDialogOpen] = useState(false);
+  const [currentSearchValue, setCurrentSearchValue] = useState("");
 
   const { data: customers, isLoading: isLoadingCustomers } = useQuery<Customer[]>({
     queryKey: ['/api/customers'],
+  });
+  
+  // Customer form using react-hook-form
+  const customerForm = useForm<CustomerFormValues>({
+    resolver: zodResolver(customerFormSchema),
+    defaultValues: {
+      name: "",
+      vatNumber: null,
+      address: null,
+      city: null,
+      state: null,
+      postalCode: null,
+      country: null,
+      email: null,
+      phone: null,
+      contactPerson: null,
+      preferredShippingCompany: null,
+      customShippingCompany: null,
+      notes: null,
+    },
+  });
+  
+  // Customer creation mutation
+  const customerMutation = useMutation({
+    mutationFn: async (values: CustomerFormValues) => {
+      return apiRequest({
+        url: '/api/customers',
+        method: 'POST',
+        body: JSON.stringify(values),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Customer created",
+        description: "New customer has been added successfully.",
+      });
+      
+      // Update the order form with the new customer
+      form.setValue('customerName', data.name);
+      
+      // Close the dialog and reset the customer form
+      setIsNewCustomerDialogOpen(false);
+      customerForm.reset();
+      
+      // Refresh customers query
+      queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error creating customer",
+        description: error.message || "Failed to create customer. Please try again.",
+        variant: "destructive",
+      });
+    }
   });
 
   const form = useForm<OrderFormValues>({
@@ -185,7 +264,19 @@ const OrderForm = () => {
                           />
                           {field.value.length > 0 && (
                             <CommandList>
-                              <CommandEmpty>No customers found</CommandEmpty>
+                              <CommandEmpty className="py-4 text-center">
+                                <p className="mb-3 text-base">No customers found</p>
+                                <Button 
+                                  onClick={() => {
+                                    setCurrentSearchValue(field.value);
+                                    customerForm.setValue('name', field.value);
+                                    setIsNewCustomerDialogOpen(true);
+                                  }}
+                                  className="h-10 text-base"
+                                >
+                                  <i className="fas fa-plus mr-2"></i> Create "{field.value}"
+                                </Button>
+                              </CommandEmpty>
                               <CommandGroup>
                                 {customers
                                   ?.filter(customer => 
@@ -368,6 +459,266 @@ const OrderForm = () => {
         onClose={() => setIsProductSearchOpen(false)}
         onSelectProduct={addProduct}
       />
+      
+      {/* New Customer Dialog */}
+      <Dialog open={isNewCustomerDialogOpen} onOpenChange={setIsNewCustomerDialogOpen}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Add New Customer</DialogTitle>
+            <DialogDescription className="text-base">
+              Fill in the customer details below.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...customerForm}>
+            <form onSubmit={customerForm.handleSubmit((values) => customerMutation.mutate(values))}>
+              <div className="space-y-4 py-2">
+                <FormField
+                  control={customerForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">Customer Name*</FormLabel>
+                      <FormControl>
+                        <Input className="h-12 text-base" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={customerForm.control}
+                  name="vatNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">VAT Number</FormLabel>
+                      <FormControl>
+                        <Input className="h-12 text-base" {...field} value={field.value || ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={customerForm.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">Address</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          className="h-20 text-base" 
+                          {...field} 
+                          value={field.value || ''} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={customerForm.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">City</FormLabel>
+                        <FormControl>
+                          <Input className="h-12 text-base" {...field} value={field.value || ''} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={customerForm.control}
+                    name="state"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">State/Province</FormLabel>
+                        <FormControl>
+                          <Input className="h-12 text-base" {...field} value={field.value || ''} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={customerForm.control}
+                    name="postalCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">Postal Code</FormLabel>
+                        <FormControl>
+                          <Input className="h-12 text-base" {...field} value={field.value || ''} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={customerForm.control}
+                    name="country"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">Country</FormLabel>
+                        <FormControl>
+                          <Input className="h-12 text-base" {...field} value={field.value || ''} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <FormField
+                  control={customerForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">Email</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="email" 
+                          className="h-12 text-base" 
+                          {...field} 
+                          value={field.value || ''} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={customerForm.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">Phone</FormLabel>
+                      <FormControl>
+                        <Input className="h-12 text-base" {...field} value={field.value || ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={customerForm.control}
+                  name="contactPerson"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">Contact Person</FormLabel>
+                      <FormControl>
+                        <Input className="h-12 text-base" {...field} value={field.value || ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={customerForm.control}
+                  name="preferredShippingCompany"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">Preferred Shipping</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value || undefined}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="h-12 text-base">
+                            <SelectValue placeholder="Select shipping company" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="dhl" className="h-10 text-base">DHL</SelectItem>
+                          <SelectItem value="fedex" className="h-10 text-base">FedEx</SelectItem>
+                          <SelectItem value="ups" className="h-10 text-base">UPS</SelectItem>
+                          <SelectItem value="usps" className="h-10 text-base">USPS</SelectItem>
+                          <SelectItem value="royal_mail" className="h-10 text-base">Royal Mail</SelectItem>
+                          <SelectItem value="other" className="h-10 text-base">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                {customerForm.watch('preferredShippingCompany') === 'other' && (
+                  <FormField
+                    control={customerForm.control}
+                    name="customShippingCompany"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">Custom Shipping Company</FormLabel>
+                        <FormControl>
+                          <Input className="h-12 text-base" {...field} value={field.value || ''} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+                
+                <FormField
+                  control={customerForm.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">Notes</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          className="h-20 text-base" 
+                          {...field} 
+                          value={field.value || ''} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <DialogFooter className="pt-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 text-base"
+                  onClick={() => setIsNewCustomerDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="h-12 text-base"
+                  disabled={customerMutation.isPending}
+                >
+                  {customerMutation.isPending ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin mr-2"></i> Creating...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-plus mr-2"></i> Create Customer
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
