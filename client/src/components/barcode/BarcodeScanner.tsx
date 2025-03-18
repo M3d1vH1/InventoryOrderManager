@@ -2,18 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-
-// This is needed for TypeScript support with react-barcode-reader
-declare module "react-barcode-reader" {
-  export default class BarcodeReader extends React.Component<{
-    onError?: (error: any) => void;
-    onScan: (data: string) => void;
-    minLength?: number;
-    delay?: number;
-    stopPropagation?: boolean;
-    preventDefault?: boolean;
-  }> {}
-}
+import { Input } from "@/components/ui/input";
 
 interface BarcodeScannerProps {
   onBarcodeScanned: (barcode: string) => void;
@@ -23,18 +12,16 @@ interface BarcodeScannerProps {
   modalTitle?: string;
 }
 
-// Dynamic import for client-side only functionality
-const BarcodeReader = React.lazy(() => import('react-barcode-reader'));
-
 const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
   onBarcodeScanned,
   buttonText = "Scan Barcode",
   buttonVariant = "default",
   buttonSize = "default",
-  modalTitle = "Scan Barcode"
+  modalTitle = "Scan or Enter Barcode"
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [barcode, setBarcode] = useState<string>("");
+  const [manualBarcode, setManualBarcode] = useState<string>("");
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const { toast } = useToast();
@@ -53,7 +40,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
       setHasPermission(false);
       toast({
         title: "Camera permission denied",
-        description: "Please allow camera access to scan barcodes.",
+        description: "You can still enter the barcode manually.",
         variant: "destructive",
       });
     }
@@ -79,28 +66,52 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
     stopCamera();
     setIsOpen(false);
     setBarcode("");
+    setManualBarcode("");
   };
 
-  const handleScan = (data: string) => {
-    if (data) {
-      setBarcode(data);
-      onBarcodeScanned(data);
+  const handleManualSubmit = () => {
+    if (manualBarcode.trim()) {
+      setBarcode(manualBarcode);
+      onBarcodeScanned(manualBarcode);
       toast({
-        title: "Barcode Scanned",
-        description: `Scanned barcode: ${data}`,
+        title: "Barcode Entered",
+        description: `Entered barcode: ${manualBarcode}`,
       });
       handleClose();
+    } else {
+      toast({
+        title: "Empty Barcode",
+        description: "Please enter a valid barcode.",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleError = (err: any) => {
-    console.error(err);
-    toast({
-      title: "Scan Error",
-      description: "There was an error while scanning. Please try again.",
-      variant: "destructive",
-    });
-  };
+  // Simulate barcode scanning with keyboard input
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isOpen && isScanning) {
+        // Only collect numeric and alphanumeric input for the barcode
+        if (/^[a-zA-Z0-9]$/.test(e.key)) {
+          setBarcode(prev => prev + e.key);
+        }
+        // When Enter is pressed, treat it as a complete scan
+        else if (e.key === 'Enter' && barcode) {
+          onBarcodeScanned(barcode);
+          toast({
+            title: "Barcode Scanned",
+            description: `Scanned barcode: ${barcode}`,
+          });
+          handleClose();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, isScanning, barcode, onBarcodeScanned, toast]);
 
   // Clean up on unmount
   useEffect(() => {
@@ -128,47 +139,71 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
           
           <div className="space-y-4">
             {hasPermission === false && (
-              <div className="p-4 border rounded-md bg-red-50 text-red-600">
-                <p>Camera access is required to scan barcodes. Please allow camera access and try again.</p>
+              <div className="p-4 border rounded-md bg-amber-50 text-amber-600">
+                <p>Camera access was denied. You can enter the barcode manually below.</p>
               </div>
             )}
             
-            {isScanning && (
-              <React.Suspense fallback={<div>Loading scanner...</div>}>
-                <BarcodeReader
-                  onError={handleError}
-                  onScan={handleScan}
-                  minLength={4}
-                  delay={300}
+            {hasPermission === true && (
+              <div className="relative bg-black rounded-md overflow-hidden">
+                <video 
+                  ref={videoRef} 
+                  className="w-full h-64 object-cover"
+                  autoPlay 
+                  playsInline 
                 />
-              </React.Suspense>
-            )}
-            
-            <div className="relative bg-black rounded-md overflow-hidden">
-              <video 
-                ref={videoRef} 
-                className="w-full h-64 object-cover"
-                autoPlay 
-                playsInline 
-              />
-              <div className="absolute inset-0 border-2 border-red-500 border-dashed pointer-events-none">
-                <div className="absolute top-1/2 left-0 w-full border-t-2 border-red-500 -translate-y-1/2"></div>
-                <div className="absolute top-0 left-1/2 h-full border-l-2 border-red-500 -translate-x-1/2"></div>
+                <div className="absolute inset-0 border-2 border-red-500 border-dashed pointer-events-none">
+                  <div className="absolute top-1/2 left-0 w-full border-t-2 border-red-500 -translate-y-1/2"></div>
+                  <div className="absolute top-0 left-1/2 h-full border-l-2 border-red-500 -translate-x-1/2"></div>
+                </div>
               </div>
-            </div>
+            )}
             
             {barcode && (
               <div className="p-4 border rounded-md bg-green-50 text-green-600">
-                <p>Scanned barcode: {barcode}</p>
+                <p>Current barcode: {barcode}</p>
               </div>
             )}
+            
+            <div className="p-4 border rounded-md bg-slate-50">
+              <p className="mb-2 text-sm text-slate-600">Enter barcode manually:</p>
+              <div className="flex space-x-2">
+                <Input 
+                  value={manualBarcode}
+                  onChange={(e) => setManualBarcode(e.target.value)}
+                  placeholder="Enter barcode (e.g., WDG-001)"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleManualSubmit();
+                    }
+                  }}
+                />
+                <Button 
+                  onClick={handleManualSubmit}
+                  type="button"
+                >
+                  Submit
+                </Button>
+              </div>
+            </div>
+            
+            <div className="text-sm text-slate-500">
+              <p>Tips:</p>
+              <ul className="list-disc pl-5 space-y-1 mt-1">
+                <li>Position barcode in the center of the camera view</li>
+                <li>Ensure good lighting for better scanning</li>
+                <li>You can also use a barcode scanner device or enter the code manually</li>
+              </ul>
+            </div>
           </div>
           
           <DialogFooter>
             <Button variant="outline" onClick={handleClose}>Cancel</Button>
-            <Button onClick={() => requestCameraPermission()} disabled={isScanning}>
-              {isScanning ? "Scanning..." : "Start Scanning"}
-            </Button>
+            {hasPermission === false && (
+              <Button onClick={() => requestCameraPermission()}>
+                Try Camera Again
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

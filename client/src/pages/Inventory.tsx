@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSidebar } from "@/context/SidebarContext";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { BarcodeScanner } from "@/components/barcode";
 
 import {
   Table,
@@ -21,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchIcon } from "lucide-react";
 
 interface Product {
   id: number;
@@ -35,6 +37,9 @@ interface Product {
 const Inventory = () => {
   const { setCurrentPage } = useSidebar();
   const { toast } = useToast();
+  const [searchText, setSearchText] = useState<string>("");
+  const [highlightedProductId, setHighlightedProductId] = useState<number | null>(null);
+  const highlightedRowRef = useRef<HTMLTableRowElement>(null);
   
   useEffect(() => {
     setCurrentPage("Inventory");
@@ -43,6 +48,43 @@ const Inventory = () => {
   const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: ['/api/products'],
   });
+  
+  // Handle barcode scanning result
+  const handleBarcodeScanned = (barcode: string) => {
+    setSearchText(barcode);
+    
+    const foundProduct = products?.find(p => p.sku === barcode);
+    if (foundProduct) {
+      setHighlightedProductId(foundProduct.id);
+      toast({
+        title: "Product Found",
+        description: `Found ${foundProduct.name} (SKU: ${foundProduct.sku})`,
+      });
+      
+      // Scroll to the highlighted product row
+      setTimeout(() => {
+        highlightedRowRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }, 100);
+    } else {
+      toast({
+        title: "Product Not Found",
+        description: `No product found with barcode/SKU: ${barcode}`,
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Filter products based on search text
+  const filteredProducts = searchText.trim() === "" 
+    ? products 
+    : products?.filter(p => 
+        p.name.toLowerCase().includes(searchText.toLowerCase()) || 
+        p.sku.toLowerCase().includes(searchText.toLowerCase()) ||
+        p.category.toLowerCase().includes(searchText.toLowerCase())
+      );
 
   const updateStockMutation = useMutation({
     mutationFn: async ({ id, stock }: { id: number; stock: number }) => {
@@ -182,6 +224,33 @@ const Inventory = () => {
       <div className="bg-white rounded-lg shadow">
         <div className="p-4 border-b border-slate-200 flex justify-between items-center">
           <h2 className="font-semibold text-lg">Inventory Management</h2>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+              <Input
+                type="text"
+                placeholder="Search products or SKU..."
+                className="pl-8 w-[250px]"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+              />
+              {searchText && (
+                <button
+                  onClick={() => setSearchText("")}
+                  className="absolute right-2.5 top-2.5 text-slate-500 hover:text-slate-900"
+                >
+                  <i className="fas fa-times-circle"></i>
+                </button>
+              )}
+            </div>
+            <BarcodeScanner
+              onBarcodeScanned={handleBarcodeScanned}
+              buttonText="Scan"
+              buttonSize="sm"
+              buttonVariant="outline"
+              modalTitle="Scan Product Barcode"
+            />
+          </div>
         </div>
         <div className="p-4">
           <div className="overflow-x-auto">
@@ -204,15 +273,21 @@ const Inventory = () => {
                       Loading inventory data...
                     </TableCell>
                   </TableRow>
-                ) : products?.length === 0 ? (
+                ) : filteredProducts?.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8">
-                      No products found in inventory.
+                      No products found matching your search criteria.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  products?.map(product => (
-                    <TableRow key={product.id}>
+                  filteredProducts?.map(product => {
+                    const isHighlighted = highlightedProductId === product.id;
+                    return (
+                    <TableRow 
+                      key={product.id} 
+                      ref={isHighlighted ? highlightedRowRef : undefined}
+                      className={isHighlighted ? 'bg-blue-50 animate-pulse' : ''}
+                    >
                       <TableCell>{product.name}</TableCell>
                       <TableCell>{product.sku}</TableCell>
                       <TableCell>{product.category}</TableCell>
@@ -255,7 +330,8 @@ const Inventory = () => {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))
+                    );
+                  })
                 )}
               </TableBody>
             </Table>

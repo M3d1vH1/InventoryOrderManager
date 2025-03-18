@@ -10,6 +10,7 @@ import Inventory from "@/pages/Inventory";
 import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
 import OrderPicking from "@/pages/OrderPicking";
+import ProductBarcode from "@/pages/ProductBarcode";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { SidebarProvider } from "@/context/SidebarContext";
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/settings" component={Settings} />
       <Route path="/order-picking" component={OrderPicking} />
       <Route path="/order-picking/:id" component={OrderPicking} />
+      <Route path="/product-barcode/:id" component={ProductBarcode} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>
