@@ -6,7 +6,8 @@ import {
   products, type Product, type InsertProduct,
   orders, type Order, type InsertOrder,
   orderItems, type OrderItem, type InsertOrderItem,
-  customers, type Customer, type InsertCustomer
+  customers, type Customer, type InsertCustomer,
+  shippingDocuments, type ShippingDocument, type InsertShippingDocument
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { log } from './vite';

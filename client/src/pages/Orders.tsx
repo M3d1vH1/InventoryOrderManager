@@ -36,6 +36,10 @@ import {
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Label
+} from "@/components/ui/label";
 import OrderForm from "@/components/orders/OrderForm";
 
 interface Product {
@@ -67,6 +71,7 @@ interface Order {
   status: 'pending' | 'picked' | 'shipped' | 'cancelled';
   notes?: string;
   items?: OrderItem[];
+  hasShippingDocument?: boolean;
 }
 
 const getStatusBadgeClass = (status: string) => {
@@ -93,6 +98,15 @@ const Orders = () => {
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  
+  // Document upload state
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [orderToShip, setOrderToShip] = useState<Order | null>(null);
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [documentType, setDocumentType] = useState<string>('T△A document');
+  const [documentNotes, setDocumentNotes] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ['/api/orders'],
@@ -179,10 +193,97 @@ const Orders = () => {
     },
   });
 
-  const handleStatusChange = (orderId: number, newStatus: string) => {
-    updateStatusMutation.mutate({ 
+  // Upload document mutation
+  const uploadDocumentMutation = useMutation({
+    mutationFn: async ({ 
       orderId, 
-      status: newStatus as 'pending' | 'picked' | 'shipped' | 'cancelled' 
+      file, 
+      documentType, 
+      notes 
+    }: { 
+      orderId: number; 
+      file: File; 
+      documentType: string; 
+      notes?: string 
+    }) => {
+      setIsUploading(true);
+      
+      const formData = new FormData();
+      formData.append('document', file);
+      formData.append('documentType', documentType);
+      if (notes) formData.append('notes', notes);
+      
+      return apiRequest({
+        url: `/api/orders/${orderId}/documents`,
+        method: 'POST',
+        body: formData,
+        // Don't set Content-Type header, browser will set it with boundary for FormData
+      });
+    },
+    onSuccess: (data, variables) => {
+      setIsUploading(false);
+      setShowUploadDialog(false);
+      setDocumentFile(null);
+      
+      // Now update the order status to shipped
+      updateStatusMutation.mutate({ 
+        orderId: variables.orderId, 
+        status: 'shipped' 
+      });
+      
+      toast({
+        title: "Document uploaded",
+        description: "The TΔA document has been attached and order is being shipped.",
+      });
+    },
+    onError: (error) => {
+      setIsUploading(false);
+      toast({
+        title: "Upload failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const handleStatusChange = (orderId: number, newStatus: string) => {
+    // If changing to shipped status, we need to check/upload TΔA document first
+    if (newStatus === 'shipped') {
+      const order = orders?.find(o => o.id === orderId);
+      if (order) {
+        if (order.hasShippingDocument) {
+          // Document already exists, just update status
+          updateStatusMutation.mutate({ orderId, status: newStatus as 'shipped' });
+        } else {
+          // Show document upload dialog
+          setOrderToShip(order);
+          setShowUploadDialog(true);
+          return; // Don't update status yet
+        }
+      }
+    } else {
+      // For other statuses, just update normally
+      updateStatusMutation.mutate({ 
+        orderId, 
+        status: newStatus as 'pending' | 'picked' | 'shipped' | 'cancelled' 
+      });
+    }
+  };
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setDocumentFile(e.target.files[0]);
+    }
+  };
+  
+  const handleUploadDocument = () => {
+    if (!orderToShip || !documentFile) return;
+    
+    uploadDocumentMutation.mutate({
+      orderId: orderToShip.id,
+      file: documentFile,
+      documentType,
+      notes: documentNotes
     });
   };
   
@@ -500,6 +601,127 @@ const Orders = () => {
               </DialogFooter>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Document Upload Dialog */}
+      <Dialog open={showUploadDialog} onOpenChange={(open) => {
+        setShowUploadDialog(open);
+        if (!open) {
+          setOrderToShip(null);
+          setDocumentFile(null);
+          setDocumentNotes('');
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Upload TΔA Document
+              {orderToShip && (
+                <span className="ml-2 text-sm font-normal text-slate-500">
+                  ({orderToShip.orderNumber})
+                </span>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              A TΔA document is required before this order can be shipped.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="documentType">Document Type</Label>
+              <Select 
+                value={documentType} 
+                onValueChange={setDocumentType}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select document type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="T△A document">T△A document</SelectItem>
+                  <SelectItem value="Invoice">Invoice</SelectItem>
+                  <SelectItem value="Custom declaration">Custom declaration</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="document">Document File</Label>
+              <div className="flex items-center gap-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full justify-start text-left font-normal"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {documentFile ? documentFile.name : "Select file..."}
+                </Button>
+                {documentFile && (
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => setDocumentFile(null)}
+                  >
+                    <span className="sr-only">Remove file</span>
+                    <AlertTriangle className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                id="document"
+                className="hidden"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                onChange={handleFileChange}
+              />
+              <p className="text-xs text-slate-500">
+                Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Textarea
+                id="notes"
+                placeholder="Add any additional information about this document..."
+                value={documentNotes}
+                onChange={(e) => setDocumentNotes(e.target.value)}
+                className="min-h-[80px]"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter className="flex justify-between sm:justify-between gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowUploadDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleUploadDocument}
+              disabled={!documentFile || isUploading}
+            >
+              {isUploading ? (
+                <>
+                  <span className="animate-spin mr-2">⟳</span>
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Upload & Ship Order
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
