@@ -24,7 +24,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, QrCode, BarcodeScan, Truck, RefreshCcw } from "lucide-react";
+import { MapPin, QrCode, ScanBarcode as BarcodeIcon, Truck, RefreshCcw } from "lucide-react";
 import { BarcodeScanner } from "@/components/barcode";
 
 interface OrderItem {
@@ -121,6 +121,59 @@ const PickList = ({ order }: { order: Order }) => {
   const completePickList = () => {
     updateOrderStatusMutation.mutate('picked');
   };
+  
+  // Handle barcode scan
+  const handleBarcodeScanned = (barcode: string) => {
+    setLastScannedBarcode(barcode);
+    
+    // Find the order item with matching product barcode
+    const orderItem = orderItemsWithProducts.find(
+      item => item.product?.barcode === barcode || item.product?.sku === barcode
+    );
+    
+    if (orderItem && order.status === 'pending') {
+      // Mark the item as picked
+      handleItemPick(orderItem.id);
+      toast({
+        title: "Item scanned",
+        description: `${orderItem.product?.name} has been marked as picked`,
+      });
+    } else if (!orderItem) {
+      toast({
+        title: "Barcode not found",
+        description: "No matching product found in this order",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Sort order items by location for more efficient picking
+  const getSortedOrderItems = () => {
+    if (!sortByLocation) {
+      return orderItemsWithProducts;
+    }
+    
+    // Sort by aisle/location
+    return [...orderItemsWithProducts].sort((a, b) => {
+      const locationA = a.product?.location || a.product?.category || '';
+      const locationB = b.product?.location || b.product?.category || '';
+      return locationA.localeCompare(locationB);
+    });
+  };
+  
+  // Filter order items by SKU search term
+  const getFilteredOrderItems = () => {
+    const sortedItems = getSortedOrderItems();
+    
+    if (!searchSku) {
+      return sortedItems;
+    }
+    
+    return sortedItems.filter(item => 
+      item.product?.sku?.toLowerCase().includes(searchSku.toLowerCase()) ||
+      item.product?.name?.toLowerCase().includes(searchSku.toLowerCase())
+    );
+  };
 
   // Calculate progress whenever pickedItems changes
   useEffect(() => {
@@ -168,6 +221,51 @@ const PickList = ({ order }: { order: Order }) => {
           </div>
           <Progress value={progress} className="h-2" />
         </div>
+        
+        {/* Controls */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Input
+                placeholder="Search by SKU or product name"
+                value={searchSku}
+                onChange={(e) => setSearchSku(e.target.value)}
+                className="pl-8"
+              />
+              <QrCode className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+            </div>
+          </div>
+          
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setSortByLocation(!sortByLocation)}
+              className={sortByLocation ? "bg-slate-100" : ""}
+            >
+              <MapPin className="mr-1 h-4 w-4" />
+              Sort by Location
+            </Button>
+            
+            <BarcodeScanner 
+              onBarcodeScanned={handleBarcodeScanned}
+              buttonText={scanMode ? "Cancel Scan" : "Scan Barcode"}
+              buttonVariant="outline"
+              buttonSize="sm"
+              modalTitle="Scan Product Barcode"
+            />
+          </div>
+        </div>
+        
+        {/* Last scanned barcode notification */}
+        {lastScannedBarcode && (
+          <Alert className="mb-4 bg-slate-50">
+            <BarcodeIcon className="h-4 w-4" />
+            <AlertDescription>
+              Last scanned: <span className="font-mono font-medium">{lastScannedBarcode}</span>
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Table>
           <TableHeader>
@@ -180,8 +278,12 @@ const PickList = ({ order }: { order: Order }) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {orderItemsWithProducts.map((item) => (
-              <TableRow key={item.id} className={item.picked ? "bg-slate-50" : ""}>
+            {getFilteredOrderItems().map((item) => (
+              <TableRow 
+                key={item.id} 
+                className={item.picked ? "bg-green-50 hover:bg-green-100" : 
+                  (item.product?.currentStock !== undefined && item.product.currentStock < item.quantity) ? "bg-red-50 hover:bg-red-100" : ""}
+              >
                 <TableCell>
                   <Checkbox 
                     checked={item.picked}
@@ -190,13 +292,22 @@ const PickList = ({ order }: { order: Order }) => {
                   />
                 </TableCell>
                 <TableCell className="font-mono">{item.product?.sku || "N/A"}</TableCell>
-                <TableCell>{item.product?.name || "Unknown Product"}</TableCell>
                 <TableCell>
-                  {item.product?.category === "widgets" && "Aisle A"}
-                  {item.product?.category === "connectors" && "Aisle B"}
-                  {item.product?.category === "brackets" && "Aisle C"}
-                  {item.product?.category === "mounts" && "Aisle D"}
-                  {item.product?.category === "other" && "Aisle E"}
+                  <div className="font-medium">{item.product?.name || "Unknown Product"}</div>
+                  {item.product?.currentStock !== undefined && item.product.currentStock < item.quantity && (
+                    <div className="text-xs text-red-500 mt-1">Low stock: {item.product?.currentStock} available</div>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {item.product?.location || (
+                    <>
+                      {item.product?.category === "widgets" && "Aisle A"}
+                      {item.product?.category === "connectors" && "Aisle B"}
+                      {item.product?.category === "brackets" && "Aisle C"}
+                      {item.product?.category === "mounts" && "Aisle D"}
+                      {item.product?.category === "other" && "Aisle E"}
+                    </>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">{item.quantity}</TableCell>
               </TableRow>
@@ -211,12 +322,48 @@ const PickList = ({ order }: { order: Order }) => {
           </div>
         )}
       </CardContent>
-      <CardFooter className="flex justify-end">
+      <CardFooter className="flex flex-col sm:flex-row gap-3 justify-between">
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              // Clear all picked items
+              setPickedItems({});
+            }}
+            disabled={order.status !== 'pending'}
+          >
+            <RefreshCcw className="mr-1 h-4 w-4" />
+            Reset Picked Items
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              // Mark all items as picked
+              const newPickedItems: Record<number, boolean> = {};
+              order.items?.forEach(item => {
+                newPickedItems[item.id] = true;
+              });
+              setPickedItems(newPickedItems);
+            }}
+            disabled={order.status !== 'pending'}
+          >
+            <Truck className="mr-1 h-4 w-4" />
+            Mark All Picked
+          </Button>
+        </div>
+        
         <Button 
           onClick={completePickList} 
           disabled={!allItemsPicked || order.status !== 'pending' || updateOrderStatusMutation.isPending}
+          className="w-full sm:w-auto"
         >
           {updateOrderStatusMutation.isPending ? "Updating..." : "Complete Pick List"}
+          {allItemsPicked && order.status === 'pending' && !updateOrderStatusMutation.isPending && (
+            <span className="ml-1">({order.items?.length} items)</span>
+          )}
         </Button>
       </CardFooter>
     </Card>
