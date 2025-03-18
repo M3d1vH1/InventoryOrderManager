@@ -238,6 +238,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Advanced Analytics Routes
+  app.get('/api/analytics/inventory-trend', async (req, res) => {
+    try {
+      const weeks = req.query.weeks ? parseInt(req.query.weeks as string) : 6;
+      const data = await storage.getInventoryTrendData(weeks);
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get('/api/analytics/orders-trend', async (req, res) => {
+    try {
+      const months = req.query.months ? parseInt(req.query.months as string) : 6;
+      const data = await storage.getOrdersTrendData(months);
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get('/api/analytics/product-categories', async (req, res) => {
+    try {
+      const data = await storage.getProductCategoryData();
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get('/api/analytics/top-selling-products', async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
+      const data = await storage.getTopSellingProducts(limit);
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get('/api/analytics/inventory-value', async (req, res) => {
+    try {
+      const data = await storage.getInventoryValueReport();
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get('/api/analytics/picking-efficiency', async (req, res) => {
+    try {
+      const data = await storage.getPickingEfficiencyReport();
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
   const httpServer = createServer(app);
   return httpServer;
 }
