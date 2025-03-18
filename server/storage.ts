@@ -160,7 +160,16 @@ export class MemStorage implements IStorage {
   
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
     const id = this.productIdCounter++;
-    const product: Product = { ...insertProduct, id };
+    // Ensure all nullable fields are properly set
+    const product: Product = { 
+      ...insertProduct, 
+      id,
+      barcode: insertProduct.barcode || null,
+      description: insertProduct.description || null,
+      location: insertProduct.location || null,
+      unitsPerBox: insertProduct.unitsPerBox || null,
+      imageUrl: insertProduct.imageUrl || null
+    };
     this.products.set(id, product);
     return product;
   }
@@ -255,7 +264,9 @@ export class MemStorage implements IStorage {
       ...insertOrder,
       orderDate: new Date(insertOrder.orderDate || Date.now()),
       id, 
-      orderNumber
+      orderNumber,
+      status: insertOrder.status || 'pending',
+      notes: insertOrder.notes || null
     };
     
     this.orders.set(id, order);
