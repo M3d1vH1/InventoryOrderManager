@@ -387,8 +387,8 @@ const Customers = () => {
         <div className="flex space-x-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                <FileDown className="h-4 w-4 mr-2" />
+              <Button variant="outline" className="h-12 text-base px-4">
+                <FileDown className="h-5 w-5 mr-2" />
                 Export
               </Button>
             </DropdownMenuTrigger>
@@ -405,8 +405,11 @@ const Customers = () => {
             </DropdownMenuContent>
           </DropdownMenu>
           
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
+          <Button 
+            onClick={() => setIsCreateDialogOpen(true)}
+            className="h-12 text-base px-4"
+          >
+            <Plus className="h-5 w-5 mr-2" />
             Add Customer
           </Button>
         </div>
@@ -425,8 +428,8 @@ const Customers = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <Button type="submit" size="icon">
-              <Search className="h-4 w-4" />
+            <Button type="submit" size="icon" className="h-12 w-12">
+              <Search className="h-5 w-5" />
             </Button>
           </div>
         </CardHeader>
@@ -467,8 +470,8 @@ const Customers = () => {
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
+                            <Button variant="ghost" size="sm" className="h-10 w-10">
+                              <MoreHorizontal className="h-5 w-5" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
@@ -1088,14 +1091,14 @@ const Customers = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="h-12 text-base">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => selectedCustomer && deleteCustomerMutation.mutate(selectedCustomer.id)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 h-12 text-base"
               disabled={deleteCustomerMutation.isPending}
             >
               {deleteCustomerMutation.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               )}
               Delete
             </AlertDialogAction>

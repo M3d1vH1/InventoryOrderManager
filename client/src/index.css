@@ -3,12 +3,28 @@
 @tailwind utilities;
 
 @layer base {
-  input, select, button {
-    @apply min-h-[44px] touch-manipulation;
+  input, select, button, textarea {
+    @apply min-h-[44px] touch-manipulation text-base;
   }
   
+  /* Make form labels more visible */
+  label {
+    @apply text-base font-medium mb-1;
+  }
+  
+  /* Increase size of dropdown items */
+  [role="option"], [role="menuitem"] {
+    @apply py-3 px-4 text-base;
+  }
+  
+  /* Larger table cells for touch */
   th, td {
     @apply p-4;
+  }
+  
+  /* Larger clickable area for buttons and links */
+  .btn-touch, button, a, [role="button"] {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
   }
 }
 
