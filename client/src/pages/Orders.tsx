@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSidebar } from "@/context/SidebarContext";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -7,7 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Link, useLocation } from "wouter";
 import { 
   Eye, Edit, ClipboardCheck, 
-  Truck, CheckSquare, AlertTriangle 
+  Truck, CheckSquare, AlertTriangle,
+  Upload, FileText, FilePlus
 } from "lucide-react";
 
 import {

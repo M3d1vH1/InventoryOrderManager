@@ -93,7 +93,7 @@ export const orders = pgTable("orders", {
   orderDate: timestamp("order_date").notNull().defaultNow(),
   status: orderStatusEnum("status").notNull().default('pending'),
   notes: text("notes"),
-  hasShippingDocument: boolean("has_shipping_document").default(false),
+  hasShippingDocument: boolean("has_shipping_document").notNull().default(false),
 });
 
 export const insertOrderSchema = createInsertSchema(orders)

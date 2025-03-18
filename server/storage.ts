@@ -282,7 +282,8 @@ export class MemStorage implements IStorage {
       id, 
       orderNumber,
       status: insertOrder.status || 'pending',
-      notes: insertOrder.notes || null
+      notes: insertOrder.notes || null,
+      hasShippingDocument: false
     };
     
     this.orders.set(id, order);
