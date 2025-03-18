@@ -6,6 +6,22 @@ import { insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCu
 import { UploadedFile } from "express-fileupload";
 import path from "path";
 import fs from "fs";
+import { WebSocketServer, WebSocket } from 'ws';
+
+// Define WebSocket server and connected clients
+let wss: WebSocketServer;
+const clients = new Set<WebSocket>();
+
+// Helper function to broadcast messages to all connected clients
+function broadcastMessage(message: any) {
+  const messageString = JSON.stringify(message);
+  clients.forEach(client => {
+    // Check if the connection is open (readyState === 1)
+    if (client.readyState === 1) {
+      client.send(messageString);
+    }
+  });
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes
@@ -331,11 +347,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Invalid status value' });
       }
       
+      // Get original order to know the previous status
+      const originalOrder = await storage.getOrder(id);
+      if (!originalOrder) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      
+      const previousStatus = originalOrder.status;
+      
       const updatedOrder = await storage.updateOrderStatus(id, status);
       
       if (!updatedOrder) {
         return res.status(404).json({ message: 'Order not found' });
       }
+      
+      // Send notification via WebSocket
+      broadcastMessage({
+        type: 'orderStatusChange',
+        orderId: updatedOrder.id,
+        orderNumber: updatedOrder.orderNumber,
+        newStatus: status,
+        previousStatus: previousStatus
+      });
       
       res.json(updatedOrder);
     } catch (error: any) {
@@ -575,5 +608,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   const httpServer = createServer(app);
+  
+  // Set up WebSocket server
+  wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  wss.on('connection', (ws: WebSocket) => {
+    // Add client to the set
+    clients.add(ws);
+    console.log('[websocket] Client connected. Total clients:', clients.size);
+    
+    // Handle disconnection
+    ws.on('close', () => {
+      clients.delete(ws);
+      console.log('[websocket] Client disconnected. Total clients:', clients.size);
+    });
+    
+    // Send welcome message
+    ws.send(JSON.stringify({
+      type: 'connection',
+      message: 'Connected to notification server'
+    }));
+  });
+  
   return httpServer;
 }
