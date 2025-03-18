@@ -312,7 +312,19 @@ const Products = () => {
                 filteredProducts?.map((product) => (
                   <TableRow key={product.id}>
                     <TableCell>{product.name}</TableCell>
-                    <TableCell>{product.sku}</TableCell>
+                    <TableCell>
+                      {product.sku}
+                      <button 
+                        className="ml-2 text-slate-600 hover:text-primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(`/product-barcode/${product.id}`, '_blank');
+                        }}
+                        title="View Barcode"
+                      >
+                        <i className="fas fa-barcode"></i>
+                      </button>
+                    </TableCell>
                     <TableCell>
                       <span className="capitalize">{product.category}</span>
                     </TableCell>
