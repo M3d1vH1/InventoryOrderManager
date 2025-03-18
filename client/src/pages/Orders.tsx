@@ -4,7 +4,11 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { 
+  Eye, Edit, ClipboardCheck, 
+  Truck, CheckSquare, AlertTriangle 
+} from "lucide-react";
 
 import {
   Table,
@@ -23,6 +27,14 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 import OrderForm from "@/components/orders/OrderForm";
 
 interface OrderItem {
@@ -60,9 +72,12 @@ const getStatusBadgeClass = (status: string) => {
 const Orders = () => {
   const { setCurrentPage } = useSidebar();
   const { toast } = useToast();
+  const [location, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showOrderForm, setShowOrderForm] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ['/api/orders'],
@@ -117,11 +132,42 @@ const Orders = () => {
     return matchesSearch && matchesStatus;
   });
 
+  // Fetch specific order details
+  const { data: orderDetails } = useQuery<Order>({
+    queryKey: ['/api/orders', selectedOrder?.id],
+    enabled: !!selectedOrder,
+    queryFn: async () => {
+      const response = await apiRequest({
+        url: `/api/orders/${selectedOrder?.id}`,
+      });
+      return response;
+    },
+  });
+
   const handleStatusChange = (orderId: number, newStatus: string) => {
     updateStatusMutation.mutate({ 
       orderId, 
       status: newStatus as 'pending' | 'picked' | 'shipped' | 'cancelled' 
     });
+  };
+  
+  const handleViewOrder = (order: Order) => {
+    setSelectedOrder(order);
+    setIsEditMode(false);
+  };
+  
+  const handleEditOrder = (order: Order) => {
+    setSelectedOrder(order);
+    setIsEditMode(true);
+  };
+  
+  const handleCloseDialog = () => {
+    setSelectedOrder(null);
+    setIsEditMode(false);
+  };
+  
+  const handleGoToPickList = (orderId: number) => {
+    setLocation(`/order-picking/${orderId}`);
   };
 
   return (
@@ -218,16 +264,28 @@ const Orders = () => {
                     <TableCell>{order.items?.length || 0}</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <button className="text-slate-600 hover:text-primary" title="View Order Details">
-                          <i className="fas fa-eye"></i>
+                        <button 
+                          onClick={() => handleViewOrder(order)}
+                          className="text-slate-600 hover:text-primary p-1 rounded-full hover:bg-slate-100" 
+                          title="View Order Details"
+                        >
+                          <Eye className="h-4 w-4" />
                         </button>
-                        <button className="text-slate-600 hover:text-primary" title="Edit Order">
-                          <i className="fas fa-edit"></i>
+                        <button 
+                          onClick={() => handleEditOrder(order)}
+                          className="text-slate-600 hover:text-primary p-1 rounded-full hover:bg-slate-100" 
+                          title="Edit Order"
+                        >
+                          <Edit className="h-4 w-4" />
                         </button>
                         {order.status === 'pending' && (
-                          <Link href={`/order-picking/${order.id}`} className="text-slate-600 hover:text-green-600" title="Pick Order">
-                            <i className="fas fa-clipboard-check"></i>
-                          </Link>
+                          <button
+                            onClick={() => handleGoToPickList(order.id)}
+                            className="text-slate-600 hover:text-green-600 p-1 rounded-full hover:bg-slate-100" 
+                            title="Pick Order"
+                          >
+                            <ClipboardCheck className="h-4 w-4" />
+                          </button>
                         )}
                       </div>
                     </TableCell>
@@ -254,6 +312,146 @@ const Orders = () => {
           </div>
         </div>
       </div>
+
+      {/* Order Details Dialog */}
+      <Dialog open={!!selectedOrder} onOpenChange={handleCloseDialog}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>
+              {isEditMode ? "Edit Order" : "Order Details"}
+              {selectedOrder && (
+                <span className="ml-2 text-sm font-normal text-slate-500">
+                  ({selectedOrder.orderNumber})
+                </span>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {isEditMode 
+                ? "Update the order information below."
+                : "View the complete details of this order."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedOrder && orderDetails && (
+            <div className="space-y-4">
+              {!isEditMode ? (
+                // View mode
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h3 className="text-sm font-medium text-slate-500">Customer</h3>
+                      <p className="text-lg font-medium">{orderDetails.customerName}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-slate-500">Order Date</h3>
+                      <p className="text-lg font-medium">
+                        {format(new Date(orderDetails.orderDate), "MMMM d, yyyy")}
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-slate-500">Status</h3>
+                      <div className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-medium ${getStatusBadgeClass(orderDetails.status)}`}>
+                        {orderDetails.status.charAt(0).toUpperCase() + orderDetails.status.slice(1)}
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-slate-500">Total Items</h3>
+                      <p className="text-lg font-medium">{orderDetails.items?.length || 0}</p>
+                    </div>
+                  </div>
+
+                  {orderDetails.notes && (
+                    <div>
+                      <h3 className="text-sm font-medium text-slate-500">Notes</h3>
+                      <p className="text-slate-700 bg-slate-50 p-2 rounded border border-slate-200">
+                        {orderDetails.notes}
+                      </p>
+                    </div>
+                  )}
+
+                  <div>
+                    <h3 className="text-sm font-medium text-slate-500 mb-2">Order Items</h3>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Product</TableHead>
+                            <TableHead>Quantity</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {orderDetails.items && orderDetails.items.length > 0 ? (
+                            orderDetails.items.map((item) => (
+                              <TableRow key={item.id}>
+                                <TableCell>Product ID: {item.productId}</TableCell>
+                                <TableCell>{item.quantity}</TableCell>
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={2} className="text-center">
+                                No items found in this order.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                // Edit mode - To be implemented with OrderForm
+                <div className="p-4 bg-slate-50 rounded-md border border-slate-200">
+                  <p className="text-center text-slate-500">
+                    Edit mode is available but form needs to be implemented.
+                  </p>
+                </div>
+              )}
+              
+              <DialogFooter className="flex justify-between sm:justify-between gap-2">
+                {isEditMode ? (
+                  <>
+                    <Button variant="outline" onClick={handleCloseDialog}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled>
+                      Save Changes
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex gap-2">
+                      {orderDetails.status === 'pending' && (
+                        <Button
+                          onClick={() => handleGoToPickList(orderDetails.id)}
+                          variant="secondary"
+                          className="flex items-center gap-2"
+                        >
+                          <ClipboardCheck className="h-4 w-4" />
+                          <span>Pick Order</span>
+                        </Button>
+                      )}
+                      
+                      <Button
+                        onClick={() => setIsEditMode(true)}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        <Edit className="h-4 w-4" />
+                        <span>Edit</span>
+                      </Button>
+                    </div>
+                    
+                    <Button onClick={handleCloseDialog}>
+                      Close
+                    </Button>
+                  </>
+                )}
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
