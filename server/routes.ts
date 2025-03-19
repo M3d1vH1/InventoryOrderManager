@@ -621,6 +621,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Endpoint to get products that were ordered but not shipped for a customer
+  app.get('/api/customers/:customerName/unshipped-products', async (req, res) => {
+    try {
+      const { customerName } = req.params;
+      if (!customerName) {
+        return res.status(400).json({ message: "Customer name is required" });
+      }
+      
+      // Get all orders for this customer
+      const allOrders = await storage.getAllOrders();
+      
+      // Filter orders by customer name and get shipped orders
+      const customerOrders = allOrders.filter(order => 
+        order.customerName.toLowerCase() === decodeURIComponent(customerName).toLowerCase());
+      
+      if (customerOrders.length === 0) {
+        return res.json([]);
+      }
+      
+      // Find orders that have status other than 'shipped'
+      const incompleteOrders = customerOrders.filter(order => 
+        order.status !== 'shipped' && order.status !== 'cancelled');
+      
+      if (incompleteOrders.length === 0) {
+        return res.json([]);
+      }
+      
+      // Get all order items for each incomplete order
+      const unshippedProductsPromises = incompleteOrders.map(async order => {
+        const orderItems = await storage.getOrderItems(order.id);
+        return orderItems.map(item => ({
+          ...item,
+          orderNumber: order.orderNumber,
+          orderDate: order.orderDate,
+          status: order.status
+        }));
+      });
+      
+      const unshippedItemsArrays = await Promise.all(unshippedProductsPromises);
+      const allUnshippedItems = unshippedItemsArrays.flat();
+      
+      // Get product details for each unshipped item
+      const productDetailsPromises = allUnshippedItems.map(async item => {
+        const product = await storage.getProduct(item.productId);
+        if (product) {
+          return {
+            ...product,
+            quantity: item.quantity,
+            orderNumber: item.orderNumber,
+            orderDate: item.orderDate,
+            status: item.status
+          };
+        }
+        return null;
+      });
+      
+      const unshippedProducts = (await Promise.all(productDetailsPromises))
+        .filter(item => item !== null);
+      
+      res.json(unshippedProducts);
+    } catch (error: any) {
+      console.error("Error fetching unshipped products:", error);
+      res.status(500).json({ message: `Error fetching unshipped products: ${error.message}` });
+    }
+  });
+  
   app.post('/api/customers', async (req, res) => {
     try {
       const customerData = insertCustomerSchema.parse(req.body);
