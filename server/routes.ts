@@ -92,10 +92,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         imagePath = `/uploads/products/${filename}`;
       }
       
-      // Parse and validate product data
+      // Parse and validate product data with default categoryId
       const productData = insertProductSchema.parse({
         ...req.body,
-        imagePath: imagePath || req.body.imagePath
+        imagePath: imagePath || req.body.imagePath,
+        categoryId: 1 // Set default categoryId for all products
       });
       
       const product = await storage.createProduct(productData);
@@ -111,7 +112,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/products/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      let updateData = req.body;
+      let updateData = {
+        ...req.body,
+        categoryId: 1 // Ensure categoryId is always set to 1
+      };
       
       // Handle file upload if present
       if (req.files && req.files.image) {
