@@ -1086,63 +1086,7 @@ export class MemStorage implements IStorage {
       notes: "Bulk orders only"
     });
     
-    // Create sample categories
-    const widgetsCategory = await this.createCategory({
-      name: "Widgets",
-      description: "Various widget products for industrial use"
-    });
-    
-    const connectorsCategory = await this.createCategory({
-      name: "Connectors",
-      description: "Connection components for various applications"
-    });
-    
-    const bracketsCategory = await this.createCategory({
-      name: "Brackets",
-      description: "Mounting brackets and supports"
-    });
-    
-    const mountsCategory = await this.createCategory({
-      name: "Mounts",
-      description: "Heavy duty mounting systems"
-    });
-    
-    // Sample products with categoryId
-    await this.createProduct({
-      name: "Widget XL",
-      sku: "WDG-001",
-      categoryId: widgetsCategory.id,
-      description: "Extra large widget for industrial use",
-      minStockLevel: 10,
-      currentStock: 2
-    });
-    
-    await this.createProduct({
-      name: "Premium Connector",
-      sku: "CON-002",
-      categoryId: connectorsCategory.id,
-      description: "High quality connector for professional applications",
-      minStockLevel: 15,
-      currentStock: 3
-    });
-    
-    await this.createProduct({
-      name: "Standard Bracket",
-      sku: "BKT-003",
-      categoryId: bracketsCategory.id,
-      description: "Standard mounting bracket",
-      minStockLevel: 20,
-      currentStock: 12
-    });
-    
-    await this.createProduct({
-      name: "Heavy Duty Mount",
-      sku: "MNT-004",
-      categoryId: mountsCategory.id,
-      description: "Heavy duty mounting system",
-      minStockLevel: 10,
-      currentStock: 45
-    });
+    // No default categories or products - user will create their own
   }
 }
 
