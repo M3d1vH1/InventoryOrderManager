@@ -10,6 +10,7 @@
     "edit": "Edit",
     "create": "Create",
     "back": "Back",
+    "close": "Close",
     "scanBarcode": "Scan Barcode",
     "inventory": "Inventory",
     "reports": "Reports",
@@ -59,5 +60,17 @@
     "deletedDescription": "The product category has been deleted successfully",
     "error": "Category Error",
     "confirmDelete": "Are you sure you want to delete this category? This action cannot be undone."
+  },
+  "orders": {
+    "title": "Orders",
+    "createNew": "Create New Order",
+    "quickCreate": "Quickly create a new customer order",
+    "createOrder": "Create Order",
+    "status": {
+      "pending": "Pending",
+      "processing": "Processing",
+      "shipped": "Shipped",
+      "delivered": "Delivered"
+    }
   }
 }

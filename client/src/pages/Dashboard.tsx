@@ -7,10 +7,12 @@ import OrderForm from "@/components/orders/OrderForm";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PlusCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const Dashboard = () => {
   const { setCurrentPage } = useSidebar();
   const [showOrderForm, setShowOrderForm] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     setCurrentPage("Dashboard");
@@ -26,14 +28,14 @@ const Dashboard = () => {
           <Card className="h-full flex flex-col items-center justify-center p-6 mb-6">
             <div className="flex flex-col items-center text-center">
               <PlusCircle className="h-16 w-16 text-primary mb-4" />
-              <h3 className="text-xl font-semibold mb-4">Create New Order</h3>
-              <p className="text-muted-foreground mb-6">Quickly create a new customer order</p>
+              <h3 className="text-xl font-semibold mb-4">{t('orders.createNew')}</h3>
+              <p className="text-muted-foreground mb-6">{t('orders.quickCreate')}</p>
               <Button 
                 size="lg"
                 className="w-full"
                 onClick={() => setShowOrderForm(true)}
               >
-                Create Order
+                {t('orders.createOrder')}
               </Button>
             </div>
           </Card>
@@ -46,13 +48,13 @@ const Dashboard = () => {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-background rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="p-4 border-b flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Create New Order</h2>
+              <h2 className="text-xl font-semibold">{t('orders.createNew')}</h2>
               <Button 
                 variant="ghost" 
                 size="sm"
                 onClick={() => setShowOrderForm(false)}
               >
-                Close
+                {t('app.close')}
               </Button>
             </div>
             <div className="p-4">
