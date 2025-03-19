@@ -327,13 +327,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const orderData = insertOrderSchema.partial().parse(req.body);
       const userId = (req.user as any)?.id || 1; // Default to admin user if somehow not authenticated
       
-      // Using raw data object to include updatedById which is not in the insertOrderSchema
-      const orderUpdateData = {
-        ...orderData
-      };
-      
-      // Add the user ID for tracking changes
-      const updatedOrder = await storage.updateOrder(id, orderUpdateData, userId);
+      // Pass the validated orderData and userId separately
+      const updatedOrder = await storage.updateOrder(id, orderData, userId);
       
       if (!updatedOrder) {
         return res.status(404).json({ message: 'Order not found' });

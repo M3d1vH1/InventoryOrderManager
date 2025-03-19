@@ -341,7 +341,7 @@ export class DatabaseStorage implements IStorage {
     return updatedOrder;
   }
 
-  async updateOrder(id: number, orderData: Partial<InsertOrder> & { updatedById: number }): Promise<Order | undefined> {
+  async updateOrder(id: number, orderData: Partial<InsertOrder>, updatedById?: number): Promise<Order | undefined> {
     // Get the existing order to track changes
     const existingOrder = await this.getOrder(id);
     if (!existingOrder) return undefined;
@@ -355,6 +355,11 @@ export class DatabaseStorage implements IStorage {
       lastUpdated: new Date()
     };
     
+    // Add updatedById if provided
+    if (updatedById) {
+      (updateWithTimestamp as any).updatedById = updatedById;
+    }
+    
     // Update the order
     const [updatedOrder] = await this.db
       .update(orders)
@@ -362,15 +367,17 @@ export class DatabaseStorage implements IStorage {
       .where(eq(orders.id, id))
       .returning();
     
-    // Add changelog entry
-    await this.addOrderChangelog({
-      orderId: id,
-      userId: orderData.updatedById,
-      action: 'update',
-      changes: { ...orderData },
-      previousValues: previousValues,
-      notes: "Order updated"
-    });
+    // Add changelog entry if we have a user ID
+    if (updatedById) {
+      await this.addOrderChangelog({
+        orderId: id,
+        userId: updatedById,
+        action: 'update',
+        changes: { ...orderData },
+        previousValues: previousValues,
+        notes: "Order updated"
+      });
+    }
     
     return updatedOrder;
   }
