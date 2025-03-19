@@ -299,7 +299,7 @@ const Orders = () => {
   };
   
   // Function to handle document upload for any order
-  const handleUploadDocument = (order: Order) => {
+  const handleOpenDocumentUpload = (order: Order) => {
     setOrderToShip(order);
     setShowUploadDialog(true);
   };
@@ -310,7 +310,7 @@ const Orders = () => {
     }
   };
   
-  const handleUploadDocument = () => {
+  const handleSubmitDocument = () => {
     if (!orderToShip || !documentFile) return;
     
     uploadDocumentMutation.mutate({
@@ -803,7 +803,7 @@ const Orders = () => {
             </Button>
             <Button
               type="button"
-              onClick={handleUploadDocument}
+              onClick={handleSubmitDocument}
               disabled={!documentFile || isUploading}
             >
               {isUploading ? (
