@@ -378,7 +378,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Document upload for orders
+  // Document upload for orders with optional status change
   app.post('/api/orders/:id/documents', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -396,6 +396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const documentFile = req.files.document as UploadedFile;
       const documentType = req.body.documentType; 
       const notes = req.body.notes;
+      const updateStatus = req.body.updateStatus === 'true' || req.body.updateStatus === true;
       
       if (!documentType) {
         return res.status(400).json({ message: 'Document type is required' });
@@ -418,14 +419,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Document path for storage
       const documentPath = `/uploads/documents/${filename}`;
       
-      // Update order status with document info
-      const updatedOrder = await storage.updateOrderStatus(id, 'shipped', {
-        documentPath,
-        documentType,
-        notes
-      });
+      // If updateStatus is true, update the order status as well
+      if (updateStatus) {
+        // Update order status with document info
+        await storage.updateOrderStatus(id, 'shipped', {
+          documentPath,
+          documentType,
+          notes
+        });
+      } else {
+        // Just attach the document without changing status
+        await storage.addShippingDocument({
+          orderId: id,
+          documentPath,
+          documentType,
+          notes: notes || null
+        });
+        
+        // Send notification via WebSocket for document attachment
+        broadcastMessage({
+          type: 'documentUploaded',
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          documentType
+        });
+      }
       
-      res.json({ success: true, documentPath });
+      res.json({ 
+        success: true, 
+        documentPath,
+        orderStatus: updateStatus ? 'shipped' : order.status 
+      });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

@@ -106,6 +106,7 @@ const Orders = () => {
   const [documentType, setDocumentType] = useState<string>('T△A document');
   const [documentNotes, setDocumentNotes] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
+  const [updateStatusOnUpload, setUpdateStatusOnUpload] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: orders, isLoading } = useQuery<Order[]>({
@@ -199,18 +200,21 @@ const Orders = () => {
       orderId, 
       file, 
       documentType, 
-      notes 
+      notes,
+      updateStatus 
     }: { 
       orderId: number; 
       file: File; 
       documentType: string; 
-      notes?: string 
+      notes?: string;
+      updateStatus: boolean;
     }) => {
       setIsUploading(true);
       
       const formData = new FormData();
       formData.append('document', file);
       formData.append('documentType', documentType);
+      formData.append('updateStatus', updateStatus.toString());
       if (notes) formData.append('notes', notes);
       
       return apiRequest({
@@ -225,16 +229,21 @@ const Orders = () => {
       setShowUploadDialog(false);
       setDocumentFile(null);
       
-      // Now update the order status to shipped
-      updateStatusMutation.mutate({ 
-        orderId: variables.orderId, 
-        status: 'shipped' 
-      });
-      
-      toast({
-        title: "Document uploaded",
-        description: "The TΔA document has been attached and order is being shipped.",
-      });
+      // Only update the status if the user checked the option
+      if (variables.updateStatus) {
+        toast({
+          title: "Document uploaded",
+          description: "The TΔA document has been attached and order is being shipped.",
+        });
+      } else {
+        toast({
+          title: "Document uploaded",
+          description: "The TΔA document has been attached to the order.",
+        });
+        
+        // Make sure to refresh order data to show document is attached
+        queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      }
     },
     onError: (error) => {
       setIsUploading(false);
@@ -283,7 +292,8 @@ const Orders = () => {
       orderId: orderToShip.id,
       file: documentFile,
       documentType,
-      notes: documentNotes
+      notes: documentNotes,
+      updateStatus: updateStatusOnUpload
     });
   };
   
@@ -743,6 +753,19 @@ const Orders = () => {
                 className="min-h-[80px]"
               />
             </div>
+            
+            <div className="flex items-center space-x-2 mt-4">
+              <input
+                type="checkbox"
+                id="updateStatus"
+                checked={updateStatusOnUpload}
+                onChange={(e) => setUpdateStatusOnUpload(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <label htmlFor="updateStatus" className="text-sm font-medium text-gray-700">
+                Change order status to 'Shipped' after upload
+              </label>
+            </div>
           </div>
           
           <DialogFooter className="flex justify-between sm:justify-between gap-2">
@@ -766,7 +789,7 @@ const Orders = () => {
               ) : (
                 <>
                   <FileText className="h-4 w-4 mr-2" />
-                  Upload & Ship Order
+                  {updateStatusOnUpload ? 'Upload & Ship Order' : 'Upload Document'}
                 </>
               )}
             </Button>
