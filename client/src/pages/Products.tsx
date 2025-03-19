@@ -401,37 +401,14 @@ const Products = () => {
 
   return (
     <div className="container mx-auto py-6">
-      {/* Category Manager Component */}
-      <Tabs defaultValue="products" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="products">{t('products.title')}</TabsTrigger>
-          {user?.role === 'admin' && (
-            <TabsTrigger value="categories">{t('categories.title')}</TabsTrigger>
-          )}
-        </TabsList>
-        {user?.role === 'admin' && (
-          <TabsContent value="categories">
-            <CategoryManager />
-          </TabsContent>
-        )}
-        <TabsContent value="products">
-          <div className="bg-white rounded-lg shadow mb-6">
+      <div className="w-full">
+        <div className="bg-white rounded-lg shadow mb-6">
             <div className="p-5 border-b border-slate-200 flex justify-between items-center">
               <div>
                 <h1 className="font-semibold text-2xl">{t('products.title')}</h1>
                 <p className="text-slate-500 mt-1">{t('products.subtitle')}</p>
               </div>
               <div className="flex gap-2">
-                {user?.role === 'admin' && (
-                  <Button 
-                    onClick={() => document.querySelector('[data-value="categories"]')?.click()}
-                    className="flex items-center gap-1"
-                    variant="outline"
-                  >
-                    <i className="fas fa-tags mr-1"></i>
-                    Manage Categories
-                  </Button>
-                )}
                 <Button 
                   onClick={handleNewProduct}
                   className="flex items-center gap-1"
