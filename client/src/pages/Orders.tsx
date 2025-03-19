@@ -565,7 +565,14 @@ const Orders = () => {
       </div>
 
       {/* Order Details Dialog */}
-      <Dialog open={!!selectedOrder} onOpenChange={handleCloseDialog}>
+      <Dialog 
+        open={!!selectedOrder} 
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseDialog();
+            setLocation('/orders');
+          }
+        }}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>

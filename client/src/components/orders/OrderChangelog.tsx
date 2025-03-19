@@ -105,15 +105,23 @@ export function OrderChangelog({ orderId }: OrderChangelogProps) {
 
   const renderChanges = (item: ChangelogItem) => {
     if (item.action === 'status_change') {
+      const prevStatus = item.previousStatus || '';
+      const newStatus = item.newStatus || '';
+      
+      const formatStatus = (status: string) => {
+        if (!status) return 'None';
+        return status.charAt(0).toUpperCase() + status.slice(1);
+      };
+      
       return (
         <div className="text-sm">
           <span className="font-medium">Status changed: </span>
-          <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(item.previousStatus || '')}`}>
-            {item.previousStatus?.charAt(0).toUpperCase() + item.previousStatus?.slice(1) || 'None'}
+          <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(prevStatus)}`}>
+            {formatStatus(prevStatus)}
           </span>
           <span className="mx-2">→</span>
-          <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(item.newStatus || '')}`}>
-            {item.newStatus?.charAt(0).toUpperCase() + item.newStatus?.slice(1) || 'None'}
+          <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(newStatus)}`}>
+            {formatStatus(newStatus)}
           </span>
         </div>
       );
