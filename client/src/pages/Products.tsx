@@ -135,7 +135,7 @@ const Products = () => {
       name: "",
       sku: "",
       barcode: "",
-      categoryId: 0,
+      categoryId: 0, // Will be updated after categories load
       description: "",
       minStockLevel: 5,
       currentStock: 0,
@@ -159,10 +159,16 @@ const Products = () => {
     staleTime: 1000, // Refresh categories every second to ensure we have the latest
   });
   
-  // Debug categories data
+  // Debug categories data and update the form's default categoryId
   useEffect(() => {
     console.log('Categories data loaded:', categoriesData);
-  }, [categoriesData]);
+    
+    // Set default categoryId to the first available category if any exist
+    if (categoriesData.length > 0 && !editingProduct) {
+      console.log('Setting default categoryId to:', categoriesData[0].id);
+      form.setValue('categoryId', categoriesData[0].id);
+    }
+  }, [categoriesData, form, editingProduct]);
   
   // Transform category objects to an array of names for backward compatibility
   const categories = React.useMemo(() => {
@@ -281,6 +287,11 @@ const Products = () => {
   });
 
   const onSubmit = (values: ProductFormValues) => {
+    // Add detailed logging
+    console.log('Submitting product with values:', values);
+    console.log('CategoryId value:', values.categoryId);
+    console.log('CategoryId type:', typeof values.categoryId);
+    
     if (editingProduct) {
       updateProductMutation.mutate({ id: editingProduct.id, values });
     } else {
@@ -775,20 +786,26 @@ const Products = () => {
                     <FormField
                       control={form.control}
                       name="categoryId"
-                      render={({ field }: { field: any }) => {
+                      render={({ field }) => {
                         console.log('Form field categoryId value:', field.value);
                         console.log('Categories in form dropdown:', categoriesData);
                         
-                        // Convert field.value to string for the Select component
-                        const stringValue = field.value?.toString() || "";
+                        // Force the value to be a string for the Select component
+                        const stringValue = field.value !== undefined ? field.value.toString() : "";
+                        
+                        // Function to update the categoryId with proper type conversion
+                        const handleCategoryChange = (value: string) => {
+                          const numValue = parseInt(value, 10);
+                          console.log('Setting categoryId to:', numValue);
+                          field.onChange(numValue);
+                        };
                         
                         return (
                           <FormItem>
                             <FormLabel>{t('products.category')}</FormLabel>
                             <Select 
-                              onValueChange={(value) => field.onChange(parseInt(value))} 
+                              onValueChange={handleCategoryChange}
                               value={stringValue}
-                              defaultValue={stringValue}
                             >
                               <FormControl>
                                 <SelectTrigger>
