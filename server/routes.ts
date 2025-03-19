@@ -321,11 +321,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.patch('/api/orders/:id', async (req, res) => {
+  app.patch('/api/orders/:id', isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const orderData = insertOrderSchema.partial().parse(req.body);
-      const updatedOrder = await storage.updateOrder(id, orderData);
+      const userId = (req.user as any)?.id || 1; // Default to admin user if somehow not authenticated
+      
+      // Add the user ID to track who made the changes
+      const updatedOrder = await storage.updateOrder(id, {
+        ...orderData,
+        updatedById: userId
+      });
       
       if (!updatedOrder) {
         return res.status(404).json({ message: 'Order not found' });
