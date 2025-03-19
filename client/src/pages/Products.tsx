@@ -159,6 +159,11 @@ const Products = () => {
     staleTime: 1000, // Refresh categories every second to ensure we have the latest
   });
   
+  // Debug categories data
+  useEffect(() => {
+    console.log('Categories data:', categoriesData);
+  }, [categoriesData]);
+  
   // Transform category objects to an array of names for backward compatibility
   const categories = React.useMemo(() => {
     return categoriesData.map(category => category.name);
@@ -770,29 +775,38 @@ const Products = () => {
                     <FormField
                       control={form.control}
                       name="categoryId"
-                      render={({ field }: { field: any }) => (
-                        <FormItem>
-                          <FormLabel>{t('products.category')}</FormLabel>
-                          <Select 
-                            onValueChange={(value) => field.onChange(parseInt(value))} 
-                            defaultValue={field.value?.toString() || ""}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder={t('products.selectCategory')} />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {categoriesData.map((category) => (
-                                <SelectItem key={category.id} value={category.id.toString()}>
-                                  {category.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      render={({ field }: { field: any }) => {
+                        console.log('Form field categoryId value:', field.value);
+                        console.log('Categories in form dropdown:', categoriesData);
+                        
+                        return (
+                          <FormItem>
+                            <FormLabel>{t('products.category')}</FormLabel>
+                            <Select 
+                              onValueChange={(value) => field.onChange(parseInt(value))} 
+                              defaultValue={field.value?.toString() || ""}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder={t('products.selectCategory')} />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {categoriesData.length === 0 ? (
+                                  <SelectItem value="0">No categories available</SelectItem>
+                                ) : (
+                                  categoriesData.map((category) => (
+                                    <SelectItem key={category.id} value={category.id.toString()}>
+                                      {category.name}
+                                    </SelectItem>
+                                  ))
+                                )}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
                     />
                     <div className="flex gap-2 items-start">
                       <FormField
