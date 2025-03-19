@@ -632,7 +632,7 @@ const OrderForm = ({
                     variant="outline"
                     className="h-12 text-base px-6"
                   >
-                    <i className="fas fa-arrow-left mr-2"></i> Back to Orders
+                    <i className="fas fa-arrow-left mr-2"></i> {t('orders.form.backToOrders')}
                   </Button>
                 </Link>
               )}
@@ -643,11 +643,11 @@ const OrderForm = ({
               >
                 {createOrderMutation.isPending || updateOrderMutation.isPending ? (
                   <>
-                    <i className="fas fa-spinner fa-spin mr-2"></i> {isEditMode ? "Updating..." : "Creating..."}
+                    <i className="fas fa-spinner fa-spin mr-2"></i> {isEditMode ? t('orders.form.updating') : t('orders.form.creating')}
                   </>
                 ) : (
                   <>
-                    <i className="fas fa-check mr-2"></i> {isEditMode ? "Update Order" : "Create Order"}
+                    <i className="fas fa-check mr-2"></i> {isEditMode ? t('orders.form.updateOrder') : t('orders.form.createOrder')}
                   </>
                 )}
               </Button>
@@ -666,9 +666,9 @@ const OrderForm = ({
       <Dialog open={isNewCustomerDialogOpen} onOpenChange={setIsNewCustomerDialogOpen}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl">Add New Customer</DialogTitle>
+            <DialogTitle className="text-xl">{t('orders.form.addNewCustomer')}</DialogTitle>
             <DialogDescription className="text-base">
-              Fill in the customer details below.
+              {t('orders.form.customerDetailsInstructions')}
             </DialogDescription>
           </DialogHeader>
           
@@ -680,7 +680,7 @@ const OrderForm = ({
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base font-medium">Customer Name*</FormLabel>
+                      <FormLabel className="text-base font-medium">{t('customers.form.customerName')}*</FormLabel>
                       <FormControl>
                         <Input className="h-12 text-base" {...field} />
                       </FormControl>
@@ -694,7 +694,7 @@ const OrderForm = ({
                   name="vatNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base font-medium">VAT Number</FormLabel>
+                      <FormLabel className="text-base font-medium">{t('customers.form.vatNumber')}</FormLabel>
                       <FormControl>
                         <Input className="h-12 text-base" {...field} value={field.value || ''} />
                       </FormControl>
@@ -708,7 +708,7 @@ const OrderForm = ({
                   name="address"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base font-medium">Address</FormLabel>
+                      <FormLabel className="text-base font-medium">{t('customers.form.address')}</FormLabel>
                       <FormControl>
                         <Textarea 
                           className="h-20 text-base" 
@@ -727,7 +727,7 @@ const OrderForm = ({
                     name="city"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">City</FormLabel>
+                        <FormLabel className="text-base font-medium">{t('customers.form.city')}</FormLabel>
                         <FormControl>
                           <Input className="h-12 text-base" {...field} value={field.value || ''} />
                         </FormControl>
@@ -741,7 +741,7 @@ const OrderForm = ({
                     name="state"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">State/Province</FormLabel>
+                        <FormLabel className="text-base font-medium">{t('customers.form.stateProvince')}</FormLabel>
                         <FormControl>
                           <Input className="h-12 text-base" {...field} value={field.value || ''} />
                         </FormControl>
@@ -757,7 +757,7 @@ const OrderForm = ({
                     name="postalCode"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">Postal Code</FormLabel>
+                        <FormLabel className="text-base font-medium">{t('customers.form.postalCode')}</FormLabel>
                         <FormControl>
                           <Input className="h-12 text-base" {...field} value={field.value || ''} />
                         </FormControl>
