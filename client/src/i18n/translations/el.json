@@ -9,7 +9,12 @@
     "delete": "Διαγραφή",
     "edit": "Επεξεργασία",
     "create": "Δημιουργία",
-    "back": "Πίσω"
+    "back": "Πίσω",
+    "inventory": "Αποθήκη",
+    "reports": "Αναφορές",
+    "customers": "Πελάτες",
+    "settings": "Ρυθμίσεις",
+    "orderPicking": "Συλλογή Παραγγελιών"
   },
   "dashboard": {
     "title": "Πίνακας Ελέγχου",

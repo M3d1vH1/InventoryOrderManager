@@ -10,7 +10,12 @@
     "edit": "Edit",
     "create": "Create",
     "back": "Back",
-    "scanBarcode": "Scan Barcode"
+    "scanBarcode": "Scan Barcode",
+    "inventory": "Inventory",
+    "reports": "Reports",
+    "customers": "Customers",
+    "settings": "Settings",
+    "orderPicking": "Order Picking"
   },
   "dashboard": {
     "title": "Dashboard",
