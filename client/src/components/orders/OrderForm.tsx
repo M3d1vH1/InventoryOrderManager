@@ -453,7 +453,7 @@ const OrderForm = ({
                 name="orderDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-base font-medium">Order Date</FormLabel>
+                    <FormLabel className="text-base font-medium">{t('orders.form.orderDate')}</FormLabel>
                     <FormControl>
                       <Input 
                         type="date" 
@@ -469,14 +469,14 @@ const OrderForm = ({
             
             <div className="mb-6">
               <div className="flex justify-between items-center mb-2">
-                <FormLabel className="text-base font-medium">Products</FormLabel>
+                <FormLabel className="text-base font-medium">{t('orders.form.products')}</FormLabel>
                 <Button
                   type="button"
                   variant="outline"
                   className="h-12 text-base px-4"
                   onClick={() => setIsProductSearchOpen(true)}
                 >
-                  <i className="fas fa-plus mr-2"></i> Add Product
+                  <i className="fas fa-plus mr-2"></i> {t('orders.form.addProduct')}
                 </Button>
               </div>
               
@@ -484,7 +484,7 @@ const OrderForm = ({
               {previousProducts.length > 0 && (
                 <div className="mb-4">
                   <div className="flex items-center text-base font-medium text-slate-700 mb-2">
-                    <i className="fas fa-history mr-2"></i> Previously ordered products
+                    <i className="fas fa-history mr-2"></i> {t('orders.form.previousProductsFromCustomer')}
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {previousProducts.slice(0, 6).map((product) => (
@@ -533,10 +533,10 @@ const OrderForm = ({
                     <table className="min-w-full">
                       <thead className="bg-slate-100">
                         <tr>
-                          <th className="py-3 px-4 text-left font-semibold text-base">Product</th>
-                          <th className="py-3 px-4 text-left font-semibold text-base w-24">Quantity</th>
-                          <th className="py-3 px-4 text-left font-semibold text-base">Stock</th>
-                          <th className="py-3 px-4 text-left font-semibold text-base w-20">Actions</th>
+                          <th className="py-3 px-4 text-left font-semibold text-base">{t('orders.form.productColumn')}</th>
+                          <th className="py-3 px-4 text-left font-semibold text-base w-24">{t('orders.form.quantityColumn')}</th>
+                          <th className="py-3 px-4 text-left font-semibold text-base">{t('orders.form.stockColumn')}</th>
+                          <th className="py-3 px-4 text-left font-semibold text-base w-20">{t('orders.form.actionsColumn')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -558,7 +558,7 @@ const OrderForm = ({
                             </td>
                             <td className="py-4 px-4">
                               <span className="text-base">
-                                Available: {' '}
+                                {t('orders.form.availableStock')}: {' '}
                                 <span className={`font-medium ${
                                   (item.product?.currentStock || 0) <= (item.product?.minStockLevel || 0) 
                                     ? 'text-red-600' 
@@ -584,7 +584,7 @@ const OrderForm = ({
                   </div>
                 ) : (
                   <div className="mt-4 text-sm text-slate-600 italic">
-                    No products added. Click 'Add Product' to start building your order.
+                    {t('orders.form.noProductsMessage')}
                   </div>
                 )}
               </div>
@@ -601,12 +601,12 @@ const OrderForm = ({
               name="notes"
               render={({ field }) => (
                 <FormItem className="mb-6">
-                  <FormLabel className="text-base font-medium">Notes</FormLabel>
+                  <FormLabel className="text-base font-medium">{t('orders.form.notes')}</FormLabel>
                   <FormControl>
                     <Textarea 
                       rows={3} 
                       className="text-base p-4"
-                      placeholder="Add any special instructions or notes about this order..."
+                      placeholder={t('orders.form.notesPlaceholder')}
                       {...field}
                     />
                   </FormControl>
@@ -623,7 +623,7 @@ const OrderForm = ({
                   className="h-12 text-base px-6"
                   onClick={onCancel}
                 >
-                  <i className="fas fa-times mr-2"></i> Cancel
+                  <i className="fas fa-times mr-2"></i> {t('common.cancel')}
                 </Button>
               ) : (
                 <Link href="/orders">
