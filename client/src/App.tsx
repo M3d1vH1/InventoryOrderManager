@@ -24,12 +24,12 @@ import { useTranslation } from 'react-i18next';
 function AuthenticatedRouter() {
   const { user, isLoading } = useAuth();
   const [location] = useLocation();
-  
+
   // If still loading auth state, show nothing (could add a loading spinner)
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
-  
+
   // Show warehouse staff only order picking
   if (user?.role === 'warehouse') {
     return (
@@ -45,7 +45,7 @@ function AuthenticatedRouter() {
       </Switch>
     );
   }
-  
+
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
@@ -71,24 +71,24 @@ function AuthenticatedRouter() {
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
   const [location] = useLocation();
-  
+
   // If loading auth state, show minimal loading indicator
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
-  
+
   // Handle login route separately
   if (location === '/login') {
     return <Login />;
   }
-  
+
   // If not authenticated and not on login page, redirect to login
   if (!isAuthenticated) {
     // Redirect to login page
     window.location.href = '/login';
     return null;
   }
-  
+
   // Show authenticated routes
   return <AuthenticatedRouter />;
 }
@@ -96,12 +96,12 @@ function Router() {
 function Layout() {
   const { isAuthenticated, isLoading } = useAuth();
   const [location] = useLocation();
-  
+
   // If on login page or loading, don't show the layout
   if (location === '/login' || isLoading || !isAuthenticated) {
     return <Router />;
   }
-  
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
@@ -116,6 +116,7 @@ function Layout() {
 }
 
 function App() {
+  const { t } = useTranslation(); // Added useTranslation hook
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
