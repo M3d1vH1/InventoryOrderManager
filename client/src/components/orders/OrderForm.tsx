@@ -771,7 +771,7 @@ const OrderForm = ({
                     name="country"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">Country</FormLabel>
+                        <FormLabel className="text-base font-medium">{t('customers.form.country')}</FormLabel>
                         <FormControl>
                           <Input className="h-12 text-base" {...field} value={field.value || ''} />
                         </FormControl>
@@ -786,7 +786,7 @@ const OrderForm = ({
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base font-medium">Email</FormLabel>
+                      <FormLabel className="text-base font-medium">{t('customers.form.email')}</FormLabel>
                       <FormControl>
                         <Input 
                           type="email" 
@@ -805,7 +805,7 @@ const OrderForm = ({
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base font-medium">Phone</FormLabel>
+                      <FormLabel className="text-base font-medium">{t('customers.form.phone')}</FormLabel>
                       <FormControl>
                         <Input className="h-12 text-base" {...field} value={field.value || ''} />
                       </FormControl>
@@ -819,7 +819,7 @@ const OrderForm = ({
                   name="contactPerson"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base font-medium">Contact Person</FormLabel>
+                      <FormLabel className="text-base font-medium">{t('customers.form.contactPerson')}</FormLabel>
                       <FormControl>
                         <Input className="h-12 text-base" {...field} value={field.value || ''} />
                       </FormControl>
@@ -833,11 +833,11 @@ const OrderForm = ({
                   name="preferredShippingCompany"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base font-medium">Preferred Shipping Company</FormLabel>
+                      <FormLabel className="text-base font-medium">{t('customers.form.preferredShippingCompany')}</FormLabel>
                       <FormControl>
                         <Input 
                           className="h-12 text-base" 
-                          placeholder="Enter shipping company name" 
+                          placeholder={t('customers.form.enterShippingCompany')} 
                           {...field} 
                           value={field.value || ''} 
                         />
@@ -852,7 +852,7 @@ const OrderForm = ({
                   name="notes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base font-medium">Notes</FormLabel>
+                      <FormLabel className="text-base font-medium">{t('customers.form.notes')}</FormLabel>
                       <FormControl>
                         <Textarea 
                           className="h-20 text-base" 
@@ -873,7 +873,7 @@ const OrderForm = ({
                   className="h-12 text-base"
                   onClick={() => setIsNewCustomerDialogOpen(false)}
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button 
                   type="submit" 
@@ -882,11 +882,11 @@ const OrderForm = ({
                 >
                   {customerMutation.isPending ? (
                     <>
-                      <i className="fas fa-spinner fa-spin mr-2"></i> Creating...
+                      <i className="fas fa-spinner fa-spin mr-2"></i> {t('customers.form.creating')}
                     </>
                   ) : (
                     <>
-                      <i className="fas fa-plus mr-2"></i> Create Customer
+                      <i className="fas fa-plus mr-2"></i> {t('customers.form.createCustomer')}
                     </>
                   )}
                 </Button>
