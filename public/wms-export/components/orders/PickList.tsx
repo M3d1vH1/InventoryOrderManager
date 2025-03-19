@@ -336,8 +336,8 @@ const PickList = ({ order }: { order: Order }) => {
                     <>
                       {item.product?.category === "widgets" && "Aisle A"}
                       {item.product?.category === "connectors" && "Aisle B"}
-                      {item.product?.category === "brackets" && "Aisle C"}
-                      {item.product?.category === "mounts" && "Aisle D"}
+                      {item.product?.category === "default" && "Aisle A"}
+                      {item.product?.location || "Warehouse"}
                       {item.product?.category === "other" && "Aisle E"}
                     </>
                   )}

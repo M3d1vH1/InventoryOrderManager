@@ -97,8 +97,7 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
                   <SelectItem value="all" className="h-10 text-base">All Categories</SelectItem>
                   <SelectItem value="widgets" className="h-10 text-base">Widgets</SelectItem>
                   <SelectItem value="connectors" className="h-10 text-base">Connectors</SelectItem>
-                  <SelectItem value="brackets" className="h-10 text-base">Brackets</SelectItem>
-                  <SelectItem value="mounts" className="h-10 text-base">Mounts</SelectItem>
+                  <SelectItem value="default" className="h-10 text-base">Default Category</SelectItem>
                 </SelectContent>
               </Select>
             </div>
