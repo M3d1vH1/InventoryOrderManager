@@ -129,30 +129,50 @@ export class DatabaseStorage implements IStorage {
   
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
     // We need to handle the category field separately since our schema doesn't define it
-    // but the database has a NOT NULL constraint on it
+    // but the database has a NOT NULL constraint on it as an ENUM type
     
-    // First, get the category name based on the categoryId
-    const category = await this.getCategory(insertProduct.categoryId);
-    
-    // Use SQL.raw to set both categoryId and the category column 
-    // (which isn't in our Drizzle schema but exists in the database)
-    const [product] = await this.db.insert(products)
-      .values(insertProduct)
-      .returning();
+    try {
+      // First, insert the product with all the fields defined in our schema
+      const [product] = await this.db.insert(products)
+        .values(insertProduct)
+        .returning();
+        
+      // If the insert succeeded, we need to update the category column directly
+      // The category column is an ENUM that only accepts specific values:
+      // 'widgets', 'connectors', 'brackets', 'mounts', 'other'
+      if (product) {
+        // Default to 'other' as a safe fallback
+        let categoryEnumValue = 'other';
+        
+        // Map categoryId to a valid enum value if possible
+        if (insertProduct.categoryId) {
+          // You could implement a mapping from categoryId to enum values here
+          // For now, we'll use a simple switch based on the ID
+          switch(insertProduct.categoryId) {
+            case 1: categoryEnumValue = 'widgets'; break;
+            case 2: categoryEnumValue = 'connectors'; break;
+            case 3: categoryEnumValue = 'brackets'; break;
+            case 4: categoryEnumValue = 'mounts'; break;
+            case 5: // Any new category will default to 'other'
+            default: categoryEnumValue = 'other'; break;
+          }
+        }
+        
+        // Update the category column using raw SQL with a valid enum value
+        await this.db.execute(
+          sql`UPDATE products SET category = ${categoryEnumValue}::category WHERE id = ${product.id}`
+        );
+        
+        // Fetch the updated product
+        const updatedProduct = await this.getProduct(product.id);
+        return updatedProduct || product;
+      }
       
-    // If the insert succeeded but we need to update the category column directly
-    if (product) {
-      // Update the category column using raw SQL
-      await this.db.execute(
-        sql`UPDATE products SET category = ${category?.name || 'Default'} WHERE id = ${product.id}`
-      );
-      
-      // Fetch the updated product
-      const updatedProduct = await this.getProduct(product.id);
-      return updatedProduct || product;
+      return product;
+    } catch (error) {
+      console.error('Error creating product:', error);
+      throw error;
     }
-    
-    return product;
   }
   
   async updateProduct(id: number, productUpdate: Partial<InsertProduct>): Promise<Product | undefined> {
