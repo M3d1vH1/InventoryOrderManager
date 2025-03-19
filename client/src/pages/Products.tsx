@@ -94,7 +94,7 @@ export default function Products() {
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [stockFilter, setStockFilter] = useState("all");
-  const [tagFilter, setTagFilter] = useState("");
+  const [tagFilter, setTagFilter] = useState("all_tags");
   const [sortField, setSortField] = useState("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -127,7 +127,7 @@ export default function Products() {
     }
 
     // Filter by tag
-    if (tagFilter && (!product.tags || !product.tags.includes(tagFilter))) {
+    if (tagFilter && tagFilter !== "all_tags" && (!product.tags || !product.tags.includes(tagFilter))) {
       return false;
     }
 
@@ -432,7 +432,7 @@ export default function Products() {
                 {allTags.length > 0 && (
                   <Select 
                     value={tagFilter || "all_tags"} 
-                    onValueChange={(value) => setTagFilter(value === "all_tags" ? "" : value)}
+                    onValueChange={(value) => setTagFilter(value)}
                   >
                     <SelectTrigger className="w-full md:w-48">
                       <SelectValue placeholder={t('products.filterByTag')} />
@@ -501,13 +501,13 @@ export default function Products() {
                 <Box className="h-12 w-12 mx-auto text-slate-400" />
                 <h3 className="mt-4 text-lg font-medium">{t('products.noProductsFound')}</h3>
                 <p className="mt-2 text-slate-500">
-                  {searchQuery || stockFilter !== "all" || tagFilter ? (
+                  {searchQuery || stockFilter !== "all" || tagFilter !== "all_tags" ? (
                     t('products.tryClearingFilters')
                   ) : (
                     t('products.createFirstProduct')
                   )}
                 </p>
-                {!searchQuery && stockFilter === "all" && !tagFilter && (
+                {!searchQuery && stockFilter === "all" && tagFilter === "all_tags" && (
                   <Button 
                     variant="default" 
                     className="mt-4" 

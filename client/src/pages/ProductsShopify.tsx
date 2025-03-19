@@ -104,7 +104,7 @@ const Products = () => {
   const [searchTerm, setSearchTerm] = useState("");
   // Category filter removed as part of simplification
   const [stockFilter, setStockFilter] = useState("all");
-  const [tagFilter, setTagFilter] = useState("");
+  const [tagFilter, setTagFilter] = useState("all_tags");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   
