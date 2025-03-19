@@ -102,7 +102,7 @@ const Inventory = () => {
       (product.location && product.location.toLowerCase().includes(searchText.toLowerCase()));
     
     // Tag filter
-    const matchesTag = tagFilter === "" || tagFilter === "all_tags" || 
+    const matchesTag = tagFilter === "all_tags" || 
       (product.tags && product.tags.some(tag => tag === tagFilter));
     
     return matchesSearch && matchesTag;

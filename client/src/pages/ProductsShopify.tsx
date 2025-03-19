@@ -374,7 +374,7 @@ const Products = () => {
     }
 
     // Tag filter
-    const matchesTag = tagFilter === "" || 
+    const matchesTag = tagFilter === "all_tags" || 
       (product.tags && product.tags.some(tag => tag.toLowerCase().includes(tagFilter.toLowerCase())));
     
     return matchesSearch && matchesStock && matchesTag;
@@ -442,7 +442,7 @@ const Products = () => {
                 {allTags.length > 0 && (
                   <Select 
                     value={tagFilter || "all_tags"} 
-                    onValueChange={(value) => setTagFilter(value === "all_tags" ? "" : value)}
+                    onValueChange={(value) => setTagFilter(value)}
                   >
                     <SelectTrigger className="w-full md:w-48 h-10 bg-white">
                       <SelectValue placeholder="Filter by tag" />
@@ -475,18 +475,18 @@ const Products = () => {
                 <Package size={48} className="mx-auto text-slate-300 mb-3" />
                 <h3 className="text-lg font-medium mb-1">No products found</h3>
                 <p className="text-slate-500">
-                  {searchTerm || stockFilter !== "all" || tagFilter !== "" 
+                  {searchTerm || stockFilter !== "all" || tagFilter !== "all_tags" 
                     ? "Try clearing your filters or creating a new product." 
                     : "Get started by creating your first product."}
                 </p>
-                {(searchTerm || stockFilter !== "all" || tagFilter !== "") && (
+                {(searchTerm || stockFilter !== "all" || tagFilter !== "all_tags") && (
                   <Button 
                     variant="outline" 
                     className="mt-4"
                     onClick={() => {
                       setSearchTerm("");
                       setStockFilter("all");
-                      setTagFilter("");
+                      setTagFilter("all_tags");
                     }}
                   >
                     Clear all filters
