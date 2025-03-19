@@ -13,18 +13,11 @@ i18n
       en: { translation: en },
       el: { translation: el }
     },
+    lng: 'el',
     fallbackLng: 'en',
-    debug: true,
-    detection: {
-      order: ['querystring', 'cookie', 'localStorage', 'sessionStorage', 'navigator'],
-      lookupQuerystring: 'lng',
-      lookupCookie: 'i18next',
-      lookupLocalStorage: 'i18nextLng',
-      caches: ['localStorage', 'cookie']
+    interpolation: {
+      escapeValue: false
     }
-  }).then(() => {
-    i18n.changeLanguage('el');
-    localStorage.setItem('i18nextLng', 'el');
   });
 
 export default i18n;
