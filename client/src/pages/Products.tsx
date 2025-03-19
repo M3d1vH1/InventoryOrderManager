@@ -136,7 +136,7 @@ const Products = () => {
       name: "",
       sku: "",
       barcode: "",
-      categoryId: 5, // Hard-coded to match the "test" category ID
+      category: "test", // Default category name
       description: "",
       minStockLevel: 5,
       currentStock: 0,
@@ -160,14 +160,14 @@ const Products = () => {
     staleTime: 1000, // Refresh categories every second to ensure we have the latest
   });
   
-  // Debug categories data and set default category
+  // Debug categories data
   useEffect(() => {
     console.log('Categories data loaded:', categoriesData);
     
-    // Set the default category when categories are loaded
+    // Set the default category name when categories are loaded
     if (categoriesData && categoriesData.length > 0 && !editingProduct) {
-      console.log('Setting default categoryId in form to:', categoriesData[0].id);
-      form.setValue('categoryId', categoriesData[0].id);
+      console.log('Setting default category in form to:', categoriesData[0].name);
+      form.setValue('category', categoriesData[0].name);
     }
   }, [categoriesData, form, editingProduct]);
   
@@ -183,16 +183,12 @@ const Products = () => {
 
   useEffect(() => {
     if (editingProduct) {
-      // Find the categoryId from the category name for existing products
-      const foundCategory = categoriesData.find(
-        cat => cat.name === editingProduct.category
-      );
-      
+      // Use the category name directly from the product
       form.reset({
         name: editingProduct.name,
         sku: editingProduct.sku,
         barcode: editingProduct.barcode || "",
-        categoryId: editingProduct.categoryId || (foundCategory ? foundCategory.id : 0),
+        category: editingProduct.category || "test", // Use existing category name
         description: editingProduct.description || "",
         minStockLevel: editingProduct.minStockLevel,
         currentStock: editingProduct.currentStock,
@@ -201,7 +197,7 @@ const Products = () => {
         imagePath: editingProduct.imagePath || "",
       });
     }
-  }, [editingProduct, form, categoriesData]);
+  }, [editingProduct, form]);
 
   useEffect(() => {
     setFilteredProducts(products.filter(product => 
@@ -287,16 +283,84 @@ const Products = () => {
     }
   });
 
-  const onSubmit = (values: ProductFormValues) => {
-    // Add detailed logging
-    console.log('Submitting product with values:', values);
-    console.log('CategoryId value:', values.categoryId);
-    console.log('CategoryId type:', typeof values.categoryId);
-    
-    if (editingProduct) {
-      updateProductMutation.mutate({ id: editingProduct.id, values });
-    } else {
-      createProductMutation.mutate(values);
+  // Create a new category via API
+  const createCategoryMutation = useMutation({
+    mutationFn: async (categoryName: string) => {
+      return apiRequest({
+        url: '/api/categories',
+        method: 'POST',
+        body: JSON.stringify({ name: categoryName, description: `Category for ${categoryName} products` })
+      });
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      return data;
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to create category",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  });
+
+  const onSubmit = async (values: ProductFormValues) => {
+    try {
+      // Add detailed logging
+      console.log('Submitting product with values:', values);
+      
+      // Check if the category already exists
+      const categoryName = values.category;
+      const existingCategory = categoriesData.find(cat => cat.name.toLowerCase() === categoryName.toLowerCase());
+      
+      let categoryId: number;
+      
+      // If category doesn't exist, create it
+      if (!existingCategory) {
+        console.log('Creating new category:', categoryName);
+        try {
+          const newCategory = await createCategoryMutation.mutateAsync(categoryName);
+          console.log('New category created:', newCategory);
+          categoryId = newCategory.id;
+        } catch (error) {
+          console.error('Failed to create category:', error);
+          return; // Stop execution if category creation fails
+        }
+      } else {
+        categoryId = existingCategory.id;
+        console.log('Using existing category ID:', categoryId);
+      }
+      
+      // Create a new values object with the categoryId instead of category name
+      const productData = {
+        name: values.name,
+        sku: values.sku,
+        barcode: values.barcode,
+        categoryId: categoryId,
+        description: values.description,
+        minStockLevel: values.minStockLevel,
+        currentStock: values.currentStock,
+        location: values.location,
+        unitsPerBox: values.unitsPerBox,
+        imagePath: values.imagePath
+      };
+      
+      console.log('Final product data for submission:', productData);
+      
+      if (editingProduct) {
+        updateProductMutation.mutate({ id: editingProduct.id, values: productData });
+      } else {
+        createProductMutation.mutate(productData);
+      }
+    } catch (error) {
+      console.error('Error in form submission:', error);
+      toast({
+        title: "Error",
+        description: "There was a problem processing your request.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -350,12 +414,12 @@ const Products = () => {
   const handleNewProduct = () => {
     setEditingProduct(null);
     
-    // Directly use hard-coded category ID 5 for "test" category
+    // Reset form with default values
     form.reset({
       name: "",
       sku: "",
       barcode: "",
-      categoryId: 5, // Hard-coded to "test" category
+      category: "test", // Default category name
       description: "",
       minStockLevel: 5,
       currentStock: 0,
