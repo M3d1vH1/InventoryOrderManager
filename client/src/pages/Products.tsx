@@ -782,35 +782,20 @@ const Products = () => {
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="categoryId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Category</FormLabel>
-                          {/* Completely hardcoded select with only "test" option */}
-                          <Select
-                            defaultValue="5"
-                            onValueChange={(val) => {
-                              console.log('Fixed category to 5');
-                              field.onChange(5); // Always set to 5
-                            }}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue>
-                                  test
-                                </SelectValue>
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="5">test</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>Select a category for this product</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                    {/* Skip the form field entirely and just use a simple div for display */}
+                    <div className="w-full space-y-2">
+                      <div className="font-medium text-sm">Category</div>
+                      <div className="flex items-center h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                        test
+                      </div>
+                      <p className="text-sm text-muted-foreground">Category is fixed to "test"</p>
+                    </div>
+                    
+                    {/* Hard-code the value directly in the submit handler */}
+                    <input 
+                      type="hidden" 
+                      id="categoryId"
+                      value="5" 
                     />
                     <div className="flex gap-2 items-start">
                       <FormField
