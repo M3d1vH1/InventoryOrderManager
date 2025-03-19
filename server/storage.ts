@@ -432,10 +432,14 @@ export class MemStorage implements IStorage {
   async updateOrderStatus(
     id: number, 
     status: 'pending' | 'picked' | 'shipped' | 'cancelled',
-    documentInfo?: { documentPath: string, documentType: string, notes?: string }
+    documentInfo?: { documentPath: string, documentType: string, notes?: string },
+    updatedById?: number
   ): Promise<Order | undefined> {
     const existingOrder = this.orders.get(id);
     if (!existingOrder) return undefined;
+    
+    // Track the previous values
+    const previousValues = { ...existingOrder };
     
     // If status is 'shipped' and documentInfo is provided, create or update shipping document
     if (status === 'shipped' && documentInfo) {
@@ -460,17 +464,50 @@ export class MemStorage implements IStorage {
       }
       
       // Update order with shipping document flag
+      const now = new Date();
       const updatedOrder = { 
         ...existingOrder, 
         status,
-        hasShippingDocument: true 
+        hasShippingDocument: true,
+        lastUpdated: now
       };
       this.orders.set(id, updatedOrder);
+      
+      // Add changelog entry if we have a user ID
+      if (updatedById) {
+        await this.addOrderChangelog({
+          orderId: id,
+          userId: updatedById,
+          action: 'status_change',
+          changes: { status, hasShippingDocument: true, lastUpdated: now },
+          previousValues: previousValues,
+          notes: `Order status changed to ${status} with document`
+        });
+      }
+      
       return updatedOrder;
     } else {
       // Just update status
-      const updatedOrder = { ...existingOrder, status };
+      const now = new Date();
+      const updatedOrder = { 
+        ...existingOrder, 
+        status,
+        lastUpdated: now
+      };
       this.orders.set(id, updatedOrder);
+      
+      // Add changelog entry if we have a user ID
+      if (updatedById) {
+        await this.addOrderChangelog({
+          orderId: id,
+          userId: updatedById,
+          action: 'status_change',
+          changes: { status, lastUpdated: now },
+          previousValues: previousValues,
+          notes: `Order status changed to ${status}`
+        });
+      }
+      
       return updatedOrder;
     }
   }

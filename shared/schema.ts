@@ -211,7 +211,8 @@ export type Customer = typeof customers.$inferSelect;
 export const changelogActionEnum = pgEnum('changelog_action', [
   'create',
   'update',
-  'delete'
+  'delete',
+  'status_change'
 ]);
 
 // Changelog Schema for Orders
@@ -231,7 +232,7 @@ export const insertOrderChangelogSchema = createInsertSchema(orderChangelogs)
   .extend({
     orderId: z.number(),
     userId: z.number(),
-    action: z.enum(['create', 'update', 'delete']),
+    action: z.enum(['create', 'update', 'delete', 'status_change']),
     changes: z.record(z.any()).optional(),
     previousValues: z.record(z.any()).optional(),
     notes: z.string().optional(),
