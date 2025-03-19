@@ -80,6 +80,28 @@
       "delivered": "Παραδόθηκε",
       "picked": "Συλλεγμένη",
       "cancelled": "Ακυρωμένη"
+    },
+    "uploadDocument": {
+      "title": "Μεταφόρτωση Εγγράφου",
+      "description": "Μεταφορτώστε ένα νέο έγγραφο για αυτή την παραγγελία",
+      "documentType": "Τύπος Εγγράφου",
+      "selectDocumentType": "Επιλέξτε τύπο εγγράφου",
+      "documentFile": "Αρχείο Εγγράφου",
+      "selectFile": "Επιλέξτε αρχείο...",
+      "removeFile": "Αφαίρεση αρχείου",
+      "acceptedFormats": "Αποδεκτές μορφές: PDF, DOC, DOCX, JPG, JPEG, PNG",
+      "notes": "Σημειώσεις (Προαιρετικά)",
+      "notesPlaceholder": "Προσθέστε οποιεσδήποτε πρόσθετες πληροφορίες για αυτό το έγγραφο...",
+      "changeStatusToShipped": "Αλλαγή κατάστασης παραγγελίας σε 'Απεστάλη' μετά τη μεταφόρτωση",
+      "uploading": "Μεταφόρτωση...",
+      "uploadAndShip": "Μεταφόρτωση & Αποστολή Παραγγελίας",
+      "uploadOnly": "Μεταφόρτωση Εγγράφου",
+      "types": {
+        "tda": "Έγγραφο T△A",
+        "invoice": "Τιμολόγιο",
+        "customDeclaration": "Τελωνειακή δήλωση",
+        "other": "Άλλο"
+      }
     }
   },
   "inventory": {

@@ -81,6 +81,28 @@
       "delivered": "Delivered",
       "picked": "Picked",
       "cancelled": "Cancelled"
+    },
+    "uploadDocument": {
+      "title": "Upload Document",
+      "description": "Upload a new document for this order",
+      "documentType": "Document Type",
+      "selectDocumentType": "Select document type",
+      "documentFile": "Document File",
+      "selectFile": "Select file...",
+      "removeFile": "Remove file",
+      "acceptedFormats": "Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG",
+      "notes": "Notes (Optional)",
+      "notesPlaceholder": "Add any additional information about this document...",
+      "changeStatusToShipped": "Change order status to 'Shipped' after upload",
+      "uploading": "Uploading...",
+      "uploadAndShip": "Upload & Ship Order",
+      "uploadOnly": "Upload Document",
+      "types": {
+        "tda": "T△A document",
+        "invoice": "Invoice",
+        "customDeclaration": "Custom declaration",
+        "other": "Other"
+      }
     }
   },
   "inventory": {

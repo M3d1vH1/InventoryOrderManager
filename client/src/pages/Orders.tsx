@@ -820,7 +820,7 @@ const Orders = () => {
                     size="icon" 
                     onClick={() => setDocumentFile(null)}
                   >
-                    <span className="sr-only">Remove file</span>
+                    <span className="sr-only">{t('orders.uploadDocument.removeFile')}</span>
                     <AlertTriangle className="h-4 w-4" />
                   </Button>
                 )}
@@ -858,7 +858,7 @@ const Orders = () => {
                 className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
               />
               <label htmlFor="updateStatus" className="text-sm font-medium text-gray-700">
-                Change order status to 'Shipped' after upload
+                {t('orders.uploadDocument.changeStatusToShipped')}
               </label>
             </div>
           </div>
@@ -869,7 +869,7 @@ const Orders = () => {
               variant="outline"
               onClick={() => setShowUploadDialog(false)}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               type="button"
@@ -879,12 +879,12 @@ const Orders = () => {
               {isUploading ? (
                 <>
                   <span className="animate-spin mr-2">⟳</span>
-                  Uploading...
+                  {t('orders.uploadDocument.uploading')}
                 </>
               ) : (
                 <>
                   <FileText className="h-4 w-4 mr-2" />
-                  {updateStatusOnUpload ? 'Upload & Ship Order' : 'Upload Document'}
+                  {updateStatusOnUpload ? t('orders.uploadDocument.uploadAndShip') : t('orders.uploadDocument.uploadOnly')}
                 </>
               )}
             </Button>
