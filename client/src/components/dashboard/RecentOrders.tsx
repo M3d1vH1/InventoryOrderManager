@@ -77,15 +77,11 @@ const RecentOrders = () => {
         <td className="py-3 px-4">{order.items?.length || 0}</td>
         <td className="py-3 px-4">
           <div className="flex space-x-2">
-            <Link href={`/orders/${order.id}`}>
-              <button className="text-slate-600 hover:text-primary">
-                <Eye className="h-4 w-4" />
-              </button>
+            <Link href={`/orders/${order.id}`} className="text-slate-600 hover:text-primary">
+              <Eye className="h-4 w-4" />
             </Link>
-            <Link href={`/orders/${order.id}/edit`}>
-              <button className="text-slate-600 hover:text-primary">
-                <Edit className="h-4 w-4" />
-              </button>
+            <Link href={`/orders/${order.id}/edit`} className="text-slate-600 hover:text-primary">
+              <Edit className="h-4 w-4" />
             </Link>
           </div>
         </td>
@@ -97,10 +93,8 @@ const RecentOrders = () => {
     <div className="lg:col-span-2 bg-white rounded-lg shadow">
       <div className="p-4 border-b border-slate-200 flex justify-between items-center">
         <h2 className="font-semibold text-lg">Recent Orders</h2>
-        <Link href="/orders">
-          <button className="text-primary hover:text-blue-700 text-sm font-medium">
-            View All
-          </button>
+        <Link href="/orders" className="text-primary hover:text-blue-700 text-sm font-medium">
+          View All
         </Link>
       </div>
       <div className="overflow-x-auto">
