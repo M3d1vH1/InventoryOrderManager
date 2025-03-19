@@ -47,12 +47,11 @@ interface Product {
   imagePath?: string;
 }
 
-// We'll use a simple form schema that includes categoryName instead of categoryId
+// We'll use a simple form schema without category (will use default)
 const productFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   sku: z.string().min(2, "SKU must be at least 2 characters"),
   barcode: z.string().optional(),
-  categoryName: z.string().min(1, "Category is required"),
   description: z.string().optional(),
   minStockLevel: z.coerce.number().min(0, "Min stock level must be 0 or greater"),
   currentStock: z.coerce.number().min(0, "Current stock must be 0 or greater"),
@@ -90,7 +89,6 @@ const Products = () => {
       name: "",
       sku: "",
       barcode: "",
-      categoryName: "",
       description: "",
       minStockLevel: 5,
       currentStock: 0,
@@ -117,12 +115,8 @@ const Products = () => {
     staleTime: 1000,
   });
   
-  // Set default category if available
-  useEffect(() => {
-    if (categoriesData.length > 0 && !form.getValues('categoryName') && !editingProduct) {
-      form.setValue('categoryName', categoriesData[0].name);
-    }
-  }, [categoriesData, form, editingProduct]);
+  // No need to set default category anymore
+  // We'll use a hardcoded categoryId = 1 for new products
   
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   
@@ -133,15 +127,11 @@ const Products = () => {
   
   // Reset form when editing a product
   useEffect(() => {
-    if (editingProduct) {
-      // Find the category name from categoryId
-      const category = categoriesData.find(cat => cat.id === editingProduct.categoryId);
-      
+    if (editingProduct) {      
       form.reset({
         name: editingProduct.name,
         sku: editingProduct.sku,
         barcode: editingProduct.barcode || "",
-        categoryName: category?.name || "",
         description: editingProduct.description || "",
         minStockLevel: editingProduct.minStockLevel,
         currentStock: editingProduct.currentStock,
@@ -150,7 +140,7 @@ const Products = () => {
         imagePath: editingProduct.imagePath || "",
       });
     }
-  }, [editingProduct, form, categoriesData]);
+  }, [editingProduct, form]);
   
   // Filter products based on search, category, and stock status
   useEffect(() => {
@@ -287,42 +277,15 @@ const Products = () => {
     try {
       console.log('Form values:', values);
       
-      // Get the category name from the form
-      const categoryName = values.categoryName;
-      
-      // Find if the category already exists
-      let existingCategory = categoriesData.find(
-        cat => cat.name.toLowerCase() === categoryName.toLowerCase()
-      );
-      
-      let categoryId: number;
-      
-      // If category doesn't exist, create it first
-      if (!existingCategory) {
-        try {
-          console.log('Creating new category:', categoryName);
-          const newCategory = await createCategoryMutation.mutateAsync(categoryName);
-          categoryId = newCategory.id;
-          console.log('Created new category with ID:', categoryId);
-        } catch (error) {
-          console.error('Failed to create category:', error);
-          toast({
-            title: "Category Creation Failed",
-            description: "Could not create the new category. Please try again.",
-            variant: "destructive",
-          });
-          return;
-        }
-      } else {
-        categoryId = existingCategory.id;
-        console.log('Using existing category ID:', categoryId);
-      }
+      // Use default category ID 1 for new products
+      // For existing products, keep the original categoryId
+      const categoryId = editingProduct ? editingProduct.categoryId : 1;
       
       // Create API payload with categoryId
       const apiPayload = {
         name: values.name,
         sku: values.sku,
-        categoryId, // Use the resolved categoryId
+        categoryId,
         minStockLevel: values.minStockLevel,
         currentStock: values.currentStock,
         
@@ -424,7 +387,6 @@ const Products = () => {
       name: "",
       sku: "",
       barcode: "",
-      categoryName: categoriesData.length > 0 ? categoriesData[0].name : "",
       description: "",
       minStockLevel: 5,
       currentStock: 0,
@@ -839,61 +801,40 @@ const Products = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
-                      name="categoryName"
+                      name="barcode"
                       render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t('products.category')}</FormLabel>
-                          <div className="relative">
+                        <FormItem className="flex-1">
+                          <FormLabel>{t('products.barcode')}</FormLabel>
+                          <div className="flex gap-2">
                             <FormControl>
-                              <Input 
-                                placeholder="Enter category name" 
-                                {...field}
-                              />
+                              <Input {...field} />
                             </FormControl>
-                            
-                            {/* Category suggestions */}
-                            {categoriesData.length > 0 && (
-                              <div className="mt-1 text-xs text-slate-500">
-                                <span className="font-medium">Suggestions: </span>
-                                {categoriesData.slice(0, 5).map((cat) => (
-                                  <button
-                                    key={cat.id}
-                                    type="button"
-                                    onClick={() => field.onChange(cat.name)}
-                                    className="inline-block px-2 py-1 mr-1 mb-1 bg-slate-100 text-slate-800 rounded text-xs hover:bg-slate-200 transition-colors"
-                                  >
-                                    {cat.name}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
+                            <BarcodeScanner 
+                              onBarcodeScanned={handleBarcodeScanned}
+                              buttonVariant="outline"
+                              buttonSize="icon"
+                            />
                           </div>
-                          <FormDescription>Enter an existing or new category name</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <div className="flex gap-2 items-start">
-                      <FormField
-                        control={form.control}
-                        name="barcode"
-                        render={({ field }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel>{t('products.barcode')}</FormLabel>
-                            <div className="flex gap-2">
-                              <FormControl>
-                                <Input {...field} />
-                              </FormControl>
-                              <BarcodeScanner 
-                                onBarcodeScanned={handleBarcodeScanned}
-                                buttonVariant="outline"
-                                buttonSize="icon"
-                              />
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                    <div className="flex items-center justify-center">
+                      <div className="text-center">
+                        <p className="text-sm text-slate-500">
+                          Products will be assigned to the default category
+                        </p>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="mt-2"
+                          onClick={() => document.querySelector('[data-value="categories"]')?.click()}
+                        >
+                          <i className="fas fa-tags mr-1"></i>
+                          Manage Categories
+                        </Button>
+                      </div>
                     </div>
                   </div>
                   <FormField
