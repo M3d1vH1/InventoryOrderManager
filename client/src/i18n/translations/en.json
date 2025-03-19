@@ -9,7 +9,8 @@
     "delete": "Delete",
     "edit": "Edit",
     "create": "Create",
-    "back": "Back"
+    "back": "Back",
+    "scanBarcode": "Scan Barcode"
   },
   "dashboard": {
     "title": "Dashboard",
