@@ -81,7 +81,7 @@ const Sidebar = () => {
                     className={`flex items-center w-full p-2 text-left rounded ${isActive("/inventory") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
                   >
                     <i className="fas fa-warehouse w-5"></i>
-                    <span className="ml-2">Inventory</span>
+                    <span className="ml-2">{t('app.inventory')}</span>
                   </button>
                 </Link>
               </li>
@@ -91,7 +91,7 @@ const Sidebar = () => {
                     className={`flex items-center w-full p-2 text-left rounded ${isActive("/reports") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
                   >
                     <i className="fas fa-chart-bar w-5"></i>
-                    <span className="ml-2">Reports</span>
+                    <span className="ml-2">{t('app.reports')}</span>
                   </button>
                 </Link>
               </li>
@@ -105,7 +105,7 @@ const Sidebar = () => {
                 className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-picking") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
               >
                 <i className="fas fa-clipboard-check w-5"></i>
-                <span className="ml-2">Order Picking</span>
+                <span className="ml-2">{t('app.orderPicking')}</span>
               </button>
             </Link>
           </li>
@@ -118,7 +118,7 @@ const Sidebar = () => {
                   className={`flex items-center w-full p-2 text-left rounded ${isActive("/settings") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
                 >
                   <i className="fas fa-cog w-5"></i>
-                  <span className="ml-2">Settings</span>
+                  <span className="ml-2">{t('app.settings')}</span>
                 </button>
               </Link>
             </li>
