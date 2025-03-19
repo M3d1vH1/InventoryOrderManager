@@ -27,7 +27,6 @@ import {
   ArrowDown, ArrowUp, Box, ChevronDown, ClipboardList, Download, Edit, 
   Loader2, PackageCheck, PlusCircle, QrCode, Search, SlidersHorizontal, Trash2, X
 } from "lucide-react";
-import { CategoryManager } from "@components/products/CategoryManager";
 import { BarcodeScanner } from "@components/barcode/BarcodeScanner";
 import { BarcodeGenerator } from "@components/barcode/BarcodeGenerator";
 
@@ -51,36 +50,24 @@ const productFormSchema = z.object({
   sku: z.string().min(2, "SKU must be at least 2 characters"),
   barcode: z.string().optional(),
   description: z.string().optional(),
-  minStockLevel: z.coerce.number().min(0, "Min stock level must be 0 or greater"),
-  currentStock: z.coerce.number().min(0, "Current stock must be 0 or greater"),
+  minStockLevel: z.coerce.number().min(0, "Min stock level cannot be negative"),
+  currentStock: z.coerce.number().min(0, "Current stock cannot be negative"),
   location: z.string().optional(),
   unitsPerBox: z.coerce.number().min(1, "Units per box must be at least 1").optional(),
   imagePath: z.string().optional(),
+  // Removed categoryId field
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
 
-const Products = () => {
+export default function Products() {
   const { t } = useTranslation();
-  const { setCurrentPage } = useSidebar();
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
+  const { setSidebarOpen } = useSidebar();
   const { user } = useAuth();
-  
-  // UI state
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const [stockFilter, setStockFilter] = useState<string>("all");
-  const [sortField, setSortField] = useState<string>("name");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  
-  // Set up the form with default values
+  // Form
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
@@ -95,242 +82,216 @@ const Products = () => {
       imagePath: "",
     },
   });
-  
-  // Data fetching
-  const { data: products = [], isLoading } = useQuery<Product[]>({
+
+  // State
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [stockFilter, setStockFilter] = useState("all");
+  const [sortField, setSortField] = useState("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+
+  // Query: Get all products
+  const { data: products = [], isLoading } = useQuery({
     queryKey: ['/api/products'],
-    staleTime: 15000,
+    select: (data) => data as Product[]
   });
-  
-  interface CategoryType {
-    id: number;
-    name: string;
-    description?: string;
-  }
-  
-  const { data: categoriesData = [], isLoading: isLoadingCategories } = useQuery<CategoryType[]>({
-    queryKey: ['/api/categories'],
-    staleTime: 1000,
-  });
-  
-  // No need to set default category anymore
-  // We'll use a hardcoded categoryId = 1 for new products
-  
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  
-  // Set current sidebar page
-  useEffect(() => {
-    setCurrentPage("Products");
-  }, [setCurrentPage]);
-  
-  // Reset form when editing a product
-  useEffect(() => {
-    if (editingProduct) {      
-      form.reset({
-        name: editingProduct.name,
-        sku: editingProduct.sku,
-        barcode: editingProduct.barcode || "",
-        description: editingProduct.description || "",
-        minStockLevel: editingProduct.minStockLevel,
-        currentStock: editingProduct.currentStock,
-        location: editingProduct.location || "",
-        unitsPerBox: editingProduct.unitsPerBox || 1,
-        imagePath: editingProduct.imagePath || "",
-      });
+
+  // Filter products based on search and stock filter
+  const filteredProducts = products.filter((product) => {
+    // Filter by search query
+    if (searchQuery && !product.name.toLowerCase().includes(searchQuery.toLowerCase()) && 
+        !product.sku.toLowerCase().includes(searchQuery.toLowerCase()) && 
+        !(product.barcode && product.barcode.toLowerCase().includes(searchQuery.toLowerCase()))) {
+      return false;
     }
-  }, [editingProduct, form]);
-  
-  // Filter products based on search and stock status
-  useEffect(() => {
-    setFilteredProducts(products.filter(product => {
-      // Search query filter
-      const searchMatches = 
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (product.barcode && product.barcode.toLowerCase().includes(searchQuery.toLowerCase()));
-      
-      // Stock status filter
-      const stockMatches = 
-        stockFilter === "all" ||
-        (stockFilter === "in" && product.currentStock > product.minStockLevel) ||
-        (stockFilter === "low" && product.currentStock > 0 && product.currentStock <= product.minStockLevel) ||
-        (stockFilter === "out" && product.currentStock === 0);
-      
-      return searchMatches && stockMatches;
-    }));
-  }, [searchQuery, stockFilter, products]);
-  
-  // Product Creation Mutation
+
+    // Filter by stock level
+    if (stockFilter === "in" && product.currentStock <= product.minStockLevel) {
+      return false;
+    }
+    if (stockFilter === "low" && (product.currentStock === 0 || product.currentStock > product.minStockLevel)) {
+      return false;
+    }
+    if (stockFilter === "out" && product.currentStock > 0) {
+      return false;
+    }
+
+    return true;
+  });
+
+  // Sort products
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    let valA = a[sortField as keyof Product];
+    let valB = b[sortField as keyof Product];
+    
+    if (typeof valA === "string" && typeof valB === "string") {
+      valA = valA.toLowerCase();
+      valB = valB.toLowerCase();
+    }
+    
+    if (valA < valB) return sortDirection === "asc" ? -1 : 1;
+    if (valA > valB) return sortDirection === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  // Mutations
   const createProductMutation = useMutation({
-    mutationFn: async (values: any) => {
-      return apiRequest({
-        url: '/api/products',
-        method: 'POST',
-        body: JSON.stringify(values)
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
-      setIsDialogOpen(false);
-      form.reset();
-      toast({
-        title: "Product created",
-        description: "The product has been created successfully.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to create product",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  });
-  
-  // Product Update Mutation
-  const updateProductMutation = useMutation({
-    mutationFn: async ({ id, values }: { id: number; values: any }) => {
-      return apiRequest({
-        url: `/api/products/${id}`,
-        method: 'PATCH',
-        body: JSON.stringify(values)
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
-      setIsDialogOpen(false);
-      setEditingProduct(null);
-      form.reset();
-      toast({
-        title: "Product updated",
-        description: "The product has been updated successfully.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to update product",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  });
-  
-  // Product Deletion Mutation
-  const deleteProductMutation = useMutation({
-    mutationFn: async (id: number) => {
-      return apiRequest({
-        url: `/api/products/${id}`,
-        method: 'DELETE'
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
-      toast({
-        title: "Product deleted",
-        description: "The product has been deleted successfully.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to delete product",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  });
-  
-  // Category Creation Mutation
-  const createCategoryMutation = useMutation({
-    mutationFn: async (categoryName: string) => {
-      return apiRequest({
-        url: '/api/categories',
-        method: 'POST',
-        body: JSON.stringify({ name: categoryName, description: `Category for ${categoryName} products` })
-      });
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
-      return data;
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to create category",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
-    }
-  });
-  
-  // Form submission handler
-  const onSubmit = async (values: ProductFormValues) => {
-    try {
-      console.log('Form values:', values);
+    mutationFn: async (values: ProductFormValues) => {
+      // Add default categoryId=1 for compatibility
+      const productData = { ...values, categoryId: 1 };
       
-      // Create simplified API payload without categories
-      const apiPayload = {
-        name: values.name,
-        sku: values.sku,
-        categoryId: 1, // Always use default category ID
-        minStockLevel: values.minStockLevel,
-        currentStock: values.currentStock,
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append('file', imageFile);
         
-        // Optional fields
-        barcode: values.barcode || undefined,
-        description: values.description || undefined,
-        location: values.location || undefined,
-        unitsPerBox: values.unitsPerBox,
-        imagePath: values.imagePath || undefined
-      };
-      
-      console.log('Submitting product data:', apiPayload);
-      
-      // Submit to the API
-      if (editingProduct) {
-        updateProductMutation.mutate({ 
-          id: editingProduct.id, 
-          values: apiPayload 
+        const response = await apiRequest('/api/upload/product-image', {
+          method: 'POST',
+          body: formData,
         });
-      } else {
-        createProductMutation.mutate(apiPayload);
+        
+        productData.imagePath = response.path;
       }
-    } catch (error) {
-      console.error('Error in form submission:', error);
+      
+      return apiRequest('/api/products', {
+        method: 'POST',
+        body: JSON.stringify(productData),
+      });
+    },
+    onSuccess: () => {
       toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        title: t('products.productCreated'),
+        description: t('products.productCreatedDescription'),
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      setIsDialogOpen(false);
+    },
+    onError: (error) => {
+      console.error("Error creating product:", error);
+      toast({
+        title: t('products.errorCreating'),
+        description: t('products.errorCreatingDescription'),
         variant: "destructive",
       });
+    }
+  });
+
+  const updateProductMutation = useMutation({
+    mutationFn: async ({ id, values }: { id: number; values: ProductFormValues }) => {
+      // Add default categoryId=1 for compatibility
+      const productData = { ...values, categoryId: 1 };
+      
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append('file', imageFile);
+        
+        const response = await apiRequest('/api/upload/product-image', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        productData.imagePath = response.path;
+      }
+      
+      return apiRequest(`/api/products/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(productData),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: t('products.productUpdated'),
+        description: t('products.productUpdatedDescription'),
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      setIsDialogOpen(false);
+    },
+    onError: (error) => {
+      console.error("Error updating product:", error);
+      toast({
+        title: t('products.errorUpdating'),
+        description: t('products.errorUpdatingDescription'),
+        variant: "destructive",
+      });
+    }
+  });
+
+  const deleteProductMutation = useMutation({
+    mutationFn: (productId: number) => 
+      apiRequest(`/api/products/${productId}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      toast({
+        title: t('products.productDeleted'),
+        description: t('products.productDeletedDescription'),
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+    },
+    onError: (error) => {
+      console.error("Error deleting product:", error);
+      toast({
+        title: t('products.errorDeleting'),
+        description: t('products.errorDeletingDescription'),
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Form submission handler
+  const onSubmit = (values: ProductFormValues) => {
+    if (editingProduct) {
+      updateProductMutation.mutate({ id: editingProduct.id, values });
+    } else {
+      createProductMutation.mutate(values);
     }
   };
-  
-  // Product editing handler
+
+  // Edit product handler
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
+    setImagePreview(null);
+    setImageFile(null);
+    
+    // Set form values
+    form.reset({
+      name: product.name,
+      sku: product.sku,
+      barcode: product.barcode || "",
+      description: product.description || "",
+      minStockLevel: product.minStockLevel,
+      currentStock: product.currentStock,
+      location: product.location || "",
+      unitsPerBox: product.unitsPerBox || 1,
+      imagePath: product.imagePath || "",
+    });
+    
     setIsDialogOpen(true);
   };
-  
-  // Product viewing handler
+
+  // View product handler
   const handleViewProduct = (product: Product) => {
     setViewingProduct(product);
     setIsDetailsDialogOpen(true);
   };
-  
-  // Product deletion handler
-  const handleDeleteProduct = (id: number) => {
-    if (window.confirm("Are you sure you want to delete this product? This action cannot be undone.")) {
-      deleteProductMutation.mutate(id);
+
+  // Delete product handler
+  const handleDeleteProduct = (productId: number) => {
+    if (confirm(t('products.confirmDelete'))) {
+      deleteProductMutation.mutate(productId);
     }
   };
-  
-  // Image upload handler
+
+  // Image change handler
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
+    const file = e.target.files?.[0];
+    if (file) {
       setImageFile(file);
       const reader = new FileReader();
-      reader.onload = (event) => {
-        setImagePreview(event.target?.result as string);
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -403,242 +364,241 @@ const Products = () => {
     <div className="container mx-auto py-6">
       <div className="w-full">
         <div className="bg-white rounded-lg shadow mb-6">
-            <div className="p-5 border-b border-slate-200 flex justify-between items-center">
-              <div>
-                <h1 className="font-semibold text-2xl">{t('products.title')}</h1>
-                <p className="text-slate-500 mt-1">{t('products.subtitle')}</p>
+          <div className="p-5 border-b border-slate-200 flex justify-between items-center">
+            <div>
+              <h1 className="font-semibold text-2xl">{t('products.title')}</h1>
+              <p className="text-slate-500 mt-1">{t('products.subtitle')}</p>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleNewProduct}
+                className="flex items-center gap-1"
+              >
+                <PlusCircle className="h-4 w-4" />
+                {t('products.addProduct')}
+              </Button>
+            </div>
+          </div>
+          <div className="p-4 border-b border-slate-200">
+            <div className="flex flex-col md:flex-row gap-4 justify-between">
+              <div className="flex flex-col md:flex-row gap-2 flex-1">
+                <div className="relative w-full md:w-64">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+                    <Search className="h-4 w-4 text-slate-400" />
+                  </span>
+                  <Input
+                    placeholder={t('products.searchPlaceholder')}
+                    className="pl-10"
+                    value={searchQuery}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+
+                <Select value={stockFilter} onValueChange={setStockFilter}>
+                  <SelectTrigger className="w-full md:w-48">
+                    <SelectValue placeholder={t('products.allStockStatus')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('products.allStockStatus')}</SelectItem>
+                    <SelectItem value="in">{t('products.inStock')}</SelectItem>
+                    <SelectItem value="low">{t('products.lowStock')}</SelectItem>
+                    <SelectItem value="out">{t('products.outOfStock')}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="flex gap-2">
-                <Button 
-                  onClick={handleNewProduct}
-                  className="flex items-center gap-1"
-                >
-                  <PlusCircle className="h-4 w-4" />
-                  {t('products.addProduct')}
+              <div className="flex flex-col md:flex-row gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="flex items-center gap-1">
+                      <SlidersHorizontal className="h-4 w-4" />
+                      {t('products.actions')}
+                      <ChevronDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>{t('products.exportOptions')}</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => handleExportData('csv')}>
+                      <Download className="h-4 w-4 mr-2" />
+                      {t('products.exportCSV')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExportData('excel')}>
+                      <Download className="h-4 w-4 mr-2" />
+                      {t('products.exportExcel')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExportData('pdf')}>
+                      <Download className="h-4 w-4 mr-2" />
+                      {t('products.exportPDF')}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>
+                      <PackageCheck className="h-4 w-4 mr-2" />
+                      {t('products.bulkUpdateStock')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <ClipboardList className="h-4 w-4 mr-2" />
+                      {t('products.printInventoryList')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button variant="outline" className="flex items-center gap-1">
+                  <QrCode className="h-4 w-4" />
+                  {t('products.scanBarcode')}
                 </Button>
               </div>
             </div>
-            <div className="p-4 border-b border-slate-200">
-              <div className="flex flex-col md:flex-row gap-4 justify-between">
-                <div className="flex flex-col md:flex-row gap-2 flex-1">
-                  <div className="relative w-full md:w-64">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                      <Search className="h-4 w-4 text-slate-400" />
-                    </span>
-                    <Input
-                      placeholder={t('products.searchPlaceholder')}
-                      className="pl-10"
-                      value={searchQuery}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-
-                  <Select value={stockFilter} onValueChange={setStockFilter}>
-                    <SelectTrigger className="w-full md:w-48">
-                      <SelectValue placeholder={t('products.allStockStatus')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t('products.allStockStatus')}</SelectItem>
-                      <SelectItem value="in">{t('products.inStock')}</SelectItem>
-                      <SelectItem value="low">{t('products.lowStock')}</SelectItem>
-                      <SelectItem value="out">{t('products.outOfStock')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex flex-col md:flex-row gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="flex items-center gap-1">
-                        <SlidersHorizontal className="h-4 w-4" />
-                        {t('products.actions')}
-                        <ChevronDown className="h-4 w-4 ml-1" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>{t('products.exportOptions')}</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => handleExportData('csv')}>
-                        <Download className="h-4 w-4 mr-2" />
-                        {t('products.exportCSV')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleExportData('excel')}>
-                        <Download className="h-4 w-4 mr-2" />
-                        {t('products.exportExcel')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleExportData('pdf')}>
-                        <Download className="h-4 w-4 mr-2" />
-                        {t('products.exportPDF')}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>
-                        <PackageCheck className="h-4 w-4 mr-2" />
-                        {t('products.bulkUpdateStock')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <ClipboardList className="h-4 w-4 mr-2" />
-                        {t('products.printInventoryList')}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <Button variant="outline" className="flex items-center gap-1">
-                    <QrCode className="h-4 w-4" />
-                    {t('products.scanBarcode')}
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-4">
-              {isLoading ? (
-                <div className="flex justify-center items-center p-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="ml-2">{t('products.loading')}</p>
-                </div>
-              ) : filteredProducts.length === 0 ? (
-                <div className="text-center p-8 border rounded-lg bg-slate-50">
-                  <Box className="h-12 w-12 mx-auto text-slate-400" />
-                  <h3 className="mt-4 text-lg font-medium">{t('products.noProductsFound')}</h3>
-                  <p className="mt-2 text-slate-500">
-                    {searchQuery || stockFilter !== "all" ? (
-                      t('products.tryClearingFilters')
-                    ) : (
-                      t('products.createFirstProduct')
-                    )}
-                  </p>
-                  {!searchQuery && stockFilter === "all" && (
-                    <Button 
-                      variant="default" 
-                      className="mt-4" 
-                      onClick={handleNewProduct}
-                    >
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      {t('products.addProduct')}
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <>
-                  <div className="overflow-x-auto rounded-lg border border-slate-200">
-                    <table className="min-w-full divide-y divide-slate-200">
-                      <thead className="bg-slate-50">
-                        <tr>
-                          <th 
-                            className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer"
-                            onClick={() => handleSort("name")}
-                          >
-                            <div className="flex items-center">
-                              {t('products.productName')}
-                              {sortField === "name" && (
-                                sortDirection === "asc" ? 
-                                  <ArrowUp className="h-3 w-3 ml-1" /> : 
-                                  <ArrowDown className="h-3 w-3 ml-1" />
-                              )}
-                            </div>
-                          </th>
-                          <th 
-                            className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer"
-                            onClick={() => handleSort("sku")}
-                          >
-                            <div className="flex items-center">
-                              {t('products.sku')}
-                              {sortField === "sku" && (
-                                sortDirection === "asc" ? 
-                                  <ArrowUp className="h-3 w-3 ml-1" /> : 
-                                  <ArrowDown className="h-3 w-3 ml-1" />
-                              )}
-                            </div>
-                          </th>
-
-                          <th 
-                            className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer"
-                            onClick={() => handleSort("currentStock")}
-                          >
-                            <div className="flex items-center">
-                              {t('products.stock')}
-                              {sortField === "currentStock" && (
-                                sortDirection === "asc" ? 
-                                  <ArrowUp className="h-3 w-3 ml-1" /> : 
-                                  <ArrowDown className="h-3 w-3 ml-1" />
-                              )}
-                            </div>
-                          </th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
-                            {t('products.actions')}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-slate-200">
-                        {filteredProducts.map((product: Product) => {
-                          return (
-                            <tr 
-                              key={product.id} 
-                              className="hover:bg-slate-50 cursor-pointer"
-                              onClick={() => handleViewProduct(product)}
-                            >
-                              <td className="px-4 py-3 whitespace-nowrap">
-                                <div className="flex items-center">
-                                  <div className="flex-shrink-0 h-10 w-10 bg-slate-100 rounded-md flex items-center justify-center">
-                                    {product.imagePath ? (
-                                      <img 
-                                        src={product.imagePath} 
-                                        alt={product.name} 
-                                        className="h-10 w-10 rounded-md object-cover"
-                                      />
-                                    ) : (
-                                      <Box className="h-5 w-5 text-slate-400" />
-                                    )}
-                                  </div>
-                                  <div className="ml-4">
-                                    <div className="text-sm font-medium text-slate-900">{product.name}</div>
-                                    {product.barcode && (
-                                      <div className="text-xs text-slate-500">{product.barcode}</div>
-                                    )}
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                                {product.sku}
-                              </td>
-
-                              <td className="px-4 py-3 whitespace-nowrap">
-                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStockStatusClass(product.currentStock, product.minStockLevel)} bg-opacity-10`}>
-                                  {product.currentStock}
-                                </span>
-                                <span className="text-xs text-slate-500 ml-1">/ {product.minStockLevel}</span>
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEditProduct(product);
-                                  }}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteProduct(product.id);
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
-            </div>
           </div>
-        </TabsContent>
-      </Tabs>
+
+          <div className="p-4">
+            {isLoading ? (
+              <div className="flex justify-center items-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="ml-2">{t('products.loading')}</p>
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="text-center p-8 border rounded-lg bg-slate-50">
+                <Box className="h-12 w-12 mx-auto text-slate-400" />
+                <h3 className="mt-4 text-lg font-medium">{t('products.noProductsFound')}</h3>
+                <p className="mt-2 text-slate-500">
+                  {searchQuery || stockFilter !== "all" ? (
+                    t('products.tryClearingFilters')
+                  ) : (
+                    t('products.createFirstProduct')
+                  )}
+                </p>
+                {!searchQuery && stockFilter === "all" && (
+                  <Button 
+                    variant="default" 
+                    className="mt-4" 
+                    onClick={handleNewProduct}
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    {t('products.addProduct')}
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto rounded-lg border border-slate-200">
+                  <table className="min-w-full divide-y divide-slate-200">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th 
+                          className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleSort("name")}
+                        >
+                          <div className="flex items-center">
+                            {t('products.productName')}
+                            {sortField === "name" && (
+                              sortDirection === "asc" ? 
+                                <ArrowUp className="h-3 w-3 ml-1" /> : 
+                                <ArrowDown className="h-3 w-3 ml-1" />
+                            )}
+                          </div>
+                        </th>
+                        <th 
+                          className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleSort("sku")}
+                        >
+                          <div className="flex items-center">
+                            {t('products.sku')}
+                            {sortField === "sku" && (
+                              sortDirection === "asc" ? 
+                                <ArrowUp className="h-3 w-3 ml-1" /> : 
+                                <ArrowDown className="h-3 w-3 ml-1" />
+                            )}
+                          </div>
+                        </th>
+
+                        <th 
+                          className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => handleSort("currentStock")}
+                        >
+                          <div className="flex items-center">
+                            {t('products.stock')}
+                            {sortField === "currentStock" && (
+                              sortDirection === "asc" ? 
+                                <ArrowUp className="h-3 w-3 ml-1" /> : 
+                                <ArrowDown className="h-3 w-3 ml-1" />
+                            )}
+                          </div>
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          {t('products.actions')}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-200">
+                      {filteredProducts.map((product: Product) => {
+                        return (
+                          <tr 
+                            key={product.id} 
+                            className="hover:bg-slate-50 cursor-pointer"
+                            onClick={() => handleViewProduct(product)}
+                          >
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="flex-shrink-0 h-10 w-10 bg-slate-100 rounded-md flex items-center justify-center">
+                                  {product.imagePath ? (
+                                    <img 
+                                      src={product.imagePath} 
+                                      alt={product.name} 
+                                      className="h-10 w-10 rounded-md object-cover"
+                                    />
+                                  ) : (
+                                    <Box className="h-5 w-5 text-slate-400" />
+                                  )}
+                                </div>
+                                <div className="ml-4">
+                                  <div className="text-sm font-medium text-slate-900">{product.name}</div>
+                                  {product.barcode && (
+                                    <div className="text-xs text-slate-500">{product.barcode}</div>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                              {product.sku}
+                            </td>
+
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStockStatusClass(product.currentStock, product.minStockLevel)} bg-opacity-10`}>
+                                {product.currentStock}
+                              </span>
+                              <span className="text-xs text-slate-500 ml-1">/ {product.minStockLevel}</span>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditProduct(product);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteProduct(product.id);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Product Form Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -902,115 +862,97 @@ const Products = () => {
                         </div>
                         <div className="space-y-4">
                           <div>
-                            <h4 className="text-sm font-medium text-slate-500">{t('products.description')}</h4>
-                            <p className="mt-1">{viewingProduct.description || t('products.noDescription')}</p>
+                            <h3 className="text-sm font-medium text-slate-500">{t('products.barcode')}</h3>
+                            <p className="mt-1">{viewingProduct.barcode || t('products.notAvailable')}</p>
                           </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <h4 className="text-sm font-medium text-slate-500">{t('products.currentStock')}</h4>
-                              <p className={`text-xl font-bold ${getStockStatusClass(viewingProduct.currentStock, viewingProduct.minStockLevel)}`}>
+                          <div>
+                            <h3 className="text-sm font-medium text-slate-500">{t('products.stockInformation')}</h3>
+                            <div className="mt-1 flex items-center">
+                              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStockStatusClass(viewingProduct.currentStock, viewingProduct.minStockLevel)} bg-opacity-10`}>
                                 {viewingProduct.currentStock}
-                              </p>
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-medium text-slate-500">{t('products.minStockLevel')}</h4>
-                              <p className="text-xl font-bold text-slate-700">{viewingProduct.minStockLevel}</p>
+                              </span>
+                              <span className="text-xs text-slate-500 ml-1">/ {viewingProduct.minStockLevel}</span>
                             </div>
                           </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <h4 className="text-sm font-medium text-slate-500">{t('products.storageLocation')}</h4>
-                              <p className="text-slate-700">{viewingProduct.location || t('products.notSpecified')}</p>
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-medium text-slate-500">{t('products.unitsPerBox')}</h4>
-                              <p className="text-slate-700">{viewingProduct.unitsPerBox || t('products.notSpecified')}</p>
-                            </div>
+                          <div>
+                            <h3 className="text-sm font-medium text-slate-500">{t('products.location')}</h3>
+                            <p className="mt-1">{viewingProduct.location || t('products.notAvailable')}</p>
                           </div>
+                          {viewingProduct.unitsPerBox && (
+                            <div>
+                              <h3 className="text-sm font-medium text-slate-500">{t('products.unitsPerBox')}</h3>
+                              <p className="mt-1">{viewingProduct.unitsPerBox}</p>
+                            </div>
+                          )}
                         </div>
                       </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-slate-500">{t('products.description')}</h3>
+                        <p className="mt-1 text-sm text-slate-700 whitespace-pre-wrap">
+                          {viewingProduct.description || t('products.noDescription')}
+                        </p>
+                      </div>
                     </CardContent>
-                    <CardFooter className="flex justify-between border-t pt-4">
+                    <CardFooter className="flex justify-between border-t pt-5">
                       <Button 
                         variant="outline" 
-                        onClick={() => {
-                          setIsDetailsDialogOpen(false);
-                          handleEditProduct(viewingProduct);
-                        }}
+                        onClick={() => setIsDetailsDialogOpen(false)}
                       >
-                        <Edit className="mr-2 h-4 w-4" />
-                        {t('products.updateInventory')}
+                        {t('products.close')}
                       </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => {
+                            setIsDetailsDialogOpen(false);
+                            handleEditProduct(viewingProduct);
+                          }}
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          {t('products.edit')}
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          onClick={() => {
+                            setIsDetailsDialogOpen(false);
+                            handleDeleteProduct(viewingProduct.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          {t('products.delete')}
+                        </Button>
+                      </div>
                     </CardFooter>
                   </Card>
                 </TabsContent>
                 <TabsContent value="barcode">
                   <Card>
                     <CardHeader>
-                      <CardTitle>{t('products.productBarcode')}</CardTitle>
-                      <CardDescription>{t('products.scanOrPrint')}</CardDescription>
+                      <CardTitle>{t('products.barcodeInformation')}</CardTitle>
+                      <CardDescription>{t('products.scanOrPrintBarcode')}</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex flex-col items-center justify-center py-6">
-                      {viewingProduct.barcode ? (
-                        <div className="text-center">
-                          <BarcodeGenerator 
-                            value={viewingProduct.barcode}
-                            width={2}
-                            height={100}
-                            displayValue={true}
-                            showPrintButton={true}
-                            showDownloadButton={true}
-                          />
-                          <p className="mt-4 text-sm text-slate-500">{t('products.barcode')}: {viewingProduct.barcode}</p>
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <QrCode className="h-16 w-16 text-slate-300 mx-auto" />
-                          <p className="mt-4 text-slate-500">{t('products.noBarcode')}</p>
-                          <Button 
-                            variant="outline" 
-                            className="mt-4"
-                            onClick={() => {
-                              setIsDetailsDialogOpen(false);
-                              handleEditProduct(viewingProduct);
-                            }}
-                          >
-                            {t('products.assignBarcode')}
-                          </Button>
-                        </div>
-                      )}
+                    <CardContent className="flex items-center justify-center p-8">
+                      <div className="text-center">
+                        <BarcodeGenerator
+                          value={viewingProduct.barcode || viewingProduct.sku}
+                          displayValue={true}
+                          size="lg"
+                          className="mb-4"
+                        />
+                        <p className="text-sm text-slate-500 mb-2">{viewingProduct.barcode || viewingProduct.sku}</p>
+                        <Button variant="outline" size="sm">
+                          <Download className="h-4 w-4 mr-2" />
+                          {t('products.downloadBarcode')}
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 </TabsContent>
               </Tabs>
-              <DialogFooter className="mt-4 gap-2">
-                <Button 
-                  variant="default" 
-                  onClick={() => {
-                    setIsDetailsDialogOpen(false);
-                    handleEditProduct(viewingProduct);
-                  }}
-                >
-                  <Edit className="mr-2 h-4 w-4" />
-                  {t('products.editProduct')}
-                </Button>
-                <Button 
-                  variant="destructive" 
-                  onClick={() => {
-                    setIsDetailsDialogOpen(false);
-                    handleDeleteProduct(viewingProduct.id);
-                  }}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {t('products.deleteProduct')}
-                </Button>
-              </DialogFooter>
             </>
           )}
         </DialogContent>
       </Dialog>
     </div>
   );
-};
-
-export default Products;
+}
