@@ -517,8 +517,8 @@ const OrderForm = ({
               {/* Unshipped products reminder section */}
               {unshippedProducts.length > 0 && (
                 <div className="mb-4">
-                  <Alert variant="warning" className="mb-4">
-                    <AlertTriangle className="h-5 w-5" />
+                  <Alert className="mb-4 border-amber-500 bg-amber-50">
+                    <AlertTriangle className="h-5 w-5 text-amber-600" />
                     <AlertTitle className="text-amber-800">
                       {t('orders.form.unshippedProductsTitle')}
                     </AlertTitle>
@@ -531,8 +531,7 @@ const OrderForm = ({
                     {unshippedProducts.map((product) => (
                       <div 
                         key={product.id}
-                        className="bg-amber-50 border border-amber-200 rounded-md p-3 hover:border-amber-400 cursor-pointer transition-colors"
-                        onClick={() => addProduct(product)}
+                        className="bg-amber-50 border border-amber-200 rounded-md p-3 hover:border-amber-400 transition-colors"
                       >
                         <div className="flex items-start justify-between">
                           <div>
@@ -555,6 +554,37 @@ const OrderForm = ({
                             size="sm" 
                             variant="default" 
                             className="h-6 px-2 py-0 text-xs bg-amber-600 hover:bg-amber-700"
+                            onClick={() => {
+                              // Check if product already exists in order
+                              const existingItem = orderItems.find(item => item.productId === product.id);
+                              
+                              if (existingItem) {
+                                // If it exists, update the quantity to include the unshipped quantity
+                                const updatedItems = orderItems.map(item => 
+                                  item.productId === product.id 
+                                    ? { ...item, quantity: item.quantity + product.quantity }
+                                    : item
+                                );
+                                setOrderItems(updatedItems);
+                                
+                                toast({
+                                  title: t('orders.form.productQuantityUpdated'),
+                                  description: t('orders.form.unshippedItemAddedToExisting'),
+                                });
+                              } else {
+                                // Otherwise add it as a new item with the unshipped quantity
+                                setOrderItems([...orderItems, { 
+                                  productId: product.id, 
+                                  product,
+                                  quantity: product.quantity 
+                                }]);
+                                
+                                toast({
+                                  title: t('orders.form.productAdded'),
+                                  description: t('orders.form.unshippedItemAddedToOrder'),
+                                });
+                              }
+                            }}
                           >
                             <PackageOpen className="h-3 w-3 mr-1" /> Add to Order
                           </Button>
