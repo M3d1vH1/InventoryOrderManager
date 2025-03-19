@@ -5,7 +5,8 @@ import {
   orderItems, type OrderItem, type InsertOrderItem,
   customers, type Customer, type InsertCustomer,
   shippingDocuments, type ShippingDocument, type InsertShippingDocument,
-  categories, type Category, type InsertCategory
+  categories, type Category, type InsertCategory,
+  orderChangelogs, type OrderChangelog, type InsertOrderChangelog
 } from "@shared/schema";
 import { DatabaseStorage, initStorage } from './storage.postgresql';
 import { log } from './vite';
@@ -55,6 +56,11 @@ export interface IStorage {
   getShippingDocument(orderId: number): Promise<ShippingDocument | undefined>;
   addShippingDocument(document: InsertShippingDocument): Promise<ShippingDocument>;
   updateShippingDocument(id: number, document: Partial<InsertShippingDocument>): Promise<ShippingDocument | undefined>;
+  
+  // Order Changelog methods
+  getOrderChangelogs(orderId: number): Promise<OrderChangelog[]>;
+  addOrderChangelog(changelog: InsertOrderChangelog): Promise<OrderChangelog>;
+  getOrderChangelogById(id: number): Promise<OrderChangelog | undefined>;
   
   // Customer methods
   getCustomer(id: number): Promise<Customer | undefined>;
@@ -130,6 +136,7 @@ export class MemStorage implements IStorage {
   private orderItems: Map<number, OrderItem>;
   private customers: Map<number, Customer>;
   private shippingDocuments: Map<number, ShippingDocument>;
+  private orderChangelogs: Map<number, OrderChangelog>;
   
   private userIdCounter: number;
   private categoryIdCounter: number;
@@ -138,6 +145,7 @@ export class MemStorage implements IStorage {
   private orderItemIdCounter: number;
   private customerIdCounter: number;
   private shippingDocumentIdCounter: number;
+  private orderChangelogIdCounter: number;
   
   constructor() {
     this.users = new Map();
@@ -147,6 +155,7 @@ export class MemStorage implements IStorage {
     this.orderItems = new Map();
     this.customers = new Map();
     this.shippingDocuments = new Map();
+    this.orderChangelogs = new Map();
     
     this.userIdCounter = 1;
     this.categoryIdCounter = 1;
@@ -155,6 +164,7 @@ export class MemStorage implements IStorage {
     this.orderItemIdCounter = 1;
     this.customerIdCounter = 1;
     this.shippingDocumentIdCounter = 1;
+    this.orderChangelogIdCounter = 1;
     
     // Initialize with sample data (async)
     // We're calling this in a non-blocking way since constructor can't be async
@@ -399,10 +409,23 @@ export class MemStorage implements IStorage {
       orderNumber,
       status: insertOrder.status || 'pending',
       notes: insertOrder.notes || null,
-      hasShippingDocument: false
+      hasShippingDocument: false,
+      updatedById: null,
+      lastUpdated: null
     };
     
     this.orders.set(id, order);
+    
+    // Add changelog entry for creation
+    await this.addOrderChangelog({
+      orderId: id,
+      userId: insertOrder.createdById,
+      action: 'create',
+      changes: { ...order },
+      previousValues: {},
+      notes: "Order created"
+    });
+    
     return order;
   }
   
@@ -452,12 +475,32 @@ export class MemStorage implements IStorage {
     }
   }
 
-  async updateOrder(id: number, orderData: Partial<InsertOrder>): Promise<Order | undefined> {
+  async updateOrder(id: number, orderData: Partial<InsertOrder> & { updatedById: number }): Promise<Order | undefined> {
     const existingOrder = this.orders.get(id);
     if (!existingOrder) return undefined;
     
-    const updatedOrder = { ...existingOrder, ...orderData };
+    const previousValues = { ...existingOrder };
+    
+    // Add update tracking
+    const now = new Date();
+    const updatedOrder = { 
+      ...existingOrder,
+      ...orderData,
+      lastUpdated: now
+    };
+    
     this.orders.set(id, updatedOrder);
+    
+    // Add changelog entry
+    await this.addOrderChangelog({
+      orderId: id,
+      userId: orderData.updatedById,
+      action: 'update',
+      changes: { ...orderData },
+      previousValues: previousValues,
+      notes: "Order updated"
+    });
+    
     return updatedOrder;
   }
   
@@ -509,6 +552,32 @@ export class MemStorage implements IStorage {
     const updatedDocument = { ...existingDocument, ...document };
     this.shippingDocuments.set(id, updatedDocument);
     return updatedDocument;
+  }
+  
+  // Order Changelog methods
+  async getOrderChangelogs(orderId: number): Promise<OrderChangelog[]> {
+    return Array.from(this.orderChangelogs.values())
+      .filter(changelog => changelog.orderId === orderId)
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }
+  
+  async addOrderChangelog(changelog: InsertOrderChangelog): Promise<OrderChangelog> {
+    const id = this.orderChangelogIdCounter++;
+    const orderChangelog: OrderChangelog = {
+      ...changelog,
+      id,
+      timestamp: new Date(),
+      changes: changelog.changes || null,
+      previousValues: changelog.previousValues || null,
+      notes: changelog.notes || null
+    };
+    
+    this.orderChangelogs.set(id, orderChangelog);
+    return orderChangelog;
+  }
+  
+  async getOrderChangelogById(id: number): Promise<OrderChangelog | undefined> {
+    return this.orderChangelogs.get(id);
   }
   
   // Customer methods
