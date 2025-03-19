@@ -988,14 +988,9 @@ export class MemStorage implements IStorage {
       description: "Connection components for various applications"
     });
     
-    const bracketsCategory = await this.createCategory({
-      name: "Brackets",
-      description: "Mounting brackets and supports"
-    });
-    
-    const mountsCategory = await this.createCategory({
-      name: "Mounts",
-      description: "Heavy duty mounting systems"
+    const defaultCategory = await this.createCategory({
+      name: "Default Category",
+      description: "Default product category"
     });
     
     // Sample products with categoryId
@@ -1020,7 +1015,7 @@ export class MemStorage implements IStorage {
     await this.createProduct({
       name: "Standard Bracket",
       sku: "BKT-003",
-      categoryId: bracketsCategory.id,
+      categoryId: defaultCategory.id,
       description: "Standard mounting bracket",
       minStockLevel: 20,
       currentStock: 12
@@ -1029,7 +1024,7 @@ export class MemStorage implements IStorage {
     await this.createProduct({
       name: "Heavy Duty Mount",
       sku: "MNT-004",
-      categoryId: mountsCategory.id,
+      categoryId: defaultCategory.id,
       description: "Heavy duty mounting system",
       minStockLevel: 10,
       currentStock: 45

@@ -722,8 +722,7 @@ const Products = () => {
                           <SelectContent>
                             <SelectItem value="widgets">Widgets</SelectItem>
                             <SelectItem value="connectors">Connectors</SelectItem>
-                            <SelectItem value="brackets">Brackets</SelectItem>
-                            <SelectItem value="mounts">Mounts</SelectItem>
+                            <SelectItem value="default">Default Category</SelectItem>
                             <SelectItem value="other">Other</SelectItem>
                           </SelectContent>
                         </Select>
