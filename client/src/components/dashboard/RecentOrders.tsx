@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { format } from "date-fns";
+import { Eye, Edit, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface OrderItem {
   id: number;
@@ -78,12 +79,12 @@ const RecentOrders = () => {
           <div className="flex space-x-2">
             <Link href={`/orders/${order.id}`}>
               <button className="text-slate-600 hover:text-primary">
-                <i className="fas fa-eye"></i>
+                <Eye className="h-4 w-4" />
               </button>
             </Link>
             <Link href={`/orders/${order.id}/edit`}>
               <button className="text-slate-600 hover:text-primary">
-                <i className="fas fa-edit"></i>
+                <Edit className="h-4 w-4" />
               </button>
             </Link>
           </div>
@@ -131,10 +132,10 @@ const RecentOrders = () => {
           </span>
           <div className="flex items-center space-x-1">
             <button className="px-3 py-1 rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-              <i className="fas fa-chevron-left"></i>
+              <ChevronLeft className="h-4 w-4" />
             </button>
             <button className="px-3 py-1 rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-              <i className="fas fa-chevron-right"></i>
+              <ChevronRight className="h-4 w-4" />
             </button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { ShoppingCart, Package, CheckCircle, AlertTriangle } from "lucide-react";
 
 interface Stats {
   pendingOrders: number;
@@ -33,7 +34,7 @@ const QuickStats = () => {
     {
       title: "Pending Orders",
       value: stats?.pendingOrders || 0,
-      icon: "fas fa-shopping-cart",
+      icon: <ShoppingCart className="h-6 w-6" />,
       bgColor: "bg-blue-100",
       textColor: "text-primary",
       path: "/orders",
@@ -42,7 +43,7 @@ const QuickStats = () => {
     {
       title: "Items to Pick",
       value: stats?.itemsToPick || 0,
-      icon: "fas fa-box",
+      icon: <Package className="h-6 w-6" />,
       bgColor: "bg-amber-100",
       textColor: "text-amber-500",
       path: "/order-picking"
@@ -50,7 +51,7 @@ const QuickStats = () => {
     {
       title: "Shipped Today",
       value: stats?.shippedToday || 0,
-      icon: "fas fa-check-circle",
+      icon: <CheckCircle className="h-6 w-6" />,
       bgColor: "bg-green-100",
       textColor: "text-green-500",
       path: "/orders",
@@ -59,7 +60,7 @@ const QuickStats = () => {
     {
       title: "Low Stock Items",
       value: stats?.lowStockItems || 0,
-      icon: "fas fa-exclamation-triangle",
+      icon: <AlertTriangle className="h-6 w-6" />,
       bgColor: "bg-red-100",
       textColor: "text-red-500",
       path: "/products",
@@ -72,8 +73,8 @@ const QuickStats = () => {
       {statCards.map((card, index) => (
         <Link key={index} href={card.path + (card.filter || "")}>
           <div className="bg-white rounded-lg shadow p-4 flex items-center hover:bg-slate-50 transition-colors cursor-pointer group">
-            <div className={`rounded-full ${card.bgColor} p-3 mr-4 group-hover:scale-110 transition-transform`}>
-              <i className={`${card.icon} ${card.textColor} text-xl`}></i>
+            <div className={`rounded-full ${card.bgColor} p-3 mr-4 group-hover:scale-110 transition-transform flex items-center justify-center`}>
+              <span className={card.textColor}>{card.icon}</span>
             </div>
             <div>
               <h3 className="text-sm text-slate-500 font-medium">{card.title}</h3>
