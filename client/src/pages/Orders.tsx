@@ -673,7 +673,7 @@ const Orders = () => {
                           ) : (
                             <TableRow>
                               <TableCell colSpan={4} className="text-center">
-                                No items found in this order.
+                                {t('orders.noItemsFound')}
                               </TableCell>
                             </TableRow>
                           )}
@@ -711,7 +711,7 @@ const Orders = () => {
                           className="flex items-center gap-2"
                         >
                           <ClipboardCheck className="h-4 w-4" />
-                          <span>Pick Order</span>
+                          <span>{t('orders.actions.pickOrder')}</span>
                         </Button>
                       )}
                       
@@ -721,7 +721,7 @@ const Orders = () => {
                         className="flex items-center gap-2"
                       >
                         <Edit className="h-4 w-4" />
-                        <span>Edit</span>
+                        <span>{t('orders.actions.edit')}</span>
                       </Button>
                       
                       {/* Document upload button for any order */}
@@ -731,7 +731,7 @@ const Orders = () => {
                         className="flex items-center gap-2"
                       >
                         <FileInput className="h-4 w-4" />
-                        <span>Upload Document</span>
+                        <span>{t('orders.actions.uploadDocument')}</span>
                       </Button>
                       
                       {/* Document view button in dialog - for any order with document */}
@@ -742,13 +742,13 @@ const Orders = () => {
                           className="flex items-center gap-2"
                         >
                           <FileText className="h-4 w-4" />
-                          <span>View Document</span>
+                          <span>{t('orders.actions.viewDocument')}</span>
                         </Button>
                       )}
                     </div>
                     
                     <Button onClick={handleCloseDialog}>
-                      Close
+                      {t('common.close')}
                     </Button>
                   </>
                 )}
@@ -770,7 +770,7 @@ const Orders = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              Upload Order Document
+              {t('orders.uploadDocument.title')}
               {orderToShip && (
                 <span className="ml-2 text-sm font-normal text-slate-500">
                   ({orderToShip.orderNumber})
@@ -778,31 +778,31 @@ const Orders = () => {
               )}
             </DialogTitle>
             <DialogDescription>
-              Documents can be uploaded for any order at any time. You can optionally change the order status to "Shipped" after upload.
+              {t('orders.uploadDocument.description')}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="documentType">Document Type</Label>
+              <Label htmlFor="documentType">{t('orders.uploadDocument.documentType')}</Label>
               <Select 
                 value={documentType} 
                 onValueChange={setDocumentType}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select document type" />
+                  <SelectValue placeholder={t('orders.uploadDocument.selectDocumentType')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="T△A document">T△A document</SelectItem>
-                  <SelectItem value="Invoice">Invoice</SelectItem>
-                  <SelectItem value="Custom declaration">Custom declaration</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
+                  <SelectItem value="T△A document">{t('orders.uploadDocument.types.tda')}</SelectItem>
+                  <SelectItem value="Invoice">{t('orders.uploadDocument.types.invoice')}</SelectItem>
+                  <SelectItem value="Custom declaration">{t('orders.uploadDocument.types.customDeclaration')}</SelectItem>
+                  <SelectItem value="Other">{t('orders.uploadDocument.types.other')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="document">Document File</Label>
+              <Label htmlFor="document">{t('orders.uploadDocument.documentFile')}</Label>
               <div className="flex items-center gap-2">
                 <Button 
                   type="button" 
@@ -811,7 +811,7 @@ const Orders = () => {
                   className="w-full justify-start text-left font-normal"
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  {documentFile ? documentFile.name : "Select file..."}
+                  {documentFile ? documentFile.name : t('orders.uploadDocument.selectFile')}
                 </Button>
                 {documentFile && (
                   <Button 
@@ -834,15 +834,15 @@ const Orders = () => {
                 onChange={handleFileChange}
               />
               <p className="text-xs text-slate-500">
-                Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG
+                {t('orders.uploadDocument.acceptedFormats')}
               </p>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Label htmlFor="notes">{t('orders.uploadDocument.notes')}</Label>
               <Textarea
                 id="notes"
-                placeholder="Add any additional information about this document..."
+                placeholder={t('orders.uploadDocument.notesPlaceholder')}
                 value={documentNotes}
                 onChange={(e) => setDocumentNotes(e.target.value)}
                 className="min-h-[80px]"
