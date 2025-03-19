@@ -154,14 +154,14 @@ const Products = () => {
     description?: string;
   }
 
-  const { data: categoriesData = [] as CategoryType[] } = useQuery<CategoryType[]>({
+  const { data: categoriesData = [] as CategoryType[], isLoading: isLoadingCategories } = useQuery<CategoryType[]>({
     queryKey: ['/api/categories'],
     staleTime: 1000, // Refresh categories every second to ensure we have the latest
   });
   
   // Debug categories data
   useEffect(() => {
-    console.log('Categories data:', categoriesData);
+    console.log('Categories data loaded:', categoriesData);
   }, [categoriesData]);
   
   // Transform category objects to an array of names for backward compatibility
@@ -779,12 +779,16 @@ const Products = () => {
                         console.log('Form field categoryId value:', field.value);
                         console.log('Categories in form dropdown:', categoriesData);
                         
+                        // Convert field.value to string for the Select component
+                        const stringValue = field.value?.toString() || "";
+                        
                         return (
                           <FormItem>
                             <FormLabel>{t('products.category')}</FormLabel>
                             <Select 
                               onValueChange={(value) => field.onChange(parseInt(value))} 
-                              defaultValue={field.value?.toString() || ""}
+                              value={stringValue}
+                              defaultValue={stringValue}
                             >
                               <FormControl>
                                 <SelectTrigger>
@@ -803,6 +807,12 @@ const Products = () => {
                                 )}
                               </SelectContent>
                             </Select>
+                            <FormDescription>
+                              {categoriesData.length === 0 ? 
+                                "You need to create categories first" : 
+                                "Select a category for this product"
+                              }
+                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         );
