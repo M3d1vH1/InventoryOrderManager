@@ -8,7 +8,7 @@ import { Link, useLocation } from "wouter";
 import { 
   Eye, Edit, ClipboardCheck, 
   Truck, CheckSquare, AlertTriangle,
-  Upload, FileText, FilePlus
+  Upload, FileText, FilePlus, FileInput
 } from "lucide-react";
 
 import {
@@ -485,12 +485,21 @@ const Orders = () => {
                           </button>
                         )}
                         
-                        {/* Document view button - only for shipped orders with document */}
-                        {order.status === 'shipped' && order.hasShippingDocument && (
+                        {/* Upload Document button for any order */}
+                        <button
+                          onClick={() => handleOpenDocumentUpload(order)}
+                          className="text-slate-600 hover:text-blue-600 p-1 rounded-full hover:bg-slate-100" 
+                          title="Upload Document"
+                        >
+                          <FileInput className="h-4 w-4" />
+                        </button>
+                        
+                        {/* Document view button - for any order with document */}
+                        {order.hasShippingDocument && (
                           <button
                             onClick={() => handleViewDocument(order.id)}
                             className="text-slate-600 hover:text-blue-600 p-1 rounded-full hover:bg-slate-100" 
-                            title="View TΔA Document"
+                            title="View Document"
                           >
                             <FileText className="h-4 w-4" />
                           </button>
