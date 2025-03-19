@@ -670,6 +670,8 @@ const Products = () => {
           )}
         </div>
       </div>
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[720px] p-0 overflow-hidden">
