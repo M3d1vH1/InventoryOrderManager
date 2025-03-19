@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { ArrowDown, ArrowUp, Box, ChevronDown, ClipboardList, Download, Edit, ImageIcon, Loader2, MapPin, PackageCheck, PlusCircle, QrCode, Search, SlidersHorizontal, Trash2, Upload, X } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from 'react-i18next';
 import { 
@@ -51,7 +50,8 @@ import {
   Search,
   SlidersHorizontal,
   Trash2,
-  Upload
+  Upload,
+  X
 } from "lucide-react";
 import {
   Dialog,
@@ -201,15 +201,31 @@ const Products = () => {
   }, [editingProduct, form]);
 
   useEffect(() => {
-    setFilteredProducts(products.filter(product => 
+    setFilteredProducts(products.filter(product => {
+      // Check search query match
+      const searchMatches = 
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (product.barcode && product.barcode.toLowerCase().includes(searchQuery.toLowerCase()))
-    ));
-  }, [searchQuery, products]);
+        (product.barcode && product.barcode.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      // Check category filter match - now using text input
+      const categoryMatches = 
+        !categoryFilter || // Empty filter shows all
+        (product.category && product.category.toLowerCase().includes(categoryFilter.toLowerCase()));
+      
+      // Check stock filter match
+      const stockMatches = 
+        stockFilter === "all" ||
+        (stockFilter === "in" && product.currentStock > product.minStockLevel) ||
+        (stockFilter === "low" && product.currentStock > 0 && product.currentStock <= product.minStockLevel) ||
+        (stockFilter === "out" && product.currentStock === 0);
+      
+      return searchMatches && categoryMatches && stockMatches;
+    }));
+  }, [searchQuery, categoryFilter, stockFilter, products]);
 
   const createProductMutation = useMutation({
-    mutationFn: async (values: ProductFormValues) => {
+    mutationFn: async (values: any) => {
       return apiRequest({
         url: '/api/products',
         method: 'POST',
@@ -235,7 +251,7 @@ const Products = () => {
   });
 
   const updateProductMutation = useMutation({
-    mutationFn: async ({ id, values }: { id: number; values: ProductFormValues }) => {
+    mutationFn: async ({ id, values }: { id: number; values: any }) => {
       return apiRequest({
         url: `/api/products/${id}`,
         method: 'PATCH',
@@ -509,14 +525,14 @@ const Products = () => {
               </div>
               <div className="relative w-full md:w-48">
                 <Input
-                  placeholder={t('products.enterCategoryFilter')}
+                  placeholder="Filter by category..."
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
                   className="w-full"
                 />
-                {categoryFilter && categoryFilter !== 'all' && (
+                {categoryFilter && (
                   <button
-                    onClick={() => setCategoryFilter('all')}
+                    onClick={() => setCategoryFilter('')}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   >
                     <X className="h-4 w-4" />
@@ -588,13 +604,13 @@ const Products = () => {
               <Box className="h-12 w-12 mx-auto text-slate-400" />
               <h3 className="mt-4 text-lg font-medium">{t('products.noProductsFound')}</h3>
               <p className="mt-2 text-slate-500">
-                {searchQuery || categoryFilter !== "all" || stockFilter !== "all" ? (
+                {searchQuery || categoryFilter || stockFilter !== "all" ? (
                   t('products.tryClearingFilters')
                 ) : (
                   t('products.createFirstProduct')
                 )}
               </p>
-              {!searchQuery && categoryFilter === "all" && stockFilter === "all" && (
+              {!searchQuery && !categoryFilter && stockFilter === "all" && (
                 <Button 
                   variant="default" 
                   className="mt-4" 
