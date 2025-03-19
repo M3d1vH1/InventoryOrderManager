@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useLocation, useRoute, useParams } from "wouter";
+import { useTranslation } from "react-i18next";
 import { 
   Eye, Edit, ClipboardCheck, 
   Truck, CheckSquare, AlertTriangle,
@@ -93,6 +94,7 @@ const getStatusBadgeClass = (status: string) => {
 const Orders = () => {
   const { setCurrentPage } = useSidebar();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [location, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -405,9 +407,9 @@ const Orders = () => {
     <div>
       <div className="bg-white rounded-lg shadow mb-6">
         <div className="p-4 border-b border-slate-200 flex justify-between items-center">
-          <h2 className="font-semibold text-lg">Order Management</h2>
+          <h2 className="font-semibold text-lg">{t('orders.management')}</h2>
           <Button onClick={() => setShowOrderForm(!showOrderForm)}>
-            {showOrderForm ? "Hide Form" : "Create New Order"}
+            {showOrderForm ? t('orders.hideForm') : t('orders.createNew')}
           </Button>
         </div>
 
@@ -424,7 +426,7 @@ const Orders = () => {
                 <i className="fas fa-search text-slate-400"></i>
               </span>
               <Input
-                placeholder="Search orders..."
+                placeholder={t('orders.searchOrders')}
                 className="pl-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -432,14 +434,14 @@ const Orders = () => {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder={t('orders.filterByStatus')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="picked">Picked</SelectItem>
-                <SelectItem value="shipped">Shipped</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="all">{t('orders.allStatuses')}</SelectItem>
+                <SelectItem value="pending">{t('orders.status.pending')}</SelectItem>
+                <SelectItem value="picked">{t('orders.status.picked')}</SelectItem>
+                <SelectItem value="shipped">{t('orders.status.shipped')}</SelectItem>
+                <SelectItem value="cancelled">{t('orders.status.cancelled')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
