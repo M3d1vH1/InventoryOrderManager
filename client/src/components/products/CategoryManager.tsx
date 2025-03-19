@@ -1,13 +1,23 @@
-import React, { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@/hooks/use-toast';
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { apiRequest } from "@/lib/queryClient";
+import { PlusCircle, Pencil, Trash2, Save } from 'lucide-react';
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +25,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -24,92 +34,80 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
-import { PlusCircle, Loader2, Edit, Trash2, PaintBucket } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+} from '@/components/ui/form';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
-// Interface for Category with color
-interface Category {
-  id: number;
-  name: string;
-  description?: string;
-  color?: string;
-}
+// Define colors for quick selection
+const CATEGORY_COLORS = [
+  '#FDE68A', // Yellow
+  '#A7F3D0', // Green
+  '#BAE6FD', // Blue
+  '#FED7AA', // Orange
+  '#DDD6FE', // Purple
+  '#FCA5A5', // Red
+  '#FECACA', // Light Red
+  '#BFDBFE', // Light Blue
+  '#C7D2FE', // Indigo
+  '#E9D5FF', // Violet
+];
 
-// Form validation schema
+// Define zod schema for category form validation
 const categoryFormSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
+  name: z.string().min(1, "Category name is required"),
   description: z.string().optional(),
-  color: z.string().optional(),
+  color: z.string().default('#BAE6FD'),
 });
 
 type CategoryFormValues = z.infer<typeof categoryFormSchema>;
 
-// Define a list of suggested colors for one-click selection
-const suggestedColors = [
-  { name: "Red", value: "#FF5A5A" },
-  { name: "Green", value: "#4CAF50" },
-  { name: "Blue", value: "#5C7AEA" },
-  { name: "Yellow", value: "#FFD700" },
-  { name: "Purple", value: "#8E44AD" },
-  { name: "Orange", value: "#FF9800" },
-  { name: "Teal", value: "#009688" },
-  { name: "Pink", value: "#E91E63" }
-];
+interface Category {
+  id: number;
+  name: string;
+  description: string | null;
+  color: string | null;
+  createdAt: string;
+}
 
 const CategoryManager = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // State management
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [open, setOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  
-  // Query to fetch categories
-  const { data: categories = [] as Category[], isLoading } = useQuery<Category[]>({
-    queryKey: ['/api/categories'],
-    staleTime: 15000,
-  });
+  const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
   
   // Form setup
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categoryFormSchema),
     defaultValues: {
-      name: "",
-      description: "",
-      color: "",
-    },
+      name: '',
+      description: '',
+      color: '#BAE6FD',
+    }
   });
   
-  // Mutations for CRUD operations
-  const createCategoryMutation = useMutation({
+  // Query categories
+  const { data: categories = [], isLoading } = useQuery({
+    queryKey: ['/api/categories'],
+    queryFn: () => apiRequest<Category[]>('/api/categories'),
+  });
+  
+  // Mutation for creating a category
+  const createMutation = useMutation({
     mutationFn: async (values: CategoryFormValues) => {
-      return apiRequest({
-        url: '/api/categories',
+      return apiRequest<Category>('/api/categories', {
         method: 'POST',
-        body: JSON.stringify(values)
+        body: JSON.stringify(values),
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
-      setIsDialogOpen(false);
+      setOpen(false);
       form.reset();
       toast({
         title: t('categories.created'),
@@ -120,22 +118,22 @@ const CategoryManager = () => {
       toast({
         title: t('categories.error'),
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     }
   });
   
-  const updateCategoryMutation = useMutation({
+  // Mutation for updating a category
+  const updateMutation = useMutation({
     mutationFn: async ({ id, values }: { id: number; values: CategoryFormValues }) => {
-      return apiRequest({
-        url: `/api/categories/${id}`,
+      return apiRequest<Category>(`/api/categories/${id}`, {
         method: 'PATCH',
-        body: JSON.stringify(values)
+        body: JSON.stringify(values),
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
-      setIsDialogOpen(false);
+      setOpen(false);
       setEditingCategory(null);
       form.reset();
       toast({
@@ -147,20 +145,21 @@ const CategoryManager = () => {
       toast({
         title: t('categories.error'),
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     }
   });
   
-  const deleteCategoryMutation = useMutation({
+  // Mutation for deleting a category
+  const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest({
-        url: `/api/categories/${id}`,
-        method: 'DELETE'
+      return apiRequest(`/api/categories/${id}`, {
+        method: 'DELETE',
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      setDeletingCategory(null);
       toast({
         title: t('categories.deleted'),
         description: t('categories.deletedDescription'),
@@ -170,17 +169,16 @@ const CategoryManager = () => {
       toast({
         title: t('categories.error'),
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     }
   });
   
-  // Event handlers
   const onSubmit = (values: CategoryFormValues) => {
     if (editingCategory) {
-      updateCategoryMutation.mutate({ id: editingCategory.id, values });
+      updateMutation.mutate({ id: editingCategory.id, values });
     } else {
-      createCategoryMutation.mutate(values);
+      createMutation.mutate(values);
     }
   };
   
@@ -188,134 +186,91 @@ const CategoryManager = () => {
     setEditingCategory(category);
     form.reset({
       name: category.name,
-      description: category.description || "",
-      color: category.color || "",
+      description: category.description || '',
+      color: category.color || '#BAE6FD',
     });
-    setIsDialogOpen(true);
+    setOpen(true);
   };
   
-  const handleNewCategory = () => {
+  const handleDeleteCategory = (category: Category) => {
+    setDeletingCategory(category);
+  };
+  
+  const handleAddCategory = () => {
     setEditingCategory(null);
     form.reset({
-      name: "",
-      description: "",
-      color: "",
+      name: '',
+      description: '',
+      color: '#BAE6FD',
     });
-    setIsDialogOpen(true);
-  };
-  
-  const handleDeleteCategory = (id: number) => {
-    if (window.confirm(t('categories.confirmDelete'))) {
-      deleteCategoryMutation.mutate(id);
-    }
-  };
-  
-  const handleColorSelect = (color: string) => {
-    form.setValue("color", color);
+    setOpen(true);
   };
 
-  const updateCategoryColor = (category: Category, color: string) => {
-    updateCategoryMutation.mutate({ 
-      id: category.id, 
-      values: { ...category, color }
-    });
-  };
-  
   return (
-    <div>
-      <Card className="mb-6">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <div>
-            <CardTitle>{t('categories.title')}</CardTitle>
-            <CardDescription>{t('categories.description')}</CardDescription>
-          </div>
-          <Button onClick={handleNewCategory} className="flex items-center gap-1">
-            <PlusCircle className="h-4 w-4" />
-            {t('categories.add')}
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center items-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="ml-2">{t('common.loading')}</p>
-            </div>
-          ) : categories.length === 0 ? (
-            <div className="text-center p-8 border rounded-lg bg-slate-50">
-              <p className="text-muted-foreground">{t('categories.noCategories')}</p>
-              <Button onClick={handleNewCategory} variant="outline" className="mt-4">
-                {t('categories.createFirst')}
-              </Button>
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('categories.name')}</TableHead>
-                    <TableHead>{t('categories.description')}</TableHead>
-                    <TableHead>{t('categories.color')}</TableHead>
-                    <TableHead>{t('common.actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {categories.map((category) => (
-                    <TableRow key={category.id}>
-                      <TableCell className="font-medium">{category.name}</TableCell>
-                      <TableCell>{category.description || "-"}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {category.color ? (
-                            <div 
-                              className="w-6 h-6 rounded border border-gray-300" 
-                              style={{ backgroundColor: category.color }}
-                            />
-                          ) : (
-                            <div className="w-6 h-6 rounded border border-gray-300 bg-gray-100" />
-                          )}
-                          <div className="flex gap-1 flex-wrap">
-                            {suggestedColors.map((color) => (
-                              <button
-                                key={color.value}
-                                className="w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform"
-                                style={{ backgroundColor: color.value }}
-                                title={color.name}
-                                onClick={() => updateCategoryColor(category, color.value)}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditCategory(category)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteCategory(category.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+    <>
+      <div className="mb-4 flex justify-between items-center">
+        <div>
+          {/* Categories count or other details could go here */}
+          {!isLoading && categories.length > 0 && (
+            <p className="text-gray-500">{categories.length} {categories.length === 1 ? 'category' : 'categories'}</p>
           )}
-        </CardContent>
-      </Card>
-
+        </div>
+        <Button onClick={handleAddCategory}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          {t('categories.add')}
+        </Button>
+      </div>
+      
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <div className="loader">{t('common.loading')}</div>
+        </div>
+      ) : categories.length === 0 ? (
+        <div className="text-center py-12">
+          <h3 className="text-lg font-medium mb-2">{t('categories.noCategories')}</h3>
+          <Button onClick={handleAddCategory}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            {t('categories.createFirst')}
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {categories.map((category) => (
+            <Card key={category.id}>
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-lg flex items-center">
+                    {category.color && (
+                      <div
+                        className="w-4 h-4 rounded-full mr-2"
+                        style={{ backgroundColor: category.color }}
+                      ></div>
+                    )}
+                    {category.name}
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                {category.description && <p className="text-gray-500">{category.description}</p>}
+              </CardContent>
+              <CardFooter className="flex justify-end gap-2 pt-0">
+                <Button variant="outline" size="sm" onClick={() => handleEditCategory(category)}>
+                  <Pencil className="h-4 w-4 mr-1" />
+                  {t('app.edit')}
+                </Button>
+                <Button variant="destructive" size="sm" onClick={() => handleDeleteCategory(category)}>
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  {t('app.delete')}
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
+      
       {/* Category Form Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>
               {editingCategory ? t('categories.edit') : t('categories.add')}
@@ -324,112 +279,124 @@ const CategoryManager = () => {
               {t('categories.formDescription')}
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('categories.name')}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t('categories.namePlaceholder')} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('categories.description')}</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder={t('categories.descriptionPlaceholder')}
-                          className="resize-none h-20"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="color"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('categories.color')}</FormLabel>
-                      <div className="flex items-center gap-2">
-                        <FormControl>
-                          <Input
-                            type="text"
-                            placeholder="#RRGGBB"
-                            {...field}
-                            className="w-28"
-                          />
-                        </FormControl>
-                        <Input
-                          type="color"
-                          value={field.value || "#FFFFFF"}
-                          onChange={(e) => field.onChange(e.target.value)}
-                          className="w-12 h-8 p-0 border-none"
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('categories.name')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t('categories.namePlaceholder')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('categories.description')}</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder={t('categories.descriptionPlaceholder')} 
+                        className="resize-none" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="color"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('categories.color')}</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center">
+                        <Input type="color" {...field} className="w-12 h-10 p-1" />
+                        <Input 
+                          type="text" 
+                          value={field.value} 
+                          onChange={(e) => field.onChange(e.target.value)} 
+                          className="ml-2 w-24" 
                         />
                       </div>
-                      <div className="mt-2">
-                        <p className="text-sm text-gray-500 mb-1">{t('categories.quickColors')}</p>
-                        <div className="flex gap-1 flex-wrap">
-                          {suggestedColors.map((color) => (
-                            <button
-                              key={color.value}
-                              type="button"
-                              className="w-8 h-8 rounded border border-gray-300 hover:scale-110 transition-transform"
-                              style={{ backgroundColor: color.value }}
-                              title={color.name}
-                              onClick={() => handleColorSelect(color.value)}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
+                    </FormControl>
+                    <FormDescription>
+                      {t('categories.quickColors')}:
+                    </FormDescription>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {CATEGORY_COLORS.map((color) => (
+                        <div
+                          key={color}
+                          className="w-8 h-8 rounded-md cursor-pointer border shadow-sm"
+                          style={{ backgroundColor: color }}
+                          onClick={() => field.onChange(color)}
+                        ></div>
+                      ))}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setOpen(false)}
+                >
+                  {t('common.cancel')}
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                >
+                  {(createMutation.isPending || updateMutation.isPending) ? (
+                    <>{t('common.saving')}</>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      {editingCategory ? t('categories.update') : t('categories.save')}
+                    </>
                   )}
-                />
-                <DialogFooter>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsDialogOpen(false)}
-                  >
-                    {t('common.cancel')}
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={
-                      createCategoryMutation.isPending || updateCategoryMutation.isPending
-                    }
-                  >
-                    {createCategoryMutation.isPending || updateCategoryMutation.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {t('common.saving')}
-                      </>
-                    ) : editingCategory ? (
-                      t('categories.update')
-                    ) : (
-                      t('categories.save')
-                    )}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </div>
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
-    </div>
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingCategory} onOpenChange={(open) => !open && setDeletingCategory(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('app.delete')} {deletingCategory?.name}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('categories.confirmDelete')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => deletingCategory && deleteMutation.mutate(deletingCategory.id)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {t('app.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 

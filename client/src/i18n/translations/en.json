@@ -21,5 +21,37 @@
     },
     "recentOrders": "Recent Orders",
     "lowStockItems": "Low Stock Items"
+  },
+  "common": {
+    "loading": "Loading...",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving...",
+    "actions": "Actions"
+  },
+  "categories": {
+    "title": "Product Categories",
+    "description": "Manage your product categories to organize your inventory",
+    "noCategories": "No categories found. Create your first category to organize your products.",
+    "createFirst": "Create First Category",
+    "add": "Add Category",
+    "edit": "Edit Category",
+    "update": "Update Category",
+    "save": "Save Category",
+    "name": "Category Name",
+    "namePlaceholder": "Enter category name",
+    "description": "Description",
+    "descriptionPlaceholder": "Enter category description",
+    "color": "Category Color",
+    "quickColors": "Quick color select",
+    "formDescription": "Fill in the information below to create or update a product category",
+    "created": "Category Created",
+    "createdDescription": "The product category has been created successfully",
+    "updated": "Category Updated",
+    "updatedDescription": "The product category has been updated successfully",
+    "deleted": "Category Deleted",
+    "deletedDescription": "The product category has been deleted successfully",
+    "error": "Category Error",
+    "confirmDelete": "Are you sure you want to delete this category? This action cannot be undone."
   }
 }
