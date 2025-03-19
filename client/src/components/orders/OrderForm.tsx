@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import ProductSearch from "@/components/products/ProductSearch";
 import { format } from "date-fns";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 
 import {
   Form,
@@ -102,6 +103,7 @@ const OrderForm = ({
   onSuccess 
 }: OrderFormProps = {}) => {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
   const [orderItems, setOrderItems] = useState<OrderItemInput[]>([]);
   const [isNewCustomerDialogOpen, setIsNewCustomerDialogOpen] = useState(false);
@@ -379,7 +381,9 @@ const OrderForm = ({
     <div className="bg-white rounded-lg shadow">
       <div className="p-4 border-b border-slate-200">
         <h2 className="font-semibold text-lg">
-          {isEditMode ? `Edit Order${initialData?.orderNumber ? ` ${initialData.orderNumber}` : ''}` : "Create New Order"}
+          {isEditMode 
+            ? `${t('orders.editOrder')}${initialData?.orderNumber ? ` ${initialData.orderNumber}` : ''}` 
+            : t('orders.form.createNewOrder')}
         </h2>
       </div>
       <div className="p-4">
@@ -391,12 +395,12 @@ const OrderForm = ({
                 name="customerName"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel className="text-base font-medium">Customer</FormLabel>
+                    <FormLabel className="text-base font-medium">{t('orders.form.customer')}</FormLabel>
                     <div className="relative">
                       <FormControl>
                         <Command className="rounded-lg border border-input">
                           <CommandInput
-                            placeholder="Type customer name..."
+                            placeholder={t('orders.form.typeCustomerName')}
                             className="h-12 text-base"
                             value={field.value}
                             onValueChange={field.onChange}
@@ -405,7 +409,7 @@ const OrderForm = ({
                           {field.value.length > 0 && (
                             <CommandList>
                               <CommandEmpty className="py-4 text-center">
-                                <p className="mb-3 text-base">No customers found</p>
+                                <p className="mb-3 text-base">{t('orders.form.noCustomersFound')}</p>
                                 <Button 
                                   onClick={() => {
                                     setCurrentSearchValue(field.value);
@@ -414,7 +418,7 @@ const OrderForm = ({
                                   }}
                                   className="h-10 text-base"
                                 >
-                                  <i className="fas fa-plus mr-2"></i> Create "{field.value}"
+                                  <i className="fas fa-plus mr-2"></i> {t('orders.form.create')} "{field.value}"
                                 </Button>
                               </CommandEmpty>
                               <CommandGroup>
