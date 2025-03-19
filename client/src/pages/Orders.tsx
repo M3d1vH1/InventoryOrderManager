@@ -291,27 +291,17 @@ const Orders = () => {
   });
   
   const handleStatusChange = (orderId: number, newStatus: string) => {
-    // If changing to shipped status, we need to check/upload TΔA document first
-    if (newStatus === 'shipped') {
-      const order = orders?.find(o => o.id === orderId);
-      if (order) {
-        if (order.hasShippingDocument) {
-          // Document already exists, just update status
-          updateStatusMutation.mutate({ orderId, status: newStatus as 'shipped' });
-        } else {
-          // Show document upload dialog
-          setOrderToShip(order);
-          setShowUploadDialog(true);
-          return; // Don't update status yet
-        }
-      }
-    } else {
-      // For other statuses, just update normally
-      updateStatusMutation.mutate({ 
-        orderId, 
-        status: newStatus as 'pending' | 'picked' | 'shipped' | 'cancelled' 
-      });
-    }
+    // Update the order status normally, without requiring document upload
+    updateStatusMutation.mutate({ 
+      orderId, 
+      status: newStatus as 'pending' | 'picked' | 'shipped' | 'cancelled' 
+    });
+  };
+  
+  // Function to handle document upload for any order
+  const handleUploadDocument = (order: Order) => {
+    setOrderToShip(order);
+    setShowUploadDialog(true);
   };
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
