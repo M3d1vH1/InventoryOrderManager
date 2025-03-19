@@ -132,45 +132,73 @@ export class DatabaseStorage implements IStorage {
     // but the database has a NOT NULL constraint on it as an ENUM type
     
     try {
-      // First, insert the product with all the fields defined in our schema
-      const [product] = await this.db.insert(products)
-        .values(insertProduct)
-        .returning();
-        
-      // If the insert succeeded, we need to update the category column directly
-      // The category column is an ENUM that only accepts specific values:
-      // 'widgets', 'connectors', 'brackets', 'mounts', 'other'
-      if (product) {
-        // Default to 'other' as a safe fallback
-        let categoryEnumValue = 'other';
-        
-        // Map categoryId to a valid enum value if possible
-        if (insertProduct.categoryId) {
-          // You could implement a mapping from categoryId to enum values here
-          // For now, we'll use a simple switch based on the ID
-          switch(insertProduct.categoryId) {
-            case 1: categoryEnumValue = 'widgets'; break;
-            case 2: categoryEnumValue = 'connectors'; break;
-            case 3: categoryEnumValue = 'brackets'; break;
-            case 4: categoryEnumValue = 'mounts'; break;
-            case 5: // Any new category will default to 'other'
-            default: categoryEnumValue = 'other'; break;
-          }
+      console.log('Attempting to create product with data:', JSON.stringify(insertProduct, null, 2));
+      
+      // The issue might be related to the initial insert failing because of the missing category field
+      // Let's modify our approach to insert both fields at once using raw SQL
+      let categoryEnumValue = 'other'; // Default fallback
+      
+      // Map categoryId to a valid enum value if possible
+      if (insertProduct.categoryId) {
+        console.log(`Mapping categoryId ${insertProduct.categoryId} to enum value`);
+        switch(insertProduct.categoryId) {
+          case 1: categoryEnumValue = 'widgets'; break;
+          case 2: categoryEnumValue = 'connectors'; break;
+          case 3: categoryEnumValue = 'brackets'; break;
+          case 4: categoryEnumValue = 'mounts'; break;
+          case 5: // Any new category will default to 'other'
+          default: categoryEnumValue = 'other'; break;
         }
-        
-        // Update the category column using raw SQL with a valid enum value
-        await this.db.execute(
-          sql`UPDATE products SET category = ${categoryEnumValue}::category WHERE id = ${product.id}`
-        );
-        
-        // Fetch the updated product
-        const updatedProduct = await this.getProduct(product.id);
-        return updatedProduct || product;
       }
       
-      return product;
+      console.log(`Using category enum value: ${categoryEnumValue}`);
+      
+      // Instead of doing a separate INSERT and UPDATE, let's do it in one step
+      // Use SQL.raw to directly set both categoryId and category columns
+      const result = await this.db.execute(sql`
+        INSERT INTO products (
+          name, 
+          sku, 
+          category_id, 
+          category,
+          min_stock_level, 
+          current_stock, 
+          description, 
+          barcode, 
+          location, 
+          units_per_box, 
+          image_path
+        ) VALUES (
+          ${insertProduct.name}, 
+          ${insertProduct.sku}, 
+          ${insertProduct.categoryId}, 
+          ${categoryEnumValue}::category,
+          ${insertProduct.minStockLevel}, 
+          ${insertProduct.currentStock}, 
+          ${insertProduct.description || null}, 
+          ${insertProduct.barcode || null}, 
+          ${insertProduct.location || null}, 
+          ${insertProduct.unitsPerBox || null}, 
+          ${insertProduct.imagePath || null}
+        )
+        RETURNING *
+      `);
+      
+      console.log('Insert result:', result);
+      
+      if (result.rows && result.rows.length > 0) {
+        const insertedProduct = result.rows[0];
+        console.log('Product created successfully:', insertedProduct);
+        return insertedProduct as Product;
+      } else {
+        throw new Error('Product insert succeeded but no product was returned');
+      }
     } catch (error) {
       console.error('Error creating product:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      }
       throw error;
     }
   }
