@@ -12,6 +12,7 @@ import Settings from "@/pages/Settings";
 import OrderPicking from "@/pages/OrderPicking";
 import ProductBarcode from "@/pages/ProductBarcode";
 import Customers from "@/pages/Customers";
+import Categories from "@/pages/Categories";
 import Login from "@/pages/Login";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
@@ -53,6 +54,7 @@ function AuthenticatedRouter() {
       <Route path="/orders/:id" component={Orders} />
       <Route path="/orders/:id/edit" component={Orders} />
       <Route path="/products" component={ProductsShopify} />
+      <Route path="/categories" component={Categories} />
       <Route path="/customers" component={Customers} />
       <Route path="/inventory" component={Inventory} />
       <Route path="/reports" component={Reports} />

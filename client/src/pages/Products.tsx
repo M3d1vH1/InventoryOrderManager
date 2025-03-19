@@ -128,6 +128,7 @@ const Products = () => {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [defaultTab, setDefaultTab] = useState<string>("products");
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
@@ -388,13 +389,25 @@ const Products = () => {
                 <h1 className="font-semibold text-2xl">{t('products.title')}</h1>
                 <p className="text-slate-500 mt-1">{t('products.subtitle')}</p>
               </div>
-              <Button 
-                onClick={handleNewProduct}
-                className="flex items-center gap-1"
-              >
-                <PlusCircle className="h-4 w-4" />
-                {t('products.addProduct')}
-              </Button>
+              <div className="flex gap-2">
+                {user?.role === 'admin' && (
+                  <Button 
+                    onClick={() => setDefaultTab("categories")}
+                    className="flex items-center gap-1"
+                    variant="outline"
+                  >
+                    <i className="fas fa-tags mr-1"></i>
+                    Manage Categories
+                  </Button>
+                )}
+                <Button 
+                  onClick={handleNewProduct}
+                  className="flex items-center gap-1"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  {t('products.addProduct')}
+                </Button>
+              </div>
             </div>
         <div className="p-4 border-b border-slate-200">
           <div className="flex flex-col md:flex-row gap-4 justify-between">
