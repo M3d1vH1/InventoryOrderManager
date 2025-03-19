@@ -49,6 +49,10 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       audio.volume = 0.5;
       // Preload audio files to reduce playback delay
       audio.preload = 'auto';
+      // Add event listener for errors during loading 
+      audio.addEventListener('error', (e) => {
+        console.error(`Error loading audio from ${src}:`, e);
+      });
       return audio;
     };
     
@@ -120,16 +124,20 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       
-      // Use a fresh audio instance to avoid browser restrictions
-      const soundPath = `/sounds/notification-${type}.mp3`;
-      const freshAudio = new Audio(soundPath);
-      freshAudio.volume = 0.5;
+      // Use the pre-created audio elements instead of creating new ones
+      const audio = audioElements[type];
+      
+      // Check if the audio element exists and is loaded properly
+      if (!audio) {
+        console.error(`Audio element for type "${type}" not found`);
+        return;
+      }
       
       // Reset the audio to the start if it's already played
-      freshAudio.currentTime = 0;
+      audio.currentTime = 0;
       
       // Try to play the sound - may be blocked without user interaction
-      const playPromise = freshAudio.play();
+      const playPromise = audio.play();
       
       if (playPromise !== undefined) {
         playPromise.catch(error => {
