@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSidebar } from "@/context/SidebarContext";
+import { useAuth } from "@/context/AuthContext";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -95,6 +96,7 @@ type ProductFormValues = z.infer<typeof productFormSchema>;
 
 const Products = () => {
   const { setCurrentPage } = useSidebar();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -369,15 +371,26 @@ const Products = () => {
             <h1 className="font-semibold text-2xl">Products</h1>
             <p className="text-slate-500 mt-1">Manage your inventory and track stock levels</p>
           </div>
-          <Button 
-            onClick={() => {
-              setEditingProduct(null);
-              setIsDialogOpen(true);
-            }}
-            className="bg-green-600 hover:bg-green-700 py-2 px-4 h-auto"
-          >
-            <Plus className="mr-2 h-4 w-4" /> Add product
-          </Button>
+          <div className="flex gap-2">
+            {user?.role === 'admin' && (
+              <Button 
+                onClick={() => window.location.href = '/categories'}
+                variant="outline"
+                className="py-2 px-4 h-auto flex items-center"
+              >
+                <i className="fas fa-tags mr-2"></i> Manage Categories
+              </Button>
+            )}
+            <Button 
+              onClick={() => {
+                setEditingProduct(null);
+                setIsDialogOpen(true);
+              }}
+              className="bg-green-600 hover:bg-green-700 py-2 px-4 h-auto"
+            >
+              <Plus className="mr-2 h-4 w-4" /> Add product
+            </Button>
+          </div>
         </div>
 
         {/* Search and filters - Shopify-style */}
