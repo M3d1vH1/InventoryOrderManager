@@ -909,10 +909,36 @@ const Products = () => {
                       name="category"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Category</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter category name" {...field} />
-                          </FormControl>
+                          <FormLabel>{t('products.category')}</FormLabel>
+                          <div className="relative">
+                            <FormControl>
+                              <Input 
+                                placeholder="Enter category name" 
+                                {...field}
+                                onChange={(e) => {
+                                  field.onChange(e.target.value);
+                                  // Set showSuggestions to true when typing
+                                }}
+                              />
+                            </FormControl>
+                            
+                            {/* Category suggestions */}
+                            {categoriesData.length > 0 && (
+                              <div className="mt-1 text-xs text-slate-500">
+                                <span className="font-medium">Suggestions: </span>
+                                {categoriesData.slice(0, 5).map((cat, idx) => (
+                                  <button
+                                    key={cat.id}
+                                    type="button"
+                                    onClick={() => field.onChange(cat.name)}
+                                    className="inline-block px-2 py-1 mr-1 mb-1 bg-slate-100 text-slate-800 rounded text-xs hover:bg-slate-200 transition-colors"
+                                  >
+                                    {cat.name}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                           <FormDescription>Enter an existing or new category name</FormDescription>
                           <FormMessage />
                         </FormItem>
