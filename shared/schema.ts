@@ -5,6 +5,7 @@ import { z } from "zod";
 // User Role Enum
 export const userRoleEnum = pgEnum('user_role', [
   'admin',
+  'manager',
   'front_office',
   'warehouse'
 ]);
@@ -28,7 +29,7 @@ export const insertUserSchema = createInsertSchema(users)
     username: z.string().min(3, { message: "Username must be at least 3 characters" }),
     password: z.string().min(6, { message: "Password must be at least 6 characters" }),
     fullName: z.string().min(2, { message: "Full name is required" }),
-    role: z.enum(['admin', 'front_office', 'warehouse']).default('front_office'),
+    role: z.enum(['admin', 'manager', 'front_office', 'warehouse']).default('front_office'),
     email: z.string().email({ message: "Invalid email address" }).optional(),
     active: z.boolean().default(true),
   });
@@ -274,3 +275,33 @@ export const insertOrderChangelogSchema = createInsertSchema(orderChangelogs)
 
 export type InsertOrderChangelog = z.infer<typeof insertOrderChangelogSchema>;
 export type OrderChangelog = typeof orderChangelogs.$inferSelect;
+
+// Unshipped Items Schema - Items that were part of an order but weren't picked
+export const unshippedItems = pgTable("unshipped_items", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull(),
+  productId: integer("product_id").notNull(),
+  quantity: integer("quantity").notNull(),
+  customerName: text("customer_name").notNull(),
+  originalOrderNumber: text("original_order_number").notNull(),
+  date: timestamp("date").notNull().defaultNow(),
+  shipped: boolean("shipped").notNull().default(false),
+  shippedInOrderId: integer("shipped_in_order_id"),
+  authorized: boolean("authorized").notNull().default(false),
+  authorizedById: integer("authorized_by_id"),
+  notes: text("notes"),
+});
+
+export const insertUnshippedItemSchema = createInsertSchema(unshippedItems)
+  .omit({ id: true, date: true, shipped: true, shippedInOrderId: true, authorized: true, authorizedById: true })
+  .extend({
+    orderId: z.number(),
+    productId: z.number(),
+    quantity: z.number().min(1),
+    customerName: z.string(),
+    originalOrderNumber: z.string(),
+    notes: z.string().optional(),
+  });
+
+export type InsertUnshippedItem = z.infer<typeof insertUnshippedItemSchema>;
+export type UnshippedItem = typeof unshippedItems.$inferSelect;
