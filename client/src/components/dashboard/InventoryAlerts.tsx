@@ -4,6 +4,7 @@ import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Upload } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Product {
   id: number;
@@ -17,6 +18,7 @@ interface Product {
 
 const InventoryAlerts = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
   
   const { data: lowStockProducts, isLoading } = useQuery<Product[]>({
     queryKey: ['/api/products/low-stock'],
@@ -34,13 +36,13 @@ const InventoryAlerts = () => {
       queryClient.invalidateQueries({ queryKey: ['/api/products/low-stock'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       toast({
-        title: "Product restocked",
-        description: "Product inventory has been updated.",
+        title: t('inventory.productRestocked'),
+        description: t('inventory.inventoryUpdated'),
       });
     },
     onError: (error) => {
       toast({
-        title: "Failed to restock product",
+        title: t('inventory.failedToRestock'),
         description: error.message,
         variant: "destructive",
       });
@@ -69,7 +71,7 @@ const InventoryAlerts = () => {
     if (!lowStockProducts || lowStockProducts.length === 0) {
       return (
         <div className="border-l-4 border-green-500 bg-green-50 p-3 rounded-r">
-          <p className="text-green-800">No low stock items. All inventory levels are healthy.</p>
+          <p className="text-green-800">{t('inventory.noLowStockItems')}</p>
         </div>
       );
     }
@@ -88,7 +90,7 @@ const InventoryAlerts = () => {
             <div>
               <h3 className="font-medium">{product.name}</h3>
               <p className="text-sm text-slate-600">
-                Stock: <span className={`font-medium ${textColor}`}>{product.currentStock}</span> (Min: {product.minStockLevel})
+                {t('inventory.stock')}: <span className={`font-medium ${textColor}`}>{product.currentStock}</span> ({t('inventory.min')}: {product.minStockLevel})
               </p>
             </div>
             <button 
@@ -96,7 +98,7 @@ const InventoryAlerts = () => {
               className="bg-white text-slate-600 hover:text-primary border border-slate-300 rounded-md px-2 py-1 text-sm"
               disabled={restockMutation.isPending}
             >
-              {restockMutation.isPending ? 'Restocking...' : 'Restock'}
+              {restockMutation.isPending ? t('inventory.restocking') : t('inventory.restock')}
             </button>
           </div>
         </div>
@@ -107,22 +109,22 @@ const InventoryAlerts = () => {
   return (
     <div className="bg-white rounded-lg shadow">
       <div className="p-4 border-b border-slate-200 flex justify-between items-center">
-        <h2 className="font-semibold text-lg">Inventory Alerts</h2>
+        <h2 className="font-semibold text-lg">{t('inventory.alerts')}</h2>
         <Link href="/products?stock=low" className="text-primary hover:text-blue-700 text-sm font-medium">
-          View All Low Stock Items
+          {t('inventory.viewAllLowStockItems')}
         </Link>
       </div>
       <div className="p-4 space-y-4">
         {renderLowStockItems()}
       </div>
       <div className="p-4 border-t border-slate-200">
-        <h3 className="font-medium text-sm mb-3">Quick Inventory Actions</h3>
+        <h3 className="font-medium text-sm mb-3">{t('inventory.quickActions')}</h3>
         <div className="grid grid-cols-2 gap-2">
           <Link href="/products" className="bg-primary text-white py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center w-full">
-            <Plus className="h-4 w-4 mr-2" /> Add New Product
+            <Plus className="h-4 w-4 mr-2" /> {t('products.addProduct')}
           </Link>
           <button className="bg-slate-200 text-slate-800 py-2 rounded-md hover:bg-slate-300 transition-colors flex items-center justify-center">
-            <Upload className="h-4 w-4 mr-2" /> Import
+            <Upload className="h-4 w-4 mr-2" /> {t('inventory.import')}
           </button>
         </div>
       </div>
