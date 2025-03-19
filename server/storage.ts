@@ -51,7 +51,7 @@ export interface IStorage {
   updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product | undefined>;
   deleteProduct(id: number): Promise<boolean>;
   getLowStockProducts(): Promise<Product[]>;
-  searchProducts(query: string, category?: string, stockStatus?: string): Promise<Product[]>;
+  searchProducts(query: string, category?: string, stockStatus?: string, tag?: string): Promise<Product[]>;
   
   // Order methods
   getOrder(id: number): Promise<Order | undefined>;
@@ -173,6 +173,8 @@ export class MemStorage implements IStorage {
     this.customers = new Map();
     this.shippingDocuments = new Map();
     this.orderChangelogs = new Map();
+    this.tags = new Map();
+    this.productTagsMap = new Map();
     
     this.userIdCounter = 1;
     this.categoryIdCounter = 1;
@@ -182,6 +184,7 @@ export class MemStorage implements IStorage {
     this.customerIdCounter = 1;
     this.shippingDocumentIdCounter = 1;
     this.orderChangelogIdCounter = 1;
+    this.tagIdCounter = 1;
     
     // Initialize with sample data (async)
     // We're calling this in a non-blocking way since constructor can't be async
@@ -290,6 +293,109 @@ export class MemStorage implements IStorage {
     return this.categories.delete(id);
   }
   
+  // Tag methods
+  async getTag(id: number): Promise<Tag | undefined> {
+    return this.tags.get(id);
+  }
+  
+  async getTagByName(name: string): Promise<Tag | undefined> {
+    return Array.from(this.tags.values()).find(
+      (tag) => tag.name.toLowerCase() === name.toLowerCase()
+    );
+  }
+  
+  async getAllTags(): Promise<Tag[]> {
+    return Array.from(this.tags.values());
+  }
+  
+  async createTag(insertTag: InsertTag): Promise<Tag> {
+    const id = this.tagIdCounter++;
+    const tag: Tag = {
+      id,
+      name: insertTag.name,
+      color: insertTag.color || null,
+      description: insertTag.description || null,
+      createdAt: new Date()
+    };
+    this.tags.set(id, tag);
+    return tag;
+  }
+  
+  async updateTag(id: number, tagUpdate: Partial<InsertTag>): Promise<Tag | undefined> {
+    const existingTag = this.tags.get(id);
+    if (!existingTag) return undefined;
+    
+    const updatedTag = { ...existingTag, ...tagUpdate };
+    this.tags.set(id, updatedTag);
+    return updatedTag;
+  }
+  
+  async deleteTag(id: number): Promise<boolean> {
+    // Check if tag is being used by any products
+    const productTagsForThisTag = Array.from(this.productTagsMap.keys())
+      .filter(key => key.endsWith(`-${id}`));
+    
+    if (productTagsForThisTag.length > 0) {
+      return false; // Can't delete tag that's in use
+    }
+    
+    return this.tags.delete(id);
+  }
+  
+  async getProductTags(productId: number): Promise<Tag[]> {
+    // Find all tag IDs associated with this product
+    const tagIds = Array.from(this.productTagsMap.keys())
+      .filter(key => key.startsWith(`${productId}-`))
+      .map(key => parseInt(key.split('-')[1], 10));
+    
+    // Get the tag objects
+    return tagIds.map(tagId => this.tags.get(tagId)).filter(Boolean) as Tag[];
+  }
+  
+  async addTagToProduct(productId: number, tagId: number): Promise<void> {
+    // Ensure both product and tag exist
+    const product = await this.getProduct(productId);
+    const tag = await this.getTag(tagId);
+    if (!product || !tag) {
+      throw new Error(`Product (${productId}) or tag (${tagId}) does not exist`);
+    }
+    
+    // Add the relation
+    const key = `${productId}-${tagId}`;
+    this.productTagsMap.set(key, 1);
+  }
+  
+  async removeTagFromProduct(productId: number, tagId: number): Promise<void> {
+    const key = `${productId}-${tagId}`;
+    this.productTagsMap.delete(key);
+  }
+  
+  async updateProductTags(productId: number, tagIds: number[]): Promise<void> {
+    // Validate product exists
+    const product = await this.getProduct(productId);
+    if (!product) {
+      throw new Error(`Product (${productId}) does not exist`);
+    }
+    
+    // Remove all existing tags for this product
+    const existingKeys = Array.from(this.productTagsMap.keys())
+      .filter(key => key.startsWith(`${productId}-`));
+    
+    for (const key of existingKeys) {
+      this.productTagsMap.delete(key);
+    }
+    
+    // Add the new tags
+    for (const tagId of tagIds) {
+      // Validate tag exists
+      const tag = await this.getTag(tagId);
+      if (tag) {
+        const key = `${productId}-${tagId}`;
+        this.productTagsMap.set(key, 1);
+      }
+    }
+  }
+  
   // Product methods
   async getProduct(id: number): Promise<Product | undefined> {
     return this.products.get(id);
@@ -339,7 +445,7 @@ export class MemStorage implements IStorage {
       .filter(product => product.currentStock <= product.minStockLevel);
   }
   
-  async searchProducts(query: string, category?: string, stockStatus?: string): Promise<Product[]> {
+  async searchProducts(query: string, category?: string, stockStatus?: string, tag?: string): Promise<Product[]> {
     let filteredProducts = Array.from(this.products.values());
     
     if (query) {
@@ -351,6 +457,47 @@ export class MemStorage implements IStorage {
       );
     }
     
+    // Handle tag filtering if tag parameter is provided
+    if (tag && tag !== 'all_tags') {
+      // Try to find tag by name first
+      const tagObj = await this.getTagByName(tag);
+      if (tagObj) {
+        // Get all products with this tag
+        const productsWithTagIds = new Set<number>();
+        
+        // Collect product IDs with this tag
+        const productTagEntries = Array.from(this.productTagsMap.keys())
+          .filter(key => key.endsWith(`-${tagObj.id}`))
+          .map(key => parseInt(key.split('-')[0], 10));
+        
+        productTagEntries.forEach(id => productsWithTagIds.add(id));
+        
+        // Filter products by the collected IDs
+        filteredProducts = filteredProducts.filter(product => 
+          productsWithTagIds.has(product.id)
+        );
+      } else {
+        // Try to filter by tagId if it's a number
+        const tagId = parseInt(tag, 10);
+        if (!isNaN(tagId)) {
+          const productsWithTagIds = new Set<number>();
+          
+          // Collect product IDs with this tag ID
+          const productTagEntries = Array.from(this.productTagsMap.keys())
+            .filter(key => key.endsWith(`-${tagId}`))
+            .map(key => parseInt(key.split('-')[0], 10));
+          
+          productTagEntries.forEach(id => productsWithTagIds.add(id));
+          
+          // Filter products by the collected IDs
+          filteredProducts = filteredProducts.filter(product => 
+            productsWithTagIds.has(product.id)
+          );
+        }
+      }
+    }
+    
+    // For backward compatibility, still handle category filtering
     if (category && category !== 'all') {
       // Try to find category by name first
       const categoryObj = await this.getCategoryByName(category);
