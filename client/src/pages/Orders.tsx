@@ -552,13 +552,25 @@ const Orders = () => {
         <div className="p-4 border-t border-slate-200 text-sm">
           <div className="flex items-center justify-between">
             <span className="text-slate-600">
-              {isLoading ? "Loading..." : filteredOrders ? `Showing ${filteredOrders.length} of ${orders?.length} orders` : "No orders found"}
+              {isLoading 
+                ? t('orders.loadingOrders') 
+                : filteredOrders 
+                  ? t('orders.showingOrders', {count: filteredOrders.length, total: orders?.length || 0}) 
+                  : t('orders.noOrdersFound')}
             </span>
             <div className="flex items-center space-x-1">
-              <button className="px-3 py-1 rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50" disabled>
+              <button 
+                className="px-3 py-1 rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50" 
+                disabled
+                aria-label={t('orders.pagination.previous')}
+              >
                 <i className="fas fa-chevron-left"></i>
               </button>
-              <button className="px-3 py-1 rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50" disabled>
+              <button 
+                className="px-3 py-1 rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50" 
+                disabled
+                aria-label={t('orders.pagination.next')}
+              >
                 <i className="fas fa-chevron-right"></i>
               </button>
             </div>

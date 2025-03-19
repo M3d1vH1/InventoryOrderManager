@@ -81,6 +81,26 @@
     "allStatuses": "All statuses",
     "loadingOrders": "Loading orders...",
     "showingOrders": "Showing {{count}} of {{total}} orders",
+    "noOrdersFound": "No orders found",
+    "loadingOrderItems": "Loading order items...",
+    "noItemsFound": "No items found in this order",
+    "orderDetails": "Order Details",
+    "editOrder": "Edit Order",
+    "updateOrderInfo": "Update order information",
+    "viewOrderDetails": "View order details",
+    "details": {
+      "customer": "Customer",
+      "orderDate": "Order Date",
+      "status": "Status",
+      "totalItems": "Total Items",
+      "notes": "Notes",
+      "orderItems": "Order Items",
+      "product": "Product",
+      "sku": "SKU",
+      "quantity": "Quantity",
+      "location": "Location",
+      "changeHistory": "Change History"
+    },
     "columns": {
       "orderId": "Order ID",
       "customer": "Customer",
@@ -88,6 +108,12 @@
       "status": "Status",
       "items": "Items",
       "actions": "Actions"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page",
+      "of": "of"
     },
     "actions": {
       "view": "View",

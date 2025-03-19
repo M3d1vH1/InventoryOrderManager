@@ -15,7 +15,13 @@
     "reports": "Αναφορές",
     "customers": "Πελάτες",
     "settings": "Ρυθμίσεις",
-    "orderPicking": "Συλλογή Παραγγελιών"
+    "orderPicking": "Συλλογή Παραγγελιών",
+    "view": "Προβολή",
+    "update": "Ενημέρωση",
+    "search": "Αναζήτηση",
+    "filter": "Φίλτρο",
+    "actions": "Ενέργειες",
+    "notSpecified": "Δεν καθορίστηκε"
   },
   "dashboard": {
     "title": "Πίνακας Ελέγχου",
@@ -80,6 +86,26 @@
     "allStatuses": "Όλες οι καταστάσεις",
     "loadingOrders": "Φόρτωση παραγγελιών...",
     "showingOrders": "Εμφάνιση {{count}} από {{total}} παραγγελίες",
+    "noOrdersFound": "Δεν βρέθηκαν παραγγελίες",
+    "loadingOrderItems": "Φόρτωση στοιχείων παραγγελίας...",
+    "noItemsFound": "Δεν βρέθηκαν προϊόντα σε αυτήν την παραγγελία",
+    "orderDetails": "Λεπτομέρειες Παραγγελίας",
+    "editOrder": "Επεξεργασία Παραγγελίας",
+    "updateOrderInfo": "Ενημερώστε τις πληροφορίες παραγγελίας",
+    "viewOrderDetails": "Προβολή λεπτομερειών παραγγελίας",
+    "details": {
+      "customer": "Πελάτης",
+      "orderDate": "Ημερομηνία Παραγγελίας",
+      "status": "Κατάσταση",
+      "totalItems": "Συνολικά Προϊόντα",
+      "notes": "Σημειώσεις",
+      "orderItems": "Στοιχεία Παραγγελίας",
+      "product": "Προϊόν",
+      "sku": "Κωδικός SKU",
+      "quantity": "Ποσότητα",
+      "location": "Τοποθεσία",
+      "changeHistory": "Ιστορικό Αλλαγών"
+    },
     "columns": {
       "orderId": "Αριθμός Παραγγελίας",
       "customer": "Πελάτης",
@@ -87,6 +113,12 @@
       "status": "Κατάσταση",
       "items": "Προϊόντα",
       "actions": "Ενέργειες"
+    },
+    "pagination": {
+      "previous": "Προηγούμενο",
+      "next": "Επόμενο",
+      "page": "Σελίδα",
+      "of": "από"
     },
     "actions": {
       "view": "Προβολή",
