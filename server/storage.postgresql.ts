@@ -9,7 +9,9 @@ import {
   customers, type Customer, type InsertCustomer,
   shippingDocuments, type ShippingDocument, type InsertShippingDocument,
   categories, type Category, type InsertCategory,
-  orderChangelogs, type OrderChangelog, type InsertOrderChangelog
+  orderChangelogs, type OrderChangelog, type InsertOrderChangelog,
+  tags, type Tag, type InsertTag,
+  productTags, type ProductTag
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { log } from './vite';

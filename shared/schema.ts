@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, json, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -55,6 +55,36 @@ export const insertCategorySchema = createInsertSchema(categories)
 
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Category = typeof categories.$inferSelect;
+
+// Tags Schema
+export const tags = pgTable("tags", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  color: text("color"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertTagSchema = createInsertSchema(tags)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    name: z.string().min(1, { message: "Tag name is required" }),
+    description: z.string().optional(),
+    color: z.string().optional(),
+  });
+
+export type InsertTag = z.infer<typeof insertTagSchema>;
+export type Tag = typeof tags.$inferSelect;
+
+// Product Tags (Many-to-Many)
+export const productTags = pgTable("product_tags", {
+  productId: integer("product_id").notNull(),
+  tagId: integer("tag_id").notNull(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.productId, t.tagId] })
+}));
+
+export type ProductTag = typeof productTags.$inferSelect;
 
 // Products Schema
 export const products = pgTable("products", {
