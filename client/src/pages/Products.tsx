@@ -42,6 +42,7 @@ interface Product {
   location?: string;
   unitsPerBox?: number;
   imagePath?: string;
+  tags?: string[];
 }
 
 // Simplified form schema without categories

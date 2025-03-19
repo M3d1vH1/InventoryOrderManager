@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSidebar } from "@/context/SidebarContext";
 import { useAuth } from "@/context/AuthContext";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -472,17 +472,18 @@ const Products = () => {
                 <Package size={48} className="mx-auto text-slate-300 mb-3" />
                 <h3 className="text-lg font-medium mb-1">No products found</h3>
                 <p className="text-slate-500">
-                  {searchTerm || stockFilter !== "all" 
+                  {searchTerm || stockFilter !== "all" || tagFilter !== "" 
                     ? "Try clearing your filters or creating a new product." 
                     : "Get started by creating your first product."}
                 </p>
-                {(searchTerm || stockFilter !== "all") && (
+                {(searchTerm || stockFilter !== "all" || tagFilter !== "") && (
                   <Button 
                     variant="outline" 
                     className="mt-4"
                     onClick={() => {
                       setSearchTerm("");
                       setStockFilter("all");
+                      setTagFilter("");
                     }}
                   >
                     Clear all filters
