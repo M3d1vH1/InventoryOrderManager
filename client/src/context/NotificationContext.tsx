@@ -186,7 +186,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     let lastMessageTime = Date.now();
     
     // Configuration constants
-    const maxReconnectAttempts = 10;
+    const maxReconnectAttempts = 30; // Increased to allow more reconnection attempts
     const initialReconnectDelay = 2000; // Base delay of 2 seconds
     const maxReconnectDelay = 30000; // Maximum delay of 30 seconds
     const pingFrequency = 30000; // Check connection health every 30 seconds
@@ -299,10 +299,11 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       // Clear any existing timers
       clearTimers();
       
-      // If max attempts reached and we're still trying, reset counter but use max delay
+      // If we've been trying to reconnect for a while, gradually reduce the frequency
+      // but never stop completely
       if (reconnectAttempts >= maxReconnectAttempts) {
-        console.log('Max reconnect attempts reached, continuing with maximum delay');
-        // We'll still try to reconnect, but less frequently
+        console.log('Many reconnect attempts made, continuing with maximum delay');
+        // Just ensure we use the maximum delay, but don't increment further
         reconnectAttempts = maxReconnectAttempts;
       }
       
@@ -461,13 +462,19 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
             pingInterval = null;
           }
           
-          // Only attempt to reconnect if we haven't reached the maximum attempts
-          if (reconnectAttempts < maxReconnectAttempts || navigator.onLine) {
+          // Always attempt to reconnect with exponential backoff
+          // But reset the counter if we've been trying for too long
+          if (reconnectAttempts >= maxReconnectAttempts) {
+            console.log('Maximum reconnect attempts reached, resetting counter but continuing with maximum delay');
+            reconnectAttempts = Math.floor(maxReconnectAttempts / 2); // Reset to half to continue but with longer delays
+          }
+          
+          // Don't attempt to reconnect if we're offline
+          if (navigator.onLine) {
             restartConnection();
           } else {
-            console.log('Maximum reconnect attempts reached or device offline, pausing reconnection attempts');
-            
-            // We'll try again on visibility change or network status change
+            console.log('Device offline, pausing reconnection attempts until back online');
+            // We'll try again when online status changes
           }
         });
         
