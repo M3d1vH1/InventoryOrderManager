@@ -673,15 +673,25 @@ const Orders = () => {
                         <span>Edit</span>
                       </Button>
                       
-                      {/* Document view button in dialog */}
-                      {orderDetails.status === 'shipped' && orderDetails.hasShippingDocument && (
+                      {/* Document upload button for any order */}
+                      <Button
+                        onClick={() => handleOpenDocumentUpload(orderDetails)}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        <FileInput className="h-4 w-4" />
+                        <span>Upload Document</span>
+                      </Button>
+                      
+                      {/* Document view button in dialog - for any order with document */}
+                      {orderDetails.hasShippingDocument && (
                         <Button
                           onClick={() => handleViewDocument(orderDetails.id)}
                           variant="outline"
                           className="flex items-center gap-2"
                         >
                           <FileText className="h-4 w-4" />
-                          <span>View TΔA</span>
+                          <span>View Document</span>
                         </Button>
                       )}
                     </div>
@@ -709,7 +719,7 @@ const Orders = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              Upload TΔA Document
+              Upload Order Document
               {orderToShip && (
                 <span className="ml-2 text-sm font-normal text-slate-500">
                   ({orderToShip.orderNumber})
@@ -717,7 +727,7 @@ const Orders = () => {
               )}
             </DialogTitle>
             <DialogDescription>
-              TΔA documents can be uploaded at any time. You can optionally change the order status to "Shipped" after upload.
+              Documents can be uploaded for any order at any time. You can optionally change the order status to "Shipped" after upload.
             </DialogDescription>
           </DialogHeader>
           
