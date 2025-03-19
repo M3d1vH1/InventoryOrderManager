@@ -109,6 +109,8 @@
       "orderUpdatedDescription": "Order has been updated successfully.",
       "errorUpdatingOrder": "Error updating order",
       "previousProductsFromCustomer": "Previous products from this customer",
+      "unshippedProductsTitle": "Unshipped Items from Previous Orders",
+      "unshippedProductsDescription": "The following products were ordered but not shipped from previous orders. Consider including them in this order.",
       "saveChanges": "Save Changes",
       "createAndAddAnother": "Create & Add Another",
       "create": "Create",
@@ -118,7 +120,18 @@
       "notesPlaceholder": "Add any additional notes for this order...",
       "customerName": "Customer Name*",
       "customerNamePlaceholder": "Enter customer name",
-      "availableStock": "Available Stock"
+      "availableStock": "Available Stock",
+      "productColumn": "Product",
+      "quantityColumn": "Quantity",
+      "stockColumn": "Stock",
+      "actionsColumn": "Actions",
+      "updateOrder": "Update Order",
+      "createOrder": "Create Order",
+      "updating": "Updating...",
+      "creating": "Creating...",
+      "backToOrders": "Back to Orders",
+      "addNewCustomer": "Add New Customer",
+      "customerDetailsInstructions": "Please enter customer details below"
     },
     "details": {
       "customer": "Customer",

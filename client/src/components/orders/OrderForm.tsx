@@ -24,6 +24,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { PackageOpen, AlertTriangle, ShoppingCart } from "lucide-react";
 
 interface Customer {
   id: number;
@@ -113,7 +116,16 @@ const OrderForm = ({
     orderCount: number;
   }
   
+  // Product from unshipped orders
+  interface UnshippedProduct extends Product {
+    quantity: number;
+    orderNumber: string;
+    orderDate: string;
+    status: 'pending' | 'picked' | 'shipped' | 'cancelled';
+  }
+  
   const [previousProducts, setPreviousProducts] = useState<ProductWithOrderCount[]>([]);
+  const [unshippedProducts, setUnshippedProducts] = useState<UnshippedProduct[]>([]);
 
   const { data: customers, isLoading: isLoadingCustomers } = useQuery<Customer[]>({
     queryKey: ['/api/customers'],
@@ -206,6 +218,7 @@ const OrderForm = ({
     // Clear previous products when customer name changes
     if (!customerName || customerName.trim() === '') {
       setPreviousProducts([]);
+      setUnshippedProducts([]);
       return;
     }
     
@@ -238,9 +251,30 @@ const OrderForm = ({
         }
       };
       
+      // Fetch unshipped products from previous orders
+      const fetchUnshippedProducts = async () => {
+        try {
+          const encodedName = encodeURIComponent(customerName);
+          const response = await fetch(`/api/customers/${encodedName}/unshipped-products`);
+          if (response.ok) {
+            const data = await response.json();
+            setUnshippedProducts(data);
+          } else {
+            console.error("Failed to fetch unshipped products:", await response.text());
+            setUnshippedProducts([]);
+          }
+        } catch (error) {
+          console.error("Error fetching unshipped products:", error);
+          setUnshippedProducts([]);
+        }
+      };
+      
+      // Execute both fetches
       fetchPreviousProducts();
+      fetchUnshippedProducts();
     } else {
       setPreviousProducts([]);
+      setUnshippedProducts([]);
     }
   }, [form.watch('customerName'), customers]);
 
@@ -480,11 +514,62 @@ const OrderForm = ({
                 </Button>
               </div>
               
-              {/* Product suggestions section */}
+              {/* Unshipped products reminder section */}
+              {unshippedProducts.length > 0 && (
+                <div className="mb-4">
+                  <Alert variant="warning" className="mb-4">
+                    <AlertTriangle className="h-5 w-5" />
+                    <AlertTitle className="text-amber-800">
+                      {t('orders.form.unshippedProductsTitle')}
+                    </AlertTitle>
+                    <AlertDescription className="text-amber-700">
+                      {t('orders.form.unshippedProductsDescription')}
+                    </AlertDescription>
+                  </Alert>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {unshippedProducts.map((product) => (
+                      <div 
+                        key={product.id}
+                        className="bg-amber-50 border border-amber-200 rounded-md p-3 hover:border-amber-400 cursor-pointer transition-colors"
+                        onClick={() => addProduct(product)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="font-medium text-sm text-amber-900">{product.name}</div>
+                            <div className="text-xs text-amber-800">SKU: {product.sku}</div>
+                            <div className="text-xs text-amber-700 mt-1">
+                              Order: {product.orderNumber} ({new Date(product.orderDate).toLocaleDateString()})
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="border-amber-500 text-amber-800 bg-amber-100">
+                            {product.status === 'pending' ? 'Pending' : 'Picked'}
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between mt-2 text-xs">
+                          <span className="text-amber-800">
+                            Quantity: <span className="font-medium">{product.quantity}</span>
+                          </span>
+                          <Button 
+                            type="button" 
+                            size="sm" 
+                            variant="default" 
+                            className="h-6 px-2 py-0 text-xs bg-amber-600 hover:bg-amber-700"
+                          >
+                            <PackageOpen className="h-3 w-3 mr-1" /> Add to Order
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Previous products suggestions section */}
               {previousProducts.length > 0 && (
                 <div className="mb-4">
                   <div className="flex items-center text-base font-medium text-slate-700 mb-2">
-                    <i className="fas fa-history mr-2"></i> {t('orders.form.previousProductsFromCustomer')}
+                    <ShoppingCart className="h-4 w-4 mr-2" /> {t('orders.form.previousProductsFromCustomer')}
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {previousProducts.slice(0, 6).map((product) => (
