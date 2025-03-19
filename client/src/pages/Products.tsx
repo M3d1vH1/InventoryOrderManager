@@ -140,7 +140,7 @@ const Products = () => {
     }
   }, [editingProduct, form]);
   
-  // Filter products based on search, category, and stock status
+  // Filter products based on search and stock status
   useEffect(() => {
     setFilteredProducts(products.filter(product => {
       // Search query filter
@@ -149,14 +149,6 @@ const Products = () => {
         product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (product.barcode && product.barcode.toLowerCase().includes(searchQuery.toLowerCase()));
       
-      // Category text filter - find category name for this product
-      const category = categoriesData.find(cat => cat.id === product.categoryId);
-      const categoryName = category?.name || "";
-      
-      const categoryMatches = 
-        !categoryFilter || // Empty filter shows all
-        categoryName.toLowerCase().includes(categoryFilter.toLowerCase());
-      
       // Stock status filter
       const stockMatches = 
         stockFilter === "all" ||
@@ -164,9 +156,9 @@ const Products = () => {
         (stockFilter === "low" && product.currentStock > 0 && product.currentStock <= product.minStockLevel) ||
         (stockFilter === "out" && product.currentStock === 0);
       
-      return searchMatches && categoryMatches && stockMatches;
+      return searchMatches && stockMatches;
     }));
-  }, [searchQuery, categoryFilter, stockFilter, products, categoriesData]);
+  }, [searchQuery, stockFilter, products]);
   
   // Product Creation Mutation
   const createProductMutation = useMutation({
@@ -347,13 +339,10 @@ const Products = () => {
   // Data export handler
   const handleExportData = (format: string) => {
     const productsForExport = products.map((product: Product) => {
-      // Find category name
-      const category = categoriesData.find(cat => cat.id === product.categoryId);
       return {
         Name: product.name,
         SKU: product.sku,
         Barcode: product.barcode || "N/A",
-        Category: category?.name || "Unknown",
         "Min Stock": product.minStockLevel,
         "Current Stock": product.currentStock,
         Location: product.location || "N/A",
@@ -532,13 +521,13 @@ const Products = () => {
                   <Box className="h-12 w-12 mx-auto text-slate-400" />
                   <h3 className="mt-4 text-lg font-medium">{t('products.noProductsFound')}</h3>
                   <p className="mt-2 text-slate-500">
-                    {searchQuery || categoryFilter || stockFilter !== "all" ? (
+                    {searchQuery || stockFilter !== "all" ? (
                       t('products.tryClearingFilters')
                     ) : (
                       t('products.createFirstProduct')
                     )}
                   </p>
-                  {!searchQuery && !categoryFilter && stockFilter === "all" && (
+                  {!searchQuery && stockFilter === "all" && (
                     <Button 
                       variant="default" 
                       className="mt-4" 
@@ -602,10 +591,6 @@ const Products = () => {
                       </thead>
                       <tbody className="bg-white divide-y divide-slate-200">
                         {filteredProducts.map((product: Product) => {
-                          // Find category name
-                          const category = categoriesData.find(cat => cat.id === product.categoryId);
-                          const categoryName = category?.name || "Unknown";
-                          
                           return (
                             <tr 
                               key={product.id} 
