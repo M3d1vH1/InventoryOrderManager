@@ -45,7 +45,7 @@ export interface IStorage {
   getAllOrders(): Promise<Order[]>;
   getRecentOrders(limit: number): Promise<Order[]>;
   createOrder(order: InsertOrder): Promise<Order>;
-  updateOrderStatus(id: number, status: 'pending' | 'picked' | 'shipped' | 'cancelled', documentInfo?: {documentPath: string, documentType: string, notes?: string}): Promise<Order | undefined>;
+  updateOrderStatus(id: number, status: 'pending' | 'picked' | 'shipped' | 'cancelled', documentInfo?: {documentPath: string, documentType: string, notes?: string}, updatedById?: number): Promise<Order | undefined>;
   updateOrder(id: number, orderData: Partial<InsertOrder>): Promise<Order | undefined>;
   
   // Order Item methods
@@ -567,8 +567,8 @@ export class MemStorage implements IStorage {
       ...changelog,
       id,
       timestamp: new Date(),
-      changes: changelog.changes || null,
-      previousValues: changelog.previousValues || null,
+      changes: changelog.changes || {},
+      previousValues: changelog.previousValues || {},
       notes: changelog.notes || null
     };
     

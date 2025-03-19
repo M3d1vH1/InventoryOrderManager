@@ -8,7 +8,8 @@ import {
   orderItems, type OrderItem, type InsertOrderItem,
   customers, type Customer, type InsertCustomer,
   shippingDocuments, type ShippingDocument, type InsertShippingDocument,
-  categories, type Category, type InsertCategory
+  categories, type Category, type InsertCategory,
+  orderChangelogs, type OrderChangelog, type InsertOrderChangelog
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { log } from './vite';
@@ -237,6 +238,16 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     
+    // Add changelog entry
+    await this.addOrderChangelog({
+      orderId: order.id,
+      userId: insertOrder.createdById,
+      action: 'create',
+      changes: { ...order },
+      previousValues: {},
+      notes: "Order created"
+    });
+    
     return order;
   }
   
@@ -284,8 +295,15 @@ export class DatabaseStorage implements IStorage {
   async updateOrderStatus(
     id: number, 
     status: 'pending' | 'picked' | 'shipped' | 'cancelled',
-    documentInfo?: {documentPath: string, documentType: string, notes?: string}
+    documentInfo?: {documentPath: string, documentType: string, notes?: string},
+    updatedById?: number
   ): Promise<Order | undefined> {
+    // Get the existing order first to track what's changing
+    const existingOrder = await this.getOrder(id);
+    if (!existingOrder) return undefined;
+    
+    // Track the previous values
+    const previousValues = { ...existingOrder };
     
     // If status is 'shipped' and document info is provided, add shipping document
     if (status === 'shipped' && documentInfo) {
@@ -297,21 +315,62 @@ export class DatabaseStorage implements IStorage {
       });
     }
     
+    // Update the status and lastUpdated
+    const now = new Date();
     const [updatedOrder] = await this.db
       .update(orders)
-      .set({ status })
+      .set({ 
+        status,
+        lastUpdated: now 
+      })
       .where(eq(orders.id, id))
       .returning();
+    
+    // Add changelog entry if we have a user ID
+    if (updatedById) {
+      await this.addOrderChangelog({
+        orderId: id,
+        userId: updatedById,
+        action: 'status_change',
+        changes: { status, lastUpdated: now },
+        previousValues: previousValues,
+        notes: `Order status changed to ${status}${documentInfo ? ' with document' : ''}`
+      });
+    }
     
     return updatedOrder;
   }
 
-  async updateOrder(id: number, orderData: Partial<InsertOrder>): Promise<Order | undefined> {
+  async updateOrder(id: number, orderData: Partial<InsertOrder> & { updatedById: number }): Promise<Order | undefined> {
+    // Get the existing order to track changes
+    const existingOrder = await this.getOrder(id);
+    if (!existingOrder) return undefined;
+    
+    // Track the previous values
+    const previousValues = { ...existingOrder };
+    
+    // Add last updated timestamp
+    const updateWithTimestamp = { 
+      ...orderData,
+      lastUpdated: new Date()
+    };
+    
+    // Update the order
     const [updatedOrder] = await this.db
       .update(orders)
-      .set(orderData)
+      .set(updateWithTimestamp)
       .where(eq(orders.id, id))
       .returning();
+    
+    // Add changelog entry
+    await this.addOrderChangelog({
+      orderId: id,
+      userId: orderData.updatedById,
+      action: 'update',
+      changes: { ...orderData },
+      previousValues: previousValues,
+      notes: "Order updated"
+    });
     
     return updatedOrder;
   }
@@ -756,6 +815,51 @@ export class DatabaseStorage implements IStorage {
       averagePickingTimeMinutes,
       pickingEfficiency
     };
+  }
+  
+  // Order Changelog methods
+  async getOrderChangelogs(orderId: number): Promise<OrderChangelog[]> {
+    try {
+      const results = await this.db.select().from(orderChangelogs)
+        .where(eq(orderChangelogs.orderId, orderId))
+        .orderBy(desc(orderChangelogs.timestamp));
+      
+      return results;
+    } catch (error) {
+      console.error('Error getting order changelogs:', error);
+      return [];
+    }
+  }
+  
+  async addOrderChangelog(changelog: InsertOrderChangelog): Promise<OrderChangelog> {
+    try {
+      const result = await this.db.insert(orderChangelogs)
+        .values({
+          ...changelog,
+          timestamp: new Date(),
+          changes: changelog.changes || {},
+          previousValues: changelog.previousValues || {},
+          notes: changelog.notes || null
+        })
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error adding order changelog:', error);
+      throw error;
+    }
+  }
+  
+  async getOrderChangelogById(id: number): Promise<OrderChangelog | undefined> {
+    try {
+      const results = await this.db.select().from(orderChangelogs)
+        .where(eq(orderChangelogs.id, id));
+      
+      return results[0];
+    } catch (error) {
+      console.error('Error getting order changelog by ID:', error);
+      return undefined;
+    }
   }
 }
 
