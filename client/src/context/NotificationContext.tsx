@@ -40,65 +40,33 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   // Calculate unread count
   const unreadCount = notifications.filter(n => !n.read).length;
   
-  // Audio elements for each sound type - created once and reused
-  const [audioElements] = useState<Record<string, HTMLAudioElement>>(() => {
-    // Create and configure audio elements for each notification type
-    const createAudioElement = (src: string): HTMLAudioElement => {
-      const audio = new Audio(src);
-      // Set default volume (0.0 to 1.0)
-      audio.volume = 0.5;
-      // Preload audio files to reduce playback delay
-      audio.preload = 'auto';
-      // Add event listener for errors during loading 
-      audio.addEventListener('error', (e) => {
-        console.error(`Error loading audio from ${src}:`, e);
-      });
-      return audio;
-    };
-    
-    return {
-      'success': createAudioElement('/sounds/notification-success.mp3'),
-      'warning': createAudioElement('/sounds/notification-warning.mp3'),
-      'error': createAudioElement('/sounds/notification-error.mp3')
-    };
-  });
+  // Use Web Audio API for sound synthesis instead of audio files
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   
   // Track whether the user has interacted with the page
   // This helps us know if autoplay might be allowed
   const [userHasInteracted, setUserHasInteracted] = useState(false);
   
-  // Update user interaction status when they click anywhere
+  // Create or resume AudioContext after user interaction
   useEffect(() => {
     const handleUserInteraction = () => {
       if (!userHasInteracted) {
         setUserHasInteracted(true);
-        // Try to "unlock" audio on first interaction
-        Object.values(audioElements).forEach(audio => {
-          const quietPlayAttempt = () => {
-            // Store original volume
-            const originalVolume = audio.volume;
-            
-            // Set volume to 0 to make it silent
-            audio.volume = 0;
-            
-            // Try to play and immediately pause to "unlock" the audio
-            audio.play()
-              .then(() => {
-                // Immediately pause and restore volume
-                audio.pause();
-                audio.currentTime = 0;
-                audio.volume = originalVolume;
-              })
-              .catch(err => {
-                // Even with user interaction, some browsers still block
-                console.log('Could not unlock audio:', err.message);
-                // Restore volume even if it failed
-                audio.volume = originalVolume;
-              });
-          };
-          
-          quietPlayAttempt();
-        });
+        
+        // Create AudioContext on first interaction
+        // or resume it if it was suspended
+        try {
+          // Create new AudioContext if we don't have one yet
+          if (!audioContext) {
+            const newContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            setAudioContext(newContext);
+          } else if (audioContext.state === 'suspended') {
+            // If we already have one but it's suspended, resume it
+            audioContext.resume();
+          }
+        } catch (error) {
+          console.error('Failed to initialize Web Audio API:', error);
+        }
       }
     };
     
@@ -113,9 +81,9 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       document.removeEventListener('keydown', handleUserInteraction);
       document.removeEventListener('touchstart', handleUserInteraction);
     };
-  }, [userHasInteracted, audioElements]);
+  }, [userHasInteracted, audioContext]);
   
-  // Function to play notification sound using the pre-created audio elements
+  // Function to play notification sounds using Web Audio API
   const playNotificationSound = (type: 'success' | 'warning' | 'error' = 'success') => {
     try {
       // Only attempt to play sound if user has interacted with the page
@@ -124,37 +92,83 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       
-      // Use the pre-created audio elements instead of creating new ones
-      const audio = audioElements[type];
-      
-      // Check if the audio element exists and is loaded properly
-      if (!audio) {
-        console.error(`Audio element for type "${type}" not found`);
-        return;
+      // Ensure we have an audio context
+      if (!audioContext) {
+        try {
+          // Create one if we don't
+          const newContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+          setAudioContext(newContext);
+        } catch (error) {
+          console.error('Failed to create AudioContext:', error);
+          return;
+        }
       }
       
-      // Reset the audio to the start if it's already played
-      audio.currentTime = 0;
-      
-      // Try to play the sound - may be blocked without user interaction
-      const playPromise = audio.play();
-      
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          // This is usually because the browser requires user interaction first
-          console.log(`Browser blocked audio playback (${type}):`, error.message);
-          
-          // If this is the first time we're encountering this,
-          // we'll show a toast to let the user know they need to interact
-          if (!userHasInteracted) {
-            toast({
-              title: "Notifications",
-              description: "Interact with the page (click/tap) to enable audio notifications",
-              duration: 5000,
-            });
-          }
+      // Resume audio context if it's suspended
+      if (audioContext?.state === 'suspended') {
+        audioContext.resume().catch(err => {
+          console.error('Failed to resume AudioContext:', err);
+          return;
         });
       }
+      
+      // Generate tones based on notification type
+      const duration = 0.15; // seconds
+      let frequency1 = 0;
+      let frequency2 = 0;
+      
+      switch (type) {
+        case 'success':
+          frequency1 = 1046.50; // High C
+          frequency2 = 1318.51; // High E
+          break;
+        case 'warning':
+          frequency1 = 830.61;  // High G#
+          frequency2 = 740.00;  // High F#
+          break;
+        case 'error':
+          frequency1 = 220.00;  // Low A
+          frequency2 = 196.00;  // Low G
+          break;
+      }
+      
+      // Create oscillators and gain node
+      const oscillator1 = audioContext.createOscillator();
+      const oscillator2 = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      // Configure oscillators
+      oscillator1.type = 'sine';
+      oscillator1.frequency.value = frequency1;
+      
+      oscillator2.type = 'sine';
+      oscillator2.frequency.value = frequency2;
+      
+      // Configure gain (volume)
+      gainNode.gain.value = 0.1; // Keep volume low
+      
+      // Connect nodes: oscillators -> gain -> output
+      oscillator1.connect(gainNode);
+      oscillator2.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Setup gentle fade-out
+      const now = audioContext.currentTime;
+      gainNode.gain.setValueAtTime(0.1, now);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
+      
+      // Start and stop oscillators
+      oscillator1.start(now);
+      oscillator2.start(now);
+      oscillator1.stop(now + duration);
+      oscillator2.stop(now + duration);
+      
+      // Clean up oscillators after they're done
+      setTimeout(() => {
+        oscillator1.disconnect();
+        oscillator2.disconnect();
+      }, duration * 1000 + 100);
+      
     } catch (error) {
       console.error('Error playing notification sound:', error);
     }
