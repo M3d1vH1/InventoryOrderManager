@@ -50,6 +50,8 @@ function AuthenticatedRouter() {
       <Route path="/" component={Dashboard} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/orders" component={Orders} />
+      <Route path="/orders/:id" component={Orders} />
+      <Route path="/orders/:id/edit" component={Orders} />
       <Route path="/products" component={ProductsShopify} />
       <Route path="/customers" component={Customers} />
       <Route path="/inventory" component={Inventory} />

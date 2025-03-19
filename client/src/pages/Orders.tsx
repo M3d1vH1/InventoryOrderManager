@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useRoute, useParams } from "wouter";
 import { 
   Eye, Edit, ClipboardCheck, 
   Truck, CheckSquare, AlertTriangle,
@@ -99,6 +99,11 @@ const Orders = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   
+  // Check if we're on a view or edit route
+  const [isViewRoute, viewParams] = useRoute('/orders/:id');
+  const [isEditRoute, editParams] = useRoute('/orders/:id/edit');
+  const params = isViewRoute ? viewParams : editParams;
+  
   // Document upload state
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [orderToShip, setOrderToShip] = useState<Order | null>(null);
@@ -151,6 +156,30 @@ const Orders = () => {
       setStatusFilter(statusParam);
     }
   }, [setCurrentPage]);
+  
+  // Handle route params for order ID when viewing or editing a specific order
+  useEffect(() => {
+    if ((isViewRoute || isEditRoute) && params && params.id) {
+      // Check if the order ID is a valid number
+      const orderId = parseInt(params.id, 10);
+      if (!isNaN(orderId) && orders) {
+        // Find the order with the matching ID
+        const order = orders.find(o => o.id === orderId);
+        if (order) {
+          setSelectedOrder(order);
+          setIsEditMode(isEditRoute); // Set edit mode based on the route
+        } else {
+          // Order not found - show toast and redirect to orders list
+          toast({
+            title: "Order not found",
+            description: `The order with ID ${orderId} does not exist.`,
+            variant: "destructive",
+          });
+          setLocation("/orders");
+        }
+      }
+    }
+  }, [isViewRoute, isEditRoute, params, orders, toast, setLocation]);
 
   const filteredOrders = orders?.filter(order => {
     const matchesSearch = searchTerm === "" || 
@@ -323,11 +352,15 @@ const Orders = () => {
   };
   
   const handleViewOrder = (order: Order) => {
+    // Use setLocation to update the URL for better bookmarking and navigation
+    setLocation(`/orders/${order.id}`);
     setSelectedOrder(order);
     setIsEditMode(false);
   };
   
   const handleEditOrder = (order: Order) => {
+    // Use setLocation to update the URL for better bookmarking and navigation
+    setLocation(`/orders/${order.id}/edit`);
     setSelectedOrder(order);
     setIsEditMode(true);
   };
