@@ -678,7 +678,7 @@ const Orders = () => {
                                   )}
                                 </TableCell>
                                 <TableCell>
-                                  {item.product?.location || "Not specified"}
+                                  {item.product?.location || t('app.notSpecified')}
                                 </TableCell>
                               </TableRow>
                             ))
