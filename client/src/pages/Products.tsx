@@ -73,7 +73,7 @@ const Products = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>("");
+
   const [stockFilter, setStockFilter] = useState<string>("all");
   const [sortField, setSortField] = useState<string>("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -466,22 +466,7 @@ const Products = () => {
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                     />
                   </div>
-                  <div className="relative w-full md:w-48">
-                    <Input
-                      placeholder="Filter by category..."
-                      value={categoryFilter}
-                      onChange={(e) => setCategoryFilter(e.target.value)}
-                      className="w-full"
-                    />
-                    {categoryFilter && (
-                      <button
-                        onClick={() => setCategoryFilter('')}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
+
                   <Select value={stockFilter} onValueChange={setStockFilter}>
                     <SelectTrigger className="w-full md:w-48">
                       <SelectValue placeholder={t('products.allStockStatus')} />
@@ -596,19 +581,7 @@ const Products = () => {
                               )}
                             </div>
                           </th>
-                          <th 
-                            className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer"
-                            onClick={() => handleSort("categoryId")}
-                          >
-                            <div className="flex items-center">
-                              {t('products.category')}
-                              {sortField === "categoryId" && (
-                                sortDirection === "asc" ? 
-                                  <ArrowUp className="h-3 w-3 ml-1" /> : 
-                                  <ArrowDown className="h-3 w-3 ml-1" />
-                              )}
-                            </div>
-                          </th>
+
                           <th 
                             className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer"
                             onClick={() => handleSort("currentStock")}
@@ -663,9 +636,7 @@ const Products = () => {
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                                 {product.sku}
                               </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                                {categoryName}
-                              </td>
+
                               <td className="px-4 py-3 whitespace-nowrap">
                                 <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStockStatusClass(product.currentStock, product.minStockLevel)} bg-opacity-10`}>
                                   {product.currentStock}
@@ -936,10 +907,7 @@ const Products = () => {
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold">{viewingProduct.name}</DialogTitle>
                 <DialogDescription>
-                  <span className="font-medium">{t('products.sku')}:</span> {viewingProduct.sku} • 
-                  <span className="font-medium"> {t('products.category')}:</span> {
-                    categoriesData.find(cat => cat.id === viewingProduct.categoryId)?.name || "Unknown"
-                  }
+                  <span className="font-medium">{t('products.sku')}:</span> {viewingProduct.sku}
                 </DialogDescription>
               </DialogHeader>
               <Tabs defaultValue="details">
