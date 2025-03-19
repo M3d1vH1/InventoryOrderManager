@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { Eye, Edit, ChevronLeft, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface OrderItem {
   id: number;
@@ -36,6 +37,7 @@ const getStatusBadgeClass = (status: string) => {
 };
 
 const RecentOrders = () => {
+  const { t } = useTranslation();
   const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ['/api/orders/recent'],
   });
@@ -58,7 +60,7 @@ const RecentOrders = () => {
       return (
         <tr>
           <td colSpan={6} className="py-6 text-center text-slate-500">
-            No orders found
+            {t('orders.noOrdersFound')}
           </td>
         </tr>
       );
@@ -71,7 +73,7 @@ const RecentOrders = () => {
         <td className="py-3 px-4">{format(new Date(order.orderDate), 'MMM dd, yyyy')}</td>
         <td className="py-3 px-4">
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(order.status)}`}>
-            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+            {t(`orders.status.${order.status}`)}
           </span>
         </td>
         <td className="py-3 px-4">{order.items?.length || 0}</td>
@@ -92,21 +94,21 @@ const RecentOrders = () => {
   return (
     <div className="lg:col-span-2 bg-white rounded-lg shadow">
       <div className="p-4 border-b border-slate-200 flex justify-between items-center">
-        <h2 className="font-semibold text-lg">Recent Orders</h2>
+        <h2 className="font-semibold text-lg">{t('dashboard.recentOrders')}</h2>
         <Link href="/orders" className="text-primary hover:text-blue-700 text-sm font-medium">
-          View All
+          {t('common.viewAll')}
         </Link>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full">
           <thead className="bg-slate-50 text-slate-500 text-sm">
             <tr>
-              <th className="py-3 px-4 text-left font-medium">Order ID</th>
-              <th className="py-3 px-4 text-left font-medium">Customer</th>
-              <th className="py-3 px-4 text-left font-medium">Date</th>
-              <th className="py-3 px-4 text-left font-medium">Status</th>
-              <th className="py-3 px-4 text-left font-medium">Items</th>
-              <th className="py-3 px-4 text-left font-medium">Actions</th>
+              <th className="py-3 px-4 text-left font-medium">{t('orders.orderId')}</th>
+              <th className="py-3 px-4 text-left font-medium">{t('orders.customer')}</th>
+              <th className="py-3 px-4 text-left font-medium">{t('orders.date')}</th>
+              <th className="py-3 px-4 text-left font-medium">{t('orders.status')}</th>
+              <th className="py-3 px-4 text-left font-medium">{t('orders.items')}</th>
+              <th className="py-3 px-4 text-left font-medium">{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
@@ -118,10 +120,10 @@ const RecentOrders = () => {
         <div className="flex items-center justify-between">
           <span className="text-slate-600">
             {isLoading 
-              ? "Loading..." 
+              ? t('common.loading')
               : orders?.length 
-                ? `Showing ${orders.length} of ${orders.length} orders`
-                : "No orders found"
+                ? t('orders.showingOrders', { count: orders.length, total: orders.length })
+                : t('orders.noOrdersFound')
             }
           </span>
           <div className="flex items-center space-x-1">

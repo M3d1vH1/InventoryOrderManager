@@ -34,7 +34,8 @@
     "cancel": "Cancel",
     "save": "Save",
     "saving": "Saving...",
-    "actions": "Actions"
+    "actions": "Actions",
+    "viewAll": "View All"
   },
   "categories": {
     "title": "Product Categories",
@@ -66,11 +67,20 @@
     "createNew": "Create New Order",
     "quickCreate": "Quickly create a new customer order",
     "createOrder": "Create Order",
+    "noOrdersFound": "No orders found",
+    "orderId": "Order ID",
+    "customer": "Customer",
+    "date": "Date",
+    "status": "Status",
+    "items": "Items",
+    "showingOrders": "Showing {{count}} of {{total}} orders",
     "status": {
       "pending": "Pending",
       "processing": "Processing",
       "shipped": "Shipped",
-      "delivered": "Delivered"
+      "delivered": "Delivered",
+      "picked": "Picked",
+      "cancelled": "Cancelled"
     }
   }
 }
