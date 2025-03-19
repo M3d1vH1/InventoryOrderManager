@@ -1,5 +1,5 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { eq, like, desc, and, or, lte, gt } from 'drizzle-orm';
+import { eq, like, desc, and, or, lte, gt, sql } from 'drizzle-orm';
 import { pool, initDatabase } from './db';
 import { 
   users, type User, type InsertUser,
