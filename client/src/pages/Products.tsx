@@ -430,12 +430,15 @@ export default function Products() {
                 </Select>
 
                 {allTags.length > 0 && (
-                  <Select value={tagFilter} onValueChange={setTagFilter}>
+                  <Select 
+                    value={tagFilter || "all_tags"} 
+                    onValueChange={(value) => setTagFilter(value === "all_tags" ? "" : value)}
+                  >
                     <SelectTrigger className="w-full md:w-48">
                       <SelectValue placeholder="Filter by tag" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Tags</SelectItem>
+                      <SelectItem value="all_tags">All Tags</SelectItem>
                       {allTags.map(tag => (
                         <SelectItem key={tag} value={tag}>
                           {tag}
