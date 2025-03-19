@@ -100,7 +100,7 @@ const productFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   sku: z.string().min(2, "SKU must be at least 2 characters"),
   barcode: z.string().optional(),
-  categoryId: z.coerce.number().min(0, "Category is required"),
+  category: z.string().min(1, "Category is required"),
   description: z.string().optional(),
   minStockLevel: z.coerce.number().min(0, "Min stock level must be 0 or greater"),
   currentStock: z.coerce.number().min(0, "Current stock must be 0 or greater"),
@@ -782,20 +782,19 @@ const Products = () => {
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    {/* Skip the form field entirely and just use a simple div for display */}
-                    <div className="w-full space-y-2">
-                      <div className="font-medium text-sm">Category</div>
-                      <div className="flex items-center h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                        test
-                      </div>
-                      <p className="text-sm text-muted-foreground">Category is fixed to "test"</p>
-                    </div>
-                    
-                    {/* Hard-code the value directly in the submit handler */}
-                    <input 
-                      type="hidden" 
-                      id="categoryId"
-                      value="5" 
+                    <FormField
+                      control={form.control}
+                      name="category"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Category</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter category name" {...field} />
+                          </FormControl>
+                          <FormDescription>Enter an existing or new category name</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
                     <div className="flex gap-2 items-start">
                       <FormField
