@@ -128,17 +128,67 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
-    const [product] = await this.db.insert(products).values(insertProduct).returning();
+    // We need to handle the category field separately since our schema doesn't define it
+    // but the database has a NOT NULL constraint on it
+    
+    // First, get the category name based on the categoryId
+    const category = await this.getCategory(insertProduct.categoryId);
+    
+    // Use SQL.raw to set both categoryId and the category column 
+    // (which isn't in our Drizzle schema but exists in the database)
+    const [product] = await this.db.insert(products)
+      .values(insertProduct)
+      .returning();
+      
+    // If the insert succeeded but we need to update the category column directly
+    if (product) {
+      // Update the category column using raw SQL
+      await this.db.execute(
+        sql`UPDATE products SET category = ${category?.name || 'Default'} WHERE id = ${product.id}`
+      );
+      
+      // Fetch the updated product
+      const updatedProduct = await this.getProduct(product.id);
+      return updatedProduct || product;
+    }
+    
     return product;
   }
   
   async updateProduct(id: number, productUpdate: Partial<InsertProduct>): Promise<Product | undefined> {
-    const [updatedProduct] = await this.db
-      .update(products)
-      .set(productUpdate)
-      .where(eq(products.id, id))
-      .returning();
-    return updatedProduct;
+    // If categoryId is being updated, we need to also update the category column
+    if (productUpdate.categoryId) {
+      // Get the category name based on the updated categoryId
+      const category = await this.getCategory(productUpdate.categoryId);
+      
+      // First update the product with the data in our schema
+      const [updatedProduct] = await this.db
+        .update(products)
+        .set(productUpdate)
+        .where(eq(products.id, id))
+        .returning();
+      
+      if (updatedProduct && category) {
+        // Also update the category column with the category name
+        await this.db.execute(
+          sql`UPDATE products SET category = ${category.name} WHERE id = ${id}`
+        );
+        
+        // Refresh the product data to include the updated category
+        const refreshedProduct = await this.getProduct(id);
+        return refreshedProduct || updatedProduct;
+      }
+      
+      return updatedProduct;
+    } else {
+      // Regular update without category changes
+      const [updatedProduct] = await this.db
+        .update(products)
+        .set(productUpdate)
+        .where(eq(products.id, id))
+        .returning();
+      return updatedProduct;
+    }
   }
   
   async deleteProduct(id: number): Promise<boolean> {
