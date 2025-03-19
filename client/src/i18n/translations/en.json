@@ -98,6 +98,7 @@
       "orderDate": "Order Date",
       "products": "Products",
       "addProduct": "Add Product",
+      "noProductsMessage": "No products added. Please add products to create an order.",
       "customerCreated": "Customer created",
       "customerCreatedDescription": "New customer has been added successfully.",
       "errorCreatingCustomer": "Error creating customer",
