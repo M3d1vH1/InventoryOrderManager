@@ -13,10 +13,14 @@ i18n
       en: { translation: en },
       el: { translation: el }
     },
+    lng: 'el',
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false
     }
   });
+
+// Force language to Greek
+i18n.changeLanguage('el');
 
 export default i18n;
