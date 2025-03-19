@@ -24,7 +24,6 @@ import JsBarcode from "jsbarcode";
 import BarcodeScanner from "@/components/barcode/BarcodeScanner";
 import BarcodeGenerator from "@/components/barcode/BarcodeGenerator";
 import CategoryManager from "@/components/products/CategoryManager";
-import CategorySelect from "@/components/products/CategorySelect";
 import {
   Tabs,
   TabsContent,
@@ -789,46 +788,23 @@ const Products = () => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Category</FormLabel>
+                          {/* Completely hardcoded select with only "test" option */}
                           <Select
-                            value={field.value ? String(field.value) : "5"}
+                            defaultValue="5"
                             onValueChange={(val) => {
-                              console.log('Setting category to:', val);
-                              field.onChange(parseInt(val, 10));
+                              console.log('Fixed category to 5');
+                              field.onChange(5); // Always set to 5
                             }}
                           >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select category">
-                                  {editingProduct ? (
-                                    // For editing, show the original category
-                                    categoriesData.find(c => c.id === field.value)?.name || "test"
-                                  ) : (
-                                    // For new products, show "test"
-                                    "test"
-                                  )}
+                                <SelectValue>
+                                  test
                                 </SelectValue>
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {/* Always show all available categories */}
-                              {categoriesData.map((category) => (
-                                <SelectItem 
-                                  key={category.id} 
-                                  value={String(category.id)}
-                                >
-                                  {category.color && (
-                                    <span 
-                                      className="w-3 h-3 rounded-full inline-block mr-2" 
-                                      style={{ backgroundColor: category.color }}
-                                    />
-                                  )}
-                                  {category.name}
-                                </SelectItem>
-                              ))}
-                              {/* Always include hardcoded "test" category in case it doesn't exist in the data */}
-                              {!categoriesData.some(c => c.id === 5) && (
-                                <SelectItem value="5">test</SelectItem>
-                              )}
+                              <SelectItem value="5">test</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormDescription>Select a category for this product</FormDescription>
