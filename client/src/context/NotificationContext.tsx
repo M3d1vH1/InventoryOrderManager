@@ -40,44 +40,45 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   // Calculate unread count
   const unreadCount = notifications.filter(n => !n.read).length;
   
-  // Function to play notification sound - create a new audio element each time
+  // Audio elements for each sound type - created once and reused
+  const [audioElements] = useState<Record<string, HTMLAudioElement>>(() => {
+    return {
+      'success': new Audio('/sounds/notification-success.mp3'),
+      'warning': new Audio('/sounds/notification-warning.mp3'),
+      'error': new Audio('/sounds/notification-error.mp3')
+    };
+  });
+  
+  // Function to play notification sound using the pre-created audio elements
   const playNotificationSound = (type: 'success' | 'warning' | 'error' = 'success') => {
     try {
-      let soundUrl = '';
+      // Get the audio element for this sound type
+      const audio = audioElements[type];
       
-      // Determine which sound file to play
-      switch (type) {
-        case 'success':
-          soundUrl = '/sounds/notification-success.mp3';
-          break;
-        case 'warning':
-          soundUrl = '/sounds/notification-warning.mp3';
-          break;
-        case 'error':
-          soundUrl = '/sounds/notification-error.mp3';
-          break;
-        default:
-          soundUrl = '/sounds/notification-success.mp3';
+      if (!audio) {
+        console.error('Audio element not found for type:', type);
+        return;
       }
       
-      // Create a new audio element each time
-      const audio = new Audio(soundUrl);
+      // Reset the audio to the start if it's already played
+      audio.currentTime = 0;
       
-      // Add event listeners for debugging
-      audio.addEventListener('canplaythrough', () => {
-        // Play when audio is loaded and can play through
-        audio.play().catch(error => {
-          console.error('Error playing notification sound:', error);
+      // Mute the sound if notifications are muted in browser
+      if (audio.muted) {
+        console.log('Audio is muted by browser policy, cannot play sound');
+        return;
+      }
+      
+      // Try to play the sound - may be blocked without user interaction
+      const playPromise = audio.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          // This will happen if browser policy blocks autoplay
+          console.log('Browser blocked audio autoplay:', error.message);
+          // We won't show an error to the user, as this is expected behavior in many browsers
         });
-      });
-      
-      audio.addEventListener('error', (e) => {
-        console.error('Audio loading error:', e);
-      });
-      
-      // This triggers the loading of the audio file
-      audio.load();
-      
+      }
     } catch (error) {
       console.error('Error playing notification sound:', error);
     }
