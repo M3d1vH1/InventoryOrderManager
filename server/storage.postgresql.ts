@@ -83,14 +83,25 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createCategory(insertCategory: InsertCategory): Promise<Category> {
-    const [category] = await this.db.insert(categories).values(insertCategory).returning();
+    // Ensure color is null instead of undefined
+    const categoryData = {
+      ...insertCategory,
+      color: insertCategory.color || null
+    };
+    const [category] = await this.db.insert(categories).values(categoryData).returning();
     return category;
   }
   
   async updateCategory(id: number, categoryUpdate: Partial<InsertCategory>): Promise<Category | undefined> {
+    // Ensure color is null instead of undefined
+    const categoryData = {
+      ...categoryUpdate,
+      color: categoryUpdate.color || null
+    };
+    
     const [updatedCategory] = await this.db
       .update(categories)
-      .set(categoryUpdate)
+      .set(categoryData)
       .where(eq(categories.id, id))
       .returning();
     return updatedCategory;
