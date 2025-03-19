@@ -13,18 +13,16 @@ i18n
       en: { translation: en },
       el: { translation: el }
     },
-    lng: 'el', // Default to Greek
+    lng: 'el',
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false
-    },
-    detection: {
-      order: ['localStorage', 'navigator'],
-      caches: ['localStorage']
     }
+  })
+  .then(() => {
+    // Force Greek language after initialization
+    i18n.changeLanguage('el');
+    localStorage.setItem('i18nextLng', 'el');
   });
-
-// Force set language to Greek
-i18n.changeLanguage('el');
 
 export default i18n;
