@@ -156,7 +156,7 @@ const Products = () => {
 
   const { data: categoriesData = [] as CategoryType[] } = useQuery<CategoryType[]>({
     queryKey: ['/api/categories'],
-    staleTime: Infinity,
+    staleTime: 1000, // Refresh categories every second to ensure we have the latest
   });
   
   // Transform category objects to an array of names for backward compatibility
@@ -332,11 +332,15 @@ const Products = () => {
 
   const handleNewProduct = () => {
     setEditingProduct(null);
+    
+    // Set default categoryId to first available category if any exist
+    const defaultCategoryId = categoriesData.length > 0 ? categoriesData[0].id : 0;
+    
     form.reset({
       name: "",
       sku: "",
       barcode: "",
-      categoryId: 0,
+      categoryId: defaultCategoryId,
       description: "",
       minStockLevel: 5,
       currentStock: 0,
