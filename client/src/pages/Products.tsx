@@ -97,6 +97,7 @@ interface Product {
   imagePath?: string;
 }
 
+// Form schema for the UI input
 const productFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   sku: z.string().min(2, "SKU must be at least 2 characters"),
@@ -107,6 +108,20 @@ const productFormSchema = z.object({
   currentStock: z.coerce.number().min(0, "Current stock must be 0 or greater"),
   location: z.string().optional(),
   unitsPerBox: z.coerce.number().min(1, "Units per box must be at least 1").optional(),
+  imagePath: z.string().optional(),
+});
+
+// API submission schema that includes categoryId instead of category string
+const productApiSchema = z.object({
+  name: z.string().min(2),
+  sku: z.string().min(2),
+  barcode: z.string().optional(),
+  categoryId: z.number(),
+  description: z.string().optional(),
+  minStockLevel: z.number().min(0),
+  currentStock: z.number().min(0),
+  location: z.string().optional(),
+  unitsPerBox: z.number().min(1).optional(),
   imagePath: z.string().optional(),
 });
 
@@ -325,57 +340,80 @@ const Products = () => {
 
   const onSubmit = async (values: ProductFormValues) => {
     try {
-      // Add detailed logging
-      console.log('Submitting product with values:', values);
-      
-      // Check if the category already exists
+      // Get the category name from the form
       const categoryName = values.category;
-      const existingCategory = categoriesData.find(cat => cat.name.toLowerCase() === categoryName.toLowerCase());
+      
+      // Find if the category already exists
+      let existingCategory = categoriesData.find(
+        cat => cat.name.toLowerCase() === categoryName.toLowerCase()
+      );
       
       let categoryId: number;
       
-      // If category doesn't exist, create it
+      // If category doesn't exist, create it first
       if (!existingCategory) {
-        console.log('Creating new category:', categoryName);
         try {
+          console.log('Creating new category:', categoryName);
           const newCategory = await createCategoryMutation.mutateAsync(categoryName);
-          console.log('New category created:', newCategory);
           categoryId = newCategory.id;
+          console.log('Created new category with ID:', categoryId);
         } catch (error) {
           console.error('Failed to create category:', error);
-          return; // Stop execution if category creation fails
+          toast({
+            title: "Category Creation Failed",
+            description: "Could not create the new category. Please try again.",
+            variant: "destructive",
+          });
+          return;
         }
       } else {
         categoryId = existingCategory.id;
         console.log('Using existing category ID:', categoryId);
       }
       
-      // Create a new values object with the categoryId instead of category name
-      const productData = {
+      // Create API payload with categoryId
+      const apiPayload = {
         name: values.name,
         sku: values.sku,
-        barcode: values.barcode,
         categoryId: categoryId,
-        description: values.description,
         minStockLevel: values.minStockLevel,
         currentStock: values.currentStock,
-        location: values.location,
+        
+        // Optional fields
+        barcode: values.barcode || undefined,
+        description: values.description || undefined,
+        location: values.location || undefined,
         unitsPerBox: values.unitsPerBox,
-        imagePath: values.imagePath
+        imagePath: values.imagePath || undefined
       };
       
-      console.log('Final product data for submission:', productData);
+      console.log('Submitting product data:', apiPayload);
       
+      // Validate with our API schema before submission
+      if (!productApiSchema.safeParse(apiPayload).success) {
+        console.error('API validation failed');
+        toast({
+          title: "Validation Error",
+          description: "The product data is not in the correct format.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Submit to the API
       if (editingProduct) {
-        updateProductMutation.mutate({ id: editingProduct.id, values: productData });
+        updateProductMutation.mutate({ 
+          id: editingProduct.id, 
+          values: apiPayload 
+        });
       } else {
-        createProductMutation.mutate(productData);
+        createProductMutation.mutate(apiPayload);
       }
     } catch (error) {
       console.error('Error in form submission:', error);
       toast({
         title: "Error",
-        description: "There was a problem processing your request.",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     }
