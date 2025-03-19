@@ -210,6 +210,26 @@
     "price": "Τιμή",
     "stock": "Απόθεμα"
   },
+  "customers": {
+    "title": "Πελάτες",
+    "form": {
+      "name": "Όνομα",
+      "vatNumber": "ΑΦΜ",
+      "address": "Διεύθυνση",
+      "city": "Πόλη",
+      "state": "Περιφέρεια/Νομός",
+      "postalCode": "Ταχυδρομικός Κώδικας",
+      "country": "Χώρα",
+      "email": "Ηλεκτρονική Διεύθυνση",
+      "phone": "Τηλέφωνο",
+      "contactPerson": "Υπεύθυνος Επικοινωνίας",
+      "preferredShippingCompany": "Προτιμώμενη Εταιρεία Αποστολής",
+      "enterShippingCompany": "Εισάγετε όνομα εταιρείας αποστολής",
+      "notes": "Σημειώσεις",
+      "createCustomer": "Δημιουργία Πελάτη",
+      "creating": "Δημιουργία..."
+    }
+  },
   "pickList": {
     "title": "Λίστα Συλλογής",
     "customer": "Πελάτης",

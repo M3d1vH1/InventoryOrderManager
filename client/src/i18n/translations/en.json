@@ -204,5 +204,25 @@
     "category": "Category",
     "price": "Price",
     "stock": "Stock"
+  },
+  "customers": {
+    "title": "Customers",
+    "form": {
+      "name": "Name",
+      "vatNumber": "VAT Number",
+      "address": "Address",
+      "city": "City",
+      "state": "State/Province",
+      "postalCode": "Postal Code",
+      "country": "Country",
+      "email": "Email",
+      "phone": "Phone",
+      "contactPerson": "Contact Person",
+      "preferredShippingCompany": "Preferred Shipping Company",
+      "enterShippingCompany": "Enter shipping company name",
+      "notes": "Notes",
+      "createCustomer": "Create Customer",
+      "creating": "Creating..."
+    }
   }
 }
