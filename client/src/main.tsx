@@ -1,10 +1,11 @@
 
+// Import i18n first to ensure it's initialized before anything else
+import i18n from './i18n';
+import './index.css';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App';
-import './index.css';
 import { I18nextProvider } from 'react-i18next';
-import i18n from './i18n';
+import App from './App';
 
 const root = document.getElementById('root');
 if (root) {

@@ -1,3 +1,4 @@
+import React from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -20,6 +21,7 @@ import { SidebarProvider } from "@/context/SidebarContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { useTranslation } from 'react-i18next';
+import './i18n'; // Import i18n setup explicitly
 
 function AuthenticatedRouter() {
   const { user, isLoading } = useAuth();
@@ -116,7 +118,16 @@ function Layout() {
 }
 
 function App() {
-  const { t } = useTranslation(); // Added useTranslation hook
+  const { t, i18n } = useTranslation();
+  
+  // Ensure Greek language is set
+  React.useEffect(() => {
+    // Force language to Greek on component mount
+    i18n.changeLanguage('el');
+    console.log('App language set to:', i18n.language);
+    console.log('Translated title:', t('app.title'));
+  }, [i18n, t]);
+  
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
