@@ -99,7 +99,7 @@ const Products = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  // Category filter removed as part of simplification
   const [stockFilter, setStockFilter] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -341,7 +341,7 @@ const Products = () => {
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.sku.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesCategory = categoryFilter === "all" || product.category === categoryFilter;
+    // Category filter removed as part of simplification
     
     let matchesStock = true;
     if (stockFilter !== "all") {
@@ -354,7 +354,7 @@ const Products = () => {
       }
     }
     
-    return matchesSearch && matchesCategory && matchesStock;
+    return matchesSearch && matchesStock;
   });
 
   const getStockStatusClass = (currentStock: number, minStockLevel: number) => {
@@ -373,15 +373,7 @@ const Products = () => {
             <p className="text-slate-500 mt-1">Manage your inventory and track stock levels</p>
           </div>
           <div className="flex gap-2">
-            {user?.role === 'admin' && (
-              <Button 
-                onClick={() => window.location.href = '/categories'}
-                variant="outline"
-                className="py-2 px-4 h-auto flex items-center"
-              >
-                <i className="fas fa-tags mr-2"></i> Manage Categories
-              </Button>
-            )}
+            {/* Categories management button removed as part of simplification */}
             <Button 
               onClick={() => {
                 setEditingProduct(null);
@@ -410,19 +402,7 @@ const Products = () => {
                 />
               </div>
               <div className="flex gap-3">
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="w-full md:w-48 h-10 bg-white">
-                    <SelectValue placeholder="Filter by category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="widgets">Widgets</SelectItem>
-                    <SelectItem value="connectors">Connectors</SelectItem>
-                    <SelectItem value="default">Default Category</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-                
+                {/* Category filter dropdown removed as part of simplification */}
                 <Select value={stockFilter} onValueChange={setStockFilter}>
                   <SelectTrigger className="w-full md:w-48 h-10 bg-white">
                     <SelectValue placeholder="Filter by stock" />
@@ -454,17 +434,16 @@ const Products = () => {
                 <Package size={48} className="mx-auto text-slate-300 mb-3" />
                 <h3 className="text-lg font-medium mb-1">No products found</h3>
                 <p className="text-slate-500">
-                  {searchTerm || categoryFilter !== "all" || stockFilter !== "all" 
+                  {searchTerm || stockFilter !== "all" 
                     ? "Try clearing your filters or creating a new product." 
                     : "Get started by creating your first product."}
                 </p>
-                {(searchTerm || categoryFilter !== "all" || stockFilter !== "all") && (
+                {(searchTerm || stockFilter !== "all") && (
                   <Button 
                     variant="outline" 
                     className="mt-4"
                     onClick={() => {
                       setSearchTerm("");
-                      setCategoryFilter("all");
                       setStockFilter("all");
                     }}
                   >
@@ -535,8 +514,8 @@ const Products = () => {
                           <p className="text-slate-700 font-medium">{product.sku}</p>
                         </div>
                         <div>
-                          <p className="text-slate-500">Category</p>
-                          <p className="text-slate-700 font-medium capitalize">{product.category}</p>
+                          <p className="text-slate-500">Location</p>
+                          <p className="text-slate-700 font-medium capitalize">{product.location || 'Not specified'}</p>
                         </div>
                         <div>
                           <p className="text-slate-500">Min Stock</p>
