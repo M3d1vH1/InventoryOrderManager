@@ -46,7 +46,7 @@ export interface IStorage {
   getRecentOrders(limit: number): Promise<Order[]>;
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrderStatus(id: number, status: 'pending' | 'picked' | 'shipped' | 'cancelled', documentInfo?: {documentPath: string, documentType: string, notes?: string}, updatedById?: number): Promise<Order | undefined>;
-  updateOrder(id: number, orderData: Partial<InsertOrder>): Promise<Order | undefined>;
+  updateOrder(id: number, orderData: Partial<InsertOrder>, updatedById?: number): Promise<Order | undefined>;
   
   // Order Item methods
   getOrderItems(orderId: number): Promise<OrderItem[]>;
@@ -512,7 +512,7 @@ export class MemStorage implements IStorage {
     }
   }
 
-  async updateOrder(id: number, orderData: Partial<InsertOrder> & { updatedById: number }): Promise<Order | undefined> {
+  async updateOrder(id: number, orderData: Partial<InsertOrder>, updatedById?: number): Promise<Order | undefined> {
     const existingOrder = this.orders.get(id);
     if (!existingOrder) return undefined;
     
@@ -523,20 +523,23 @@ export class MemStorage implements IStorage {
     const updatedOrder = { 
       ...existingOrder,
       ...orderData,
+      updatedById: updatedById || existingOrder.updatedById,
       lastUpdated: now
     };
     
     this.orders.set(id, updatedOrder);
     
-    // Add changelog entry
-    await this.addOrderChangelog({
-      orderId: id,
-      userId: orderData.updatedById,
-      action: 'update',
-      changes: { ...orderData },
-      previousValues: previousValues,
-      notes: "Order updated"
-    });
+    // Add changelog entry if we have a user ID
+    if (updatedById) {
+      await this.addOrderChangelog({
+        orderId: id,
+        userId: updatedById,
+        action: 'update',
+        changes: { ...orderData },
+        previousValues: previousValues,
+        notes: "Order updated"
+      });
+    }
     
     return updatedOrder;
   }
