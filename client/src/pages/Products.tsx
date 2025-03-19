@@ -787,11 +787,53 @@ const Products = () => {
                       control={form.control}
                       name="categoryId"
                       render={({ field }) => (
-                        <CategorySelect 
-                          value={field.value}
-                          onChange={field.onChange}
-                          description="Select a category for this product"
-                        />
+                        <FormItem>
+                          <FormLabel>Category</FormLabel>
+                          <Select
+                            value={field.value ? String(field.value) : "5"}
+                            onValueChange={(val) => {
+                              console.log('Setting category to:', val);
+                              field.onChange(parseInt(val, 10));
+                            }}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select category">
+                                  {editingProduct ? (
+                                    // For editing, show the original category
+                                    categoriesData.find(c => c.id === field.value)?.name || "test"
+                                  ) : (
+                                    // For new products, show "test"
+                                    "test"
+                                  )}
+                                </SelectValue>
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {/* Always show all available categories */}
+                              {categoriesData.map((category) => (
+                                <SelectItem 
+                                  key={category.id} 
+                                  value={String(category.id)}
+                                >
+                                  {category.color && (
+                                    <span 
+                                      className="w-3 h-3 rounded-full inline-block mr-2" 
+                                      style={{ backgroundColor: category.color }}
+                                    />
+                                  )}
+                                  {category.name}
+                                </SelectItem>
+                              ))}
+                              {/* Always include hardcoded "test" category in case it doesn't exist in the data */}
+                              {!categoriesData.some(c => c.id === 5) && (
+                                <SelectItem value="5">test</SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>Select a category for this product</FormDescription>
+                          <FormMessage />
+                        </FormItem>
                       )}
                     />
                     <div className="flex gap-2 items-start">
