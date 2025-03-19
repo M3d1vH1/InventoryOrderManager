@@ -77,6 +77,7 @@ interface Product {
   location?: string;
   unitsPerBox?: number;
   imagePath?: string;
+  tags?: string[];
 }
 
 // Simplified form schema without categories
@@ -89,7 +90,8 @@ const productFormSchema = z.object({
   currentStock: z.coerce.number().min(0, { message: "Current stock must be 0 or greater" }),
   location: z.string().optional(),
   unitsPerBox: z.coerce.number().min(0).optional(),
-  imagePath: z.string().optional()
+  imagePath: z.string().optional(),
+  tags: z.array(z.string()).optional().default([])
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
@@ -138,7 +140,8 @@ const Products = () => {
       barcode: "",
       location: "",
       unitsPerBox: 0,
-      imagePath: ""
+      imagePath: "",
+      tags: []
     }
   });
 
@@ -153,7 +156,8 @@ const Products = () => {
         currentStock: editingProduct.currentStock,
         location: editingProduct.location || "",
         unitsPerBox: editingProduct.unitsPerBox || 0,
-        imagePath: editingProduct.imagePath || ""
+        imagePath: editingProduct.imagePath || "",
+        tags: editingProduct.tags || []
       });
     } else {
       form.reset({
@@ -165,7 +169,8 @@ const Products = () => {
         currentStock: 0,
         location: "",
         unitsPerBox: 0,
-        imagePath: ""
+        imagePath: "",
+        tags: []
       });
     }
   }, [editingProduct, form]);
