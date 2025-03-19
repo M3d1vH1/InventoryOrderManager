@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Plus, Upload } from "lucide-react";
 
 interface Product {
   id: number;
@@ -23,8 +24,10 @@ const InventoryAlerts = () => {
 
   const restockMutation = useMutation({
     mutationFn: async (productId: number) => {
-      return apiRequest('PATCH', `/api/products/${productId}`, {
-        currentStock: 30 // Set a default restock amount
+      return apiRequest<Product>(`/api/products/${productId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentStock: 30 }) // Set a default restock amount
       });
     },
     onSuccess: () => {
@@ -119,11 +122,11 @@ const InventoryAlerts = () => {
         <div className="grid grid-cols-2 gap-2">
           <Link href="/products">
             <button className="bg-primary text-white py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center w-full">
-              <i className="fas fa-plus mr-2"></i> Add New Product
+              <Plus className="h-4 w-4 mr-2" /> Add New Product
             </button>
           </Link>
           <button className="bg-slate-200 text-slate-800 py-2 rounded-md hover:bg-slate-300 transition-colors flex items-center justify-center">
-            <i className="fas fa-file-import mr-2"></i> Import
+            <Upload className="h-4 w-4 mr-2" /> Import
           </button>
         </div>
       </div>
