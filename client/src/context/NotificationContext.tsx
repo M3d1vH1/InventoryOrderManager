@@ -144,6 +144,33 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
           if (notification.type === 'success' || notification.type === 'warning' || notification.type === 'error') {
             playNotificationSound(notification.type);
           }
+        } else if (data.type === 'documentUploaded') {
+          // Handle document upload notifications
+          const id = `document-${data.orderId}-${Date.now()}`;
+          
+          // Create notification for document upload
+          const newNotification: Notification = {
+            id,
+            title: 'Document Uploaded',
+            message: `A ${data.documentType} has been uploaded for order ${data.orderNumber}`,
+            type: 'info',
+            timestamp: new Date(),
+            read: false,
+            orderId: data.orderId,
+            orderNumber: data.orderNumber
+          };
+          
+          // Add notification
+          setNotifications(prev => [newNotification, ...prev]);
+          
+          // Show toast
+          toast({
+            title: newNotification.title,
+            description: newNotification.message,
+          });
+          
+          // Play notification sound
+          playNotificationSound('success');
         } else if (data.type === 'orderStatusChange') {
           // Generate unique ID
           const id = `order-${data.orderId}-${Date.now()}`;
