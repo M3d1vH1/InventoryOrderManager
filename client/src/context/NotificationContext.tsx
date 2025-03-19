@@ -114,25 +114,22 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   // Function to play notification sound using the pre-created audio elements
   const playNotificationSound = (type: 'success' | 'warning' | 'error' = 'success') => {
     try {
-      // Get the audio element for this sound type
-      const audio = audioElements[type];
-      
-      if (!audio) {
-        console.error('Audio element not found for type:', type);
+      // Only attempt to play sound if user has interacted with the page
+      if (!userHasInteracted) {
+        console.log('Audio playback skipped: waiting for user interaction first');
         return;
       }
+      
+      // Use a fresh audio instance to avoid browser restrictions
+      const soundPath = `/sounds/notification-${type}.mp3`;
+      const freshAudio = new Audio(soundPath);
+      freshAudio.volume = 0.5;
       
       // Reset the audio to the start if it's already played
-      audio.currentTime = 0;
-      
-      // Check if browser audio is muted
-      if (audio.muted) {
-        console.log('Audio is muted by browser policy, cannot play sound');
-        return;
-      }
+      freshAudio.currentTime = 0;
       
       // Try to play the sound - may be blocked without user interaction
-      const playPromise = audio.play();
+      const playPromise = freshAudio.play();
       
       if (playPromise !== undefined) {
         playPromise.catch(error => {
