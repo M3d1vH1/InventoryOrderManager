@@ -105,8 +105,8 @@ const Orders = () => {
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState<string>('T△A document');
   const [documentNotes, setDocumentNotes] = useState<string>('');
+  const [updateStatusOnUpload, setUpdateStatusOnUpload] = useState<boolean>(true);
   const [isUploading, setIsUploading] = useState(false);
-  const [updateStatusOnUpload, setUpdateStatusOnUpload] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: orders, isLoading } = useQuery<Order[]>({
@@ -683,7 +683,7 @@ const Orders = () => {
               )}
             </DialogTitle>
             <DialogDescription>
-              A TΔA document is required before this order can be shipped.
+              TΔA documents can be uploaded at any time. You can optionally change the order status to "Shipped" after upload.
             </DialogDescription>
           </DialogHeader>
           
