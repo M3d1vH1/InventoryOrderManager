@@ -17,6 +17,7 @@ import { Button } from "@components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@components/ui/dialog";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
+import { Badge } from "@components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select";
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, 
@@ -93,6 +94,7 @@ export default function Products() {
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [stockFilter, setStockFilter] = useState("all");
+  const [tagFilter, setTagFilter] = useState("");
   const [sortField, setSortField] = useState("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -104,7 +106,7 @@ export default function Products() {
     select: (data) => data as Product[]
   });
 
-  // Filter products based on search and stock filter
+  // Filter products based on search, stock filter, and tags
   const filteredProducts = products.filter((product) => {
     // Filter by search query
     if (searchQuery && !product.name.toLowerCase().includes(searchQuery.toLowerCase()) && 
@@ -121,6 +123,11 @@ export default function Products() {
       return false;
     }
     if (stockFilter === "out" && product.currentStock > 0) {
+      return false;
+    }
+
+    // Filter by tag
+    if (tagFilter && (!product.tags || !product.tags.includes(tagFilter))) {
       return false;
     }
 
@@ -352,6 +359,17 @@ export default function Products() {
     if (currentStock <= minStockLevel) return "text-amber-600";
     return "text-green-600";
   };
+
+  // Get all unique tags from products
+  const allTags = React.useMemo(() => {
+    const tagSet = new Set<string>();
+    products.forEach(product => {
+      if (product.tags && product.tags.length > 0) {
+        product.tags.forEach(tag => tagSet.add(tag));
+      }
+    });
+    return Array.from(tagSet).sort();
+  }, [products]);
   
   // Sorting handler
   const handleSort = (field: string) => {
@@ -410,6 +428,22 @@ export default function Products() {
                     <SelectItem value="out">{t('products.outOfStock')}</SelectItem>
                   </SelectContent>
                 </Select>
+
+                {allTags.length > 0 && (
+                  <Select value={tagFilter} onValueChange={setTagFilter}>
+                    <SelectTrigger className="w-full md:w-48">
+                      <SelectValue placeholder="Filter by tag" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Tags</SelectItem>
+                      {allTags.map(tag => (
+                        <SelectItem key={tag} value={tag}>
+                          {tag}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
               <div className="flex flex-col md:flex-row gap-2">
                 <DropdownMenu>
@@ -464,13 +498,13 @@ export default function Products() {
                 <Box className="h-12 w-12 mx-auto text-slate-400" />
                 <h3 className="mt-4 text-lg font-medium">{t('products.noProductsFound')}</h3>
                 <p className="mt-2 text-slate-500">
-                  {searchQuery || stockFilter !== "all" ? (
+                  {searchQuery || stockFilter !== "all" || tagFilter ? (
                     t('products.tryClearingFilters')
                   ) : (
                     t('products.createFirstProduct')
                   )}
                 </p>
-                {!searchQuery && stockFilter === "all" && (
+                {!searchQuery && stockFilter === "all" && !tagFilter && (
                   <Button 
                     variant="default" 
                     className="mt-4" 
@@ -561,8 +595,27 @@ export default function Products() {
                                 </div>
                               </div>
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                              {product.sku}
+                            <td className="px-4 py-3 text-sm text-slate-500">
+                              <div>
+                                {product.sku}
+                                {product.tags && product.tags.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {product.tags.map((tag, index) => (
+                                      <Badge 
+                                        key={index} 
+                                        variant="outline" 
+                                        className="text-xs bg-slate-50 cursor-pointer hover:bg-slate-100"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setTagFilter(tag);
+                                        }}
+                                      >
+                                        {tag}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
                             </td>
 
                             <td className="px-4 py-3 whitespace-nowrap">
@@ -930,9 +983,9 @@ export default function Products() {
                           <h3 className="text-sm font-medium text-slate-500">Tags</h3>
                           <div className="flex flex-wrap gap-2 mt-2">
                             {viewingProduct.tags.map((tag, index) => (
-                              <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+                              <Badge key={index} variant="outline" className="bg-slate-100">
                                 {tag}
-                              </span>
+                              </Badge>
                             ))}
                           </div>
                         </div>
