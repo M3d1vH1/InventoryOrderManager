@@ -274,18 +274,8 @@ export class DatabaseStorage implements IStorage {
       );
     }
     
-    // Add category filter if provided
-    if (category && category !== 'all') {
-      try {
-        // Get category ID from categories table
-        const categoryResult = await this.db.select().from(categories).where(eq(categories.name, category)).limit(1);
-        if (categoryResult.length > 0) {
-          conditions.push(eq(products.categoryId, categoryResult[0].id));
-        }
-      } catch (error) {
-        console.error('Error filtering by category:', error);
-      }
-    }
+    // Note: Category filtering has been removed as part of the simplified system
+    // The category parameter is retained for backward compatibility but is ignored
     
     // Add stock status filter if provided
     if (stockStatus) {
@@ -766,31 +756,16 @@ export class DatabaseStorage implements IStorage {
     name: string;
     value: number;
   }[]> {
+    // Since the category system has been removed, we'll return a simplified view
+    // of product data, showing all products under a single "General" category
+    
     const allProducts = await this.getAllProducts();
-    const allCategories = await this.getAllCategories();
     
-    // Create a map of categoryId to category name
-    const categoryMap = new Map<number, string>();
-    for (const category of allCategories) {
-      categoryMap.set(category.id, category.name);
-    }
-    
-    // Group products by category
-    const categoryCount = new Map<string, number>();
-    
-    for (const product of allProducts) {
-      // Get category name from map, or use 'Unknown' if not found
-      const categoryName = categoryMap.get(product.categoryId) || 'Unknown';
-      categoryCount.set(categoryName, (categoryCount.get(categoryName) || 0) + 1);
-    }
-    
-    // Convert to required format
-    const result = Array.from(categoryCount.entries()).map(([name, value]) => ({
-      name,
-      value
-    }));
-    
-    return result;
+    // Return a single entry for all products
+    return [{
+      name: "All Products",
+      value: allProducts.length
+    }];
   }
 
   async getTopSellingProducts(limit: number = 5): Promise<{
@@ -847,40 +822,24 @@ export class DatabaseStorage implements IStorage {
     const averagePrice = 35.99;
     
     const allProducts = await this.getAllProducts();
-    const allCategories = await this.getAllCategories();
     let totalValue = 0;
     
-    // Create a map of categoryId to category name
-    const categoryMap = new Map<number, string>();
-    for (const category of allCategories) {
-      categoryMap.set(category.id, category.name);
-    }
+    // Since categories are removed, we'll use a single category
+    const productCount = allProducts.length;
     
-    // Group products by category
-    const categoryData = new Map<string, { 
-      productCount: number;
-      totalValue: number; 
-    }>();
-    
+    // Calculate total inventory value
     for (const product of allProducts) {
-      const categoryName = categoryMap.get(product.categoryId) || 'Uncategorized';
       const productValue = product.currentStock * averagePrice;
       totalValue += productValue;
-      
-      const currentData = categoryData.get(categoryName) || { productCount: 0, totalValue: 0 };
-      categoryData.set(categoryName, {
-        productCount: currentData.productCount + 1,
-        totalValue: currentData.totalValue + productValue
-      });
     }
     
-    // Convert to required format
-    const categoryBreakdown = Array.from(categoryData.entries()).map(([category, data]) => ({
-      category,
-      productCount: data.productCount,
-      totalValue: data.totalValue,
-      percentageOfTotal: totalValue > 0 ? (data.totalValue / totalValue) * 100 : 0
-    }));
+    // Return a simplified report with a single category
+    const categoryBreakdown = [{
+      category: 'All Products',
+      productCount,
+      totalValue,
+      percentageOfTotal: 100 // Single category = 100%
+    }];
     
     return {
       totalValue,
