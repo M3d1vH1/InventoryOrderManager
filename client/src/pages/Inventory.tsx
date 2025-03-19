@@ -41,7 +41,7 @@ const Inventory = () => {
   const { setCurrentPage } = useSidebar();
   const { toast } = useToast();
   const [searchText, setSearchText] = useState<string>("");
-  const [tagFilter, setTagFilter] = useState<string>("");
+  const [tagFilter, setTagFilter] = useState<string>("all_tags");
   const [highlightedProductId, setHighlightedProductId] = useState<number | null>(null);
   const highlightedRowRef = useRef<HTMLTableRowElement>(null);
   
@@ -102,7 +102,7 @@ const Inventory = () => {
       (product.location && product.location.toLowerCase().includes(searchText.toLowerCase()));
     
     // Tag filter
-    const matchesTag = tagFilter === "" || 
+    const matchesTag = tagFilter === "" || tagFilter === "all_tags" || 
       (product.tags && product.tags.some(tag => tag === tagFilter));
     
     return matchesSearch && matchesTag;
@@ -293,18 +293,18 @@ const Inventory = () => {
                     </div>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Tags</SelectItem>
+                    <SelectItem value="all_tags">All Tags</SelectItem>
                     {allTags.map(tag => (
                       <SelectItem key={tag} value={tag}>{tag}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {tagFilter && (
+                {tagFilter !== "all_tags" && (
                   <Button 
                     variant="ghost" 
                     size="sm" 
                     className="ml-1" 
-                    onClick={() => setTagFilter("")}
+                    onClick={() => setTagFilter("all_tags")}
                   >
                     <i className="fas fa-times-circle"></i>
                   </Button>
