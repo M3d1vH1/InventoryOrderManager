@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { ShoppingCart, Package, CheckCircle, AlertTriangle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Stats {
   pendingOrders: number;
@@ -10,6 +11,7 @@ interface Stats {
 }
 
 const QuickStats = () => {
+  const { t } = useTranslation();
   const { data: stats, isLoading } = useQuery<Stats>({
     queryKey: ['/api/dashboard/stats'],
   });
@@ -32,7 +34,7 @@ const QuickStats = () => {
   
   const statCards = [
     {
-      title: "Pending Orders",
+      title: t('dashboard.stats.pendingOrders'),
       value: stats?.pendingOrders || 0,
       icon: <ShoppingCart className="h-6 w-6" />,
       bgColor: "bg-blue-100",
@@ -41,7 +43,7 @@ const QuickStats = () => {
       filter: "?status=pending"
     },
     {
-      title: "Items to Pick",
+      title: t('dashboard.stats.itemsToPick'),
       value: stats?.itemsToPick || 0,
       icon: <Package className="h-6 w-6" />,
       bgColor: "bg-amber-100",
@@ -49,7 +51,7 @@ const QuickStats = () => {
       path: "/order-picking"
     },
     {
-      title: "Shipped Today",
+      title: t('dashboard.stats.shippedOrders'),
       value: stats?.shippedToday || 0,
       icon: <CheckCircle className="h-6 w-6" />,
       bgColor: "bg-green-100",
@@ -58,7 +60,7 @@ const QuickStats = () => {
       filter: "?status=shipped"
     },
     {
-      title: "Low Stock Items",
+      title: t('dashboard.stats.lowStock'),
       value: stats?.lowStockItems || 0,
       icon: <AlertTriangle className="h-6 w-6" />,
       bgColor: "bg-red-100",
