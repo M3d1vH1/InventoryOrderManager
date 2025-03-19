@@ -905,10 +905,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Category management routes
+  // Modified category endpoints for backward compatibility with simplified system
   app.get('/api/categories', async (req, res) => {
     try {
-      const categories = await storage.getAllCategories();
-      res.json(categories);
+      // Return a single default category for backward compatibility
+      res.json([
+        { 
+          id: 1, 
+          name: 'All Products',
+          description: 'Default category for all products in the simplified system',
+          createdAt: new Date()
+        }
+      ]);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -917,34 +925,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/categories/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const category = await storage.getCategory(id);
       
-      if (!category) {
+      // Only category ID 1 exists in the simplified system
+      if (id !== 1) {
         return res.status(404).json({ message: 'Category not found' });
       }
       
-      res.json(category);
+      // Return the default category
+      res.json({
+        id: 1,
+        name: 'All Products',
+        description: 'Default category for all products in the simplified system',
+        createdAt: new Date()
+      });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
   
+  // In the simplified system, categories can't be created, updated or deleted
   app.post('/api/categories', isAuthenticated, hasRole(['admin']), async (req, res) => {
     try {
-      const categoryData = insertCategorySchema.parse(req.body);
-      
-      // Check if category name already exists
-      const existingCategory = await storage.getCategoryByName(categoryData.name);
-      if (existingCategory) {
-        return res.status(400).json({ message: 'Category name already exists' });
-      }
-      
-      const category = await storage.createCategory(categoryData);
-      res.status(201).json(category);
+      // No new categories can be created in the simplified system
+      res.status(403).json({ 
+        message: 'Category creation is disabled in the simplified system' 
+      });
     } catch (error: any) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: 'Validation error', errors: error.errors });
-      }
       res.status(500).json({ message: error.message });
     }
   });
@@ -952,27 +958,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/categories/:id', isAuthenticated, hasRole(['admin']), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const categoryData = insertCategorySchema.partial().parse(req.body);
       
-      // If name is being updated, check that it doesn't conflict
-      if (categoryData.name) {
-        const existingCategory = await storage.getCategoryByName(categoryData.name);
-        if (existingCategory && existingCategory.id !== id) {
-          return res.status(400).json({ message: 'Category name already exists' });
-        }
-      }
-      
-      const updatedCategory = await storage.updateCategory(id, categoryData);
-      
-      if (!updatedCategory) {
+      // Only category ID 1 exists in the simplified system
+      if (id !== 1) {
         return res.status(404).json({ message: 'Category not found' });
       }
       
-      res.json(updatedCategory);
+      // Categories can't be modified in the simplified system
+      res.status(403).json({ 
+        message: 'Category modification is disabled in the simplified system' 
+      });
     } catch (error: any) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: 'Validation error', errors: error.errors });
-      }
       res.status(500).json({ message: error.message });
     }
   });
@@ -981,15 +977,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
-      const result = await storage.deleteCategory(id);
-      
-      if (!result) {
-        return res.status(400).json({ 
-          message: 'Cannot delete this category because it is in use by one or more products' 
-        });
+      // Only category ID 1 exists in the simplified system
+      if (id !== 1) {
+        return res.status(404).json({ message: 'Category not found' });
       }
       
-      res.status(204).send();
+      // The default category can't be deleted
+      res.status(403).json({ 
+        message: 'The default category cannot be deleted in the simplified system' 
+      });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
