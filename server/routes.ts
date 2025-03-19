@@ -340,10 +340,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/orders/:id/status', async (req, res) => {
+  app.patch('/api/orders/:id/status', isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { status } = req.body;
+      const userId = (req.user as any)?.id;
       
       if (!['pending', 'picked', 'shipped', 'cancelled'].includes(status)) {
         return res.status(400).json({ message: 'Invalid status value' });
@@ -357,7 +358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const previousStatus = originalOrder.status;
       
-      const updatedOrder = await storage.updateOrderStatus(id, status);
+      const updatedOrder = await storage.updateOrderStatus(id, status, undefined, userId);
       
       if (!updatedOrder) {
         return res.status(404).json({ message: 'Order not found' });
@@ -379,9 +380,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Document upload for orders with optional status change
-  app.post('/api/orders/:id/documents', async (req, res) => {
+  app.post('/api/orders/:id/documents', isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const userId = (req.user as any)?.id;
       
       // Check if order exists
       const order = await storage.getOrder(id);
@@ -426,7 +428,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           documentPath,
           documentType,
           notes
-        });
+        }, userId);
       } else {
         // Just attach the document without changing status
         await storage.addShippingDocument({
@@ -468,6 +470,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json(document);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Get order changelogs
+  app.get('/api/orders/:id/changelogs', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Check if order exists
+      const order = await storage.getOrder(id);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      
+      // Get changelogs for this order
+      const changelogs = await storage.getOrderChangelogs(id);
+      
+      // For each changelog, fetch the user to get the name
+      const changelogsWithUserNames = await Promise.all(
+        changelogs.map(async (log) => {
+          try {
+            const user = await storage.getUser(log.userId);
+            return {
+              ...log,
+              user: user ? {
+                id: user.id,
+                username: user.username,
+                fullName: user.fullName
+              } : undefined
+            };
+          } catch (err) {
+            return {
+              ...log,
+              user: undefined
+            };
+          }
+        })
+      );
+      
+      res.json(changelogsWithUserNames);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
