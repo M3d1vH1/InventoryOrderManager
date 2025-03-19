@@ -17,6 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { apiRequest } from "@/lib/queryClient";
 import { useSidebar } from "@/context/SidebarContext";
+import { useAuth } from "@/context/AuthContext"; // Import useAuth hook
 import { exportData } from "@/lib/utils";
 import { Link } from "wouter";
 import JsBarcode from "jsbarcode";
@@ -115,6 +116,7 @@ const Products = () => {
   const { setCurrentPage } = useSidebar();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth(); // Use auth context
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -370,11 +372,15 @@ const Products = () => {
       <Tabs defaultValue="products" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="products">{t('products.title')}</TabsTrigger>
-          <TabsTrigger value="categories">{t('categories.title')}</TabsTrigger>
+          {user?.role === 'admin' && (
+            <TabsTrigger value="categories">{t('categories.title')}</TabsTrigger>
+          )}
         </TabsList>
-        <TabsContent value="categories">
-          <CategoryManager />
-        </TabsContent>
+        {user?.role === 'admin' && (
+          <TabsContent value="categories">
+            <CategoryManager />
+          </TabsContent>
+        )}
         <TabsContent value="products">
           <div className="bg-white rounded-lg shadow mb-6">
             <div className="p-5 border-b border-slate-200 flex justify-between items-center">
