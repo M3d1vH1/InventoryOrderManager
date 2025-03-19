@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSidebar } from "@/context/SidebarContext";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -22,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SearchIcon } from "lucide-react";
+import { SearchIcon, Tag } from "lucide-react";
 
 interface Product {
   id: number;
@@ -33,12 +34,14 @@ interface Product {
   minStockLevel: number;
   currentStock: number;
   location?: string;
+  tags?: string[];
 }
 
 const Inventory = () => {
   const { setCurrentPage } = useSidebar();
   const { toast } = useToast();
   const [searchText, setSearchText] = useState<string>("");
+  const [tagFilter, setTagFilter] = useState<string>("");
   const [highlightedProductId, setHighlightedProductId] = useState<number | null>(null);
   const highlightedRowRef = useRef<HTMLTableRowElement>(null);
   
@@ -49,6 +52,18 @@ const Inventory = () => {
   const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: ['/api/products'],
   });
+  
+  // Get all unique tags
+  const allTags = React.useMemo(() => {
+    if (!products) return [];
+    const tagSet = new Set<string>();
+    products.forEach(product => {
+      if (product.tags && product.tags.length > 0) {
+        product.tags.forEach(tag => tagSet.add(tag));
+      }
+    });
+    return Array.from(tagSet).sort();
+  }, [products]);
   
   // Handle barcode scanning result
   const handleBarcodeScanned = (barcode: string) => {
@@ -78,14 +93,20 @@ const Inventory = () => {
     }
   };
   
-  // Filter products based on search text
-  const filteredProducts = searchText.trim() === "" 
-    ? products 
-    : products?.filter(p => 
-        p.name.toLowerCase().includes(searchText.toLowerCase()) || 
-        p.sku.toLowerCase().includes(searchText.toLowerCase()) ||
-        (p.location && p.location.toLowerCase().includes(searchText.toLowerCase()))
-      );
+  // Filter products based on search text and tag
+  const filteredProducts = products?.filter(product => {
+    // Text search filter
+    const matchesSearch = searchText.trim() === "" || 
+      product.name.toLowerCase().includes(searchText.toLowerCase()) || 
+      product.sku.toLowerCase().includes(searchText.toLowerCase()) ||
+      (product.location && product.location.toLowerCase().includes(searchText.toLowerCase()));
+    
+    // Tag filter
+    const matchesTag = tagFilter === "" || 
+      (product.tags && product.tags.some(tag => tag === tagFilter));
+    
+    return matchesSearch && matchesTag;
+  });
 
   const updateStockMutation = useMutation({
     mutationFn: async ({ id, stock }: { id: number; stock: number }) => {
@@ -208,6 +229,20 @@ const Inventory = () => {
                           Stock: <span className={`font-medium ${textColor}`}>{product.currentStock}</span> (Min: {product.minStockLevel})
                         </p>
                         <p className="text-xs text-slate-500 mt-1">SKU: {product.sku}</p>
+                        {product.tags && product.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {product.tags.map(tag => (
+                              <Badge 
+                                key={tag} 
+                                variant="outline" 
+                                className="cursor-pointer text-xs"
+                                onClick={() => setTagFilter(tag)}
+                              >
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <Button 
                         variant="outline"
@@ -248,6 +283,34 @@ const Inventory = () => {
                 </button>
               )}
             </div>
+            {allTags.length > 0 && (
+              <div className="flex items-center">
+                <Select value={tagFilter} onValueChange={setTagFilter}>
+                  <SelectTrigger className="w-[150px]">
+                    <div className="flex items-center">
+                      <Tag className="w-4 h-4 mr-2" />
+                      <SelectValue placeholder="Filter by tag" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Tags</SelectItem>
+                    {allTags.map(tag => (
+                      <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {tagFilter && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="ml-1" 
+                    onClick={() => setTagFilter("")}
+                  >
+                    <i className="fas fa-times-circle"></i>
+                  </Button>
+                )}
+              </div>
+            )}
             <BarcodeScanner
               onBarcodeScanned={handleBarcodeScanned}
               buttonText="Scan"
@@ -293,7 +356,25 @@ const Inventory = () => {
                       ref={isHighlighted ? highlightedRowRef : undefined}
                       className={isHighlighted ? 'bg-blue-50 animate-pulse' : ''}
                     >
-                      <TableCell>{product.name}</TableCell>
+                      <TableCell>
+                        <div>
+                          <div>{product.name}</div>
+                          {product.tags && product.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {product.tags.map(tag => (
+                                <Badge 
+                                  key={tag} 
+                                  variant="outline" 
+                                  className="cursor-pointer"
+                                  onClick={() => setTagFilter(tag)}
+                                >
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>{product.sku}</TableCell>
                       <TableCell>{product.location || "-"}</TableCell>
                       <TableCell>{product.minStockLevel}</TableCell>
