@@ -43,6 +43,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -103,6 +104,7 @@ const Products = () => {
   const [searchTerm, setSearchTerm] = useState("");
   // Category filter removed as part of simplification
   const [stockFilter, setStockFilter] = useState("all");
+  const [tagFilter, setTagFilter] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   
@@ -341,6 +343,18 @@ const Products = () => {
     setSelectedTab("info");
   };
 
+  // Get all unique tags across all products
+  const allTags = React.useMemo(() => {
+    if (!products) return [];
+    const tagSet = new Set<string>();
+    products.forEach(product => {
+      if (product.tags && product.tags.length > 0) {
+        product.tags.forEach(tag => tagSet.add(tag));
+      }
+    });
+    return Array.from(tagSet).sort();
+  }, [products]);
+
   const filteredProducts = products?.filter(product => {
     const matchesSearch = searchTerm === "" || 
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -358,8 +372,12 @@ const Products = () => {
         matchesStock = product.currentStock > product.minStockLevel;
       }
     }
+
+    // Tag filter
+    const matchesTag = tagFilter === "" || 
+      (product.tags && product.tags.some(tag => tag.toLowerCase().includes(tagFilter.toLowerCase())));
     
-    return matchesSearch && matchesStock;
+    return matchesSearch && matchesStock && matchesTag;
   });
 
   const getStockStatusClass = (currentStock: number, minStockLevel: number) => {
@@ -419,6 +437,21 @@ const Products = () => {
                     <SelectItem value="out">Out of Stock</SelectItem>
                   </SelectContent>
                 </Select>
+                
+                {/* Tag Filter */}
+                {allTags.length > 0 && (
+                  <Select value={tagFilter} onValueChange={setTagFilter}>
+                    <SelectTrigger className="w-full md:w-48 h-10 bg-white">
+                      <SelectValue placeholder="Filter by tag" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Tags</SelectItem>
+                      {allTags.map(tag => (
+                        <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </div>
           </div>
@@ -533,6 +566,16 @@ const Products = () => {
                           </p>
                         </div>
                       </div>
+                      
+                      {product.tags && product.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {product.tags.map((tag, index) => (
+                            <Badge key={index} variant="outline" className="bg-slate-50 text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                       
                       <div className="flex justify-between items-center pt-3 border-t border-slate-200">
                         <button 
@@ -794,6 +837,37 @@ const Products = () => {
                     />
                   </div>
                   
+                  <div className="w-full">
+                    <FormField
+                      control={form.control}
+                      name="tags"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tags</FormLabel>
+                          <FormDescription>
+                            Enter comma-separated tags to categorize this product
+                          </FormDescription>
+                          <FormControl>
+                            <Input 
+                              placeholder="e.g. fragile, electronics, discount"
+                              value={field.value?.join(', ') || ''}
+                              onChange={(e) => {
+                                const tagsInput = e.target.value;
+                                // Split by comma and trim each tag
+                                const tagsArray = tagsInput
+                                  .split(',')
+                                  .map(tag => tag.trim())
+                                  .filter(tag => tag.length > 0);
+                                field.onChange(tagsArray);
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
                   <DialogFooter>
                     <Button 
                       type="button" 
@@ -905,6 +979,19 @@ const Products = () => {
                             <div>
                               <h3 className="text-sm font-medium text-slate-500">Description</h3>
                               <p className="text-slate-700 whitespace-pre-line">{viewingProduct.description}</p>
+                            </div>
+                          )}
+                          
+                          {viewingProduct.tags && viewingProduct.tags.length > 0 && (
+                            <div className="mt-4">
+                              <h3 className="text-sm font-medium text-slate-500 mb-2">Tags</h3>
+                              <div className="flex flex-wrap gap-2">
+                                {viewingProduct.tags.map((tag, index) => (
+                                  <Badge key={index} variant="outline" className="bg-slate-100">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </CardContent>
