@@ -56,6 +56,7 @@ const productFormSchema = z.object({
   location: z.string().optional(),
   unitsPerBox: z.coerce.number().min(1, "Units per box must be at least 1").optional(),
   imagePath: z.string().optional(),
+  tags: z.array(z.string()).optional().default([]),
   // Removed categoryId field
 });
 
@@ -81,6 +82,7 @@ export default function Products() {
       location: "",
       unitsPerBox: 1,
       imagePath: "",
+      tags: [],
     },
   });
 
@@ -267,6 +269,7 @@ export default function Products() {
       location: product.location || "",
       unitsPerBox: product.unitsPerBox || 1,
       imagePath: product.imagePath || "",
+      tags: product.tags || [],
     });
     
     setIsDialogOpen(true);
@@ -338,6 +341,7 @@ export default function Products() {
       location: "",
       unitsPerBox: 1,
       imagePath: "",
+      tags: [],
     });
     setIsDialogOpen(true);
   };
@@ -797,6 +801,34 @@ export default function Products() {
                       )}
                     />
                   </div>
+                  <FormField
+                    control={form.control}
+                    name="tags"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tags</FormLabel>
+                        <FormDescription>
+                          Enter comma-separated tags to categorize this product
+                        </FormDescription>
+                        <FormControl>
+                          <Input 
+                            placeholder="e.g. fragile, electronics, discount"
+                            value={field.value?.join(', ') || ''}
+                            onChange={(e) => {
+                              const tagsInput = e.target.value;
+                              // Split by comma and trim each tag
+                              const tagsArray = tagsInput
+                                .split(',')
+                                .map(tag => tag.trim())
+                                .filter(tag => tag.length > 0);
+                              field.onChange(tagsArray);
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <DialogFooter className="pt-4">
                     <Button 
                       type="button" 
@@ -893,6 +925,18 @@ export default function Products() {
                           {viewingProduct.description || t('products.noDescription')}
                         </p>
                       </div>
+                      {viewingProduct.tags && viewingProduct.tags.length > 0 && (
+                        <div>
+                          <h3 className="text-sm font-medium text-slate-500">Tags</h3>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {viewingProduct.tags.map((tag, index) => (
+                              <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                     <CardFooter className="flex justify-between border-t pt-5">
                       <Button 
