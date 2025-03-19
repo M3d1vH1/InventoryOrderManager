@@ -24,6 +24,7 @@ import JsBarcode from "jsbarcode";
 import BarcodeScanner from "@/components/barcode/BarcodeScanner";
 import BarcodeGenerator from "@/components/barcode/BarcodeGenerator";
 import CategoryManager from "@/components/products/CategoryManager";
+import CategorySelect from "@/components/products/CategorySelect";
 import {
   Tabs,
   TabsContent,
@@ -786,69 +787,13 @@ const Products = () => {
                     <FormField
                       control={form.control}
                       name="categoryId"
-                      render={({ field }) => {
-                        console.log('Form field categoryId value:', field.value);
-                        console.log('Categories in form dropdown:', categoriesData);
-                        
-                        // Ensure we have a valid category ID when categories are loaded
-                        React.useEffect(() => {
-                          if (categoriesData.length > 0) {
-                            // If no valid category is selected (0 or undefined), force select the first one
-                            if (!field.value || field.value === 0) {
-                              console.log('Setting default categoryId to:', categoriesData[0].id);
-                              field.onChange(categoriesData[0].id);
-                            }
-                          }
-                        }, [categoriesData, field]);
-                        
-                        // Only render once we have categories
-                        if (categoriesData.length === 0) {
-                          return (
-                            <FormItem>
-                              <FormLabel>{t('products.category')}</FormLabel>
-                              <div className="flex items-center space-x-2 h-10 px-3 py-2 text-sm border border-slate-200 rounded-md">
-                                <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                                <span>Loading categories...</span>
-                              </div>
-                              <FormDescription>
-                                Please create categories first
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          );
-                        }
-                        
-                        return (
-                          <FormItem>
-                            <FormLabel>{t('products.category')}</FormLabel>
-                            <Select 
-                              onValueChange={(value) => {
-                                const numValue = parseInt(value, 10);
-                                console.log('Changing categoryId to:', numValue);
-                                field.onChange(numValue);
-                              }}
-                              value={field.value?.toString()}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder={t('products.selectCategory')} />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {categoriesData.map((category) => (
-                                  <SelectItem key={category.id} value={category.id.toString()}>
-                                    {category.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormDescription>
-                              Select a category for this product
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        );
-                      }}
+                      render={({ field }) => (
+                        <CategorySelect 
+                          value={field.value}
+                          onChange={field.onChange}
+                          description="Select a category for this product"
+                        />
+                      )}
                     />
                     <div className="flex gap-2 items-start">
                       <FormField
