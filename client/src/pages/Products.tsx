@@ -100,7 +100,7 @@ const productFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   sku: z.string().min(2, "SKU must be at least 2 characters"),
   barcode: z.string().optional(),
-  categoryId: z.coerce.number().min(1, "Category is required"),
+  categoryId: z.coerce.number().min(0, "Category is required"),
   description: z.string().optional(),
   minStockLevel: z.coerce.number().min(0, "Min stock level must be 0 or greater"),
   currentStock: z.coerce.number().min(0, "Current stock must be 0 or greater"),
@@ -159,16 +159,10 @@ const Products = () => {
     staleTime: 1000, // Refresh categories every second to ensure we have the latest
   });
   
-  // Debug categories data and update the form's default categoryId
+  // Debug categories data
   useEffect(() => {
     console.log('Categories data loaded:', categoriesData);
-    
-    // Set default categoryId to the first available category if any exist
-    if (categoriesData.length > 0 && !editingProduct) {
-      console.log('Setting default categoryId to:', categoriesData[0].id);
-      form.setValue('categoryId', categoriesData[0].id);
-    }
-  }, [categoriesData, form, editingProduct]);
+  }, [categoriesData]);
   
   // Transform category objects to an array of names for backward compatibility
   const categories = React.useMemo(() => {
@@ -800,30 +794,45 @@ const Products = () => {
                           field.onChange(numValue);
                         };
                         
+                        // Set initial value if categories exist but value is 0
+                        React.useEffect(() => {
+                          if (categoriesData.length > 0 && field.value === 0) {
+                            handleCategoryChange(categoriesData[0].id.toString());
+                          }
+                        }, [categoriesData, field.value]);
+                        
                         return (
                           <FormItem>
                             <FormLabel>{t('products.category')}</FormLabel>
-                            <Select 
-                              onValueChange={handleCategoryChange}
-                              value={stringValue}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder={t('products.selectCategory')} />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {categoriesData.length === 0 ? (
-                                  <SelectItem value="0">No categories available</SelectItem>
-                                ) : (
-                                  categoriesData.map((category) => (
-                                    <SelectItem key={category.id} value={category.id.toString()}>
-                                      {category.name}
-                                    </SelectItem>
-                                  ))
-                                )}
-                              </SelectContent>
-                            </Select>
+                            {isLoadingCategories ? (
+                              <div className="flex items-center space-x-2 h-10 px-3 py-2 text-sm border border-slate-200 rounded-md">
+                                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                <span>Loading categories...</span>
+                              </div>
+                            ) : (
+                              <Select 
+                                onValueChange={handleCategoryChange}
+                                value={stringValue}
+                                defaultValue={categoriesData.length > 0 ? categoriesData[0].id.toString() : "0"}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder={t('products.selectCategory')} />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {categoriesData.length === 0 ? (
+                                    <SelectItem value="0">No categories available</SelectItem>
+                                  ) : (
+                                    categoriesData.map((category) => (
+                                      <SelectItem key={category.id} value={category.id.toString()}>
+                                        {category.name}
+                                      </SelectItem>
+                                    ))
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            )}
                             <FormDescription>
                               {categoriesData.length === 0 ? 
                                 "You need to create categories first" : 
