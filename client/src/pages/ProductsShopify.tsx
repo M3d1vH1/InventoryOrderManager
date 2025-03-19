@@ -70,7 +70,7 @@ interface Product {
   name: string;
   sku: string;
   barcode?: string;
-  category: string;
+  // category field removed as part of simplification
   description?: string;
   minStockLevel: number;
   currentStock: number;
@@ -79,11 +79,11 @@ interface Product {
   imagePath?: string;
 }
 
+// Simplified form schema without categories
 const productFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   sku: z.string().min(3, { message: "SKU must be at least 3 characters" }),
   barcode: z.string().optional(),
-  category: z.string().min(1, { message: "Please select a category" }),
   description: z.string().optional(),
   minStockLevel: z.coerce.number().min(0, { message: "Minimum stock level must be 0 or greater" }),
   currentStock: z.coerce.number().min(0, { message: "Current stock must be 0 or greater" }),
@@ -132,10 +132,13 @@ const Products = () => {
     defaultValues: {
       name: "",
       sku: "",
-      category: "",
       description: "",
       minStockLevel: 10,
-      currentStock: 0
+      currentStock: 0,
+      barcode: "",
+      location: "",
+      unitsPerBox: 0,
+      imagePath: ""
     }
   });
 
@@ -145,7 +148,6 @@ const Products = () => {
         name: editingProduct.name,
         sku: editingProduct.sku,
         barcode: editingProduct.barcode || "",
-        category: editingProduct.category,
         description: editingProduct.description || "",
         minStockLevel: editingProduct.minStockLevel,
         currentStock: editingProduct.currentStock,
@@ -158,7 +160,6 @@ const Products = () => {
         name: "",
         sku: "",
         barcode: "",
-        category: "",
         description: "",
         minStockLevel: 10,
         currentStock: 0,
@@ -717,32 +718,7 @@ const Products = () => {
                     />
                   </div>
                   
-                  <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Category</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select category" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="widgets">Widgets</SelectItem>
-                            <SelectItem value="connectors">Connectors</SelectItem>
-                            <SelectItem value="default">Default Category</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {/* Category field removed */}
                   
                   <FormField
                     control={form.control}
@@ -914,10 +890,7 @@ const Products = () => {
                         </CardHeader>
                         <CardContent className="space-y-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <h3 className="text-sm font-medium text-slate-500">Category</h3>
-                              <p className="capitalize">{viewingProduct.category}</p>
-                            </div>
+                            {/* Category field removed */}
                             {viewingProduct.location && (
                               <div>
                                 <h3 className="text-sm font-medium text-slate-500 flex items-center">
