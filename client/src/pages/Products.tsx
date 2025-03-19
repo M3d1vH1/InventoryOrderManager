@@ -22,6 +22,7 @@ import { Link } from "wouter";
 import JsBarcode from "jsbarcode";
 import BarcodeScanner from "@/components/barcode/BarcodeScanner";
 import BarcodeGenerator from "@/components/barcode/BarcodeGenerator";
+import CategoryManager from "@/components/products/CategoryManager";
 import {
   Tabs,
   TabsContent,
