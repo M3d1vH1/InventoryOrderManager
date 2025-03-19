@@ -41,6 +41,7 @@ export const categories = pgTable("categories", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   description: text("description"),
+  color: text("color"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -49,6 +50,7 @@ export const insertCategorySchema = createInsertSchema(categories)
   .extend({
     name: z.string().min(2, { message: "Category name must be at least 2 characters" }),
     description: z.string().optional(),
+    color: z.string().optional(),
   });
 
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
