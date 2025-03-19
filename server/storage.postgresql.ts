@@ -113,6 +113,103 @@ export class DatabaseStorage implements IStorage {
     const result = await this.db.delete(categories).where(eq(categories.id, id)).returning();
     return result.length > 0;
   }
+  
+  // Tag methods
+  async getTag(id: number): Promise<Tag | undefined> {
+    const result = await this.db.select().from(tags).where(eq(tags.id, id));
+    return result[0];
+  }
+  
+  async getTagByName(name: string): Promise<Tag | undefined> {
+    const result = await this.db.select().from(tags).where(eq(tags.name, name));
+    return result[0];
+  }
+  
+  async getAllTags(): Promise<Tag[]> {
+    return await this.db.select().from(tags);
+  }
+  
+  async createTag(insertTag: InsertTag): Promise<Tag> {
+    const tagData = {
+      ...insertTag,
+      color: insertTag.color || null
+    };
+    const [tag] = await this.db.insert(tags).values(tagData).returning();
+    return tag;
+  }
+  
+  async updateTag(id: number, tagUpdate: Partial<InsertTag>): Promise<Tag | undefined> {
+    const tagData = {
+      ...tagUpdate,
+      color: tagUpdate.color || null
+    };
+    
+    const [updatedTag] = await this.db
+      .update(tags)
+      .set(tagData)
+      .where(eq(tags.id, id))
+      .returning();
+    return updatedTag;
+  }
+  
+  async deleteTag(id: number): Promise<boolean> {
+    // First delete all product tag associations
+    await this.db.delete(productTags).where(eq(productTags.tagId, id));
+    // Then delete the tag itself
+    const result = await this.db.delete(tags).where(eq(tags.id, id)).returning();
+    return result.length > 0;
+  }
+  
+  async getProductTags(productId: number): Promise<Tag[]> {
+    // Join productTags with tags to get the actual tag data
+    const result = await this.db
+      .select()
+      .from(productTags)
+      .innerJoin(tags, eq(productTags.tagId, tags.id))
+      .where(eq(productTags.productId, productId));
+      
+    // Extract just the tag data from the join result
+    return result.map(row => row.tags);
+  }
+  
+  async addTagToProduct(productId: number, tagId: number): Promise<void> {
+    // Check if the relation already exists
+    const existing = await this.db
+      .select()
+      .from(productTags)
+      .where(and(
+        eq(productTags.productId, productId),
+        eq(productTags.tagId, tagId)
+      ));
+    
+    // Only insert if it doesn't exist
+    if (existing.length === 0) {
+      await this.db.insert(productTags).values({ productId, tagId });
+    }
+  }
+  
+  async removeTagFromProduct(productId: number, tagId: number): Promise<void> {
+    await this.db
+      .delete(productTags)
+      .where(and(
+        eq(productTags.productId, productId),
+        eq(productTags.tagId, tagId)
+      ));
+  }
+  
+  async updateProductTags(productId: number, tagIds: number[]): Promise<void> {
+    // Begin a transaction
+    await this.db.transaction(async (tx) => {
+      // Delete all existing tag associations for this product
+      await tx.delete(productTags).where(eq(productTags.productId, productId));
+      
+      // Add the new tag associations
+      if (tagIds.length > 0) {
+        const tagValues = tagIds.map(tagId => ({ productId, tagId }));
+        await tx.insert(productTags).values(tagValues);
+      }
+    });
+  }
 
   // Product methods
   async getProduct(id: number): Promise<Product | undefined> {

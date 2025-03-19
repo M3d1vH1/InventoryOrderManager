@@ -6,7 +6,9 @@ import {
   customers, type Customer, type InsertCustomer,
   shippingDocuments, type ShippingDocument, type InsertShippingDocument,
   categories, type Category, type InsertCategory,
-  orderChangelogs, type OrderChangelog, type InsertOrderChangelog
+  orderChangelogs, type OrderChangelog, type InsertOrderChangelog,
+  tags, type Tag, type InsertTag,
+  productTags, type ProductTag
 } from "@shared/schema";
 import { DatabaseStorage, initStorage } from './storage.postgresql';
 import { log } from './vite';
@@ -28,6 +30,18 @@ export interface IStorage {
   createCategory(category: InsertCategory): Promise<Category>;
   updateCategory(id: number, category: Partial<InsertCategory>): Promise<Category | undefined>;
   deleteCategory(id: number): Promise<boolean>;
+  
+  // Tag methods
+  getTag(id: number): Promise<Tag | undefined>;
+  getTagByName(name: string): Promise<Tag | undefined>;
+  getAllTags(): Promise<Tag[]>;
+  createTag(tag: InsertTag): Promise<Tag>;
+  updateTag(id: number, tag: Partial<InsertTag>): Promise<Tag | undefined>;
+  deleteTag(id: number): Promise<boolean>;
+  getProductTags(productId: number): Promise<Tag[]>;
+  addTagToProduct(productId: number, tagId: number): Promise<void>;
+  removeTagFromProduct(productId: number, tagId: number): Promise<void>;
+  updateProductTags(productId: number, tagIds: number[]): Promise<void>;
   
   // Product methods
   getProduct(id: number): Promise<Product | undefined>;
@@ -137,6 +151,8 @@ export class MemStorage implements IStorage {
   private customers: Map<number, Customer>;
   private shippingDocuments: Map<number, ShippingDocument>;
   private orderChangelogs: Map<number, OrderChangelog>;
+  private tags: Map<number, Tag>;
+  private productTagsMap: Map<string, number>; // key: productId-tagId, value: 1 (just for existence)
   
   private userIdCounter: number;
   private categoryIdCounter: number;
@@ -146,6 +162,7 @@ export class MemStorage implements IStorage {
   private customerIdCounter: number;
   private shippingDocumentIdCounter: number;
   private orderChangelogIdCounter: number;
+  private tagIdCounter: number;
   
   constructor() {
     this.users = new Map();
