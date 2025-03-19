@@ -13,7 +13,14 @@ i18n.use(initReactI18next).init({
   fallbackLng: 'en',
   interpolation: {
     escapeValue: false
+  },
+  detection: {
+    order: ['localStorage', 'navigator'],
+    caches: ['localStorage']
   }
 });
+
+// Force language to Greek
+i18n.changeLanguage('el');
 
 export default i18n;
