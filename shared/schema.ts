@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -123,14 +123,18 @@ export const orders = pgTable("orders", {
   status: orderStatusEnum("status").notNull().default('pending'),
   notes: text("notes"),
   hasShippingDocument: boolean("has_shipping_document").notNull().default(false),
+  createdById: integer("created_by_id").notNull(), // References the user who created this order
+  updatedById: integer("updated_by_id"), // Last user who updated this order
+  lastUpdated: timestamp("last_updated"), // When the order was last updated
 });
 
 export const insertOrderSchema = createInsertSchema(orders)
-  .omit({ id: true, orderNumber: true, orderDate: true })
+  .omit({ id: true, orderNumber: true, orderDate: true, lastUpdated: true, updatedById: true })
   .extend({
     customerName: z.string().min(2),
     notes: z.string().optional(),
     orderDate: z.string().optional().transform(val => val ? new Date(val) : new Date()),
+    createdById: z.number(),
   });
 
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
@@ -202,3 +206,36 @@ export const insertCustomerSchema = createInsertSchema(customers)
 
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
 export type Customer = typeof customers.$inferSelect;
+
+// Action Type Enum for Changelog
+export const changelogActionEnum = pgEnum('changelog_action', [
+  'create',
+  'update',
+  'delete'
+]);
+
+// Changelog Schema for Orders
+export const orderChangelogs = pgTable("order_changelogs", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull(),
+  userId: integer("user_id").notNull(),
+  action: changelogActionEnum("action").notNull(),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+  changes: json("changes"), // Stores the changes made in JSON format
+  previousValues: json("previous_values"), // Stores the previous values in JSON format
+  notes: text("notes"),
+});
+
+export const insertOrderChangelogSchema = createInsertSchema(orderChangelogs)
+  .omit({ id: true, timestamp: true })
+  .extend({
+    orderId: z.number(),
+    userId: z.number(),
+    action: z.enum(['create', 'update', 'delete']),
+    changes: z.record(z.any()).optional(),
+    previousValues: z.record(z.any()).optional(),
+    notes: z.string().optional(),
+  });
+
+export type InsertOrderChangelog = z.infer<typeof insertOrderChangelogSchema>;
+export type OrderChangelog = typeof orderChangelogs.$inferSelect;
