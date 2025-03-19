@@ -1,253 +1,287 @@
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { format } from 'date-fns';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Activity, Clock, FileText, UserCircle } from 'lucide-react';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { AlertCircle, CheckCircle, Clock, Plus, Pencil, RefreshCw, Truck, FileText } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+interface ChangelogItem {
+  id: number;
+  orderId: number;
+  userId: number;
+  username: string;
+  action: 'create' | 'update' | 'status_change';
+  timestamp: string;
+  details: string;
+  previousStatus?: string;
+  newStatus?: string;
+  changedFields?: string[];
+  previousValues?: Record<string, any>;
+  notes?: string;
+}
 
 interface OrderChangelogProps {
   orderId: number;
 }
 
-interface ChangelogUser {
-  id: number;
-  username: string;
-  fullName: string;
-}
-
-interface OrderChangelog {
-  id: number;
-  orderId: number;
-  userId: number;
-  action: 'create' | 'update' | 'delete' | 'status_change';
-  timestamp: string;
-  changes: Record<string, any>;
-  previousValues: Record<string, any>;
-  notes: string | null;
-  user?: ChangelogUser;
-}
-
-function getActionLabel(action: string): string {
-  switch (action) {
-    case 'create':
-      return 'Created';
-    case 'update':
-      return 'Updated';
-    case 'delete':
-      return 'Deleted';
-    case 'status_change':
-      return 'Status Changed';
-    default:
-      return action;
-  }
-}
-
-function getActionColor(action: string): string {
-  switch (action) {
-    case 'create':
-      return 'bg-green-500 hover:bg-green-600';
-    case 'update':
-      return 'bg-blue-500 hover:bg-blue-600';
-    case 'delete':
-      return 'bg-red-500 hover:bg-red-600';
-    case 'status_change':
-      return 'bg-amber-500 hover:bg-amber-600';
-    default:
-      return 'bg-gray-500 hover:bg-gray-600';
-  }
-}
-
-function formatChangedValue(key: string, value: any): string {
-  if (key === 'status') {
-    return value.charAt(0).toUpperCase() + value.slice(1);
-  }
-  
-  if (value === null || value === undefined) {
-    return 'None';
-  }
-  
-  if (typeof value === 'boolean') {
-    return value ? 'Yes' : 'No';
-  }
-  
-  if (typeof value === 'object') {
-    try {
-      return JSON.stringify(value);
-    } catch (e) {
-      return String(value);
-    }
-  }
-  
-  return String(value);
-}
-
-function getKeyLabel(key: string): string {
-  const labels: Record<string, string> = {
-    status: 'Status',
-    notes: 'Notes',
-    orderNumber: 'Order Number',
-    customerName: 'Customer Name',
-    orderDate: 'Order Date',
-    lastUpdated: 'Last Updated',
-    hasShippingDocument: 'Has Shipping Document',
-    documentPath: 'Document Path',
-    documentType: 'Document Type'
-  };
-  
-  return labels[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-}
-
-function renderChanges(changes: Record<string, any>, previousValues: Record<string, any>) {
-  const keys = Object.keys(changes);
-  
-  if (keys.length === 0) {
-    return <p className="text-sm text-gray-500 italic">No changes recorded</p>;
-  }
-  
-  return (
-    <div className="space-y-2">
-      {keys.map(key => (
-        <div key={key} className="grid grid-cols-3 gap-2 text-sm items-start">
-          <div className="font-medium text-slate-800">{getKeyLabel(key)}</div>
-          <div className="text-red-600 line-through">
-            {key in previousValues 
-              ? formatChangedValue(key, previousValues[key])
-              : <span className="text-slate-400 italic">Not set</span>
-            }
-          </div>
-          <div className="text-green-600">
-            {formatChangedValue(key, changes[key])}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function OrderChangelog({ orderId }: OrderChangelogProps) {
-  const { data: changelogs, isLoading, isError } = useQuery<OrderChangelog[]>({
-    queryKey: ['/api/orders', orderId, 'changelogs'],
-    queryFn: async () => {
-      const response = await fetch(`/api/orders/${orderId}/changelogs`);
-      if (!response.ok) throw new Error('Failed to fetch order history');
-      return response.json();
-    },
+  const { data: changelog, isLoading, error } = useQuery<ChangelogItem[]>({
+    queryKey: ['/api/orders', orderId, 'changelog'],
     enabled: !!orderId,
+    queryFn: async () => {
+      return apiRequest({
+        url: `/api/orders/${orderId}/changelog`,
+      });
+    },
   });
+
+  const getActionIcon = (action: string, newStatus?: string) => {
+    switch (action) {
+      case 'create':
+        return <Plus className="h-4 w-4 text-green-500" />;
+      case 'update':
+        return <Pencil className="h-4 w-4 text-blue-500" />;
+      case 'status_change':
+        if (newStatus === 'pending') return <Clock className="h-4 w-4 text-amber-500" />;
+        if (newStatus === 'picked') return <CheckCircle className="h-4 w-4 text-blue-500" />;
+        if (newStatus === 'shipped') return <Truck className="h-4 w-4 text-green-500" />;
+        if (newStatus === 'cancelled') return <AlertCircle className="h-4 w-4 text-red-500" />;
+        return <RefreshCw className="h-4 w-4 text-slate-500" />;
+      default:
+        return <RefreshCw className="h-4 w-4 text-slate-500" />;
+    }
+  };
+
+  const getActionText = (item: ChangelogItem) => {
+    if (item.action === 'create') {
+      return 'Order created';
+    }
+    
+    if (item.action === 'update') {
+      if (item.changedFields && item.changedFields.includes('documentPath')) {
+        return 'Document uploaded';
+      }
+      return `Order updated (${item.changedFields?.join(', ')})`;
+    }
+    
+    if (item.action === 'status_change') {
+      let statusText = '';
+      switch (item.newStatus) {
+        case 'pending':
+          statusText = 'marked as Pending';
+          break;
+        case 'picked':
+          statusText = 'marked as Picked';
+          break;
+        case 'shipped':
+          statusText = 'marked as Shipped';
+          break;
+        case 'cancelled':
+          statusText = 'Cancelled';
+          break;
+        default:
+          statusText = `status changed to ${item.newStatus}`;
+      }
+      return `Order ${statusText}`;
+    }
+    
+    return 'Order updated';
+  };
+
+  const renderChanges = (item: ChangelogItem) => {
+    if (item.action === 'status_change') {
+      return (
+        <div className="text-sm">
+          <span className="font-medium">Status changed: </span>
+          <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(item.previousStatus || '')}`}>
+            {item.previousStatus?.charAt(0).toUpperCase() + item.previousStatus?.slice(1) || 'None'}
+          </span>
+          <span className="mx-2">→</span>
+          <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(item.newStatus || '')}`}>
+            {item.newStatus?.charAt(0).toUpperCase() + item.newStatus?.slice(1) || 'None'}
+          </span>
+        </div>
+      );
+    }
+    
+    if (item.action === 'update' && item.changedFields && item.previousValues) {
+      return (
+        <div className="text-sm">
+          {item.changedFields.includes('documentPath') ? (
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-blue-500" />
+              <span>Document added to order</span>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {item.changedFields.map(field => (
+                <div key={field}>
+                  <span className="font-medium">{formatFieldName(field)}: </span>
+                  <span className="line-through text-slate-500 mr-2">
+                    {formatFieldValue(field, item.previousValues?.[field])}
+                  </span>
+                  <span className="text-slate-900">
+                    {formatFieldValue(field, item.details ? JSON.parse(item.details)[field] : '')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+    
+    if (item.notes) {
+      return (
+        <div className="text-sm italic text-slate-600">
+          "{item.notes}"
+        </div>
+      );
+    }
+    
+    return null;
+  };
+
+  const formatFieldName = (field: string) => {
+    // Convert camelCase to Title Case with spaces
+    const formatted = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+    
+    // Special cases
+    switch (field) {
+      case 'orderNumber':
+        return 'Order Number';
+      case 'customerName':
+        return 'Customer';
+      case 'orderDate':
+        return 'Order Date';
+      default:
+        return formatted;
+    }
+  };
+
+  const formatFieldValue = (field: string, value: any) => {
+    if (value === null || value === undefined) return 'None';
+    
+    // Handle dates
+    if (field === 'orderDate' && value) {
+      try {
+        return format(new Date(value), 'MMM dd, yyyy');
+      } catch (e) {
+        return value;
+      }
+    }
+    
+    // Handle booleans
+    if (typeof value === 'boolean') {
+      return value ? 'Yes' : 'No';
+    }
+    
+    // Handle empty strings
+    if (value === '') return 'Empty';
+    
+    return value.toString();
+  };
+
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-amber-100 text-amber-800';
+      case 'picked':
+        return 'bg-blue-100 text-blue-800';
+      case 'shipped':
+        return 'bg-green-100 text-green-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-slate-100 text-slate-800';
+    }
+  };
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity size={18} /> Order History
-          </CardTitle>
-          <CardDescription>Loading change history...</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="h-6 w-1/3" />
-                <Skeleton className="h-12 w-full" />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
+      </div>
     );
   }
 
-  if (isError) {
+  if (error) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-red-600">
-            <Activity size={18} /> Error Loading Order History
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>There was an error loading the order history. Please try again later.</p>
-        </CardContent>
-      </Card>
+      <div className="p-4 border border-red-200 bg-red-50 text-red-700 rounded-md">
+        Failed to load order history. Please try again later.
+      </div>
     );
   }
 
-  if (!changelogs || changelogs.length === 0) {
+  if (!changelog || changelog.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity size={18} /> Order History
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-slate-500">No change history available for this order.</p>
-        </CardContent>
-      </Card>
+      <div className="p-4 border border-slate-200 bg-slate-50 text-slate-700 rounded-md">
+        No change history available for this order.
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Activity size={18} /> Order History
-        </CardTitle>
-        <CardDescription>
-          History of changes made to this order
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Accordion type="single" collapsible className="w-full">
-          {changelogs.map((log) => (
-            <AccordionItem key={log.id} value={`item-${log.id}`}>
-              <AccordionTrigger className="py-4 px-0">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center w-full text-left gap-2">
-                  <div className="flex items-center gap-2">
-                    <Badge className={getActionColor(log.action)}>
-                      {getActionLabel(log.action)}
-                    </Badge>
-                    <span className="font-semibold">
-                      {log.user && log.user.fullName}
-                    </span>
-                  </div>
-                  <div className="flex items-center text-sm text-slate-500">
-                    <Clock size={14} className="mr-1" />
-                    {format(new Date(log.timestamp), 'MMM d, yyyy h:mm a')}
-                  </div>
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[180px]">Date & Time</TableHead>
+            <TableHead>Action</TableHead>
+            <TableHead>Changed By</TableHead>
+            <TableHead>Details</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {changelog.map((item) => (
+            <TableRow key={item.id}>
+              <TableCell className="font-medium">
+                {format(new Date(item.timestamp), "MMM dd, yyyy HH:mm")}
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  {getActionIcon(item.action, item.newStatus)}
+                  <span>{getActionText(item)}</span>
                 </div>
-              </AccordionTrigger>
-              <AccordionContent className="space-y-4 pt-2">
-                {log.notes && (
-                  <div className="flex items-start bg-slate-50 p-3 rounded-md">
-                    <FileText size={16} className="mr-2 mt-0.5 text-slate-500" />
-                    <p className="text-sm text-slate-700">{log.notes}</p>
-                  </div>
-                )}
-                <div className="space-y-4">
-                  <div className="flex items-center">
-                    <UserCircle size={16} className="mr-2 text-slate-500" />
-                    <h4 className="text-sm font-medium">
-                      {log.user ? (
-                        <span>Changed by {log.user.fullName} (@{log.user.username})</span>
-                      ) : (
-                        <span>Changed by user ID {log.userId}</span>
-                      )}
-                    </h4>
-                  </div>
-                  <div className="border-t pt-3">
-                    <h4 className="text-sm font-medium mb-2">Changes</h4>
-                    {renderChanges(log.changes, log.previousValues)}
-                  </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
+              </TableCell>
+              <TableCell>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="cursor-help underline decoration-dotted">
+                        {item.username}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>User ID: {item.userId}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </TableCell>
+              <TableCell>
+                {renderChanges(item)}
+              </TableCell>
+            </TableRow>
           ))}
-        </Accordion>
-      </CardContent>
-    </Card>
+        </TableBody>
+      </Table>
+    </div>
   );
 }

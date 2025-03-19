@@ -672,6 +672,14 @@ const Orders = () => {
                       </Table>
                     </div>
                   </div>
+
+                  {/* Order Changelog Section */}
+                  <div className="mt-8">
+                    <h3 className="text-sm font-medium text-slate-500 mb-2">Order Change History</h3>
+                    {selectedOrder && (
+                      <OrderChangelog orderId={selectedOrder.id} />
+                    )}
+                  </div>
                 </div>
               ) : (
                 // Edit mode with OrderForm
