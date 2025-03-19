@@ -123,9 +123,32 @@ function App() {
   // Ensure Greek language is set
   React.useEffect(() => {
     // Force language to Greek on component mount
-    i18n.changeLanguage('el');
-    console.log('App language set to:', i18n.language);
-    console.log('Translated title:', t('app.title'));
+    if (i18n.language !== 'el') {
+      i18n.changeLanguage('el');
+    }
+    
+    // Set document title in Greek
+    document.title = t('app.title');
+    
+    // Only log in development
+    if (import.meta.env.DEV) {
+      console.log('App language set to:', i18n.language);
+      console.log('App title:', document.title);
+    }
+    
+    // Force Greek language on all routes
+    const handleRouteChange = () => {
+      if (i18n.language !== 'el') {
+        i18n.changeLanguage('el');
+      }
+    };
+    
+    // Listen for route changes
+    window.addEventListener('popstate', handleRouteChange);
+    
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+    };
   }, [i18n, t]);
   
   return (

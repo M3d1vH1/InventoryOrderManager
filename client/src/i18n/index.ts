@@ -1,6 +1,7 @@
 
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
 import el from './translations/el.json';
 import en from './translations/en.json';
 
@@ -9,28 +10,27 @@ const resources = {
   el: { translation: el }
 };
 
-// Initialize i18next
+// Set up i18next instance with simple configuration
 i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: 'el', // Default language is Greek
+    lng: 'el',
     fallbackLng: 'en',
-    debug: true, // Enable debug mode to see console messages
     interpolation: {
       escapeValue: false
     },
     react: {
-      useSuspense: false // Disable suspense to prevent issues
+      useSuspense: false
     }
   });
 
 // Force language to Greek
 i18n.changeLanguage('el');
 
-// Add language detection debugging
-console.log('Current language:', i18n.language);
-console.log('Languages available:', Object.keys(resources));
-console.log('Greek translation sample:', i18n.t('app.title'));
+// Log debug info in development
+if (import.meta.env.DEV) {
+  console.log('i18n initialized with language:', i18n.language);
+}
 
 export default i18n;
