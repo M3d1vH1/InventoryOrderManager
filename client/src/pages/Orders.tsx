@@ -451,25 +451,25 @@ const Orders = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Order ID</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Items</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>{t('orders.columns.orderId')}</TableHead>
+                <TableHead>{t('orders.columns.customer')}</TableHead>
+                <TableHead>{t('orders.columns.date')}</TableHead>
+                <TableHead>{t('orders.columns.status')}</TableHead>
+                <TableHead>{t('orders.columns.items')}</TableHead>
+                <TableHead>{t('orders.columns.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8">
-                    Loading orders...
+                    {t('orders.loadingOrders')}
                   </TableCell>
                 </TableRow>
               ) : filteredOrders?.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8">
-                    No orders found. {searchTerm || statusFilter ? "Try clearing your filters." : ""}
+                    {t('orders.noOrdersFound')} {searchTerm || statusFilter ? t('orders.tryClearingFilters') : ""}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -487,10 +487,10 @@ const Orders = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="picked">Picked</SelectItem>
-                          <SelectItem value="shipped">Shipped</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                          <SelectItem value="pending">{t('orders.status.pending')}</SelectItem>
+                          <SelectItem value="picked">{t('orders.status.picked')}</SelectItem>
+                          <SelectItem value="shipped">{t('orders.status.shipped')}</SelectItem>
+                          <SelectItem value="cancelled">{t('orders.status.cancelled')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>
@@ -578,7 +578,7 @@ const Orders = () => {
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>
-              {isEditMode ? "Edit Order" : "Order Details"}
+              {isEditMode ? t('orders.editOrder') : t('orders.orderDetails')}
               {selectedOrder && (
                 <span className="ml-2 text-sm font-normal text-slate-500">
                   ({selectedOrder.orderNumber})
@@ -587,8 +587,8 @@ const Orders = () => {
             </DialogTitle>
             <DialogDescription>
               {isEditMode 
-                ? "Update the order information below."
-                : "View the complete details of this order."}
+                ? t('orders.updateOrderInfo')
+                : t('orders.viewOrderDetails')}
             </DialogDescription>
           </DialogHeader>
 
@@ -599,30 +599,30 @@ const Orders = () => {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <h3 className="text-sm font-medium text-slate-500">Customer</h3>
+                      <h3 className="text-sm font-medium text-slate-500">{t('orders.details.customer')}</h3>
                       <p className="text-lg font-medium">{orderDetails.customerName}</p>
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium text-slate-500">Order Date</h3>
+                      <h3 className="text-sm font-medium text-slate-500">{t('orders.details.orderDate')}</h3>
                       <p className="text-lg font-medium">
                         {format(new Date(orderDetails.orderDate), "MMMM d, yyyy")}
                       </p>
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium text-slate-500">Status</h3>
+                      <h3 className="text-sm font-medium text-slate-500">{t('orders.details.status')}</h3>
                       <div className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-medium ${getStatusBadgeClass(orderDetails.status)}`}>
-                        {orderDetails.status.charAt(0).toUpperCase() + orderDetails.status.slice(1)}
+                        {t(`orders.status.${orderDetails.status}`)}
                       </div>
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium text-slate-500">Total Items</h3>
+                      <h3 className="text-sm font-medium text-slate-500">{t('orders.details.totalItems')}</h3>
                       <p className="text-lg font-medium">{orderDetails.items?.length || 0}</p>
                     </div>
                   </div>
 
                   {orderDetails.notes && (
                     <div>
-                      <h3 className="text-sm font-medium text-slate-500">Notes</h3>
+                      <h3 className="text-sm font-medium text-slate-500">{t('orders.details.notes')}</h3>
                       <p className="text-slate-700 bg-slate-50 p-2 rounded border border-slate-200">
                         {orderDetails.notes}
                       </p>
@@ -630,22 +630,22 @@ const Orders = () => {
                   )}
 
                   <div>
-                    <h3 className="text-sm font-medium text-slate-500 mb-2">Order Items</h3>
+                    <h3 className="text-sm font-medium text-slate-500 mb-2">{t('orders.details.orderItems')}</h3>
                     <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Product</TableHead>
-                            <TableHead>SKU</TableHead>
-                            <TableHead>Quantity</TableHead>
-                            <TableHead>Location</TableHead>
+                            <TableHead>{t('orders.details.product')}</TableHead>
+                            <TableHead>{t('orders.details.sku')}</TableHead>
+                            <TableHead>{t('orders.details.quantity')}</TableHead>
+                            <TableHead>{t('orders.details.location')}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {isOrderDetailsLoading ? (
                             <TableRow>
                               <TableCell colSpan={4} className="text-center py-4">
-                                Loading order items...
+                                {t('orders.loadingOrderItems')}
                               </TableCell>
                             </TableRow>
                           ) : orderDetails.items && orderDetails.items.length > 0 ? (
@@ -684,7 +684,7 @@ const Orders = () => {
 
                   {/* Order Changelog Section */}
                   <div className="mt-8">
-                    <h3 className="text-sm font-medium text-slate-500 mb-2">Order Change History</h3>
+                    <h3 className="text-sm font-medium text-slate-500 mb-2">{t('orders.details.changeHistory')}</h3>
                     {selectedOrder && (
                       <OrderChangelog orderId={selectedOrder.id} />
                     )}
