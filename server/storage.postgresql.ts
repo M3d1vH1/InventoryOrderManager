@@ -128,28 +128,20 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
-    // We need to handle the category field separately since our schema doesn't define it
-    // but the database has a NOT NULL constraint on it as an ENUM type
+    // Since the category system has been removed from the UI, we always set a default categoryId
+    // but the database still has a NOT NULL constraint on it
     
     try {
-      console.log('Attempting to create product with data:', JSON.stringify(insertProduct, null, 2));
+      // Always set default categoryId of 1 (for 'widgets')
+      const productWithCategory = {
+        ...insertProduct,
+        categoryId: 1 // Set default categoryId to 1
+      };
       
-      // The issue might be related to the initial insert failing because of the missing category field
-      // Let's modify our approach to insert both fields at once using raw SQL
-      let categoryEnumValue = 'other'; // Default fallback
+      console.log('Attempting to create product with data:', JSON.stringify(productWithCategory, null, 2));
       
-      // Map categoryId to a valid enum value if possible
-      if (insertProduct.categoryId) {
-        console.log(`Mapping categoryId ${insertProduct.categoryId} to enum value`);
-        switch(insertProduct.categoryId) {
-          case 1: categoryEnumValue = 'widgets'; break;
-          case 2: categoryEnumValue = 'connectors'; break;
-          case 3: categoryEnumValue = 'brackets'; break;
-          case 4: categoryEnumValue = 'mounts'; break;
-          case 5: // Any new category will default to 'other'
-          default: categoryEnumValue = 'other'; break;
-        }
-      }
+      // Map categoryId to a valid enum value for backward compatibility
+      let categoryEnumValue = 'widgets'; // Default value for categoryId 1
       
       console.log(`Using category enum value: ${categoryEnumValue}`);
       
@@ -169,17 +161,17 @@ export class DatabaseStorage implements IStorage {
           units_per_box, 
           image_path
         ) VALUES (
-          ${insertProduct.name}, 
-          ${insertProduct.sku}, 
-          ${insertProduct.categoryId}, 
+          ${productWithCategory.name}, 
+          ${productWithCategory.sku}, 
+          ${productWithCategory.categoryId}, 
           ${categoryEnumValue}::category,
-          ${insertProduct.minStockLevel}, 
-          ${insertProduct.currentStock}, 
-          ${insertProduct.description || null}, 
-          ${insertProduct.barcode || null}, 
-          ${insertProduct.location || null}, 
-          ${insertProduct.unitsPerBox || null}, 
-          ${insertProduct.imagePath || null}
+          ${productWithCategory.minStockLevel}, 
+          ${productWithCategory.currentStock}, 
+          ${productWithCategory.description || null}, 
+          ${productWithCategory.barcode || null}, 
+          ${productWithCategory.location || null}, 
+          ${productWithCategory.unitsPerBox || null}, 
+          ${productWithCategory.imagePath || null}
         )
         RETURNING *
       `);
