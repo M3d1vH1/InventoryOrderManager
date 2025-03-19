@@ -69,6 +69,7 @@ export const products = pgTable("products", {
   location: text("location"),
   unitsPerBox: integer("units_per_box"),
   imagePath: text("image_path"),
+  tags: text("tags").array(),
 });
 
 export const insertProductSchema = createInsertSchema(products)
@@ -81,6 +82,7 @@ export const insertProductSchema = createInsertSchema(products)
     barcode: z.string().optional(),
     location: z.string().optional(),
     unitsPerBox: z.number().optional(),
+    tags: z.array(z.string()).optional().default([]),
   });
 
 export type InsertProduct = z.infer<typeof insertProductSchema>;
