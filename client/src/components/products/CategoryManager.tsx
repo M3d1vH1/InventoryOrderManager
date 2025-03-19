@@ -100,9 +100,13 @@ const CategoryManager = () => {
   // Mutation for creating a category
   const createMutation = useMutation({
     mutationFn: async (values: CategoryFormValues) => {
+      console.log('Creating category with data:', values);
       return apiRequest<Category>('/api/categories', {
         method: 'POST',
         body: JSON.stringify(values),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
     },
     onSuccess: () => {
@@ -115,9 +119,10 @@ const CategoryManager = () => {
       });
     },
     onError: (error) => {
+      console.error('Category creation error:', error);
       toast({
         title: t('categories.error'),
-        description: error.message,
+        description: error.message || "Failed to create category",
         variant: 'destructive',
       });
     }
@@ -126,9 +131,13 @@ const CategoryManager = () => {
   // Mutation for updating a category
   const updateMutation = useMutation({
     mutationFn: async ({ id, values }: { id: number; values: CategoryFormValues }) => {
+      console.log('Updating category with data:', values);
       return apiRequest<Category>(`/api/categories/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(values),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
     },
     onSuccess: () => {
@@ -142,9 +151,10 @@ const CategoryManager = () => {
       });
     },
     onError: (error) => {
+      console.error('Category update error:', error);
       toast({
         title: t('categories.error'),
-        description: error.message,
+        description: error.message || "Failed to update category",
         variant: 'destructive',
       });
     }
