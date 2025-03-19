@@ -500,14 +500,14 @@ const Orders = () => {
                         <button 
                           onClick={() => handleViewOrder(order)}
                           className="text-slate-600 hover:text-primary p-1 rounded-full hover:bg-slate-100" 
-                          title="View Order Details"
+                          title={t('orders.actions.view')}
                         >
                           <Eye className="h-4 w-4" />
                         </button>
                         <button 
                           onClick={() => handleEditOrder(order)}
                           className="text-slate-600 hover:text-primary p-1 rounded-full hover:bg-slate-100" 
-                          title="Edit Order"
+                          title={t('orders.actions.edit')}
                         >
                           <Edit className="h-4 w-4" />
                         </button>
@@ -515,7 +515,7 @@ const Orders = () => {
                           <button
                             onClick={() => handleGoToPickList(order.id)}
                             className="text-slate-600 hover:text-green-600 p-1 rounded-full hover:bg-slate-100" 
-                            title="Pick Order"
+                            title={t('orders.actions.pickOrder')}
                           >
                             <ClipboardCheck className="h-4 w-4" />
                           </button>
@@ -525,7 +525,7 @@ const Orders = () => {
                         <button
                           onClick={() => handleOpenDocumentUpload(order)}
                           className="text-slate-600 hover:text-blue-600 p-1 rounded-full hover:bg-slate-100" 
-                          title="Upload Document"
+                          title={t('orders.actions.uploadDocument')}
                         >
                           <FileInput className="h-4 w-4" />
                         </button>
@@ -535,7 +535,7 @@ const Orders = () => {
                           <button
                             onClick={() => handleViewDocument(order.id)}
                             className="text-slate-600 hover:text-blue-600 p-1 rounded-full hover:bg-slate-100" 
-                            title="View Document"
+                            title={t('orders.actions.viewDocument')}
                           >
                             <FileText className="h-4 w-4" />
                           </button>
