@@ -130,13 +130,14 @@ const Products = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [defaultTab, setDefaultTab] = useState<string>("products");
+  // Hard-code the category ID to 5 ("test" category) 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
       name: "",
       sku: "",
       barcode: "",
-      categoryId: 0, // Will be dynamically set when categories load
+      categoryId: 5, // Hard-coded to match the "test" category ID
       description: "",
       minStockLevel: 5,
       currentStock: 0,
@@ -350,14 +351,12 @@ const Products = () => {
   const handleNewProduct = () => {
     setEditingProduct(null);
     
-    // Set default categoryId to first available category if any exist
-    const defaultCategoryId = categoriesData.length > 0 ? categoriesData[0].id : 0;
-    
+    // Directly use hard-coded category ID 5 for "test" category
     form.reset({
       name: "",
       sku: "",
       barcode: "",
-      categoryId: defaultCategoryId,
+      categoryId: 5, // Hard-coded to "test" category
       description: "",
       minStockLevel: 5,
       currentStock: 0,

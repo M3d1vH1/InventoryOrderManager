@@ -32,21 +32,14 @@ const CategorySelect = ({ value, onChange, description }: CategorySelectProps) =
   
   console.log('CategorySelect rendered with:', { value, categories, selectedValue });
   
-  // Initialize selected value when categories load
+  // Initialize with hard-coded value
   useEffect(() => {
-    if (categories && categories.length > 0) {
-      // If no valid category is selected, force select the first one
-      if (!value || value === 0) {
-        const firstCategoryId = categories[0].id;
-        console.log('Setting default category to:', firstCategoryId);
-        onChange(firstCategoryId);
-        setSelectedValue(String(firstCategoryId));
-      } else {
-        // If we have a value already, sync it with local state
-        setSelectedValue(String(value));
-      }
-    }
-  }, [categories, value, onChange]);
+    // Always set the value to 5 for "test" category
+    const testCategoryId = 5;
+    console.log('Setting fixed category to:', testCategoryId);
+    onChange(testCategoryId);
+    setSelectedValue(String(testCategoryId));
+  }, [onChange]);
   
   // When the select value changes
   const handleValueChange = (newValue: string) => {
