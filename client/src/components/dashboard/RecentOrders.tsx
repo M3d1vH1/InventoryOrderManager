@@ -103,12 +103,12 @@ const RecentOrders = () => {
         <table className="min-w-full">
           <thead className="bg-slate-50 text-slate-500 text-sm">
             <tr>
-              <th className="py-3 px-4 text-left font-medium">{t('orders.orderId')}</th>
-              <th className="py-3 px-4 text-left font-medium">{t('orders.customer')}</th>
-              <th className="py-3 px-4 text-left font-medium">{t('orders.date')}</th>
-              <th className="py-3 px-4 text-left font-medium">{t('orders.status')}</th>
-              <th className="py-3 px-4 text-left font-medium">{t('orders.items')}</th>
-              <th className="py-3 px-4 text-left font-medium">{t('common.actions')}</th>
+              <th className="py-3 px-4 text-left font-medium">{t('orders.columns.orderId')}</th>
+              <th className="py-3 px-4 text-left font-medium">{t('orders.columns.customer')}</th>
+              <th className="py-3 px-4 text-left font-medium">{t('orders.columns.date')}</th>
+              <th className="py-3 px-4 text-left font-medium">{t('orders.columns.status')}</th>
+              <th className="py-3 px-4 text-left font-medium">{t('orders.columns.items')}</th>
+              <th className="py-3 px-4 text-left font-medium">{t('orders.columns.actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
