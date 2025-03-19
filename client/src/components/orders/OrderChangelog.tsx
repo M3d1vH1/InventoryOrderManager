@@ -20,17 +20,20 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+interface User {
+  id: number;
+  username: string;
+  fullName: string;
+}
+
 interface ChangelogItem {
   id: number;
   orderId: number;
   userId: number;
-  username: string;
+  user?: User;
   action: 'create' | 'update' | 'status_change';
   timestamp: string;
-  details: string;
-  previousStatus?: string;
-  newStatus?: string;
-  changedFields?: string[];
+  changes: Record<string, any>;
   previousValues?: Record<string, any>;
   notes?: string;
 }
@@ -50,7 +53,10 @@ export function OrderChangelog({ orderId }: OrderChangelogProps) {
     },
   });
 
-  const getActionIcon = (action: string, newStatus?: string) => {
+  const getActionIcon = (item: ChangelogItem) => {
+    const action = item.action;
+    const newStatus = item.changes?.status;
+    
     switch (action) {
       case 'create':
         return <Plus className="h-4 w-4 text-green-500" />;
@@ -73,15 +79,18 @@ export function OrderChangelog({ orderId }: OrderChangelogProps) {
     }
     
     if (item.action === 'update') {
-      if (item.changedFields && item.changedFields.includes('documentPath')) {
+      if (item.changes && 'documentPath' in item.changes) {
         return 'Document uploaded';
       }
-      return `Order updated (${item.changedFields?.join(', ')})`;
+      const changedFields = item.changes ? Object.keys(item.changes) : [];
+      return `Order updated (${changedFields.join(', ')})`;
     }
     
     if (item.action === 'status_change') {
       let statusText = '';
-      switch (item.newStatus) {
+      const newStatus = item.changes?.status;
+      
+      switch (newStatus) {
         case 'pending':
           statusText = 'marked as Pending';
           break;
@@ -95,7 +104,7 @@ export function OrderChangelog({ orderId }: OrderChangelogProps) {
           statusText = 'Cancelled';
           break;
         default:
-          statusText = `status changed to ${item.newStatus}`;
+          statusText = `status changed to ${newStatus || 'unknown'}`;
       }
       return `Order ${statusText}`;
     }
@@ -105,8 +114,8 @@ export function OrderChangelog({ orderId }: OrderChangelogProps) {
 
   const renderChanges = (item: ChangelogItem) => {
     if (item.action === 'status_change') {
-      const prevStatus = item.previousStatus || '';
-      const newStatus = item.newStatus || '';
+      const prevStatus = item.previousValues?.status || '';
+      const newStatus = item.changes?.status || '';
       
       const formatStatus = (status: string) => {
         if (!status) return 'None';
@@ -127,24 +136,26 @@ export function OrderChangelog({ orderId }: OrderChangelogProps) {
       );
     }
     
-    if (item.action === 'update' && item.changedFields && item.previousValues) {
+    if (item.action === 'update' && item.changes && item.previousValues) {
+      const changedFields = Object.keys(item.changes);
+      
       return (
         <div className="text-sm">
-          {item.changedFields.includes('documentPath') ? (
+          {changedFields.includes('documentPath') ? (
             <div className="flex items-center gap-2">
               <FileText className="h-4 w-4 text-blue-500" />
               <span>Document added to order</span>
             </div>
           ) : (
             <div className="space-y-1">
-              {item.changedFields.map(field => (
+              {changedFields.map((field: string) => (
                 <div key={field}>
                   <span className="font-medium">{formatFieldName(field)}: </span>
                   <span className="line-through text-slate-500 mr-2">
                     {formatFieldValue(field, item.previousValues?.[field])}
                   </span>
                   <span className="text-slate-900">
-                    {formatFieldValue(field, item.details ? JSON.parse(item.details)[field] : '')}
+                    {formatFieldValue(field, item.changes?.[field])}
                   </span>
                 </div>
               ))}
@@ -265,7 +276,7 @@ export function OrderChangelog({ orderId }: OrderChangelogProps) {
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
-                  {getActionIcon(item.action, item.newStatus)}
+                  {getActionIcon(item)}
                   <span>{getActionText(item)}</span>
                 </div>
               </TableCell>
@@ -274,11 +285,12 @@ export function OrderChangelog({ orderId }: OrderChangelogProps) {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <span className="cursor-help underline decoration-dotted">
-                        {item.username}
+                        {item.user?.fullName || `User ID: ${item.userId}`}
                       </span>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>User ID: {item.userId}</p>
+                      {item.user && <p>Username: {item.user.username}</p>}
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
