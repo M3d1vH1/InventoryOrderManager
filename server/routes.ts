@@ -948,12 +948,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  // Create WebSocket server with ping timeout
+  wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: '/ws',
+    // Adding client tracking - default WebSocketServer doesn't track clients for us
+    clientTracking: true,
+  });
+  
+  // Set up heartbeat detection
+  function heartbeat(this: WebSocket) {
+    // @ts-ignore - Adding a custom property to track client activity
+    this.isAlive = true;
+  }
+  
+  // Periodically check for inactive clients
+  const interval = setInterval(() => {
+    wss.clients.forEach((ws) => {
+      // @ts-ignore - Check custom isAlive property
+      if (ws.isAlive === false) {
+        console.log('[websocket] Terminating inactive client');
+        return ws.terminate();
+      }
+      
+      // @ts-ignore - Mark as inactive until we get a pong response
+      ws.isAlive = false;
+      // Send a ping to check if client is still responsive
+      ws.ping();
+    });
+  }, 30000); // Check every 30 seconds
+  
+  // Cleanup interval on server close
+  wss.on('close', () => {
+    clearInterval(interval);
+  });
   
   wss.on('connection', (ws: WebSocket) => {
     // Add client to the set
     clients.add(ws);
     console.log('[websocket] Client connected. Total clients:', clients.size);
+    
+    // Initialize the connection as alive
+    // @ts-ignore - Custom property to track client activity
+    ws.isAlive = true;
+    
+    // Handle pong responses from client
+    ws.on('pong', heartbeat);
+    
+    // Handle client messages (including ping)
+    ws.on('message', (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        
+        // Handle ping messages from client
+        if (data.type === 'ping') {
+          // Send pong back to client
+          ws.send(JSON.stringify({
+            type: 'pong',
+            timestamp: Date.now()
+          }));
+        }
+      } catch (error) {
+        console.error('[websocket] Error parsing message:', error);
+      }
+    });
     
     // Handle disconnection
     ws.on('close', () => {
@@ -961,10 +1019,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[websocket] Client disconnected. Total clients:', clients.size);
     });
     
+    // Handle connection errors
+    ws.on('error', (error) => {
+      console.error('[websocket] Connection error:', error);
+      // Try to gracefully clean up
+      try {
+        clients.delete(ws);
+      } catch (e) {
+        console.error('[websocket] Error during cleanup:', e);
+      }
+    });
+    
     // Send welcome message
     ws.send(JSON.stringify({
       type: 'connection',
-      message: 'Connected to notification server'
+      message: 'Connected to notification server',
+      timestamp: Date.now()
     }));
   });
   

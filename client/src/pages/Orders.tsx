@@ -216,7 +216,7 @@ const Orders = () => {
         toast({
           title: "Large file detected",
           description: "Uploading large files may take some time. Please wait...",
-          variant: "warning",
+          // Use default variant instead of warning (which isn't a valid variant)
           duration: 5000,
         });
       }
@@ -228,13 +228,12 @@ const Orders = () => {
       if (notes) formData.append('notes', notes);
       
       try {
-        // Set a longer timeout for large files
+        // Make the request for document upload
         const response = await apiRequest({
           url: `/api/orders/${orderId}/documents`,
           method: 'POST',
           body: formData,
           // Don't set Content-Type header, browser will set it with boundary for FormData
-          timeout: 60000, // 60-second timeout for large file uploads
         });
         return response;
       } catch (error: any) {
