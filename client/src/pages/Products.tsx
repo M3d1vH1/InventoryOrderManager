@@ -47,12 +47,13 @@ interface Product {
   imagePath?: string;
 }
 
-// We'll use a simple form schema without category (will use default)
+// Include categoryId in form schema
 const productFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   sku: z.string().min(2, "SKU must be at least 2 characters"),
   barcode: z.string().optional(),
   description: z.string().optional(),
+  categoryId: z.coerce.number().optional(), // Make it optional in the form since we set default in onSubmit
   minStockLevel: z.coerce.number().min(0, "Min stock level must be 0 or greater"),
   currentStock: z.coerce.number().min(0, "Current stock must be 0 or greater"),
   location: z.string().optional(),
@@ -90,6 +91,7 @@ const Products = () => {
       sku: "",
       barcode: "",
       description: "",
+      categoryId: 1, // Default to category ID 1
       minStockLevel: 5,
       currentStock: 0,
       location: "",
@@ -133,6 +135,7 @@ const Products = () => {
         sku: editingProduct.sku,
         barcode: editingProduct.barcode || "",
         description: editingProduct.description || "",
+        categoryId: editingProduct.categoryId,
         minStockLevel: editingProduct.minStockLevel,
         currentStock: editingProduct.currentStock,
         location: editingProduct.location || "",
@@ -277,15 +280,14 @@ const Products = () => {
     try {
       console.log('Form values:', values);
       
-      // Use default category ID 1 for new products
-      // For existing products, keep the original categoryId
-      const categoryId = editingProduct ? editingProduct.categoryId : 1;
+      // Use the categoryId from form values (which is set in defaultValues)
+      // This will work for both new and existing products
       
       // Create API payload with categoryId
       const apiPayload = {
         name: values.name,
         sku: values.sku,
-        categoryId,
+        categoryId: values.categoryId || 1, // Use form value, fallback to 1 if not set
         minStockLevel: values.minStockLevel,
         currentStock: values.currentStock,
         
@@ -388,6 +390,7 @@ const Products = () => {
       sku: "",
       barcode: "",
       description: "",
+      categoryId: 1, // Set default category ID
       minStockLevel: 5,
       currentStock: 0,
       location: "",
