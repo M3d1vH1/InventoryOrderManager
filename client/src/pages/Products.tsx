@@ -135,7 +135,7 @@ const Products = () => {
       name: "",
       sku: "",
       barcode: "",
-      categoryId: 0, // Will be updated after categories load
+      categoryId: 0, // Will be dynamically set when categories load
       description: "",
       minStockLevel: 5,
       currentStock: 0,
@@ -159,10 +159,16 @@ const Products = () => {
     staleTime: 1000, // Refresh categories every second to ensure we have the latest
   });
   
-  // Debug categories data
+  // Debug categories data and set default category
   useEffect(() => {
     console.log('Categories data loaded:', categoriesData);
-  }, [categoriesData]);
+    
+    // Set the default category when categories are loaded
+    if (categoriesData && categoriesData.length > 0 && !editingProduct) {
+      console.log('Setting default categoryId in form to:', categoriesData[0].id);
+      form.setValue('categoryId', categoriesData[0].id);
+    }
+  }, [categoriesData, form, editingProduct]);
   
   // Transform category objects to an array of names for backward compatibility
   const categories = React.useMemo(() => {
