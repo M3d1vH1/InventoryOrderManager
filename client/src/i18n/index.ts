@@ -6,7 +6,6 @@ import el from './translations/el.json';
 import en from './translations/en.json';
 
 i18n
-  .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources: {
@@ -17,12 +16,12 @@ i18n
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false
+    },
+    react: {
+      useSuspense: true
     }
-  })
-  .then(() => {
-    // Force Greek language after initialization
-    i18n.changeLanguage('el');
-    localStorage.setItem('i18nextLng', 'el');
   });
+
+i18n.changeLanguage('el');
 
 export default i18n;
