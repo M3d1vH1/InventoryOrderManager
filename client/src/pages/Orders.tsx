@@ -211,46 +211,82 @@ const Orders = () => {
     }) => {
       setIsUploading(true);
       
+      // Display a warning for large files (over 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Large file detected",
+          description: "Uploading large files may take some time. Please wait...",
+          variant: "warning",
+          duration: 5000,
+        });
+      }
+      
       const formData = new FormData();
       formData.append('document', file);
       formData.append('documentType', documentType);
       formData.append('updateStatus', updateStatus.toString());
       if (notes) formData.append('notes', notes);
       
-      return apiRequest({
-        url: `/api/orders/${orderId}/documents`,
-        method: 'POST',
-        body: formData,
-        // Don't set Content-Type header, browser will set it with boundary for FormData
-      });
+      try {
+        // Set a longer timeout for large files
+        const response = await apiRequest({
+          url: `/api/orders/${orderId}/documents`,
+          method: 'POST',
+          body: formData,
+          // Don't set Content-Type header, browser will set it with boundary for FormData
+          timeout: 60000, // 60-second timeout for large file uploads
+        });
+        return response;
+      } catch (error: any) {
+        // Rethrow to be caught by onError
+        throw new Error(error.message || 'Upload failed. Please try again.');
+      }
     },
     onSuccess: (data, variables) => {
       setIsUploading(false);
       setShowUploadDialog(false);
       setDocumentFile(null);
+      setDocumentNotes('');
+      
+      // Reset the document type to default after successful upload
+      setDocumentType('T△A document');
       
       // Only update the status if the user checked the option
       if (variables.updateStatus) {
         toast({
           title: "Document uploaded",
-          description: "The TΔA document has been attached and order is being shipped.",
+          description: `The ${variables.documentType} has been attached and order is being shipped.`,
         });
       } else {
         toast({
           title: "Document uploaded",
-          description: "The TΔA document has been attached to the order.",
+          description: `The ${variables.documentType} has been attached to the order.`,
         });
-        
-        // Make sure to refresh order data to show document is attached
-        queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       }
+      
+      // Always refresh order data to show document is attached
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      
+      // We don't need to play notification sound here as it will come via WebSocket
     },
-    onError: (error) => {
+    onError: (error: any) => {
       setIsUploading(false);
+      
+      // More user-friendly error messages
+      let errorMessage = error?.message || "An unknown error occurred";
+      
+      // Handle specific error types
+      if (errorMessage.includes('Network Error') || errorMessage.includes('timeout')) {
+        errorMessage = "Network issue or timeout. The file may be too large or your connection is unstable.";
+      } else if (errorMessage.includes('413') || errorMessage.includes('Payload Too Large')) {
+        errorMessage = "The file is too large. Please reduce the file size and try again.";
+      }
+      
       toast({
         title: "Upload failed",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
+        duration: 7000, // Show error longer
       });
     }
   });

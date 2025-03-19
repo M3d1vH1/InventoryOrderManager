@@ -107,136 +107,193 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   
   // Setup WebSocket connection for real-time notifications
   useEffect(() => {
-    // Create WebSocket connection
-    const socketProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const socket = new WebSocket(`${socketProtocol}//${window.location.host}/ws`);
+    let socket: WebSocket | null = null;
+    let reconnectTimeout: number | null = null;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
+    const reconnectDelay = 2000; // Base delay of 2 seconds
     
-    // Connection opened
-    socket.addEventListener('open', (event) => {
-      console.log('WebSocket connected');
-    });
-    
-    // Listen for messages
-    socket.addEventListener('message', (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        
-        // Handle different types of notifications
-        if (data.type === 'notification' && data.notification) {
-          // Handle direct notification messages (typically from test notifications)
-          const notification = data.notification;
-          
-          // Ensure timestamp is a Date object
-          if (typeof notification.timestamp === 'string') {
-            notification.timestamp = new Date(notification.timestamp);
-          }
-          
-          // Add notification
-          setNotifications(prev => [notification, ...prev]);
-          
-          // Show toast
-          toast({
-            title: notification.title,
-            description: notification.message,
-            variant: notification.type === 'error' ? 'destructive' : 'default',
-          });
-          
-          // Play notification sound if type is specified
-          if (notification.type === 'success' || notification.type === 'warning' || notification.type === 'error') {
-            playNotificationSound(notification.type);
-          }
-        } else if (data.type === 'documentUploaded') {
-          // Handle document upload notifications
-          const id = `document-${data.orderId}-${Date.now()}`;
-          
-          // Create notification for document upload
-          const newNotification: Notification = {
-            id,
-            title: 'Document Uploaded',
-            message: `A ${data.documentType} has been uploaded for order ${data.orderNumber}`,
-            type: 'info',
-            timestamp: new Date(),
-            read: false,
-            orderId: data.orderId,
-            orderNumber: data.orderNumber
-          };
-          
-          // Add notification
-          setNotifications(prev => [newNotification, ...prev]);
-          
-          // Show toast
-          toast({
-            title: newNotification.title,
-            description: newNotification.message,
-          });
-          
-          // Play notification sound
-          playNotificationSound('success');
-        } else if (data.type === 'orderStatusChange') {
-          // Generate unique ID
-          const id = `order-${data.orderId}-${Date.now()}`;
-          
-          // Determine notification type based on status change
-          let notificationType: 'info' | 'success' | 'warning' | 'error' = 'info';
-          let soundType: 'success' | 'warning' | 'error' = 'success';
-          
-          if (data.newStatus === 'shipped') {
-            notificationType = 'success';
-            soundType = 'success';
-          } else if (data.newStatus === 'cancelled') {
-            notificationType = 'error';
-            soundType = 'error';
-          } else if (data.newStatus === 'picked') {
-            notificationType = 'info';
-            soundType = 'success';
-          } else if (data.newStatus === 'pending' && data.previousStatus === 'picked') {
-            notificationType = 'warning';
-            soundType = 'warning';
-          }
-          
-          // Create notification
-          const newNotification: Notification = {
-            id,
-            title: 'Order Status Updated',
-            message: `Order ${data.orderNumber} changed to ${data.newStatus}`,
-            type: notificationType,
-            timestamp: new Date(),
-            read: false,
-            orderId: data.orderId,
-            orderNumber: data.orderNumber
-          };
-          
-          // Add notification
-          setNotifications(prev => [newNotification, ...prev]);
-          
-          // Show toast
-          toast({
-            title: newNotification.title,
-            description: newNotification.message,
-            variant: notificationType === 'error' ? 'destructive' : 'default',
-          });
-          
-          // Play notification sound
-          playNotificationSound(soundType);
-        }
-      } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
+    // Function to create and set up a WebSocket connection
+    const setupWebSocket = () => {
+      // Clear any existing reconnect timeouts
+      if (reconnectTimeout) {
+        window.clearTimeout(reconnectTimeout);
+        reconnectTimeout = null;
       }
-    });
+      
+      // Create WebSocket connection
+      const socketProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      socket = new WebSocket(`${socketProtocol}//${window.location.host}/ws`);
+      
+      // Connection opened
+      socket.addEventListener('open', (event) => {
+        console.log('WebSocket connected');
+        // Reset reconnect attempts on successful connection
+        reconnectAttempts = 0;
+      });
+      
+      // Listen for messages
+      socket.addEventListener('message', (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          
+          // Handle different types of notifications
+          if (data.type === 'notification' && data.notification) {
+            // Handle direct notification messages (typically from test notifications)
+            const notification = data.notification;
+            
+            // Ensure timestamp is a Date object
+            if (typeof notification.timestamp === 'string') {
+              notification.timestamp = new Date(notification.timestamp);
+            }
+            
+            // Add notification
+            setNotifications(prev => [notification, ...prev]);
+            
+            // Show toast
+            toast({
+              title: notification.title,
+              description: notification.message,
+              variant: notification.type === 'error' ? 'destructive' : 'default',
+            });
+            
+            // Play notification sound if type is specified
+            if (notification.type === 'success' || notification.type === 'warning' || notification.type === 'error') {
+              playNotificationSound(notification.type);
+            }
+          } else if (data.type === 'documentUploaded') {
+            // Handle document upload notifications
+            const id = `document-${data.orderId}-${Date.now()}`;
+            
+            // Create notification for document upload
+            const newNotification: Notification = {
+              id,
+              title: 'Document Uploaded',
+              message: `A ${data.documentType} has been uploaded for order ${data.orderNumber}`,
+              type: 'info',
+              timestamp: new Date(),
+              read: false,
+              orderId: data.orderId,
+              orderNumber: data.orderNumber
+            };
+            
+            // Add notification
+            setNotifications(prev => [newNotification, ...prev]);
+            
+            // Show toast
+            toast({
+              title: newNotification.title,
+              description: newNotification.message,
+            });
+            
+            // Play notification sound
+            playNotificationSound('success');
+          } else if (data.type === 'orderStatusChange') {
+            // Generate unique ID
+            const id = `order-${data.orderId}-${Date.now()}`;
+            
+            // Determine notification type based on status change
+            let notificationType: 'info' | 'success' | 'warning' | 'error' = 'info';
+            let soundType: 'success' | 'warning' | 'error' = 'success';
+            
+            if (data.newStatus === 'shipped') {
+              notificationType = 'success';
+              soundType = 'success';
+            } else if (data.newStatus === 'cancelled') {
+              notificationType = 'error';
+              soundType = 'error';
+            } else if (data.newStatus === 'picked') {
+              notificationType = 'info';
+              soundType = 'success';
+            } else if (data.newStatus === 'pending' && data.previousStatus === 'picked') {
+              notificationType = 'warning';
+              soundType = 'warning';
+            }
+            
+            // Create notification
+            const newNotification: Notification = {
+              id,
+              title: 'Order Status Updated',
+              message: `Order ${data.orderNumber} changed to ${data.newStatus}`,
+              type: notificationType,
+              timestamp: new Date(),
+              read: false,
+              orderId: data.orderId,
+              orderNumber: data.orderNumber
+            };
+            
+            // Add notification
+            setNotifications(prev => [newNotification, ...prev]);
+            
+            // Show toast
+            toast({
+              title: newNotification.title,
+              description: newNotification.message,
+              variant: notificationType === 'error' ? 'destructive' : 'default',
+            });
+            
+            // Play notification sound
+            playNotificationSound(soundType);
+          }
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      });
+      
+      // Connection closed - attempt to reconnect
+      socket.addEventListener('close', (event) => {
+        console.log('WebSocket disconnected');
+        
+        // Only attempt to reconnect if we haven't reached the maximum attempts
+        if (reconnectAttempts < maxReconnectAttempts) {
+          // Exponential backoff - increase delay with each attempt
+          const delay = reconnectDelay * Math.pow(1.5, reconnectAttempts);
+          console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+          
+          reconnectTimeout = window.setTimeout(() => {
+            reconnectAttempts++;
+            setupWebSocket();
+          }, delay);
+        } else {
+          console.log('Maximum reconnect attempts reached, not reconnecting WebSocket');
+        }
+      });
+      
+      // Connection error
+      socket.addEventListener('error', (event) => {
+        console.error('WebSocket error:', event);
+      });
+    };
     
-    // Connection closed
-    socket.addEventListener('close', (event) => {
-      console.log('WebSocket disconnected');
-    });
+    // Create the initial WebSocket connection
+    setupWebSocket();
     
-    // Connection error
-    socket.addEventListener('error', (event) => {
-      console.error('WebSocket error:', event);
-    });
+    // Check if the document is visible to handle page tab visibility changes
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // If the page becomes visible and the socket is closed, reconnect
+        if (socket && (socket.readyState === WebSocket.CLOSED || socket.readyState === WebSocket.CLOSING)) {
+          console.log('Page visible, reconnecting WebSocket');
+          reconnectAttempts = 0; // Reset reconnect attempts
+          setupWebSocket();
+        }
+      }
+    };
+    
+    // Listen for visibility changes to reconnect if needed
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     
     // Cleanup on unmount
     return () => {
-      socket.close();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      
+      if (reconnectTimeout) {
+        window.clearTimeout(reconnectTimeout);
+      }
+      
+      if (socket) {
+        socket.close();
+      }
     };
   }, [toast]);
   
