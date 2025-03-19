@@ -819,21 +819,18 @@ const Products = () => {
                         </FormItem>
                       )}
                     />
+                    {/* Additional barcode or scanning options could go here */}
                     <div className="flex items-center justify-center">
                       <div className="text-center">
                         <p className="text-sm text-slate-500">
-                          Products will be assigned to the default category
+                          {t('products.scanBarcode')}
                         </p>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
+                        <BarcodeGenerator
+                          value={form.getValues("barcode") || form.getValues("sku")}
+                          buttonVariant="ghost"
+                          buttonSize="sm"
                           className="mt-2"
-                          onClick={() => document.querySelector('[data-value="categories"]')?.click()}
-                        >
-                          <i className="fas fa-tags mr-1"></i>
-                          Manage Categories
-                        </Button>
+                        />
                       </div>
                     </div>
                   </div>
