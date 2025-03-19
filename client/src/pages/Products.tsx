@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { ArrowDown, ArrowUp, Box, ChevronDown, ClipboardList, Download, Edit, ImageIcon, Loader2, MapPin, PackageCheck, PlusCircle, QrCode, Search, SlidersHorizontal, Trash2, Upload, X } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from 'react-i18next';
 import { 
@@ -122,7 +123,7 @@ const Products = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [stockFilter, setStockFilter] = useState<string>("all");
   const [sortField, setSortField] = useState<string>("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -506,19 +507,22 @@ const Products = () => {
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-full md:w-48">
-                  <SelectValue placeholder={t('products.allCategories')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('products.allCategories')}</SelectItem>
-                  {categories.map((category: string) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="relative w-full md:w-48">
+                <Input
+                  placeholder={t('products.enterCategoryFilter')}
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="w-full"
+                />
+                {categoryFilter && categoryFilter !== 'all' && (
+                  <button
+                    onClick={() => setCategoryFilter('all')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
               <Select value={stockFilter} onValueChange={setStockFilter}>
                 <SelectTrigger className="w-full md:w-48">
                   <SelectValue placeholder={t('products.allStockStatus')} />
