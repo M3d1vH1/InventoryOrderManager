@@ -13,19 +13,18 @@ i18n
       en: { translation: en },
       el: { translation: el }
     },
-    lng: 'el', // Set default language to Greek
     fallbackLng: 'en',
-    interpolation: {
-      escapeValue: false
-    },
+    debug: true,
     detection: {
-      order: ['localStorage', 'navigator'],
-      caches: ['localStorage']
+      order: ['querystring', 'cookie', 'localStorage', 'sessionStorage', 'navigator'],
+      lookupQuerystring: 'lng',
+      lookupCookie: 'i18next',
+      lookupLocalStorage: 'i18nextLng',
+      caches: ['localStorage', 'cookie']
     }
+  }).then(() => {
+    i18n.changeLanguage('el');
+    localStorage.setItem('i18nextLng', 'el');
   });
-
-// Force set language and store in localStorage
-localStorage.setItem('i18nextLng', 'el');
-i18n.changeLanguage('el').catch(console.error);
 
 export default i18n;
