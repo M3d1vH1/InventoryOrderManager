@@ -1,94 +1,44 @@
-import React, { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTranslation } from 'react-i18next';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription,
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import React, { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@lib/queryClient";
 import { useForm } from "react-hook-form";
-import { apiRequest } from "@/lib/queryClient";
-import { useSidebar } from "@/context/SidebarContext";
-import { useAuth } from "@/context/AuthContext"; // Import useAuth hook
-import { exportData } from "@/lib/utils";
-import { Link } from "wouter";
-import JsBarcode from "jsbarcode";
-import BarcodeScanner from "@/components/barcode/BarcodeScanner";
-import BarcodeGenerator from "@/components/barcode/BarcodeGenerator";
-import CategoryManager from "@/components/products/CategoryManager";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useTranslation } from "react-i18next";
+import { useSidebar } from "@context/SidebarContext";
+import { useAuth } from "@context/AuthContext";
+import { useToast } from "@hooks/use-toast";
+import { exportData } from "@lib/utils";
+import { 
+  Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage 
+} from "@components/ui/form";
+import { Input } from "@components/ui/input";
+import { Button } from "@components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/ui/tabs";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@components/ui/dialog";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select";
+import { 
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, 
+  DropdownMenuSeparator, DropdownMenuTrigger 
+} from "@components/ui/dropdown-menu";
+import { Textarea } from "@components/ui/textarea";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from "@/components/ui/tabs";
-import {
-  ArrowDown,
-  ArrowUp,
-  Box,
-  ChevronDown,
-  ClipboardList,
-  Download,
-  Edit,
-  Filter,
-  ImageIcon,
-  Loader2,
-  MapPin,
-  MoreHorizontal,
-  PackageCheck,
-  PackagePlus,
-  PlusCircle,
-  QrCode,
-  Search,
-  SlidersHorizontal,
-  Trash2,
-  Upload,
-  X
+  ArrowDown, ArrowUp, Box, ChevronDown, ClipboardList, Download, Edit, 
+  Loader2, PackageCheck, PlusCircle, QrCode, Search, SlidersHorizontal, Trash2, X
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { CategoryManager } from "@components/products/CategoryManager";
+import { BarcodeScanner } from "@components/barcode/BarcodeScanner";
+import { BarcodeGenerator } from "@components/barcode/BarcodeGenerator";
 
-
+// Interface for a Product
 interface Product {
   id: number;
   name: string;
   sku: string;
   barcode?: string;
   categoryId: number;
-  category?: string; // For backward compatibility during transition
+  category?: string;
   description?: string;
   minStockLevel: number;
   currentStock: number;
@@ -97,31 +47,17 @@ interface Product {
   imagePath?: string;
 }
 
-// Form schema for the UI input
+// We'll use a simple form schema that includes categoryName instead of categoryId
 const productFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   sku: z.string().min(2, "SKU must be at least 2 characters"),
   barcode: z.string().optional(),
-  category: z.string().min(1, "Category is required"),
+  categoryName: z.string().min(1, "Category is required"),
   description: z.string().optional(),
   minStockLevel: z.coerce.number().min(0, "Min stock level must be 0 or greater"),
   currentStock: z.coerce.number().min(0, "Current stock must be 0 or greater"),
   location: z.string().optional(),
   unitsPerBox: z.coerce.number().min(1, "Units per box must be at least 1").optional(),
-  imagePath: z.string().optional(),
-});
-
-// API submission schema that includes categoryId instead of category string
-const productApiSchema = z.object({
-  name: z.string().min(2),
-  sku: z.string().min(2),
-  barcode: z.string().optional(),
-  categoryId: z.number(),
-  description: z.string().optional(),
-  minStockLevel: z.number().min(0),
-  currentStock: z.number().min(0),
-  location: z.string().optional(),
-  unitsPerBox: z.number().min(1).optional(),
   imagePath: z.string().optional(),
 });
 
@@ -132,7 +68,9 @@ const Products = () => {
   const { setCurrentPage } = useSidebar();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { user, isAuthenticated } = useAuth(); // Use auth context
+  const { user } = useAuth();
+  
+  // UI state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -144,15 +82,15 @@ const Products = () => {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [defaultTab, setDefaultTab] = useState<string>("products");
-  // Hard-code the category ID to 5 ("test" category) 
+  
+  // Set up the form with default values
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
       name: "",
       sku: "",
       barcode: "",
-      category: "test", // Default category name
+      categoryName: "",
       description: "",
       minStockLevel: 5,
       currentStock: 0,
@@ -161,50 +99,49 @@ const Products = () => {
       imagePath: "",
     },
   });
-  const { data: products = [] as Product[], isLoading } = useQuery<Product[]>({
+  
+  // Data fetching
+  const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ['/api/products'],
     staleTime: 15000,
   });
+  
   interface CategoryType {
     id: number;
     name: string;
     description?: string;
   }
-
-  const { data: categoriesData = [] as CategoryType[], isLoading: isLoadingCategories } = useQuery<CategoryType[]>({
+  
+  const { data: categoriesData = [], isLoading: isLoadingCategories } = useQuery<CategoryType[]>({
     queryKey: ['/api/categories'],
-    staleTime: 1000, // Refresh categories every second to ensure we have the latest
+    staleTime: 1000,
   });
   
-  // Debug categories data
+  // Set default category if available
   useEffect(() => {
-    console.log('Categories data loaded:', categoriesData);
-    
-    // Set the default category name when categories are loaded
-    if (categoriesData && categoriesData.length > 0 && !editingProduct) {
-      console.log('Setting default category in form to:', categoriesData[0].name);
-      form.setValue('category', categoriesData[0].name);
+    if (categoriesData.length > 0 && !form.getValues('categoryName') && !editingProduct) {
+      form.setValue('categoryName', categoriesData[0].name);
     }
   }, [categoriesData, form, editingProduct]);
   
-  // Transform category objects to an array of names for backward compatibility
-  const categories = React.useMemo(() => {
-    return categoriesData.map(category => category.name);
-  }, [categoriesData]);
-  const [filteredProducts, setFilteredProducts] = useState(products);
-
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  
+  // Set current sidebar page
   useEffect(() => {
     setCurrentPage("Products");
   }, [setCurrentPage]);
-
+  
+  // Reset form when editing a product
   useEffect(() => {
     if (editingProduct) {
-      // Use the category name directly from the product
+      // Find the category name from categoryId
+      const category = categoriesData.find(cat => cat.id === editingProduct.categoryId);
+      
       form.reset({
         name: editingProduct.name,
         sku: editingProduct.sku,
         barcode: editingProduct.barcode || "",
-        category: editingProduct.category || "test", // Use existing category name
+        categoryName: category?.name || "",
         description: editingProduct.description || "",
         minStockLevel: editingProduct.minStockLevel,
         currentStock: editingProduct.currentStock,
@@ -213,22 +150,26 @@ const Products = () => {
         imagePath: editingProduct.imagePath || "",
       });
     }
-  }, [editingProduct, form]);
-
+  }, [editingProduct, form, categoriesData]);
+  
+  // Filter products based on search, category, and stock status
   useEffect(() => {
     setFilteredProducts(products.filter(product => {
-      // Check search query match
+      // Search query filter
       const searchMatches = 
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (product.barcode && product.barcode.toLowerCase().includes(searchQuery.toLowerCase()));
       
-      // Check category filter match - now using text input
+      // Category text filter - find category name for this product
+      const category = categoriesData.find(cat => cat.id === product.categoryId);
+      const categoryName = category?.name || "";
+      
       const categoryMatches = 
         !categoryFilter || // Empty filter shows all
-        (product.category && product.category.toLowerCase().includes(categoryFilter.toLowerCase()));
+        categoryName.toLowerCase().includes(categoryFilter.toLowerCase());
       
-      // Check stock filter match
+      // Stock status filter
       const stockMatches = 
         stockFilter === "all" ||
         (stockFilter === "in" && product.currentStock > product.minStockLevel) ||
@@ -237,8 +178,9 @@ const Products = () => {
       
       return searchMatches && categoryMatches && stockMatches;
     }));
-  }, [searchQuery, categoryFilter, stockFilter, products]);
-
+  }, [searchQuery, categoryFilter, stockFilter, products, categoriesData]);
+  
+  // Product Creation Mutation
   const createProductMutation = useMutation({
     mutationFn: async (values: any) => {
       return apiRequest({
@@ -264,7 +206,8 @@ const Products = () => {
       });
     }
   });
-
+  
+  // Product Update Mutation
   const updateProductMutation = useMutation({
     mutationFn: async ({ id, values }: { id: number; values: any }) => {
       return apiRequest({
@@ -291,7 +234,8 @@ const Products = () => {
       });
     }
   });
-
+  
+  // Product Deletion Mutation
   const deleteProductMutation = useMutation({
     mutationFn: async (id: number) => {
       return apiRequest({
@@ -314,8 +258,8 @@ const Products = () => {
       });
     }
   });
-
-  // Create a new category via API
+  
+  // Category Creation Mutation
   const createCategoryMutation = useMutation({
     mutationFn: async (categoryName: string) => {
       return apiRequest({
@@ -337,11 +281,14 @@ const Products = () => {
       throw error;
     }
   });
-
+  
+  // Form submission handler
   const onSubmit = async (values: ProductFormValues) => {
     try {
+      console.log('Form values:', values);
+      
       // Get the category name from the form
-      const categoryName = values.category;
+      const categoryName = values.categoryName;
       
       // Find if the category already exists
       let existingCategory = categoriesData.find(
@@ -375,7 +322,7 @@ const Products = () => {
       const apiPayload = {
         name: values.name,
         sku: values.sku,
-        categoryId: categoryId,
+        categoryId, // Use the resolved categoryId
         minStockLevel: values.minStockLevel,
         currentStock: values.currentStock,
         
@@ -388,17 +335,6 @@ const Products = () => {
       };
       
       console.log('Submitting product data:', apiPayload);
-      
-      // Validate with our API schema before submission
-      if (!productApiSchema.safeParse(apiPayload).success) {
-        console.error('API validation failed');
-        toast({
-          title: "Validation Error",
-          description: "The product data is not in the correct format.",
-          variant: "destructive",
-        });
-        return;
-      }
       
       // Submit to the API
       if (editingProduct) {
@@ -418,22 +354,27 @@ const Products = () => {
       });
     }
   };
-
+  
+  // Product editing handler
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
     setIsDialogOpen(true);
   };
-
+  
+  // Product viewing handler
   const handleViewProduct = (product: Product) => {
     setViewingProduct(product);
     setIsDetailsDialogOpen(true);
   };
-
+  
+  // Product deletion handler
   const handleDeleteProduct = (id: number) => {
     if (window.confirm("Are you sure you want to delete this product? This action cannot be undone.")) {
       deleteProductMutation.mutate(id);
     }
   };
+  
+  // Image upload handler
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -445,19 +386,27 @@ const Products = () => {
       reader.readAsDataURL(file);
     }
   };
+  
+  // Data export handler
   const handleExportData = (format: string) => {
-    const productsForExport = products.map((product: Product) => ({
-      Name: product.name,
-      SKU: product.sku,
-      Barcode: product.barcode || "N/A",
-      Category: product.category,
-      "Min Stock": product.minStockLevel,
-      "Current Stock": product.currentStock,
-      Location: product.location || "N/A",
-      "Units/Box": product.unitsPerBox || "N/A",
-    }));
+    const productsForExport = products.map((product: Product) => {
+      // Find category name
+      const category = categoriesData.find(cat => cat.id === product.categoryId);
+      return {
+        Name: product.name,
+        SKU: product.sku,
+        Barcode: product.barcode || "N/A",
+        Category: category?.name || "Unknown",
+        "Min Stock": product.minStockLevel,
+        "Current Stock": product.currentStock,
+        Location: product.location || "N/A",
+        "Units/Box": product.unitsPerBox || "N/A",
+      };
+    });
     exportData(productsForExport, format, "Products_Export");
   };
+  
+  // Barcode scanning handler
   const handleBarcodeScanned = (barcode: string) => {
     form.setValue("barcode", barcode);
     toast({
@@ -465,7 +414,8 @@ const Products = () => {
       description: `Successfully scanned barcode: ${barcode}`,
     });
   };
-
+  
+  // New product handler
   const handleNewProduct = () => {
     setEditingProduct(null);
     
@@ -474,7 +424,7 @@ const Products = () => {
       name: "",
       sku: "",
       barcode: "",
-      category: "test", // Default category name
+      categoryName: categoriesData.length > 0 ? categoriesData[0].name : "",
       description: "",
       minStockLevel: 5,
       currentStock: 0,
@@ -484,13 +434,15 @@ const Products = () => {
     });
     setIsDialogOpen(true);
   };
-
+  
+  // Utility to get stock status CSS class
   const getStockStatusClass = (currentStock: number, minStockLevel: number) => {
     if (currentStock === 0) return "text-red-600";
     if (currentStock <= minStockLevel) return "text-amber-600";
     return "text-green-600";
   };
   
+  // Sorting handler
   const handleSort = (field: string) => {
     if (sortField === field) {
       // Toggle sort direction if clicking the same field
@@ -500,9 +452,6 @@ const Products = () => {
       setSortField(field);
       setSortDirection("asc");
     }
-    
-    // We could also implement actual sorting logic here
-    // For now we'll assume it's handled by the UI based on sortField and sortDirection
   };
 
   return (
@@ -530,7 +479,7 @@ const Products = () => {
               <div className="flex gap-2">
                 {user?.role === 'admin' && (
                   <Button 
-                    onClick={() => setDefaultTab("categories")}
+                    onClick={() => document.querySelector('[data-value="categories"]')?.click()}
                     className="flex items-center gap-1"
                     variant="outline"
                   >
@@ -547,273 +496,262 @@ const Products = () => {
                 </Button>
               </div>
             </div>
-        <div className="p-4 border-b border-slate-200">
-          <div className="flex flex-col md:flex-row gap-4 justify-between">
-            <div className="flex flex-col md:flex-row gap-2 flex-1">
-              <div className="relative w-full md:w-64">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                  <Search className="h-4 w-4 text-slate-400" />
-                </span>
-                <Input
-                  placeholder={t('products.searchPlaceholder')}
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <div className="relative w-full md:w-48">
-                <Input
-                  placeholder="Filter by category..."
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="w-full"
-                />
-                {categoryFilter && (
-                  <button
-                    onClick={() => setCategoryFilter('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-              <Select value={stockFilter} onValueChange={setStockFilter}>
-                <SelectTrigger className="w-full md:w-48">
-                  <SelectValue placeholder={t('products.allStockStatus')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('products.allStockStatus')}</SelectItem>
-                  <SelectItem value="in">{t('products.inStock')}</SelectItem>
-                  <SelectItem value="low">{t('products.lowStock')}</SelectItem>
-                  <SelectItem value="out">{t('products.outOfStock')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col md:flex-row gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+            <div className="p-4 border-b border-slate-200">
+              <div className="flex flex-col md:flex-row gap-4 justify-between">
+                <div className="flex flex-col md:flex-row gap-2 flex-1">
+                  <div className="relative w-full md:w-64">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+                      <Search className="h-4 w-4 text-slate-400" />
+                    </span>
+                    <Input
+                      placeholder={t('products.searchPlaceholder')}
+                      className="pl-10"
+                      value={searchQuery}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <div className="relative w-full md:w-48">
+                    <Input
+                      placeholder="Filter by category..."
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      className="w-full"
+                    />
+                    {categoryFilter && (
+                      <button
+                        onClick={() => setCategoryFilter('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  <Select value={stockFilter} onValueChange={setStockFilter}>
+                    <SelectTrigger className="w-full md:w-48">
+                      <SelectValue placeholder={t('products.allStockStatus')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('products.allStockStatus')}</SelectItem>
+                      <SelectItem value="in">{t('products.inStock')}</SelectItem>
+                      <SelectItem value="low">{t('products.lowStock')}</SelectItem>
+                      <SelectItem value="out">{t('products.outOfStock')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col md:flex-row gap-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="flex items-center gap-1">
+                        <SlidersHorizontal className="h-4 w-4" />
+                        {t('products.actions')}
+                        <ChevronDown className="h-4 w-4 ml-1" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>{t('products.exportOptions')}</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => handleExportData('csv')}>
+                        <Download className="h-4 w-4 mr-2" />
+                        {t('products.exportCSV')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleExportData('excel')}>
+                        <Download className="h-4 w-4 mr-2" />
+                        {t('products.exportExcel')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleExportData('pdf')}>
+                        <Download className="h-4 w-4 mr-2" />
+                        {t('products.exportPDF')}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem>
+                        <PackageCheck className="h-4 w-4 mr-2" />
+                        {t('products.bulkUpdateStock')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <ClipboardList className="h-4 w-4 mr-2" />
+                        {t('products.printInventoryList')}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <Button variant="outline" className="flex items-center gap-1">
-                    <SlidersHorizontal className="h-4 w-4" />
-                    {t('products.actions')}
-                    <ChevronDown className="h-4 w-4 ml-1" />
+                    <QrCode className="h-4 w-4" />
+                    {t('products.scanBarcode')}
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>{t('products.exportOptions')}</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => handleExportData('csv')}>
-                    <Download className="h-4 w-4 mr-2" />
-                    {t('products.exportCSV')}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExportData('excel')}>
-                    <Download className="h-4 w-4 mr-2" />
-                    {t('products.exportExcel')}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExportData('pdf')}>
-                    <Download className="h-4 w-4 mr-2" />
-                    {t('products.exportPDF')}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <PackageCheck className="h-4 w-4 mr-2" />
-                    {t('products.bulkUpdateStock')}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <ClipboardList className="h-4 w-4 mr-2" />
-                    {t('products.printInventoryList')}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button variant="outline" className="flex items-center gap-1">
-                <QrCode className="h-4 w-4" />
-                {t('products.scanBarcode')}
-              </Button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <div className="p-4">
-          {isLoading ? (
-            <div className="flex justify-center items-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="ml-2">{t('products.loading')}</p>
-            </div>
-          ) : filteredProducts.length === 0 ? (
-            <div className="text-center p-8 border rounded-lg bg-slate-50">
-              <Box className="h-12 w-12 mx-auto text-slate-400" />
-              <h3 className="mt-4 text-lg font-medium">{t('products.noProductsFound')}</h3>
-              <p className="mt-2 text-slate-500">
-                {searchQuery || categoryFilter || stockFilter !== "all" ? (
-                  t('products.tryClearingFilters')
-                ) : (
-                  t('products.createFirstProduct')
-                )}
-              </p>
-              {!searchQuery && !categoryFilter && stockFilter === "all" && (
-                <Button 
-                  variant="default" 
-                  className="mt-4" 
-                  onClick={handleNewProduct}
-                >
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  {t('products.addProduct')}
-                </Button>
+            <div className="p-4">
+              {isLoading ? (
+                <div className="flex justify-center items-center p-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="ml-2">{t('products.loading')}</p>
+                </div>
+              ) : filteredProducts.length === 0 ? (
+                <div className="text-center p-8 border rounded-lg bg-slate-50">
+                  <Box className="h-12 w-12 mx-auto text-slate-400" />
+                  <h3 className="mt-4 text-lg font-medium">{t('products.noProductsFound')}</h3>
+                  <p className="mt-2 text-slate-500">
+                    {searchQuery || categoryFilter || stockFilter !== "all" ? (
+                      t('products.tryClearingFilters')
+                    ) : (
+                      t('products.createFirstProduct')
+                    )}
+                  </p>
+                  {!searchQuery && !categoryFilter && stockFilter === "all" && (
+                    <Button 
+                      variant="default" 
+                      className="mt-4" 
+                      onClick={handleNewProduct}
+                    >
+                      <PlusCircle className="h-4 w-4 mr-2" />
+                      {t('products.addProduct')}
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto rounded-lg border border-slate-200">
+                    <table className="min-w-full divide-y divide-slate-200">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <th 
+                            className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer"
+                            onClick={() => handleSort("name")}
+                          >
+                            <div className="flex items-center">
+                              {t('products.productName')}
+                              {sortField === "name" && (
+                                sortDirection === "asc" ? 
+                                  <ArrowUp className="h-3 w-3 ml-1" /> : 
+                                  <ArrowDown className="h-3 w-3 ml-1" />
+                              )}
+                            </div>
+                          </th>
+                          <th 
+                            className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer"
+                            onClick={() => handleSort("sku")}
+                          >
+                            <div className="flex items-center">
+                              {t('products.sku')}
+                              {sortField === "sku" && (
+                                sortDirection === "asc" ? 
+                                  <ArrowUp className="h-3 w-3 ml-1" /> : 
+                                  <ArrowDown className="h-3 w-3 ml-1" />
+                              )}
+                            </div>
+                          </th>
+                          <th 
+                            className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer"
+                            onClick={() => handleSort("categoryId")}
+                          >
+                            <div className="flex items-center">
+                              {t('products.category')}
+                              {sortField === "categoryId" && (
+                                sortDirection === "asc" ? 
+                                  <ArrowUp className="h-3 w-3 ml-1" /> : 
+                                  <ArrowDown className="h-3 w-3 ml-1" />
+                              )}
+                            </div>
+                          </th>
+                          <th 
+                            className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer"
+                            onClick={() => handleSort("currentStock")}
+                          >
+                            <div className="flex items-center">
+                              {t('products.stock')}
+                              {sortField === "currentStock" && (
+                                sortDirection === "asc" ? 
+                                  <ArrowUp className="h-3 w-3 ml-1" /> : 
+                                  <ArrowDown className="h-3 w-3 ml-1" />
+                              )}
+                            </div>
+                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
+                            {t('products.actions')}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-slate-200">
+                        {filteredProducts.map((product: Product) => {
+                          // Find category name
+                          const category = categoriesData.find(cat => cat.id === product.categoryId);
+                          const categoryName = category?.name || "Unknown";
+                          
+                          return (
+                            <tr 
+                              key={product.id} 
+                              className="hover:bg-slate-50 cursor-pointer"
+                              onClick={() => handleViewProduct(product)}
+                            >
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <div className="flex items-center">
+                                  <div className="flex-shrink-0 h-10 w-10 bg-slate-100 rounded-md flex items-center justify-center">
+                                    {product.imagePath ? (
+                                      <img 
+                                        src={product.imagePath} 
+                                        alt={product.name} 
+                                        className="h-10 w-10 rounded-md object-cover"
+                                      />
+                                    ) : (
+                                      <Box className="h-5 w-5 text-slate-400" />
+                                    )}
+                                  </div>
+                                  <div className="ml-4">
+                                    <div className="text-sm font-medium text-slate-900">{product.name}</div>
+                                    {product.barcode && (
+                                      <div className="text-xs text-slate-500">{product.barcode}</div>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                                {product.sku}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                                {categoryName}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStockStatusClass(product.currentStock, product.minStockLevel)} bg-opacity-10`}>
+                                  {product.currentStock}
+                                </span>
+                                <span className="text-xs text-slate-500 ml-1">/ {product.minStockLevel}</span>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditProduct(product);
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteProduct(product.id);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto rounded-lg border border-slate-200">
-                <table className="min-w-full divide-y divide-slate-200">
-                  <thead className="bg-slate-50">
-                    <tr>
-                      <th 
-                        className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer"
-                        onClick={() => handleSort("name")}
-                      >
-                        <div className="flex items-center">
-                          {t('products.productName')}
-                          {sortField === "name" && (
-                            sortDirection === "asc" ? 
-                              <ArrowUp className="h-3 w-3 ml-1" /> : 
-                              <ArrowDown className="h-3 w-3 ml-1" />
-                          )}
-                        </div>
-                      </th>
-                      <th 
-                        className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer"
-                        onClick={() => handleSort("sku")}
-                      >
-                        <div className="flex items-center">
-                          {t('products.sku')}
-                          {sortField === "sku" && (
-                            sortDirection === "asc" ? 
-                              <ArrowUp className="h-3 w-3 ml-1" /> : 
-                              <ArrowDown className="h-3 w-3 ml-1" />
-                          )}
-                        </div>
-                      </th>
-                      <th 
-                        className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer"
-                        onClick={() => handleSort("categoryId")}
-                      >
-                        <div className="flex items-center">
-                          {t('products.category')}
-                          {sortField === "categoryId" && (
-                            sortDirection === "asc" ? 
-                              <ArrowUp className="h-3 w-3 ml-1" /> : 
-                              <ArrowDown className="h-3 w-3 ml-1" />
-                          )}
-                        </div>
-                      </th>
-                      <th 
-                        className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer"
-                        onClick={() => handleSort("currentStock")}
-                      >
-                        <div className="flex items-center">
-                          {t('products.stock')}
-                          {sortField === "currentStock" && (
-                            sortDirection === "asc" ? 
-                              <ArrowUp className="h-3 w-3 ml-1" /> : 
-                              <ArrowDown className="h-3 w-3 ml-1" />
-                          )}
-                        </div>
-                      </th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
-                        {t('products.actions')}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-slate-200">
-                    {filteredProducts.map((product: Product) => (
-                      <tr 
-                        key={product.id} 
-                        className="hover:bg-slate-50 cursor-pointer"
-                        onClick={() => handleViewProduct(product)}
-                      >
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="h-10 w-10 flex-shrink-0 rounded bg-slate-100 flex items-center justify-center">
-                              {product.imagePath ? (
-                                <img 
-                                  src={product.imagePath} 
-                                  alt={product.name} 
-                                  className="h-10 w-10 object-cover rounded"
-                                />
-                              ) : (
-                                <Box className="h-5 w-5 text-slate-400" />
-                              )}
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-slate-900">{product.name}</div>
-                              {product.barcode && (
-                                <div className="text-xs text-slate-500">
-                                  <QrCode className="h-3 w-3 inline-block mr-1" />
-                                  {product.barcode}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-500">
-                          {product.sku}
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-500">
-                          {product.category}
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <div className={`text-sm font-medium ${getStockStatusClass(product.currentStock, product.minStockLevel)}`}>
-                            {product.currentStock} 
-                            <span className="text-slate-400 ml-1">/ {product.minStockLevel} min</span>
-                          </div>
-                          {product.location && (
-                            <div className="text-xs text-slate-500">
-                              <MapPin className="h-3 w-3 inline-block mr-1" />
-                              {product.location}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditProduct(product);
-                              }}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Edit className="h-4 w-4" />
-                              <span className="sr-only">{t('products.edit')}</span>
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteProduct(product.id);
-                              }}
-                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">{t('products.delete')}</span>
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="mt-4 text-center text-sm text-slate-500">
-                {t('products.showing', { count: filteredProducts.length, total: products.length })}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+          </div>
         </TabsContent>
       </Tabs>
 
+      {/* Product Form Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[720px] p-0 overflow-hidden">
           <div className="flex h-full">
@@ -826,49 +764,44 @@ const Products = () => {
                 <FormField
                   control={form.control}
                   name="imagePath"
-                  render={({ field }: { field: any }) => (
+                  render={({ field }) => (
                     <FormItem>
-                      <div className="flex flex-col items-center justify-center py-4 border-2 border-dashed rounded-md border-slate-300 bg-white mb-4">
-                        <div className="mb-2">
-                          {imagePreview ? (
+                      <FormLabel className="block mb-2">{t('products.uploadImage')}</FormLabel>
+                      <div className="mb-4">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          className="hidden"
+                          id="image-upload"
+                        />
+                        <label
+                          htmlFor="image-upload"
+                          className="cursor-pointer bg-white border border-slate-200 rounded-md p-8 flex items-center justify-center flex-col"
+                        >
+                          {imagePreview || (editingProduct && editingProduct.imagePath) ? (
                             <img
-                              src={imagePreview}
-                              alt="Product preview"
-                              className="w-28 h-28 object-contain"
-                            />
-                          ) : editingProduct?.imagePath ? (
-                            <img
-                              src={editingProduct.imagePath}
-                              alt="Product preview"
-                              className="w-28 h-28 object-contain"
+                              src={imagePreview || editingProduct?.imagePath}
+                              alt="Preview"
+                              className="max-h-32 object-contain mb-2"
                             />
                           ) : (
-                            <ImageIcon className="w-12 h-12 text-slate-300" />
+                            <Box className="h-12 w-12 text-slate-300 mb-2" />
                           )}
-                        </div>
-                        <div className="space-y-1 text-center">
-                          <Button type="button" variant="outline" size="sm" asChild>
-                            <label className="cursor-pointer">
-                              <Upload className="h-4 w-4 mr-1 inline-block" />
-                              {t('products.uploadImage')}
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={handleImageChange}
-                              />
-                            </label>
-                          </Button>
-                          <p className="text-xs text-slate-500">{t('products.imageSize')}</p>
-                        </div>
-                        <FormMessage />
+                          <span className="text-sm text-center text-slate-500">
+                            {t('products.dragOrClickToUpload')}
+                          </span>
+                        </label>
                       </div>
+                      <p className="text-xs text-slate-500 mt-2">
+                        {t('products.recommendedImageSize')}
+                      </p>
                     </FormItem>
                   )}
                 />
               </div>
             </div>
-            <div className="w-2/3 max-h-[80vh] overflow-y-auto">
+            <div className="flex-1">
               <DialogHeader className="p-6 pb-0">
                 <DialogTitle className="text-xl">{editingProduct ? t('products.editProduct') : t('products.addNewProduct')}</DialogTitle>
                 <DialogDescription>{t('products.fillDetails')}</DialogDescription>
@@ -879,7 +812,7 @@ const Products = () => {
                     <FormField
                       control={form.control}
                       name="name"
-                      render={({ field }: { field: any }) => (
+                      render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t('products.productName')}</FormLabel>
                           <FormControl>
@@ -892,7 +825,7 @@ const Products = () => {
                     <FormField
                       control={form.control}
                       name="sku"
-                      render={({ field }: { field: any }) => (
+                      render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t('products.sku')}</FormLabel>
                           <FormControl>
@@ -906,7 +839,7 @@ const Products = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
-                      name="category"
+                      name="categoryName"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t('products.category')}</FormLabel>
@@ -915,10 +848,6 @@ const Products = () => {
                               <Input 
                                 placeholder="Enter category name" 
                                 {...field}
-                                onChange={(e) => {
-                                  field.onChange(e.target.value);
-                                  // Set showSuggestions to true when typing
-                                }}
                               />
                             </FormControl>
                             
@@ -926,7 +855,7 @@ const Products = () => {
                             {categoriesData.length > 0 && (
                               <div className="mt-1 text-xs text-slate-500">
                                 <span className="font-medium">Suggestions: </span>
-                                {categoriesData.slice(0, 5).map((cat, idx) => (
+                                {categoriesData.slice(0, 5).map((cat) => (
                                   <button
                                     key={cat.id}
                                     type="button"
@@ -948,7 +877,7 @@ const Products = () => {
                       <FormField
                         control={form.control}
                         name="barcode"
-                        render={({ field }: { field: any }) => (
+                        render={({ field }) => (
                           <FormItem className="flex-1">
                             <FormLabel>{t('products.barcode')}</FormLabel>
                             <div className="flex gap-2">
@@ -970,7 +899,7 @@ const Products = () => {
                   <FormField
                     control={form.control}
                     name="description"
-                    render={({ field }: { field: any }) => (
+                    render={({ field }) => (
                       <FormItem>
                         <FormLabel>{t('products.description')}</FormLabel>
                         <FormControl>
@@ -984,7 +913,7 @@ const Products = () => {
                     <FormField
                       control={form.control}
                       name="currentStock"
-                      render={({ field }: { field: any }) => (
+                      render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t('products.currentStock')}</FormLabel>
                           <FormControl>
@@ -997,7 +926,7 @@ const Products = () => {
                     <FormField
                       control={form.control}
                       name="minStockLevel"
-                      render={({ field }: { field: any }) => (
+                      render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t('products.minStockLevel')}</FormLabel>
                           <FormControl>
@@ -1015,7 +944,7 @@ const Products = () => {
                     <FormField
                       control={form.control}
                       name="location"
-                      render={({ field }: { field: any }) => (
+                      render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t('products.storageLocation')}</FormLabel>
                           <FormControl>
@@ -1031,7 +960,7 @@ const Products = () => {
                     <FormField
                       control={form.control}
                       name="unitsPerBox"
-                      render={({ field }: { field: any }) => (
+                      render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t('products.unitsPerBox')}</FormLabel>
                           <FormControl>
@@ -1067,6 +996,7 @@ const Products = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Product Details Dialog */}
       <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-auto">
           {viewingProduct && (
@@ -1074,7 +1004,10 @@ const Products = () => {
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold">{viewingProduct.name}</DialogTitle>
                 <DialogDescription>
-                  <span className="font-medium">{t('products.sku')}:</span> {viewingProduct.sku} • <span className="font-medium">{t('products.category')}:</span> {viewingProduct.category}
+                  <span className="font-medium">{t('products.sku')}:</span> {viewingProduct.sku} • 
+                  <span className="font-medium"> {t('products.category')}:</span> {
+                    categoriesData.find(cat => cat.id === viewingProduct.categoryId)?.name || "Unknown"
+                  }
                 </DialogDescription>
               </DialogHeader>
               <Tabs defaultValue="details">
