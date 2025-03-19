@@ -10,6 +10,7 @@ import {
   Truck, CheckSquare, AlertTriangle,
   Upload, FileText, FilePlus, FileInput
 } from "lucide-react";
+import { OrderChangelog } from "@/components/orders/OrderChangelog";
 
 import {
   Table,
