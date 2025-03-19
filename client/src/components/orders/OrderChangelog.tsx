@@ -41,11 +41,11 @@ interface OrderChangelogProps {
 
 export function OrderChangelog({ orderId }: OrderChangelogProps) {
   const { data: changelog, isLoading, error } = useQuery<ChangelogItem[]>({
-    queryKey: ['/api/orders', orderId, 'changelog'],
+    queryKey: ['/api/orders', orderId, 'changelogs'],
     enabled: !!orderId,
     queryFn: async () => {
       return apiRequest({
-        url: `/api/orders/${orderId}/changelog`,
+        url: `/api/orders/${orderId}/changelogs`,
       });
     },
   });
