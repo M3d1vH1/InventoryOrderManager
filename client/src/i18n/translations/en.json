@@ -82,5 +82,26 @@
       "picked": "Picked",
       "cancelled": "Cancelled"
     }
+  },
+  "inventory": {
+    "alerts": "Inventory Alerts",
+    "viewAllLowStockItems": "View All Low Stock Items",
+    "noLowStockItems": "No low stock items. All inventory levels are healthy.",
+    "stock": "Stock",
+    "min": "Min",
+    "restock": "Restock",
+    "restocking": "Restocking...",
+    "quickActions": "Quick Inventory Actions",
+    "import": "Import",
+    "productRestocked": "Product Restocked",
+    "inventoryUpdated": "Product inventory has been updated.",
+    "failedToRestock": "Failed to restock product"
+  },
+  "products": {
+    "title": "Products",
+    "addProduct": "Add Product",
+    "category": "Category",
+    "price": "Price",
+    "stock": "Stock"
   }
 }
