@@ -117,7 +117,8 @@
       "notes": "Notes (Optional)",
       "notesPlaceholder": "Add any additional notes for this order...",
       "customerName": "Customer Name*",
-      "customerNamePlaceholder": "Enter customer name"
+      "customerNamePlaceholder": "Enter customer name",
+      "availableStock": "Available Stock"
     },
     "details": {
       "customer": "Customer",

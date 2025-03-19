@@ -122,7 +122,8 @@
       "notes": "Σημειώσεις (Προαιρετικά)",
       "notesPlaceholder": "Προσθέστε τυχόν πρόσθετες σημειώσεις για αυτήν την παραγγελία...",
       "customerName": "Όνομα Πελάτη*",
-      "customerNamePlaceholder": "Εισάγετε όνομα πελάτη"
+      "customerNamePlaceholder": "Εισάγετε όνομα πελάτη",
+      "availableStock": "Διαθέσιμο Απόθεμα"
     },
     "details": {
       "customer": "Πελάτης",
