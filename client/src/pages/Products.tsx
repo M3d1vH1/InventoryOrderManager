@@ -784,60 +784,60 @@ const Products = () => {
                         console.log('Form field categoryId value:', field.value);
                         console.log('Categories in form dropdown:', categoriesData);
                         
-                        // Force the value to be a string for the Select component
-                        const stringValue = field.value !== undefined ? field.value.toString() : "";
-                        
-                        // Function to update the categoryId with proper type conversion
-                        const handleCategoryChange = (value: string) => {
-                          const numValue = parseInt(value, 10);
-                          console.log('Setting categoryId to:', numValue);
-                          field.onChange(numValue);
-                        };
-                        
-                        // Set initial value if categories exist but value is 0
+                        // Ensure we have a valid category ID when categories are loaded
                         React.useEffect(() => {
-                          if (categoriesData.length > 0 && field.value === 0) {
-                            handleCategoryChange(categoriesData[0].id.toString());
+                          if (categoriesData.length > 0) {
+                            // If no valid category is selected (0 or undefined), force select the first one
+                            if (!field.value || field.value === 0) {
+                              console.log('Setting default categoryId to:', categoriesData[0].id);
+                              field.onChange(categoriesData[0].id);
+                            }
                           }
-                        }, [categoriesData, field.value]);
+                        }, [categoriesData, field]);
                         
-                        return (
-                          <FormItem>
-                            <FormLabel>{t('products.category')}</FormLabel>
-                            {isLoadingCategories ? (
+                        // Only render once we have categories
+                        if (categoriesData.length === 0) {
+                          return (
+                            <FormItem>
+                              <FormLabel>{t('products.category')}</FormLabel>
                               <div className="flex items-center space-x-2 h-10 px-3 py-2 text-sm border border-slate-200 rounded-md">
                                 <Loader2 className="h-4 w-4 animate-spin text-primary" />
                                 <span>Loading categories...</span>
                               </div>
-                            ) : (
-                              <Select 
-                                onValueChange={handleCategoryChange}
-                                value={stringValue}
-                                defaultValue={categoriesData.length > 0 ? categoriesData[0].id.toString() : "0"}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder={t('products.selectCategory')} />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {categoriesData.length === 0 ? (
-                                    <SelectItem value="0">No categories available</SelectItem>
-                                  ) : (
-                                    categoriesData.map((category) => (
-                                      <SelectItem key={category.id} value={category.id.toString()}>
-                                        {category.name}
-                                      </SelectItem>
-                                    ))
-                                  )}
-                                </SelectContent>
-                              </Select>
-                            )}
+                              <FormDescription>
+                                Please create categories first
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          );
+                        }
+                        
+                        return (
+                          <FormItem>
+                            <FormLabel>{t('products.category')}</FormLabel>
+                            <Select 
+                              onValueChange={(value) => {
+                                const numValue = parseInt(value, 10);
+                                console.log('Changing categoryId to:', numValue);
+                                field.onChange(numValue);
+                              }}
+                              value={field.value?.toString()}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder={t('products.selectCategory')} />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {categoriesData.map((category) => (
+                                  <SelectItem key={category.id} value={category.id.toString()}>
+                                    {category.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             <FormDescription>
-                              {categoriesData.length === 0 ? 
-                                "You need to create categories first" : 
-                                "Select a category for this product"
-                              }
+                              Select a category for this product
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
