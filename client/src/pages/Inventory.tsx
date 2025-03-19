@@ -28,10 +28,11 @@ interface Product {
   id: number;
   name: string;
   sku: string;
-  category: string;
+  // category field removed as part of simplification
   description?: string;
   minStockLevel: number;
   currentStock: number;
+  location?: string;
 }
 
 const Inventory = () => {
@@ -83,12 +84,16 @@ const Inventory = () => {
     : products?.filter(p => 
         p.name.toLowerCase().includes(searchText.toLowerCase()) || 
         p.sku.toLowerCase().includes(searchText.toLowerCase()) ||
-        p.category.toLowerCase().includes(searchText.toLowerCase())
+        (p.location && p.location.toLowerCase().includes(searchText.toLowerCase()))
       );
 
   const updateStockMutation = useMutation({
     mutationFn: async ({ id, stock }: { id: number; stock: number }) => {
-      return apiRequest('PATCH', `/api/products/${id}`, { currentStock: stock });
+      return apiRequest(`/api/products/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentStock: stock })
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
@@ -259,7 +264,7 @@ const Inventory = () => {
                 <TableRow>
                   <TableHead>Product</TableHead>
                   <TableHead>SKU</TableHead>
-                  <TableHead>Category</TableHead>
+                  <TableHead>Location</TableHead>
                   <TableHead>Min Stock</TableHead>
                   <TableHead>Current Stock</TableHead>
                   <TableHead>Status</TableHead>
@@ -290,7 +295,7 @@ const Inventory = () => {
                     >
                       <TableCell>{product.name}</TableCell>
                       <TableCell>{product.sku}</TableCell>
-                      <TableCell>{product.category}</TableCell>
+                      <TableCell>{product.location || "-"}</TableCell>
                       <TableCell>{product.minStockLevel}</TableCell>
                       <TableCell>
                         <span className={`font-medium ${getStockStatusClass(product.currentStock, product.minStockLevel)}`}>
