@@ -580,11 +580,18 @@ export class DatabaseStorage implements IStorage {
           // Get the order data needed for unshipped item
           const orderNumber = order.orderNumber;
           
-          // Get customer ID from customer name if needed
+          // Look up the customer ID from the customer name
           let customerId: string | undefined;
-          const customer = await this.db.select().from(customers).where(eq(customers.name, order.customerName)).limit(1);
-          if (customer.length > 0) {
-            customerId = customer[0].id.toString();
+          try {
+            const customer = await this.db.select().from(customers).where(eq(customers.name, order.customerName)).limit(1);
+            if (customer.length > 0) {
+              customerId = customer[0].id.toString();
+              console.log(`Found customer ID ${customerId} for customer ${order.customerName}`);
+            } else {
+              console.log(`No customer found with name ${order.customerName}, creating unshipped item without customerId`);
+            }
+          } catch (err) {
+            console.warn(`Error finding customer by name: ${err}`);
           }
           
           const unshippedItem = await this.addUnshippedItem({
