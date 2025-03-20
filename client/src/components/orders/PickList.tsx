@@ -77,6 +77,8 @@ const PickList = ({ order }: { order: Order }) => {
   const [sortByLocation, setSortByLocation] = useState(false);
   const [searchSku, setSearchSku] = useState('');
   const [orderItemsWithProducts, setOrderItemsWithProducts] = useState<(OrderItem & {product?: Product, picked?: boolean, actualQuantity?: number})[]>([]);
+  const [showBoxCountDialog, setShowBoxCountDialog] = useState(false);
+  const [boxCount, setBoxCount] = useState(1);
 
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ['/api/products'],
