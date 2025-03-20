@@ -6,6 +6,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { useNotifications } from "@/context/NotificationContext";
 import ProductSearch from "@/components/products/ProductSearch";
 import { format } from "date-fns";
 import { Link } from "wouter";
@@ -213,6 +214,17 @@ const OrderForm = ({
     }
   }, [initialData]);
 
+  // Define a state for unshipped items warning
+  const [unshippedItemsWarning, setUnshippedItemsWarning] = useState<{
+    hasUnshippedItems: boolean;
+    unshippedItemsCount: number;
+    hasAuthorizedUnshippedItems: boolean;
+    pendingOrders: number;
+  } | null>(null);
+  
+  // Import the notification context
+  const { playNotificationSound } = useNotifications();
+  
   // Effect to fetch previous products when customer changes
   useEffect(() => {
     const customerName = form.watch('customerName');
@@ -221,6 +233,7 @@ const OrderForm = ({
     if (!customerName || customerName.trim() === '') {
       setPreviousProducts([]);
       setUnshippedProducts([]);
+      setUnshippedItemsWarning(null);
       return;
     }
     
@@ -235,6 +248,30 @@ const OrderForm = ({
     );
     
     if (matchedCustomer) {
+      // Fetch if customer has unshipped items immediately for notification
+      const checkForUnshippedItems = async () => {
+        try {
+          const encodedName = encodeURIComponent(customerName);
+          const response = await fetch(`/api/customers/${encodedName}/has-unshipped-items`);
+          if (response.ok) {
+            const data = await response.json();
+            setUnshippedItemsWarning(data);
+            
+            // Play a notification sound if customer has unfulfilled items
+            if (data.hasUnshippedItems) {
+              // Use the notification context to play a sound
+              playNotificationSound('warning');
+            }
+          } else {
+            console.error("Failed to check for unshipped items:", await response.text());
+            setUnshippedItemsWarning(null);
+          }
+        } catch (error) {
+          console.error("Error checking for unshipped items:", error);
+          setUnshippedItemsWarning(null);
+        }
+      };
+      
       // Fetch previous products for this customer
       const fetchPreviousProducts = async () => {
         try {
@@ -271,14 +308,16 @@ const OrderForm = ({
         }
       };
       
-      // Execute both fetches
+      // Execute all fetches
+      checkForUnshippedItems();
       fetchPreviousProducts();
       fetchUnshippedProducts();
     } else {
       setPreviousProducts([]);
       setUnshippedProducts([]);
+      setUnshippedItemsWarning(null);
     }
-  }, [form.watch('customerName'), customers]);
+  }, [form.watch('customerName'), customers, playNotificationSound]);
 
   useEffect(() => {
     // Update form items field when orderItems changes
@@ -435,6 +474,45 @@ const OrderForm = ({
         </h2>
       </div>
       <div className="p-4">
+        {/* Customer has unshipped items warning - shown when customer is selected */}
+        {unshippedItemsWarning && unshippedItemsWarning.hasUnshippedItems && (
+          <Alert className="mb-6 bg-orange-50 border-orange-200">
+            <AlertTriangle className="h-5 w-5 text-orange-600" />
+            <AlertTitle className="text-orange-800 font-semibold text-base">
+              Customer Has Unfulfilled Items
+            </AlertTitle>
+            <AlertDescription className="text-orange-700 mt-1">
+              <p className="mb-2">
+                This customer has {unshippedItemsWarning.unshippedItemsCount} unfulfilled item(s) from previous orders
+                {unshippedItemsWarning.pendingOrders > 0 && ` and ${unshippedItemsWarning.pendingOrders} pending order(s)`}.
+              </p>
+              <div className="flex items-center gap-2 mt-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 bg-white border-orange-300 text-orange-800 hover:bg-orange-100"
+                  onClick={() => {
+                    // Scroll to unshipped products section
+                    const unshippedSection = document.getElementById('unshipped-products-section');
+                    if (unshippedSection) {
+                      unshippedSection.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                >
+                  <ShoppingCart className="h-4 w-4 mr-1" />
+                  View Unfulfilled Items
+                </Button>
+                {unshippedItemsWarning.hasAuthorizedUnshippedItems && (
+                  <Badge className="bg-green-100 text-green-800 hover:bg-green-200 border-green-300">
+                    Some Items Authorized
+                  </Badge>
+                )}
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Partial fulfillment info alert - only show when there's at least one item exceeding stock */}
         {orderItems.some(item => item.quantity > (item.product?.currentStock || 0)) && (
           <Alert className="mb-6 bg-amber-50 border-amber-200">
@@ -541,7 +619,7 @@ const OrderForm = ({
               
               {/* Unshipped products reminder section */}
               {unshippedProducts.length > 0 && (
-                <div className="mb-4">
+                <div id="unshipped-products-section" className="mb-4">
                   <Alert className="mb-4 border-amber-500 bg-amber-50">
                     <AlertTriangle className="h-5 w-5 text-amber-600" />
                     <AlertTitle className="text-amber-800">
