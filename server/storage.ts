@@ -59,6 +59,7 @@ export interface IStorage {
   getOrderByNumber(orderNumber: string): Promise<Order | undefined>;
   getAllOrders(): Promise<Order[]>;
   getRecentOrders(limit: number): Promise<Order[]>;
+  getOrdersByCustomer(customerName: string): Promise<Order[]>;
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrderStatus(id: number, status: 'pending' | 'picked' | 'shipped' | 'cancelled', documentInfo?: {documentPath: string, documentType: string, notes?: string}, updatedById?: number): Promise<Order | undefined>;
   updateOrder(id: number, orderData: Partial<InsertOrder>, updatedById?: number): Promise<Order | undefined>;
@@ -576,6 +577,12 @@ export class MemStorage implements IStorage {
     return Array.from(this.orders.values())
       .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime())
       .slice(0, limit);
+  }
+  
+  async getOrdersByCustomer(customerName: string): Promise<Order[]> {
+    return Array.from(this.orders.values())
+      .filter(order => order.customerName.toLowerCase() === customerName.toLowerCase())
+      .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
   }
   
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
