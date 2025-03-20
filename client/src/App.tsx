@@ -41,10 +41,12 @@ function AuthenticatedRouter() {
         <Route path="/order-picking/:id" component={OrderPicking} />
         <Route path="/product-barcode/:id" component={ProductBarcode} />
         <Route path="/unshipped-items" component={UnshippedItems} />
+        <Route path="/orders/unshipped-items" component={UnshippedItems} />
         <Route>
           {/* Redirect to order picking for warehouse staff if on any other route */}
           {location !== '/order-picking' && 
-           location !== '/unshipped-items' && 
+           location !== '/unshipped-items' &&
+           location !== '/orders/unshipped-items' && 
            (window.location.href = '/order-picking')}
           <OrderPicking />
         </Route>
@@ -59,6 +61,7 @@ function AuthenticatedRouter() {
       <Route path="/orders" component={Orders} />
       <Route path="/orders/:id" component={Orders} />
       <Route path="/orders/:id/edit" component={Orders} />
+      <Route path="/orders/unshipped-items" component={UnshippedItems} />
       <Route path="/products" component={ProductsShopify} />
       <Route path="/categories" component={Categories} />
       <Route path="/customers" component={Customers} />

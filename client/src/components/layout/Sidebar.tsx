@@ -10,8 +10,19 @@ const Sidebar = () => {
   const { t } = useTranslation();
 
   const isActive = (path: string): boolean => {
+    // Special case for root path
     if (path === "/" && location === "/") return true;
+    
+    // Special case for unshipped items - consider both paths active
+    if (path === "/unshipped-items" && location === "/orders/unshipped-items") return true;
+    if (path === "/orders/unshipped-items" && location === "/unshipped-items") return true;
+    
+    // Special case for orders - make parent active when children are active
+    if (path === "/orders" && location.startsWith("/orders/")) return true;
+    
+    // Default behavior
     if (path !== "/" && location.startsWith(path)) return true;
+    
     return false;
   };
   
@@ -46,14 +57,48 @@ const Sidebar = () => {
                 </Link>
               </li>
               <li className="mb-1">
-                <Link href="/orders" onClick={() => setCurrentPage("Orders")}>
+                <div>
                   <button 
-                    className={`flex items-center w-full p-2 text-left rounded ${isActive("/orders") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                    className={`flex items-center justify-between w-full p-2 text-left rounded ${(isActive("/orders") || isActive("/unshipped-items")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                    onClick={() => {
+                      setCurrentPage("Orders");
+                      // Toggle the orders submenu
+                      const ordersSubmenu = document.getElementById('orders-submenu');
+                      if (ordersSubmenu) {
+                        ordersSubmenu.classList.toggle('hidden');
+                      }
+                    }}
                   >
-                    <i className="fas fa-shopping-cart w-5"></i>
-                    <span className="ml-2">{t('orders.title')}</span>
+                    <div className="flex items-center">
+                      <i className="fas fa-shopping-cart w-5"></i>
+                      <span className="ml-2">{t('orders.title')}</span>
+                    </div>
+                    <i className="fas fa-chevron-down text-xs"></i>
                   </button>
-                </Link>
+                  
+                  <ul id="orders-submenu" className={`ml-4 mt-1 ${!(isActive("/orders") || isActive("/unshipped-items")) ? 'hidden' : ''}`}>
+                    <li className="mb-1">
+                      <Link href="/orders" onClick={() => setCurrentPage("Orders")}>
+                        <button 
+                          className={`flex items-center w-full p-2 text-left rounded ${isActive("/orders") ? "bg-primary/60 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                        >
+                          <i className="fas fa-list w-5"></i>
+                          <span className="ml-2">{t('orders.management')}</span>
+                        </button>
+                      </Link>
+                    </li>
+                    <li className="mb-1">
+                      <Link href="/orders/unshipped-items" onClick={() => setCurrentPage("Unshipped Items")}>
+                        <button 
+                          className={`flex items-center w-full p-2 text-left rounded ${isActive("/orders/unshipped-items") || isActive("/unshipped-items") ? "bg-primary/60 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                        >
+                          <i className="fas fa-dolly w-5"></i>
+                          <span className="ml-2">{t('unshippedItems.sidebarTitle')}</span>
+                        </button>
+                      </Link>
+                    </li>
+                  </ul>
+                </div>
               </li>
               <li className="mb-1">
                 <Link href="/products" onClick={() => setCurrentPage("Products")}>
@@ -82,16 +127,6 @@ const Sidebar = () => {
                   >
                     <i className="fas fa-warehouse w-5"></i>
                     <span className="ml-2">{t('app.inventory')}</span>
-                  </button>
-                </Link>
-              </li>
-              <li className="mb-1">
-                <Link href="/unshipped-items" onClick={() => setCurrentPage("Unshipped Items")}>
-                  <button 
-                    className={`flex items-center w-full p-2 text-left rounded ${isActive("/unshipped-items") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
-                  >
-                    <i className="fas fa-dolly w-5"></i>
-                    <span className="ml-2">{t('unshippedItems.sidebarTitle')}</span>
                   </button>
                 </Link>
               </li>
