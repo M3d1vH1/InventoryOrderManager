@@ -15,6 +15,10 @@ import { DatabaseStorage, initStorage } from './storage.postgresql';
 import { log } from './vite';
 
 export interface IStorage {
+  // Email settings methods
+  getEmailSettings(): Promise<EmailSettings | undefined>;
+  updateEmailSettings(settings: Partial<InsertEmailSettings>): Promise<EmailSettings | undefined>;
+  
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -166,6 +170,7 @@ export class MemStorage implements IStorage {
   private tags: Map<number, Tag>;
   private productTagsMap: Map<string, number>; // key: productId-tagId, value: 1 (just for existence)
   private unshippedItems: Map<number, UnshippedItem>;
+  private emailSettingsData: EmailSettings | undefined;
   
   private userIdCounter: number;
   private categoryIdCounter: number;

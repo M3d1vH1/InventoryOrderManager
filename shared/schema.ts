@@ -133,6 +133,7 @@ export const shippingDocuments = pgTable("shipping_documents", {
   orderId: integer("order_id").notNull().unique(),
   documentPath: text("document_path").notNull(),
   documentType: text("document_type").notNull(),
+  trackingNumber: text("tracking_number"),
   uploadDate: timestamp("upload_date").notNull().defaultNow(),
   notes: text("notes"),
 });
@@ -143,6 +144,7 @@ export const insertShippingDocumentSchema = createInsertSchema(shippingDocuments
     orderId: z.number(),
     documentPath: z.string().min(1),
     documentType: z.string().min(1),
+    trackingNumber: z.string().optional(),
     notes: z.string().optional(),
   });
 
