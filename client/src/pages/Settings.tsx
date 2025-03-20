@@ -658,10 +658,18 @@ const Settings = () => {
   // Email settings mutation
   const emailSettingsMutation = useMutation({
     mutationFn: async (values: z.infer<typeof emailSettingsSchema>) => {
-      return apiRequest('/api/email-settings', {
-        method: 'PUT',
-        body: JSON.stringify(values),
-      });
+      console.log('Submitting email settings:', values);
+      try {
+        const result = await apiRequest('/api/email-settings', {
+          method: 'PUT',
+          body: JSON.stringify(values),
+        });
+        console.log('Email settings saved successfully:', result);
+        return result;
+      } catch (error) {
+        console.error('Error saving email settings:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
@@ -671,6 +679,7 @@ const Settings = () => {
       queryClient.invalidateQueries({ queryKey: ['/api/email-settings'] });
     },
     onError: (error) => {
+      console.error('Mutation error:', error);
       toast({
         title: "Error",
         description: "Failed to save email settings. " + (error instanceof Error ? error.message : String(error)),
