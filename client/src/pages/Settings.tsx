@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -1465,6 +1466,188 @@ const Settings = () => {
           </Card>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+};
+
+// Email Template Editor Component
+const EmailTemplateEditor = () => {
+  const { toast } = useToast();
+  const [selectedTemplate, setSelectedTemplate] = useState('order-shipped');
+  const [isEditing, setIsEditing] = useState(false);
+  
+  // Template form
+  const templateForm = useForm<z.infer<typeof templateEditSchema>>({
+    resolver: zodResolver(templateEditSchema),
+    defaultValues: {
+      content: '',
+    }
+  });
+  
+  // Get template content query
+  const { data: templateData, isLoading: isLoadingTemplate, refetch: refetchTemplate } = useQuery({
+    queryKey: ['/api/email-settings/templates', selectedTemplate],
+    enabled: !!selectedTemplate,
+    queryFn: async () => {
+      const response = await apiRequest(`/api/email-settings/templates/${selectedTemplate}`, {
+        method: 'GET',
+      });
+      return response;
+    }
+  });
+  
+  // Effect to update form when template data changes
+  useEffect(() => {
+    if (templateData && templateData.content) {
+      templateForm.reset({
+        content: templateData.content,
+      });
+    }
+  }, [templateData, templateForm]);
+  
+  // Update template mutation
+  const updateTemplateMutation = useMutation({
+    mutationFn: async (values: z.infer<typeof templateEditSchema>) => {
+      return apiRequest(`/api/email-settings/templates/${selectedTemplate}`, {
+        method: 'PUT',
+        body: JSON.stringify(values),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Template Updated",
+        description: "The email template has been updated successfully.",
+      });
+      setIsEditing(false);
+      refetchTemplate();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update template. " + (error instanceof Error ? error.message : String(error)),
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Template selection options
+  const templateOptions = [
+    { value: 'order-shipped', label: 'Order Shipped Notification' },
+    // Add more templates as needed
+  ];
+  
+  // Handler for template form submission
+  const onTemplateSubmit = (values: z.infer<typeof templateEditSchema>) => {
+    updateTemplateMutation.mutate(values);
+  };
+  
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h3 className="text-lg font-medium">Email Templates</h3>
+          <p className="text-sm text-slate-500">Customize notification emails sent to customers</p>
+        </div>
+        
+        <div className="flex gap-2">
+          {isEditing ? (
+            <>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setIsEditing(false);
+                  if (templateData && templateData.content) {
+                    templateForm.reset({
+                      content: templateData.content,
+                    });
+                  }
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={templateForm.handleSubmit(onTemplateSubmit)}
+                disabled={updateTemplateMutation.isPending}
+              >
+                {updateTemplateMutation.isPending ? "Saving..." : "Save Template"}
+              </Button>
+            </>
+          ) : (
+            <Button onClick={() => setIsEditing(true)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Template
+            </Button>
+          )}
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 gap-6">
+        <div className="space-y-4">
+          <div className="flex items-center space-x-4">
+            <Select 
+              value={selectedTemplate} 
+              onValueChange={setSelectedTemplate}
+              disabled={isEditing}
+            >
+              <SelectTrigger className="w-[300px]">
+                <SelectValue placeholder="Select a template" />
+              </SelectTrigger>
+              <SelectContent>
+                {templateOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {isLoadingTemplate ? (
+            <div className="text-center py-4">Loading template...</div>
+          ) : (
+            <div className="border rounded-md">
+              {isEditing ? (
+                <Form {...templateForm}>
+                  <form onSubmit={templateForm.handleSubmit(onTemplateSubmit)} className="space-y-4 p-4">
+                    <FormField
+                      control={templateForm.control}
+                      name="content"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Template HTML</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              {...field} 
+                              className="font-mono text-sm h-[500px]"
+                              spellCheck={false}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Use Handlebars syntax for variables: {`{{variable_name}}`}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </form>
+                </Form>
+              ) : (
+                <div className="p-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="font-medium">Template Preview</h4>
+                    <div className="text-sm text-slate-500">
+                      Available variables: customerName, orderNumber, items, notes, trackingNumber, shippingCompany
+                    </div>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-md overflow-auto max-h-[500px]">
+                    <pre className="text-xs font-mono whitespace-pre-wrap">{templateData?.content || 'No template content available'}</pre>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
