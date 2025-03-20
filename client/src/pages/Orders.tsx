@@ -157,13 +157,37 @@ const Orders = () => {
   useEffect(() => {
     setCurrentPage("Orders");
     
-    // Check URL parameters for filters
+    // Check URL parameters for filters and highlights
     const params = new URLSearchParams(window.location.search);
+    
+    // Handle status filter parameter
     const statusParam = params.get("status");
     if (statusParam && ["pending", "picked", "shipped", "cancelled"].includes(statusParam)) {
       setStatusFilter(statusParam);
     }
-  }, [setCurrentPage]);
+    
+    // Handle highlight parameter
+    const highlightId = params.get("highlight");
+    if (highlightId) {
+      // Clean up the URL by removing the highlight parameter
+      const url = new URL(window.location.href);
+      url.searchParams.delete("highlight");
+      window.history.replaceState({}, '', url);
+      
+      const orderId = parseInt(highlightId, 10);
+      if (!isNaN(orderId)) {
+        // Use setTimeout to ensure the orders have loaded first
+        setTimeout(() => {
+          const order = orders?.find(o => o.id === orderId);
+          if (order) {
+            setSelectedOrder(order);
+            setIsEditMode(false);
+            setLocation(`/orders/${orderId}`);
+          }
+        }, 100);
+      }
+    }
+  }, [setCurrentPage, orders, setLocation]);
   
   // Handle route params for order ID when viewing or editing a specific order
   useEffect(() => {

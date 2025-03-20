@@ -1033,10 +1033,16 @@ const Customers = () => {
                             <TableCell>
                               <Badge 
                                 variant={
-                                  order.status === 'shipped' ? 'success' : 
-                                  order.status === 'picked' ? 'warning' : 
+                                  order.status === 'shipped' ? 'default' : 
+                                  order.status === 'picked' ? 'outline' : 
                                   order.status === 'cancelled' ? 'destructive' : 
-                                  'default'
+                                  'secondary'
+                                }
+                                className={
+                                  order.status === 'shipped' ? 'bg-green-100 text-green-800 hover:bg-green-100' : 
+                                  order.status === 'picked' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100' : 
+                                  order.status === 'cancelled' ? '' : 
+                                  ''
                                 }
                               >
                                 {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
@@ -1047,7 +1053,12 @@ const Customers = () => {
                                 variant="outline" 
                                 size="sm"
                                 className="h-8"
-                                onClick={() => window.open(`/orders?highlight=${order.id}`, '_blank')}
+                                onClick={() => {
+                                  // Close the details dialog first
+                                  setViewDetailsId(null);
+                                  // Navigate to the orders page with this order highlighted
+                                  window.location.href = `/orders?highlight=${order.id}`;
+                                }}
                               >
                                 View
                               </Button>
