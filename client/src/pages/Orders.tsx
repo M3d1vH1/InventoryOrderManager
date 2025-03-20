@@ -40,6 +40,16 @@ import {
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Label
@@ -293,13 +303,15 @@ const Orders = () => {
       file, 
       documentType, 
       notes,
-      updateStatus 
+      updateStatus,
+      approvePartialFulfillment 
     }: { 
       orderId: number; 
       file: File; 
       documentType: string; 
       notes?: string;
       updateStatus: boolean;
+      approvePartialFulfillment?: boolean;
     }) => {
       setIsUploading(true);
       
@@ -318,6 +330,7 @@ const Orders = () => {
       formData.append('documentType', documentType);
       formData.append('updateStatus', updateStatus.toString());
       if (notes) formData.append('notes', notes);
+      if (approvePartialFulfillment) formData.append('approvePartialFulfillment', 'true');
       
       try {
         // Make the request for document upload
@@ -329,7 +342,21 @@ const Orders = () => {
         });
         return response;
       } catch (error: any) {
-        // Rethrow to be caught by onError
+        // Check if this is a partial fulfillment that requires approval
+        if (error.status === 403 && error.data?.requiresApproval) {
+          setOrderRequiringApproval({
+            orderId: orderId,
+            status: 'shipped',
+            unshippedItems: error.data.unshippedItems || 0
+          });
+          setShowApprovalDialog(true);
+          setIsUploading(false);
+          setShowUploadDialog(false);
+          // Don't throw an error since we're showing the approval dialog
+          throw new Error("Requires manager approval");
+        }
+        
+        // Rethrow to be caught by onError for other errors
         throw new Error(error.message || 'Upload failed. Please try again.');
       }
     },
@@ -361,6 +388,11 @@ const Orders = () => {
       // We don't need to play notification sound here as it will come via WebSocket
     },
     onError: (error: any) => {
+      // If we already handled this error with the approval dialog, just return
+      if (error.message === "Requires manager approval") {
+        return;
+      }
+      
       setIsUploading(false);
       
       // More user-friendly error messages
@@ -410,7 +442,8 @@ const Orders = () => {
       file: documentFile,
       documentType,
       notes: documentNotes,
-      updateStatus: updateStatusOnUpload
+      updateStatus: updateStatusOnUpload,
+      approvePartialFulfillment: false // Default to false, will show approval dialog if needed
     });
   };
   
@@ -1102,6 +1135,48 @@ const Orders = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Partial order approval dialog */}
+      <AlertDialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Partial Order Fulfillment Requires Approval</AlertDialogTitle>
+            <AlertDialogDescription>
+              <p className="mb-4">
+                This order has {orderRequiringApproval?.unshippedItems} item(s) that cannot be fulfilled due to insufficient stock.
+              </p>
+              <p className="mb-4">
+                As a manager or admin, you can approve this partial shipment. The unfulfilled items will be tracked in the system.
+              </p>
+              <p className="font-semibold">
+                Do you want to approve this partial order fulfillment?
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowApprovalDialog(false);
+              setOrderRequiringApproval(null);
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                if (orderRequiringApproval) {
+                  updateStatusMutation.mutate({
+                    orderId: orderRequiringApproval.orderId,
+                    status: orderRequiringApproval.status,
+                    approvePartialFulfillment: true
+                  });
+                }
+              }} 
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Approve Partial Fulfillment
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
