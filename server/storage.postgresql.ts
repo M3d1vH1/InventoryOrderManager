@@ -1225,21 +1225,35 @@ export class DatabaseStorage implements IStorage {
           
         return newSettings;
       } else {
-        // Create an update object
+        // Create an update object with all fields that are not undefined
         const updateObject: any = {
-          ...settings,
           updatedAt: new Date()
         };
         
-        // Only update password if provided
-        if (settings.authPass === '') {
-          delete updateObject.authPass;
+        // Explicitly set each field if it's provided in settings
+        if (settings.host !== undefined) updateObject.host = settings.host;
+        if (settings.port !== undefined) updateObject.port = settings.port;
+        if (settings.secure !== undefined) updateObject.secure = settings.secure;
+        if (settings.enableNotifications !== undefined) updateObject.enableNotifications = settings.enableNotifications;
+        if (settings.companyName !== undefined) updateObject.companyName = settings.companyName;
+        
+        // Handle authentication fields - keep existing values if empty strings are provided
+        if (settings.authUser !== undefined && settings.authUser !== '') {
+          updateObject.authUser = settings.authUser;
+        }
+        
+        if (settings.authPass !== undefined && settings.authPass !== '') {
+          updateObject.authPass = settings.authPass;
+        }
+        
+        if (settings.fromEmail !== undefined && settings.fromEmail !== '') {
+          updateObject.fromEmail = settings.fromEmail;
         }
         
         // Log the update for debugging
         console.log("Updating email settings with:", JSON.stringify({
           ...updateObject,
-          authPass: updateObject.authPass ? "******" : undefined
+          authPass: updateObject.authPass ? "******" : "(unchanged)"
         }));
         
         // Update existing settings
