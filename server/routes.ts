@@ -1709,9 +1709,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post('/api/email-settings/test-connection', isAuthenticated, hasRole(['admin']), testEmailConnection);
   
-  app.get('/api/email-templates/:templateName', isAuthenticated, hasRole(['admin']), getEmailTemplate);
+  // Email template routes
+  app.get('/api/email-settings/templates/:templateName', isAuthenticated, hasRole(['admin']), getEmailTemplate);
   
-  app.put('/api/email-templates/:templateName', isAuthenticated, hasRole(['admin']), updateEmailTemplate);
+  app.put('/api/email-settings/templates/:templateName', isAuthenticated, hasRole(['admin']), updateEmailTemplate);
   
   // Email notification endpoint for shipped orders
   app.post('/api/orders/:id/send-email', isAuthenticated, async (req, res) => {
