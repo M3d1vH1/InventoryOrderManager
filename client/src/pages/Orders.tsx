@@ -186,6 +186,11 @@ const Orders = () => {
         });
         setShowApprovalDialog(true);
       } else {
+        // Reset UI states
+        setShowApprovalDialog(false);
+        setOrderRequiringApproval(null);
+        
+        // Show error message
         toast({
           title: "Failed to update order status",
           description: error.message,
@@ -395,7 +400,9 @@ const Orders = () => {
         return;
       }
       
+      // Reset all UI states
       setIsUploading(false);
+      setShowUploadDialog(false);
       
       // More user-friendly error messages
       let errorMessage = error?.message || "An unknown error occurred";
