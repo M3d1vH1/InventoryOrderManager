@@ -67,7 +67,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, MoreHorizontal, Plus, Search, FileDown } from 'lucide-react';
+import { Loader2, MoreHorizontal, Plus, Search, FileDown, X } from 'lucide-react';
 
 // Define a schema for the customer form
 const customerFormSchema = z.object({

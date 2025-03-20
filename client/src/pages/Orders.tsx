@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 import { 
   Eye, Edit, ClipboardCheck, 
   Truck, CheckSquare, AlertTriangle,
-  Upload, FileText, FilePlus, FileInput
+  Upload, FileText, FilePlus, FileInput, X
 } from "lucide-react";
 import { OrderChangelog } from "@/components/orders/OrderChangelog";
 
@@ -453,7 +453,7 @@ const Orders = () => {
                   className="absolute inset-y-0 right-0 flex items-center pr-3 h-full"
                   onClick={() => setSearchTerm('')}
                 >
-                  <i className="fas fa-times text-slate-400"></i>
+                  <X className="h-4 w-4 text-slate-400" />
                 </Button>
               )}
             </div>
