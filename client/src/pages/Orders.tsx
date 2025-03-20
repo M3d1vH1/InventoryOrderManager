@@ -408,6 +408,46 @@ const Orders = () => {
     }
   };
 
+  // Delete order mutation
+  const deleteOrderMutation = useMutation({
+    mutationFn: async (orderId: number) => {
+      return apiRequest({
+        url: `/api/orders/${orderId}`,
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      setShowDeleteConfirmDialog(false);
+      setOrderToDelete(null);
+      toast({
+        title: "Order deleted",
+        description: "The order has been permanently deleted.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to delete order",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Handle order deletion
+  const handleDeleteOrder = (order: Order) => {
+    setOrderToDelete(order);
+    setShowDeleteConfirmDialog(true);
+  };
+
+  // Confirm order deletion
+  const confirmDeleteOrder = () => {
+    if (orderToDelete) {
+      deleteOrderMutation.mutate(orderToDelete.id);
+    }
+  };
+
   // Handle navigation to unshipped items
   const handleGoToUnshippedItems = () => {
     setLocation('/orders/unshipped-items');
@@ -568,6 +608,17 @@ const Orders = () => {
                             title={t('orders.actions.viewDocument')}
                           >
                             <FileText className="h-4 w-4" />
+                          </button>
+                        )}
+                        
+                        {/* Delete button - only visible for admin users */}
+                        {hasPermission(['admin']) && (
+                          <button
+                            onClick={() => handleDeleteOrder(order)}
+                            className="text-slate-600 hover:text-red-600 p-1 rounded-full hover:bg-slate-100" 
+                            title={t('orders.actions.delete')}
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         )}
                       </div>
@@ -800,6 +851,69 @@ const Orders = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Delete Order Confirmation Dialog */}
+      <Dialog open={showDeleteConfirmDialog} onOpenChange={(open) => {
+        setShowDeleteConfirmDialog(open);
+        if (!open) {
+          setOrderToDelete(null);
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">{t('orders.deleteOrder.title')}</DialogTitle>
+            <DialogDescription>
+              {t('orders.deleteOrder.description')}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {orderToDelete && (
+            <div className="py-4">
+              <div className="bg-red-50 p-4 rounded-md mb-4">
+                <p className="text-sm text-red-800">
+                  {t('orders.deleteOrder.warning')}
+                </p>
+              </div>
+              
+              <div className="mb-4">
+                <h3 className="text-sm font-medium mb-2">{t('orders.deleteOrder.orderInfo')}:</h3>
+                <ul className="space-y-1 text-sm">
+                  <li><span className="font-medium">{t('orders.columns.orderId')}:</span> {orderToDelete.orderNumber}</li>
+                  <li><span className="font-medium">{t('orders.columns.customer')}:</span> {orderToDelete.customerName}</li>
+                  <li><span className="font-medium">{t('orders.columns.date')}:</span> {format(new Date(orderToDelete.orderDate), "MMM dd, yyyy")}</li>
+                  <li><span className="font-medium">{t('orders.columns.status')}:</span> {t(`orders.status.${orderToDelete.status}`)}</li>
+                </ul>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter className="flex justify-between space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowDeleteConfirmDialog(false)}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmDeleteOrder}
+              disabled={deleteOrderMutation.isPending}
+            >
+              {deleteOrderMutation.isPending ? (
+                <div className="flex items-center">
+                  <span className="animate-spin mr-2">⏳</span>
+                  {t('orders.deleteOrder.deleting')}
+                </div>
+              ) : (
+                <div className="flex items-center">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {t('orders.deleteOrder.confirm')}
+                </div>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
       {/* Document Upload Dialog */}
       <Dialog open={showUploadDialog} onOpenChange={(open) => {
         setShowUploadDialog(open);
