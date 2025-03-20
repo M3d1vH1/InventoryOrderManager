@@ -369,6 +369,14 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
   }
   
+  async getOrdersByCustomer(customerName: string): Promise<Order[]> {
+    return await this.db
+      .select()
+      .from(orders)
+      .where(eq(orders.customerName, customerName))
+      .orderBy(desc(orders.orderDate));
+  }
+  
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
     // Generate order number format: ORD-XXXX
     const allOrders = await this.getAllOrders();

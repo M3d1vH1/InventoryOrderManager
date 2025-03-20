@@ -778,6 +778,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get orders by customer name
+  app.get('/api/customers/:id/orders', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const customer = await storage.getCustomer(id);
+      
+      if (!customer) {
+        return res.status(404).json({ message: 'Customer not found' });
+      }
+      
+      const orders = await storage.getOrdersByCustomer(customer.name);
+      res.json(orders);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
   // Add endpoint to get previous products for a customer
   app.get('/api/customers/:customerName/previous-products', async (req, res) => {
     try {

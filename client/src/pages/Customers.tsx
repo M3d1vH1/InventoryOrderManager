@@ -144,6 +144,30 @@ const Customers = () => {
     },
     enabled: viewDetailsId !== null,
   });
+  
+  // Define Order interface
+  interface Order {
+    id: number;
+    orderNumber: string;
+    customerName: string;
+    orderDate: string;
+    status: 'pending' | 'picked' | 'shipped' | 'cancelled';
+    notes?: string;
+    hasShippingDocument?: boolean;
+  }
+  
+  // Query to fetch customer orders when viewDetailsId changes
+  const { data: customerOrders = [] } = useQuery<Order[]>({
+    queryKey: ['/api/customers/orders', viewDetailsId],
+    queryFn: async () => {
+      if (!viewDetailsId) return [];
+      return apiRequest<Order[]>({
+        url: `/api/customers/${viewDetailsId}/orders`,
+        method: 'GET'
+      });
+    },
+    enabled: viewDetailsId !== null,
+  });
 
   // Mutation for creating a new customer
   const createCustomerMutation = useMutation({
