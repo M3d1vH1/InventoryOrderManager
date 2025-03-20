@@ -9,7 +9,6 @@ import { useSidebar } from "@context/SidebarContext";
 import { useAuth } from "@context/AuthContext";
 import { useToast } from "@hooks/use-toast";
 import { exportData } from "@lib/utils";
-import { useLocation } from "wouter";
 import { 
   Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage 
 } from "@components/ui/form";
@@ -100,25 +99,6 @@ export default function Products() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  
-  // Get URL parameters
-  const [location] = useLocation();
-  
-  // Parse URL params to set initial filters
-  useEffect(() => {
-    const params = new URLSearchParams(location.split("?")[1]);
-    const stockParam = params.get("stock");
-    
-    if (stockParam === "low") {
-      setStockFilter("low");
-    } else if (stockParam === "out") {
-      setStockFilter("out");
-    } else if (stockParam === "all-alerts") {
-      // Custom filter that includes both low stock and out of stock
-      // This doesn't exist in the UI, so we'll create a special filter value
-      setStockFilter("low-and-out");
-    }
-  }, [location]);
 
   // Query: Get all products
   const { data: products = [], isLoading } = useQuery({
@@ -143,10 +123,6 @@ export default function Products() {
       return false;
     }
     if (stockFilter === "out" && product.currentStock > 0) {
-      return false;
-    }
-    // Special filter for both low and out of stock products
-    if (stockFilter === "low-and-out" && product.currentStock > product.minStockLevel) {
       return false;
     }
 

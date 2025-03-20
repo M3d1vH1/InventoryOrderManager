@@ -21,7 +21,7 @@ const InventoryAlerts = () => {
   const { t } = useTranslation();
   
   const { data: lowStockProducts, isLoading } = useQuery<Product[]>({
-    queryKey: ['/api/products/low-and-out-of-stock'],
+    queryKey: ['/api/products/low-stock'],
   });
 
   const restockMutation = useMutation({
@@ -34,7 +34,6 @@ const InventoryAlerts = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/products/low-stock'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/products/low-and-out-of-stock'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       toast({
         title: t('inventory.productRestocked'),
@@ -111,8 +110,8 @@ const InventoryAlerts = () => {
     <div className="bg-white rounded-lg shadow">
       <div className="p-4 border-b border-slate-200 flex justify-between items-center">
         <h2 className="font-semibold text-lg">{t('inventory.alerts')}</h2>
-        <Link href="/products?stock=all-alerts" className="text-primary hover:text-blue-700 text-sm font-medium">
-          {t('inventory.viewAllStockAlerts')}
+        <Link href="/products?stock=low" className="text-primary hover:text-blue-700 text-sm font-medium">
+          {t('inventory.viewAllLowStockItems')}
         </Link>
       </div>
       <div className="p-4 space-y-4">

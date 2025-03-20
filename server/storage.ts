@@ -52,7 +52,6 @@ export interface IStorage {
   updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product | undefined>;
   deleteProduct(id: number): Promise<boolean>;
   getLowStockProducts(): Promise<Product[]>;
-  getLowAndOutOfStockProducts(): Promise<Product[]>;
   searchProducts(query: string, category?: string, stockStatus?: string, tag?: string): Promise<Product[]>;
   
   // Order methods
@@ -460,11 +459,6 @@ export class MemStorage implements IStorage {
   async getLowStockProducts(): Promise<Product[]> {
     return Array.from(this.products.values())
       .filter(product => product.currentStock <= product.minStockLevel);
-  }
-  
-  async getLowAndOutOfStockProducts(): Promise<Product[]> {
-    return Array.from(this.products.values())
-      .filter(product => product.currentStock <= product.minStockLevel || product.currentStock === 0);
   }
   
   async searchProducts(query: string, category?: string, stockStatus?: string, tag?: string): Promise<Product[]> {
