@@ -56,10 +56,10 @@ const Header = () => {
         </div>
         <div className="flex items-center gap-4">
           <Button
-            variant="outline"
+            variant="default"
             size="sm"
             onClick={() => setShowOrderForm(true)}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
           >
             <PlusCircle className="h-4 w-4" />
             <span>{t('orders.createNew')}</span>
