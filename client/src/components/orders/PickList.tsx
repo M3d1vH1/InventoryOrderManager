@@ -30,7 +30,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { MapPin, QrCode, ScanBarcode, Truck, RefreshCcw, CheckCircle2, FileText, Info } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { MapPin, QrCode, ScanBarcode, Truck, RefreshCcw, CheckCircle2, FileText, Info, Printer, PackageCheck } from "lucide-react";
 import { BarcodeScanner } from "@/components/barcode";
 
 interface OrderItem {
@@ -174,6 +176,11 @@ const PickList = ({ order }: { order: Order }) => {
   };
 
   const completePickList = () => {
+    // Show box count dialog instead of immediately completing
+    setShowBoxCountDialog(true);
+  };
+  
+  const handleCompleteWithBoxCount = () => {
     // Prepare data with actual quantities
     const itemsWithActualQuantities = orderItemsWithProducts
       .filter(item => item.picked)
@@ -199,8 +206,89 @@ const PickList = ({ order }: { order: Order }) => {
             variant: "destructive"
           });
         }
+        
+        // Generate shipping labels with the boxCount
+        generateShippingLabels(order, boxCount);
       }
     });
+    
+    // Close dialog
+    setShowBoxCountDialog(false);
+  };
+  
+  // Function to generate shipping labels for CAB EOS printer
+  const generateShippingLabels = (order: Order, boxCount: number) => {
+    // Only proceed if we have a valid box count
+    if (boxCount < 1) {
+      toast({
+        title: "Error",
+        description: "Box count must be at least 1",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Create the JScript commands for the CAB EOS1 printer
+    const createLabelJScript = (boxNumber: number, totalBoxes: number) => {
+      // Based on CAB EOS manual - JScript programming language
+      return `
+m m
+J
+H 100,0,T
+S l1;0,0,68,71,100
+T 25,25,0,3,pt9;Order: ${order.orderNumber}
+T 25,50,0,3,pt8;Customer: ${order.customerName}
+T 25,75,0,3,pt8;Date: ${new Date(order.orderDate).toLocaleDateString()}
+T 25,100,0,3,pt12;BOX ${boxNumber} OF ${totalBoxes}
+B 25,130,0,EAN13,60,0,3,3;${order.id.toString().padStart(12, '0')}
+T 25,220,0,3,pt8;Warehouse Management System
+A 1
+`;
+    };
+    
+    try {
+      // For each box, create a label
+      for (let i = 1; i <= boxCount; i++) {
+        const jscript = createLabelJScript(i, boxCount);
+        
+        // Send to the server to print
+        apiRequest({
+          url: '/api/print/shipping-label',
+          method: 'POST',
+          body: JSON.stringify({
+            labelContent: jscript,
+            orderId: order.id,
+            boxNumber: i,
+            totalBoxes: boxCount
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+        .then(() => {
+          if (i === boxCount) {
+            toast({
+              title: "Shipping labels printed",
+              description: `${boxCount} label(s) sent to printer`,
+              variant: "default"
+            });
+          }
+        })
+        .catch(error => {
+          toast({
+            title: "Error printing label",
+            description: error.message || "Failed to print shipping label",
+            variant: "destructive"
+          });
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error generating labels",
+        description: error.message || "An error occurred while generating shipping labels",
+        variant: "destructive"
+      });
+    }
   };
   
   // Handle barcode scan
@@ -519,6 +607,57 @@ const PickList = ({ order }: { order: Order }) => {
           )}
         </Button>
       </CardFooter>
+
+      {/* Box Count Dialog */}
+      <Dialog open={showBoxCountDialog} onOpenChange={setShowBoxCountDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <PackageCheck className="mr-2 h-5 w-5 text-blue-500" />
+              Enter Box Count for Shipping Labels
+            </DialogTitle>
+            <DialogDescription>
+              Specify how many boxes are used for this order. A shipping label will be generated for each box.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="boxCount">Number of Boxes</Label>
+                <Input
+                  id="boxCount"
+                  type="number"
+                  min={1}
+                  value={boxCount}
+                  onChange={(e) => setBoxCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+                <div className="flex items-center mb-1">
+                  <Printer className="h-4 w-4 mr-2 text-blue-500" />
+                  <p className="text-sm font-medium text-blue-700">CAB EOS1 Label Information</p>
+                </div>
+                <p className="text-sm text-blue-600">
+                  Labels will be printed with order number, customer name, and box numbers.
+                </p>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBoxCountDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCompleteWithBoxCount} 
+              disabled={boxCount < 1 || updateOrderStatusMutation.isPending}
+            >
+              {updateOrderStatusMutation.isPending ? "Processing..." : "Complete & Print Labels"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
