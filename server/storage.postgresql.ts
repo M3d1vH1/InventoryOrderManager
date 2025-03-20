@@ -246,6 +246,9 @@ export class DatabaseStorage implements IStorage {
       console.log(`Using category enum value: ${categoryEnumValue}`);
       
       // Execute the SQL insert - removed the non-existent 'category' column
+      // Let's handle the tags array separately since it needs special SQL syntax
+      const tagsArray = productWithCategory.tags || [];
+      
       const result = await this.db.execute(sql`
         INSERT INTO products (
           name, 
@@ -270,7 +273,7 @@ export class DatabaseStorage implements IStorage {
           ${productWithCategory.location || null}, 
           ${productWithCategory.unitsPerBox || null}, 
           ${productWithCategory.imagePath || null},
-          ${productWithCategory.tags || null}
+          ${tagsArray}::text[]
         )
         RETURNING *
       `);
