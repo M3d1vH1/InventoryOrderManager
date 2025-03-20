@@ -167,7 +167,7 @@ export default function UnshippedItems({ mode = 'all', customerId }: UnshippedIt
             ? t('unshippedItems.pendingAuthorization') 
             : t('unshippedItems.title')}
         </CardTitle>
-        {hasPermission(['admin', 'manager']) && selectedItems.length > 0 && (
+        {hasPermission(['admin', 'manager', 'front_office']) && selectedItems.length > 0 && (
           <Button 
             onClick={handleAuthorize}
             disabled={authorizeItemsMutation.isPending}
@@ -186,7 +186,7 @@ export default function UnshippedItems({ mode = 'all', customerId }: UnshippedIt
           <Table>
             <TableHeader>
               <TableRow>
-                {hasPermission(['admin', 'manager']) && (
+                {hasPermission(['admin', 'manager', 'front_office']) && (
                   <TableHead className="w-12">
                     <Checkbox 
                       checked={selectedItems.length === unshippedItems.length && unshippedItems.length > 0}
@@ -206,7 +206,7 @@ export default function UnshippedItems({ mode = 'all', customerId }: UnshippedIt
             <TableBody>
               {unshippedItems.map((item: UnshippedItem) => (
                 <TableRow key={item.id}>
-                  {hasPermission(['admin', 'manager']) && (
+                  {hasPermission(['admin', 'manager', 'front_office']) && (
                     <TableCell>
                       <Checkbox 
                         checked={selectedItems.includes(item.id)}

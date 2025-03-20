@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { useTranslation } from 'react-i18next';
 
 interface Notification {
   id: string;
@@ -38,6 +39,7 @@ export const useNotifications = () => useContext(NotificationContext);
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const { toast } = useToast();
+  const { t } = useTranslation();
   
   // Calculate unread count
   const unreadCount = notifications.filter(n => !n.read).length;

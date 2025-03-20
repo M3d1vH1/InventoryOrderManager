@@ -347,11 +347,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Route for authorizing unshipped items - requires manager or admin role
-  app.post('/api/unshipped-items/authorize', isAuthenticated, hasRole(['admin', 'manager']), async (req, res) => {
+  // Route for authorizing unshipped items - now allows front_office users too
+  app.post('/api/unshipped-items/authorize', isAuthenticated, hasRole(['admin', 'manager', 'front_office']), async (req, res) => {
     try {
       const { itemIds } = req.body;
       const userId = (req.user as any)?.id;
+      const userRole = (req.user as any)?.role;
       
       if (!itemIds || !Array.isArray(itemIds) || itemIds.length === 0) {
         return res.status(400).json({ message: 'Item IDs are required' });
@@ -364,7 +365,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       broadcastMessage({
         type: 'unshippedItemsAuthorized',
         itemCount: itemIds.length,
-        authorizedById: userId
+        authorizedById: userId,
+        authorizedByRole: userRole
       });
       
       res.json({ success: true, authorizedItems: itemIds.length });

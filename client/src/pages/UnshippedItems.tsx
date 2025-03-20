@@ -57,7 +57,7 @@ export default function UnshippedItemsPage() {
                     {t('unshippedItems.authorizationProcessDescription')}
                   </p>
                 </div>
-                {hasPermission(['admin', 'manager']) && (
+                {hasPermission(['admin', 'manager', 'front_office']) && (
                   <div>
                     <h3 className="text-lg font-medium">{t('unshippedItems.managersResponsibility')}</h3>
                     <p className="text-muted-foreground">
