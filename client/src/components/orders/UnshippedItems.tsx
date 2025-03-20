@@ -6,7 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Spinner } from '@/components/ui/spinner';
+import { Spinner } from '@/components/ui/spinner'; // Now pointing to our new Spinner component
 import { apiRequest } from '@/lib/queryClient';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
