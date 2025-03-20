@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { exportData } from '@/lib/utils';
+import { format } from 'date-fns';
 
 import {
   Card,
@@ -68,7 +69,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, MoreHorizontal, Plus, Search, FileDown, X } from 'lucide-react';
+import { Loader2, MoreHorizontal, Plus, Search, FileDown, X, ClipboardCheck, FileText, Eye } from 'lucide-react';
 
 // Define a schema for the customer form
 const customerFormSchema = z.object({
@@ -115,6 +116,8 @@ const Customers = () => {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [viewDetailsId, setViewDetailsId] = useState<number | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -146,7 +149,28 @@ const Customers = () => {
     enabled: viewDetailsId !== null,
   });
   
-  // Define Order interface
+  // Define Order and OrderItem interfaces
+  interface Product {
+    id: number;
+    name: string;
+    sku: string;
+    barcode?: string;
+    category: string;
+    description?: string;
+    minStockLevel: number;
+    currentStock: number;
+    location?: string;
+    unitsPerBox?: number;
+  }
+
+  interface OrderItem {
+    id: number;
+    orderId: number;
+    productId: number;
+    quantity: number;
+    product?: Product;
+  }
+
   interface Order {
     id: number;
     orderNumber: string;
@@ -155,6 +179,7 @@ const Customers = () => {
     status: 'pending' | 'picked' | 'shipped' | 'cancelled';
     notes?: string;
     hasShippingDocument?: boolean;
+    items?: OrderItem[];
   }
   
   // Query to fetch customer orders when viewDetailsId changes
