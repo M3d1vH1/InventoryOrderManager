@@ -11,7 +11,7 @@ import fs from "fs";
 import { WebSocketServer, WebSocket } from 'ws';
 import { exec } from "child_process";
 import { promisify } from "util";
-import { getEmailSettings, updateEmailSettings, testEmailConnection, getEmailTemplate, updateEmailTemplate } from "./api/emailSettings";
+import { getEmailSettings, updateEmailSettings, testEmailConnection, getEmailTemplate, updateEmailTemplate, getLabelTemplate, updateLabelTemplate } from "./api/emailSettings";
 import { sendOrderShippedEmail } from "./services/emailService";
 
 // Define WebSocket server and connected clients
@@ -1713,6 +1713,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/email-settings/templates/:templateName', isAuthenticated, hasRole(['admin']), getEmailTemplate);
   
   app.put('/api/email-settings/templates/:templateName', isAuthenticated, hasRole(['admin']), updateEmailTemplate);
+  
+  // Label template routes
+  app.get('/api/label-templates/:templateName', isAuthenticated, hasRole(['admin', 'warehouse']), getLabelTemplate);
+  
+  app.put('/api/label-templates/:templateName', isAuthenticated, hasRole(['admin']), updateLabelTemplate);
   
   // Email notification endpoint for shipped orders
   app.post('/api/orders/:id/send-email', isAuthenticated, async (req, res) => {
