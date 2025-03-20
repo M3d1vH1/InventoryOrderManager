@@ -434,7 +434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/orders/:id/status', isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { status } = req.body;
+      const { status, itemQuantities } = req.body;
       const userId = (req.user as any)?.id;
       const userRole = (req.user as any)?.role;
       
@@ -450,8 +450,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const previousStatus = originalOrder.status;
       
-      // Note: We allow shipping orders with unshipped items as part of the partial fulfillment flow
-      // This is because unshipped items are tracked separately and will be fulfilled in subsequent orders
+      // Handle partial shipments if we have item quantities data and we're marking as picked
+      if (status === 'picked' && itemQuantities && Array.isArray(itemQuantities)) {
+        const orderItems = await storage.getOrderItems(id);
+        
+        // Process each item in the order
+        for (const quantityData of itemQuantities) {
+          const { orderItemId, productId, requestedQuantity, actualQuantity } = quantityData;
+          
+          // If actual quantity is less than requested, create unshipped items for the difference
+          if (actualQuantity < requestedQuantity) {
+            const orderItem = orderItems.find(item => item.id === orderItemId);
+            
+            if (orderItem) {
+              // Calculate the quantity difference
+              const quantityDifference = requestedQuantity - actualQuantity;
+              
+              // Create an unshipped item record
+              await storage.addUnshippedItem({
+                orderId: id,
+                productId,
+                quantity: quantityDifference,
+                customerName: originalOrder.customerName,
+                customerId: originalOrder.customerName,  // Using customerName as customerId for now
+                originalOrderNumber: originalOrder.orderNumber,
+                notes: `Partially fulfilled order. ${actualQuantity} out of ${requestedQuantity} shipped.`
+              });
+              
+              console.log(`Created unshipped item for order ${id}, product ${productId}, quantity ${quantityDifference}`);
+            }
+          }
+        }
+      }
+      
+      // If status is being changed to shipped, check for any unshipped items
       if (status === 'shipped') {
         // Get unshipped items for this order and log them for tracking purposes
         const unshippedItems = await storage.getUnshippedItemsByOrder(id);
@@ -479,6 +511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Update the order status
       const updatedOrder = await storage.updateOrderStatus(id, status, undefined, userId);
       
       if (!updatedOrder) {

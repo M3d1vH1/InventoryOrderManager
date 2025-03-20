@@ -109,11 +109,24 @@ const PickList = ({ order }: { order: Order }) => {
   }) || [];
 
   const updateOrderStatusMutation = useMutation({
-    mutationFn: async (status: 'pending' | 'picked' | 'shipped' | 'cancelled') => {
+    mutationFn: async (status: 'pending' | 'picked' | 'shipped' | 'cancelled', options?: any) => {
+      // Collect actual quantity data for items that have been picked
+      const itemQuantities = orderItemsWithProducts
+        .filter(item => item.picked)
+        .map(item => ({
+          orderItemId: item.id,
+          productId: item.productId,
+          requestedQuantity: item.quantity,
+          actualQuantity: item.actualQuantity || item.quantity
+        }));
+      
       return apiRequest({
         url: `/api/orders/${order.id}/status`,
         method: 'PATCH',
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ 
+          status,
+          itemQuantities
+        }),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -122,9 +135,11 @@ const PickList = ({ order }: { order: Order }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/unshipped-items'] });
       toast({
         title: "Order status updated",
         description: "The order has been marked as picked",
+        variant: "default"
       });
     },
     onError: (error: any) => {
@@ -176,7 +191,7 @@ const PickList = ({ order }: { order: Order }) => {
           toast({
             title: "Partial order fulfilled",
             description: "Unshipped items have been created for items with insufficient quantity.",
-            variant: "warning"
+            variant: "destructive"
           });
         }
       }
