@@ -373,6 +373,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get all unshipped items
+  app.get('/api/unshipped-items', isAuthenticated, async (req, res) => {
+    try {
+      const customerId = req.query.customerId as string;
+      const items = await storage.getUnshippedItems(customerId);
+      res.json(items);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
   // Get unshipped items pending authorization
   app.get('/api/unshipped-items/pending-authorization', isAuthenticated, async (req, res) => {
     try {
