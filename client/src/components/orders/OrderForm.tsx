@@ -421,14 +421,16 @@ const OrderForm = ({
         </h2>
       </div>
       <div className="p-4">
-        {/* Partial fulfillment info alert */}
-        <Alert className="mb-6 bg-amber-50 border-amber-200">
-          <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <AlertTitle className="text-amber-800">{t('orders.form.partialFulfillmentTitle')}</AlertTitle>
-          <AlertDescription className="text-amber-700">
-            {t('orders.form.partialFulfillmentDescription')}
-          </AlertDescription>
-        </Alert>
+        {/* Partial fulfillment info alert - only show when there's at least one item exceeding stock */}
+        {orderItems.some(item => item.quantity > (item.product?.currentStock || 0)) && (
+          <Alert className="mb-6 bg-amber-50 border-amber-200">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertTitle className="text-amber-800">{t('orders.form.partialFulfillmentTitle')}</AlertTitle>
+            <AlertDescription className="text-amber-700">
+              {t('orders.form.partialFulfillmentDescription')}
+            </AlertDescription>
+          </Alert>
+        )}
       
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
