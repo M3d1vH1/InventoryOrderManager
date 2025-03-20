@@ -1027,7 +1027,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all orders for this customer
       const allOrders = await storage.getAllOrders();
       
-      // Filter orders by customer name and get shipped orders
+      // Filter orders by customer name
       const customerOrders = allOrders.filter(order => 
         order.customerName.toLowerCase() === decodeURIComponent(customerName).toLowerCase());
       
@@ -1035,47 +1035,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json([]);
       }
       
-      // Find orders that have status other than 'shipped'
+      // Get all official unshipped items for this customer
+      const unshippedItems = await storage.getUnshippedItems(decodeURIComponent(customerName));
+      
+      // If we have unshipped items, use those first
+      let result: any[] = [];
+      if (unshippedItems.length > 0) {
+        const productDetailsPromises = unshippedItems.map(async item => {
+          const product = await storage.getProduct(item.productId);
+          const order = customerOrders.find(o => o.id === item.orderId);
+          if (product) {
+            return {
+              ...product,
+              quantity: item.quantity,
+              orderNumber: item.originalOrderNumber || (order ? order.orderNumber : 'Unknown'),
+              orderDate: order ? order.orderDate : new Date().toISOString(),
+              status: 'unshipped',
+              notes: item.notes,
+              unshippedItemId: item.id,
+              authorized: item.authorized
+            };
+          }
+          return null;
+        });
+        
+        result = (await Promise.all(productDetailsPromises))
+          .filter((item): item is any => item !== null);
+      }
+      
+      // Also include items from incomplete orders (pending/picked)
       const incompleteOrders = customerOrders.filter(order => 
         order.status !== 'shipped' && order.status !== 'cancelled');
       
-      if (incompleteOrders.length === 0) {
-        return res.json([]);
+      if (incompleteOrders.length > 0) {
+        // Get all order items for each incomplete order
+        const unshippedProductsPromises = incompleteOrders.map(async order => {
+          const orderItems = await storage.getOrderItems(order.id);
+          return orderItems.map(item => ({
+            ...item,
+            orderNumber: order.orderNumber,
+            orderDate: order.orderDate,
+            status: order.status
+          }));
+        });
+        
+        const unshippedItemsArrays = await Promise.all(unshippedProductsPromises);
+        const allUnshippedItems = unshippedItemsArrays.flat();
+        
+        // Get product details for each unshipped item
+        const pendingProductDetailsPromises = allUnshippedItems.map(async item => {
+          const product = await storage.getProduct(item.productId);
+          if (product) {
+            return {
+              ...product,
+              quantity: item.quantity,
+              orderNumber: item.orderNumber,
+              orderDate: item.orderDate,
+              status: item.status,
+              source: 'pending_order'
+            };
+          }
+          return null;
+        });
+        
+        const pendingProducts = (await Promise.all(pendingProductDetailsPromises))
+          .filter(item => item !== null);
+          
+        // Combine both result arrays
+        result = [...result, ...pendingProducts];
       }
       
-      // Get all order items for each incomplete order
-      const unshippedProductsPromises = incompleteOrders.map(async order => {
-        const orderItems = await storage.getOrderItems(order.id);
-        return orderItems.map(item => ({
-          ...item,
-          orderNumber: order.orderNumber,
-          orderDate: order.orderDate,
-          status: order.status
-        }));
-      });
-      
-      const unshippedItemsArrays = await Promise.all(unshippedProductsPromises);
-      const allUnshippedItems = unshippedItemsArrays.flat();
-      
-      // Get product details for each unshipped item
-      const productDetailsPromises = allUnshippedItems.map(async item => {
-        const product = await storage.getProduct(item.productId);
-        if (product) {
-          return {
-            ...product,
-            quantity: item.quantity,
-            orderNumber: item.orderNumber,
-            orderDate: item.orderDate,
-            status: item.status
-          };
-        }
-        return null;
-      });
-      
-      const unshippedProducts = (await Promise.all(productDetailsPromises))
-        .filter(item => item !== null);
-      
-      res.json(unshippedProducts);
+      console.log(`Found ${result.length} unshipped products for customer ${customerName}`);
+      res.json(result);
     } catch (error: any) {
       console.error("Error fetching unshipped products:", error);
       res.status(500).json({ message: `Error fetching unshipped products: ${error.message}` });
@@ -1090,11 +1121,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Customer name is required" });
       }
       
-      // Get all unshipped items for this customer
-      const unshippedItems = await storage.getUnshippedItems(customerName);
+      // Get all unshipped items for this customer (including from shipped orders)
+      const unshippedItems = await storage.getUnshippedItems(decodeURIComponent(customerName));
+      
+      console.log(`Found ${unshippedItems.length} unshipped items for customer ${customerName}`);
       
       // Check authorized unshipped items
       const hasAuthorizedUnshippedItems = unshippedItems.some(item => item.authorized);
+      const hasUnauthorizedUnshippedItems = unshippedItems.some(item => !item.authorized);
       
       // Also check for pending orders that aren't yet fully shipped
       const allOrders = await storage.getAllOrders();
@@ -1107,6 +1141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hasUnshippedItems: unshippedItems.length > 0,
         unshippedItemsCount: unshippedItems.length,
         hasAuthorizedUnshippedItems,
+        hasUnauthorizedUnshippedItems,
         pendingOrders: customerOrders.length,
       });
     } catch (error: any) {
