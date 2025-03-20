@@ -537,6 +537,11 @@ const Orders = () => {
       });
     }
   };
+  
+  // Handler for sending email notification
+  const handleSendEmail = (orderId: number) => {
+    sendEmailMutation.mutate(orderId);
+  };
 
   // Delete order mutation
   const deleteOrderMutation = useMutation({
@@ -561,6 +566,31 @@ const Orders = () => {
         title: "Failed to delete order",
         description: error.message,
         variant: "destructive",
+      });
+    }
+  });
+  
+  // Send email notification mutation
+  const sendEmailMutation = useMutation({
+    mutationFn: async (orderId: number) => {
+      return apiRequest({
+        url: `/api/orders/${orderId}/send-email`,
+        method: 'POST',
+      });
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Email Sent",
+        description: data.message || "Shipping notification email has been sent to the customer.",
+        duration: 5000,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Send Email",
+        description: error.message || "There was an error sending the email notification. Please check email settings.",
+        variant: "destructive",
+        duration: 7000,
       });
     }
   });
@@ -966,6 +996,18 @@ const Orders = () => {
                         >
                           <FileText className="h-4 w-4" />
                           <span>{t('orders.actions.viewDocument')}</span>
+                        </Button>
+                      )}
+                      
+                      {/* Send email notification button - only for shipped orders */}
+                      {orderDetails.status === 'shipped' && (
+                        <Button
+                          onClick={() => handleSendEmail(orderDetails.id)}
+                          variant="outline"
+                          className="flex items-center gap-2"
+                        >
+                          <Mail className="h-4 w-4" />
+                          <span>{t('orders.actions.sendEmail', 'Send Email')}</span>
                         </Button>
                       )}
                     </div>
