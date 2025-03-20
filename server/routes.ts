@@ -300,6 +300,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { items, ...orderData } = req.body;
       const validatedOrder = insertOrderSchema.parse(orderData);
       
+      // Check if this customer has unshipped items before creating a new order
+      const customerName = validatedOrder.customerName;
+      const unshippedItems = await storage.getUnshippedItems(customerName);
+      
+      // Create the order
       const order = await storage.createOrder({
         ...validatedOrder,
         orderDate: validatedOrder.orderDate || new Date(),
@@ -318,7 +323,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      res.status(201).json(order);
+      // If customer has unshipped items, send a notification via WebSocket
+      if (unshippedItems.length > 0) {
+        // Create a notification about unshipped items
+        const notificationId = Math.random().toString(36).substring(2, 15);
+        const notification = {
+          id: notificationId,
+          title: 'Customer Has Unfulfilled Items',
+          message: `New order created for ${customerName} who has ${unshippedItems.length} unfulfilled item(s) from previous orders.`,
+          type: 'warning',
+          timestamp: new Date(),
+          read: false,
+          orderId: order.id,
+          orderNumber: order.orderNumber
+        };
+        
+        // Send notification via WebSocket
+        broadcastMessage({
+          type: 'notification',
+          notification
+        });
+        
+        // Add info about unshipped items to the response
+        return res.status(201).json({
+          order,
+          warning: {
+            hasUnshippedItems: true,
+            unshippedItemsCount: unshippedItems.length,
+            message: `Customer has ${unshippedItems.length} unfulfilled item(s) from previous orders.`
+          }
+        });
+      }
+      
+      res.status(201).json({
+        order,
+        warning: null
+      });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Validation error', errors: error.errors });
@@ -923,6 +963,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error fetching unshipped products:", error);
       res.status(500).json({ message: `Error fetching unshipped products: ${error.message}` });
+    }
+  });
+  
+  // New endpoint to check if a customer has unshipped items
+  app.get('/api/customers/:customerName/has-unshipped-items', async (req, res) => {
+    try {
+      const { customerName } = req.params;
+      if (!customerName) {
+        return res.status(400).json({ message: "Customer name is required" });
+      }
+      
+      // Get all unshipped items for this customer
+      const unshippedItems = await storage.getUnshippedItems(customerName);
+      
+      // Check authorized unshipped items
+      const hasAuthorizedUnshippedItems = unshippedItems.some(item => item.authorized);
+      
+      // Also check for pending orders that aren't yet fully shipped
+      const allOrders = await storage.getAllOrders();
+      const customerOrders = allOrders.filter(order => 
+        order.customerName.toLowerCase() === decodeURIComponent(customerName).toLowerCase() &&
+        (order.status === 'pending' || order.status === 'picked'));
+      
+      // Return data about unshipped items and pending orders
+      res.json({
+        hasUnshippedItems: unshippedItems.length > 0,
+        unshippedItemsCount: unshippedItems.length,
+        hasAuthorizedUnshippedItems,
+        pendingOrders: customerOrders.length,
+      });
+    } catch (error: any) {
+      console.error("Error checking for unshipped items:", error);
+      res.status(500).json({ 
+        message: `Error checking for unshipped items: ${error.message}` 
+      });
     }
   });
   
