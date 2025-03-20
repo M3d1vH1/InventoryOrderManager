@@ -421,6 +421,15 @@ const OrderForm = ({
         </h2>
       </div>
       <div className="p-4">
+        {/* Partial fulfillment info alert */}
+        <Alert className="mb-6 bg-amber-50 border-amber-200">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertTitle className="text-amber-800">{t('orders.form.partialFulfillmentTitle')}</AlertTitle>
+          <AlertDescription className="text-amber-700">
+            {t('orders.form.partialFulfillmentDescription')}
+          </AlertDescription>
+        </Alert>
+      
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -665,23 +674,30 @@ const OrderForm = ({
                               <Input
                                 type="number"
                                 min="1"
-                                max={item.product?.currentStock || 999}
                                 value={item.quantity}
                                 onChange={(e) => updateQuantity(index, parseInt(e.target.value) || 1)}
-                                className="w-full h-12 text-base"
+                                className={`w-full h-12 text-base ${item.quantity > (item.product?.currentStock || 0) ? 'border-amber-400' : ''}`}
                               />
                             </td>
                             <td className="py-4 px-4">
-                              <span className="text-base">
-                                {t('orders.form.availableStock')}: {' '}
-                                <span className={`font-medium ${
-                                  (item.product?.currentStock || 0) <= (item.product?.minStockLevel || 0) 
-                                    ? 'text-red-600' 
-                                    : 'text-green-600'
-                                }`}>
-                                  {item.product?.currentStock || 0}
+                              <div>
+                                <span className="text-base">
+                                  {t('orders.form.availableStock')}: {' '}
+                                  <span className={`font-medium ${
+                                    (item.product?.currentStock || 0) <= (item.product?.minStockLevel || 0) 
+                                      ? 'text-red-600' 
+                                      : 'text-green-600'
+                                  }`}>
+                                    {item.product?.currentStock || 0}
+                                  </span>
                                 </span>
-                              </span>
+                                {item.quantity > (item.product?.currentStock || 0) && (
+                                  <div className="mt-1 text-sm text-amber-600 flex items-center">
+                                    <AlertTriangle className="h-3 w-3 mr-1" />
+                                    {t('orders.form.partialFulfillment')}
+                                  </div>
+                                )}
+                              </div>
                             </td>
                             <td className="py-4 px-4">
                               <button 

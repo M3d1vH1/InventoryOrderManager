@@ -135,7 +135,10 @@
       "creating": "Creating...",
       "backToOrders": "Back to Orders",
       "addNewCustomer": "Add New Customer",
-      "customerDetailsInstructions": "Please enter customer details below"
+      "customerDetailsInstructions": "Please enter customer details below",
+      "partialFulfillment": "Partial fulfillment",
+      "partialFulfillmentTitle": "Partial Fulfillment Available",
+      "partialFulfillmentDescription": "When ordering more than available stock, the system will ship what's available and create backorder items for the rest."
     },
     "details": {
       "customer": "Customer",

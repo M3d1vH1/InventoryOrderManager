@@ -143,7 +143,10 @@
       "creating": "Δημιουργία...",
       "backToOrders": "Επιστροφή στις Παραγγελίες",
       "addNewCustomer": "Προσθήκη Νέου Πελάτη",
-      "customerDetailsInstructions": "Εισάγετε τα στοιχεία του πελάτη παρακάτω"
+      "customerDetailsInstructions": "Εισάγετε τα στοιχεία του πελάτη παρακάτω",
+      "partialFulfillment": "Μερική εκπλήρωση",
+      "partialFulfillmentTitle": "Διαθέσιμη Μερική Εκπλήρωση",
+      "partialFulfillmentDescription": "Όταν παραγγέλνετε περισσότερα από το διαθέσιμο απόθεμα, το σύστημα θα αποστείλει ό,τι είναι διαθέσιμο και θα δημιουργήσει είδη σε εκκρεμότητα για τα υπόλοιπα."
     },
     "details": {
       "customer": "Πελάτης",
