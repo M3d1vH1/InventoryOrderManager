@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -622,22 +622,23 @@ const Settings = () => {
   // Get current email settings query
   const { data: emailSettings, isLoading: isLoadingEmailSettings } = useQuery({
     queryKey: ['/api/email-settings'],
-    onSuccess: (data: any) => {
-      if (data) {
-        // Only reset form if we got data from the server
-        emailForm.reset({
-          host: data.host || 'smtp.gmail.com',
-          port: data.port || 587,
-          secure: data.secure || false,
-          authUser: data.authUser || '',
-          authPass: '', // Never pre-fill password field for security
-          fromEmail: data.fromEmail || '',
-          companyName: data.companyName || 'Warehouse Management System',
-          enableNotifications: data.enableNotifications ?? true,
-        });
-      }
-    }
   });
+  
+  // Update form when settings are loaded
+  useEffect(() => {
+    if (emailSettings) {
+      emailForm.reset({
+        host: emailSettings.host || 'smtp.gmail.com',
+        port: emailSettings.port || 587,
+        secure: emailSettings.secure || false,
+        authUser: emailSettings.authUser || '',
+        authPass: '', // Never pre-fill password field for security
+        fromEmail: emailSettings.fromEmail || '',
+        companyName: emailSettings.companyName || 'Warehouse Management System',
+        enableNotifications: emailSettings.enableNotifications ?? true,
+      });
+    }
+  }, [emailSettings, emailForm]);
 
   // Test email form
   const testEmailForm = useForm<z.infer<typeof emailTestSchema>>({
@@ -674,13 +675,27 @@ const Settings = () => {
   // Test email mutation
   const testEmailMutation = useMutation({
     mutationFn: async (values: z.infer<typeof emailTestSchema>) => {
-      const emailConfig = emailForm.getValues();
+      // Get form values and ensure they're all defined
+      const formValues = emailForm.getValues();
+      
+      // Create a cleaned up config object with default values if needed
+      const emailConfig = {
+        host: formValues.host || 'smtp.gmail.com',
+        port: Number(formValues.port || 587),
+        secure: Boolean(formValues.secure),
+        authUser: formValues.authUser || '',
+        authPass: formValues.authPass || '',
+        fromEmail: formValues.fromEmail || '',
+        companyName: formValues.companyName || 'Warehouse Management System',
+        enableNotifications: Boolean(formValues.enableNotifications),
+        testEmail: values.testEmail,
+      };
+      
+      console.log('Sending test email with config:', JSON.stringify(emailConfig));
+      
       return apiRequest('/api/email-settings/test-connection', {
         method: 'POST',
-        body: JSON.stringify({
-          ...emailConfig,
-          testEmail: values.testEmail,
-        }),
+        body: JSON.stringify(emailConfig),
       });
     },
     onSuccess: () => {

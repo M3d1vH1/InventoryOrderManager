@@ -65,6 +65,8 @@ export async function updateEmailSettings(req: Request, res: Response) {
  */
 export async function testEmailConnection(req: Request, res: Response) {
   try {
+    console.log('Email test request received:', JSON.stringify(req.body));
+    
     const schema = z.object({
       host: z.string(),
       port: z.number(),
@@ -72,6 +74,8 @@ export async function testEmailConnection(req: Request, res: Response) {
       authUser: z.string(),
       authPass: z.string(),
       fromEmail: z.string().email(),
+      companyName: z.string().optional(),
+      enableNotifications: z.boolean().optional(),
       testEmail: z.string().email(),
     });
 
@@ -88,9 +92,11 @@ export async function testEmailConnection(req: Request, res: Response) {
       },
     });
     
+    const companyName = validatedData.companyName || 'Warehouse Management System';
+    
     // Send a test email
     await transporter.sendMail({
-      from: validatedData.fromEmail,
+      from: `"${companyName}" <${validatedData.fromEmail}>`,
       to: validatedData.testEmail,
       subject: 'Test Email from Warehouse Management System',
       text: 'This is a test email from your Warehouse Management System. If you received this email, your email configuration is working correctly.',
@@ -100,6 +106,13 @@ export async function testEmailConnection(req: Request, res: Response) {
     return res.json({ success: true, message: 'Test email sent successfully' });
   } catch (error) {
     console.error('Error testing email connection:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid email configuration', 
+        errors: error.errors,
+      });
+    }
     return res.status(500).json({ 
       success: false, 
       message: 'Failed to send test email',
