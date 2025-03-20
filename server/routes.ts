@@ -541,10 +541,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Convert approvePartialFulfillment to boolean to handle both string and boolean values
           const isApproved = approvePartialFulfillment === true || approvePartialFulfillment === 'true';
           
-          // If this is a partial order fulfillment that hasn't been approved 
-          // and the user doesn't have permission to approve it themselves
-          if (!isApproved && !hasApprovalPermission) {
-            console.log(`Order ${id} requires approval for partial fulfillment. User role: ${userRole}`);
+          // If this order has not been explicitly approved for partial fulfillment,
+          // require approval EVEN for admin/manager - they must explicitly approve
+          if (!isApproved) {
+            console.log(`Order ${id} requires explicit approval for partial fulfillment. User role: ${userRole}`);
             console.log('Sending approval required response with:', {
               orderId: id,
               unshippedItems: unshippedItems.length,
@@ -554,11 +554,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
             
             return res.status(403).json({
-              message: "Partial order fulfillment requires manager or admin approval",
+              message: "Partial order fulfillment requires explicit approval",
               requiresApproval: true,
               isPartialFulfillment: true,
               unshippedItems: unshippedItems.length,
-              orderId: id
+              orderId: id,
+              canApprove: hasApprovalPermission
             });
           }
           
@@ -734,9 +735,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const hasApprovalPermission = userRole === 'admin' || userRole === 'manager';
           const isApproved = req.body.approvePartialFulfillment === 'true' || req.body.approvePartialFulfillment === true;
           
-          // If partial order and not approved and user doesn't have permission to approve
-          if (!isApproved && !hasApprovalPermission) {
-            console.log(`Document upload: Order ${id} requires approval for partial fulfillment. User role: ${userRole}`);
+          // If this order has not been explicitly approved for partial fulfillment,
+          // require approval EVEN for admin/manager - they must explicitly approve
+          if (!isApproved) {
+            console.log(`Document upload: Order ${id} requires explicit approval for partial fulfillment. User role: ${userRole}`);
             console.log('Sending approval required response with:', {
               orderId: id,
               unshippedItems: unshippedItems.length,
@@ -746,11 +748,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
             
             return res.status(403).json({
-              message: "Partial order fulfillment requires manager or admin approval",
+              message: "Partial order fulfillment requires explicit approval",
               requiresApproval: true,
               isPartialFulfillment: true,
               unshippedItems: unshippedItems.length,
-              orderId: id
+              orderId: id,
+              canApprove: hasApprovalPermission
             });
           }
           
