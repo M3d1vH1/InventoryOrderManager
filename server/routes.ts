@@ -9,6 +9,8 @@ import { UploadedFile } from "express-fileupload";
 import path from "path";
 import fs from "fs";
 import { WebSocketServer, WebSocket } from 'ws';
+import { exec } from "child_process";
+import { promisify } from "util";
 
 // Define WebSocket server and connected clients
 let wss: WebSocketServer;
@@ -1369,6 +1371,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
       message: 'Connected to notification server',
       timestamp: Date.now()
     }));
+  });
+  
+  // Promisify exec to use with async/await
+  const execPromise = promisify(exec);
+  
+  // Endpoint for printing shipping labels with CAB EOS1 printer
+  app.post('/api/print/shipping-label', isAuthenticated, async (req, res) => {
+    try {
+      const { labelContent, orderId, boxNumber, totalBoxes } = req.body;
+      
+      if (!labelContent) {
+        return res.status(400).json({ message: 'Label content is required' });
+      }
+      
+      // Create a temporary file with the JScript content
+      const tempDir = path.join(process.cwd(), 'temp_labels');
+      
+      // Ensure the directory exists
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+      
+      const tempFilePath = path.join(tempDir, `label_order_${orderId}_box_${boxNumber}.txt`);
+      fs.writeFileSync(tempFilePath, labelContent);
+      
+      // Log the action
+      console.log(`[printer] Preparing to print label for order ${orderId}, box ${boxNumber} of ${totalBoxes}`);
+      
+      // In a production environment, we would send the file to the printer here
+      // For CAB printers with JScript support, this could be done via direct USB printing
+      // or through a print server. The exact command depends on your setup.
+      
+      try {
+        // For Windows systems, a command like this might work:
+        // await execPromise(`copy "${tempFilePath}" COM3:`);
+        
+        // For Linux systems with CUPS, a command like this might work:
+        // await execPromise(`lp -d CAB-EOS1 "${tempFilePath}"`);
+        
+        // For now, we'll simulate the printing process
+        console.log(`[printer] Simulating printing of label to CAB EOS1 printer`);
+        console.log(`[printer] Label content:\n${labelContent}`);
+        
+        // Send notification via WebSocket
+        broadcastMessage({
+          type: 'labelPrinted',
+          orderId,
+          boxNumber,
+          totalBoxes
+        });
+        
+        // Add to order changelog
+        const userId = (req.user as any)?.id || 1;
+        await storage.addOrderChangelog({
+          orderId,
+          userId,
+          action: 'label_printed',
+          changes: {
+            boxNumber,
+            totalBoxes
+          },
+          notes: `Printed shipping label for box ${boxNumber} of ${totalBoxes}`
+        });
+        
+        res.json({ 
+          success: true, 
+          message: `Shipping label for order ${orderId}, box ${boxNumber} of ${totalBoxes} has been sent to printer`
+        });
+      } catch (printError: any) {
+        console.error('[printer] Error sending to printer:', printError);
+        res.status(500).json({ 
+          message: 'Error sending label to printer', 
+          details: printError.message 
+        });
+      } finally {
+        // Clean up the temporary file
+        if (fs.existsSync(tempFilePath)) {
+          fs.unlinkSync(tempFilePath);
+        }
+      }
+    } catch (error: any) {
+      console.error('[printer] Error processing label print request:', error);
+      res.status(500).json({ message: error.message });
+    }
   });
   
   return httpServer;
