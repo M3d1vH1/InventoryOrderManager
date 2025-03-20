@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { AlertCircle, CheckCircle, Clock, Plus, Pencil, RefreshCw, Truck, FileText } from "lucide-react";
+import { AlertCircle, CheckCircle, Clock, Plus, Pencil, RefreshCw, Truck, FileText, Package, User } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 import {
@@ -68,6 +68,8 @@ export function OrderChangelog({ orderId }: OrderChangelogProps) {
         if (newStatus === 'shipped') return <Truck className="h-4 w-4 text-green-500" />;
         if (newStatus === 'cancelled') return <AlertCircle className="h-4 w-4 text-red-500" />;
         return <RefreshCw className="h-4 w-4 text-slate-500" />;
+      case 'unshipped_authorization':
+        return <CheckCircle className="h-4 w-4 text-purple-500" />;
       default:
         return <RefreshCw className="h-4 w-4 text-slate-500" />;
     }
@@ -109,6 +111,10 @@ export function OrderChangelog({ orderId }: OrderChangelogProps) {
       return `Order ${statusText}`;
     }
     
+    if (item.action === 'unshipped_authorization') {
+      return 'Unshipped items authorized';
+    }
+    
     return 'Order updated';
   };
 
@@ -132,6 +138,33 @@ export function OrderChangelog({ orderId }: OrderChangelogProps) {
           <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(newStatus)}`}>
             {formatStatus(newStatus)}
           </span>
+        </div>
+      );
+    }
+    
+    if (item.action === 'unshipped_authorization' && item.changes) {
+      const { productId, quantity, authorizedByRole } = item.changes;
+      
+      return (
+        <div className="text-sm">
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4 text-purple-500" />
+            <span>
+              <span className="font-medium">Product ID {productId}</span>
+              {quantity && <span> - Quantity: {quantity}</span>}
+            </span>
+          </div>
+          {authorizedByRole && (
+            <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+              <User className="h-3.5 w-3.5" />
+              <span>Authorized by {authorizedByRole}</span>
+            </div>
+          )}
+          {item.notes && (
+            <div className="mt-1 text-xs italic text-slate-600">
+              {item.notes}
+            </div>
+          )}
         </div>
       );
     }
