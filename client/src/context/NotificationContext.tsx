@@ -421,6 +421,36 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
               
               // Play notification sound
               playNotificationSound('success');
+            } else if (data.type === 'unshippedItemsAuthorized') {
+              // Generate unique ID for the unshipped items authorization notification
+              const id = `unshipped-authorized-${Date.now()}`;
+              
+              // Get translated text using i18next
+              const title = t('notifications.unshippedItemsAuthorized');
+              const message = t('notifications.unshippedItemsAuthorizedMessage', { count: data.itemCount });
+              
+              // Create notification for unshipped items that have been authorized
+              const newNotification: Notification = {
+                id,
+                title,
+                message,
+                type: 'success',
+                timestamp: new Date(),
+                read: false
+              };
+              
+              // Add notification
+              setNotifications(prev => [newNotification, ...prev]);
+              
+              // Show toast
+              toast({
+                title: newNotification.title,
+                description: newNotification.message,
+              });
+              
+              // Play notification sound
+              playNotificationSound('success');
+              
             } else if (data.type === 'orderStatusChange') {
               // Generate unique ID
               const id = `order-${data.orderId}-${Date.now()}`;

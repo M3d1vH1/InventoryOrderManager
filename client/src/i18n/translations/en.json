@@ -246,5 +246,40 @@
       "createCustomer": "Create Customer",
       "creating": "Creating..."
     }
+  },
+  "unshippedItems": {
+    "pageTitle": "Unshipped Items",
+    "pageDescription": "Manage partial order fulfillments and items that were ordered but could not be shipped due to stock limitations.",
+    "title": "Unshipped Items",
+    "aboutTitle": "About Unshipped Items",
+    "aboutDescription": "Understand how unshipped items are managed in the system",
+    "whatAreUnshippedItems": "What are unshipped items?",
+    "whatAreUnshippedItemsDescription": "Unshipped items occur when a customer orders products that are currently out of stock or have insufficient quantity. Instead of cancelling the entire order, the system allows for partial fulfillment.",
+    "authorizationProcess": "Authorization Process",
+    "authorizationProcessDescription": "Unshipped items require manager authorization before they can be fulfilled in subsequent orders. This ensures proper oversight of partial fulfillment processes.",
+    "managersResponsibility": "Manager's Responsibility",
+    "managersResponsibilityDescription": "As a manager, you can review and authorize unshipped items. Once authorized, these items will be prioritized for inclusion in new orders for the same customer.",
+    "allItems": "All Items",
+    "pendingAuthorization": "Pending Authorization",
+    "authorized": "Authorized",
+    "authorizedSuccess": "{{count}} item(s) have been authorized successfully",
+    "noItemsSelected": "No Items Selected",
+    "selectItemsToAuthorize": "Please select items to authorize",
+    "authorizeSelected": "Authorize Selected ({{count}})",
+    "orderNumber": "Order Number",
+    "customerName": "Customer",
+    "productId": "Product ID",
+    "quantity": "Quantity",
+    "date": "Date",
+    "status": "Status",
+    "notes": "Notes",
+    "noUnshippedItems": "No unshipped items found",
+    "noItemsPendingAuthorization": "No items pending authorization"
+  },
+  "notifications": {
+    "unshippedItemsRequireAuthorization": "Unshipped Items Require Authorization",
+    "unshippedItemsRequireAuthorizationMessage": "{{count}} unshipped item(s) from order {{orderNumber}} require manager authorization.",
+    "unshippedItemsAuthorized": "Unshipped Items Authorized",
+    "unshippedItemsAuthorizedMessage": "{{count}} unshipped item(s) have been authorized for fulfillment"
   }
 }
