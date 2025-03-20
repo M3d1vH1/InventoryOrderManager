@@ -40,6 +40,7 @@ interface OrderItem {
   quantity: number;
   product?: Product;
   picked?: boolean;
+  actualQuantity?: number;
 }
 
 interface Product {
@@ -69,6 +70,7 @@ const PickList = ({ order }: { order: Order }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [pickedItems, setPickedItems] = useState<Record<number, boolean>>({});
+  const [actualQuantities, setActualQuantities] = useState<Record<number, number>>({});
   const [progress, setProgress] = useState(0);
   const [scanMode, setScanMode] = useState(false);
   const [lastScannedBarcode, setLastScannedBarcode] = useState<string | null>(null);
@@ -79,13 +81,30 @@ const PickList = ({ order }: { order: Order }) => {
     queryKey: ['/api/products'],
   });
 
+  // Initialize actual quantities if not already set
+  useEffect(() => {
+    if (order.items && order.items.length > 0) {
+      setActualQuantities(prev => {
+        const newQuantities = { ...prev };
+        order.items?.forEach(item => {
+          // If not already set, initialize with the requested quantity
+          if (newQuantities[item.id] === undefined) {
+            newQuantities[item.id] = item.quantity;
+          }
+        });
+        return newQuantities;
+      });
+    }
+  }, [order.items]);
+
   // Load product details for each order item
   const orderItemsWithProducts = order.items?.map(item => {
     const product = products.find(p => p.id === item.productId);
     return {
       ...item,
       product,
-      picked: !!pickedItems[item.id]
+      picked: !!pickedItems[item.id],
+      actualQuantity: actualQuantities[item.id] || item.quantity
     };
   }) || [];
 
@@ -123,9 +142,45 @@ const PickList = ({ order }: { order: Order }) => {
       return newState;
     });
   };
+  
+  const handleActualQuantityChange = (itemId: number, value: string) => {
+    const numValue = parseInt(value, 10);
+    if (!isNaN(numValue) && numValue >= 0) {
+      setActualQuantities(prev => ({
+        ...prev,
+        [itemId]: numValue
+      }));
+    }
+  };
 
   const completePickList = () => {
-    updateOrderStatusMutation.mutate('picked');
+    // Prepare data with actual quantities
+    const itemsWithActualQuantities = orderItemsWithProducts
+      .filter(item => item.picked)
+      .map(item => ({
+        orderItemId: item.id,
+        productId: item.productId,
+        requestedQuantity: item.quantity,
+        actualQuantity: item.actualQuantity || item.quantity
+      }));
+
+    // Send the data to update the order status and create any unshipped items
+    updateOrderStatusMutation.mutate('picked', {
+      onSuccess: () => {
+        // Check if any items have partial quantities
+        const hasPartialQuantities = itemsWithActualQuantities.some(
+          item => item.actualQuantity < item.requestedQuantity
+        );
+
+        if (hasPartialQuantities) {
+          toast({
+            title: "Partial order fulfilled",
+            description: "Unshipped items have been created for items with insufficient quantity.",
+            variant: "warning"
+          });
+        }
+      }
+    });
   };
   
   // Handle barcode scan
@@ -300,7 +355,8 @@ const PickList = ({ order }: { order: Order }) => {
               <TableHead>SKU</TableHead>
               <TableHead>Product</TableHead>
               <TableHead>Location</TableHead>
-              <TableHead className="text-right">Quantity</TableHead>
+              <TableHead className="text-right">Requested</TableHead>
+              <TableHead className="text-right">Actual Shipped</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -343,6 +399,23 @@ const PickList = ({ order }: { order: Order }) => {
                   )}
                 </TableCell>
                 <TableCell className="text-right">{item.quantity}</TableCell>
+                <TableCell>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={item.quantity}
+                    value={item.actualQuantity}
+                    onChange={(e) => handleActualQuantityChange(item.id, e.target.value)}
+                    disabled={order.status !== 'pending' || !item.picked}
+                    className="w-20 text-right ml-auto"
+                    aria-label={`Actual quantity for ${item.product?.name}`}
+                  />
+                  {item.actualQuantity !== item.quantity && item.picked && (
+                    <div className="text-xs text-amber-600 mt-1 text-right">
+                      Missing: {item.quantity - (item.actualQuantity || 0)}
+                    </div>
+                  )}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
