@@ -466,18 +466,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Calculate the quantity difference
               const quantityDifference = requestedQuantity - actualQuantity;
               
-              // Create an unshipped item record
-              await storage.addUnshippedItem({
-                orderId: id,
-                productId,
-                quantity: quantityDifference,
-                customerName: originalOrder.customerName,
-                customerId: originalOrder.customerName,  // Using customerName as customerId for now
-                originalOrderNumber: originalOrder.orderNumber,
-                notes: `Partially fulfilled order. ${actualQuantity} out of ${requestedQuantity} shipped.`
-              });
+              // Check if an unshipped item already exists for this order and product
+              const existingUnshippedItems = await storage.getUnshippedItemsByOrder(id);
+              const duplicate = existingUnshippedItems.find(item => 
+                item.productId === productId && 
+                item.quantity === quantityDifference &&
+                !item.shipped
+              );
               
-              console.log(`Created unshipped item for order ${id}, product ${productId}, quantity ${quantityDifference}`);
+              if (!duplicate) {
+                // Create an unshipped item record only if there isn't already one
+                await storage.addUnshippedItem({
+                  orderId: id,
+                  productId,
+                  quantity: quantityDifference,
+                  customerName: originalOrder.customerName,
+                  customerId: originalOrder.customerName,  // Using customerName as customerId for now
+                  originalOrderNumber: originalOrder.orderNumber,
+                  notes: `Partially fulfilled order. ${actualQuantity} out of ${requestedQuantity} shipped.`
+                });
+                
+                console.log(`Created unshipped item for order ${id}, product ${productId}, quantity ${quantityDifference}`);
+              } else {
+                console.log(`Unshipped item already exists for order ${id}, product ${productId}, quantity ${quantityDifference}`);
+              }
             }
           }
         }
