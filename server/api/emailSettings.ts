@@ -81,6 +81,11 @@ export async function testEmailConnection(req: Request, res: Response) {
     
     // First get the existing settings
     const existingSettings = await storage.getEmailSettings();
+    console.log('Existing email settings:', JSON.stringify({
+      ...existingSettings,
+      authPass: existingSettings?.authPass ? '******' : null // Mask password for security
+    }));
+    
     if (!existingSettings) {
       return res.status(400).json({
         success: false,
@@ -94,6 +99,31 @@ export async function testEmailConnection(req: Request, res: Response) {
     });
     
     const { testEmail } = testEmailSchema.parse(req.body);
+    console.log('Test email will be sent to:', testEmail);
+    
+    // Check if required email settings are provided
+    if (!existingSettings.host) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email host is not configured.'
+      });
+    }
+    
+    if (!existingSettings.fromEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'Sender email address (From Email) is not configured.'
+      });
+    }
+    
+    if (!existingSettings.authUser || !existingSettings.authPass) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email authentication credentials are not configured.'
+      });
+    }
+    
+    console.log(`Setting up email transporter with host: ${existingSettings.host}, port: ${existingSettings.port}, secure: ${existingSettings.secure}`);
     
     // Create a test transporter using the existing settings
     const transporter = nodemailer.createTransport({
@@ -106,10 +136,25 @@ export async function testEmailConnection(req: Request, res: Response) {
       },
     });
     
+    // Verify transporter configuration
+    console.log('Verifying email transporter connection...');
+    try {
+      await transporter.verify();
+      console.log('Email transporter connection verified successfully');
+    } catch (verifyError) {
+      console.error('Email transporter verification failed:', verifyError);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Email server connection failed. Please check your settings.',
+        error: verifyError instanceof Error ? verifyError.message : String(verifyError)
+      });
+    }
+    
     const companyName = existingSettings.companyName || 'Warehouse Management System';
     
     // Send a test email
-    await transporter.sendMail({
+    console.log(`Sending test email from: "${companyName}" <${existingSettings.fromEmail}> to: ${testEmail}`);
+    const info = await transporter.sendMail({
       from: `"${companyName}" <${existingSettings.fromEmail}>`,
       to: testEmail,
       subject: 'Test Email from Warehouse Management System',
@@ -117,19 +162,34 @@ export async function testEmailConnection(req: Request, res: Response) {
       html: '<p>This is a test email from your Warehouse Management System.</p><p>If you received this email, your email configuration is working correctly.</p>',
     });
     
-    return res.json({ success: true, message: 'Test email sent successfully' });
+    console.log('Test email sent successfully:', info.messageId);
+    return res.json({ 
+      success: true, 
+      message: 'Test email sent successfully. Please check your email inbox (and spam folder).'
+    });
   } catch (error) {
     console.error('Error testing email connection:', error);
+    
     if (error instanceof z.ZodError) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Invalid email configuration', 
+        message: 'Invalid email address format', 
         errors: error.errors,
       });
     }
+    
+    // For Gmail users with less secure apps turned off or 2FA enabled
+    if (error.message?.includes('535')) {
+      return res.status(500).json({
+        success: false,
+        message: 'Authentication failed. If using Gmail, you need an app password. Go to your Google Account > Security > App passwords.',
+        error: error.message
+      });
+    }
+    
     return res.status(500).json({ 
       success: false, 
-      message: 'Failed to send test email',
+      message: 'Failed to send test email: ' + (error.message || 'Unknown error'),
       error: error instanceof Error ? error.message : String(error)
     });
   }

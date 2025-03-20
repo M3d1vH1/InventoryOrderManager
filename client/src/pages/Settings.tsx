@@ -1127,6 +1127,23 @@ const Settings = () => {
                 Configure email server settings for notifications and alerts
               </CardDescription>
             </CardHeader>
+            <div className="mx-6 my-2 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-md p-4">
+              <div className="flex">
+                <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 mr-2" />
+                <div>
+                  <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-300">Gmail Configuration Instructions</h3>
+                  <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-400">
+                    <p>If using Gmail, you need to:</p>
+                    <ol className="list-decimal ml-4 mt-1 space-y-1">
+                      <li>Enable 2-Step Verification in your Google Account</li>
+                      <li>Create an App Password (Google Account → Security → App Passwords)</li>
+                      <li>Use your full Gmail address as Username and the generated App Password as Password</li>
+                    </ol>
+                    <p className="mt-1">Regular Gmail passwords won't work due to Google's security settings.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
             <CardContent>
               <Form {...emailForm}>
                 <form onSubmit={emailForm.handleSubmit(onEmailSettingsSubmit)} className="space-y-6">
