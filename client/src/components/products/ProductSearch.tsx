@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -28,17 +28,47 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("all");
   const [stockStatus, setStockStatus] = useState("all");
-
+  const modalRef = useRef<HTMLDivElement>(null);
+  
   const { data: products, isLoading, refetch } = useQuery<Product[]>({
     queryKey: ['/api/products', searchTerm, category, stockStatus],
     enabled: isOpen,
   });
 
+  // Function to handle click outside the modal
+  const handleClickOutside = useCallback((event: MouseEvent) => {
+    if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+      onClose();
+    }
+  }, [onClose]);
+
+  // Function to handle keyboard events
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      onClose();
+    }
+  }, [onClose]);
+
+  // Add event listeners when modal is open
   useEffect(() => {
     if (isOpen) {
       refetch();
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+      
+      // Set focus on search input when modal opens
+      const searchInput = document.querySelector('.product-search-input input') as HTMLInputElement;
+      if (searchInput) {
+        setTimeout(() => searchInput.focus(), 100);
+      }
     }
-  }, [isOpen, refetch]);
+    
+    // Cleanup event listeners
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, refetch, handleClickOutside, handleKeyDown]);
 
   const handleSearch = () => {
     refetch();
@@ -54,7 +84,7 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-6xl max-h-[95vh] flex flex-col">
+      <div ref={modalRef} className="bg-white rounded-lg shadow-lg w-full max-w-6xl max-h-[95vh] flex flex-col">
         <div className="p-5 border-b border-slate-200 flex justify-between items-center">
           <h2 className="font-semibold text-xl">Search Products</h2>
           <button 
@@ -73,10 +103,13 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
               </span>
               <Input
                 placeholder="Search by product name or SKU"
-                className="pl-10 h-12 text-base"
+                className="pl-10 h-12 text-base product-search-input"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSearch();
+                  if (e.key === 'Escape') onClose();
+                }}
               />
             </div>
             <Button 
@@ -219,6 +252,13 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
             )}
           </span>
           <div className="flex items-center space-x-3">
+            <Button 
+              variant="outline"
+              className="h-10 px-4"
+              onClick={onClose}
+            >
+              <i className="fas fa-times mr-2"></i> Close
+            </Button>
             <button 
               className="flex items-center justify-center h-10 px-4 rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 text-base" 
               disabled
