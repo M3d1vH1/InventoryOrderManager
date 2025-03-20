@@ -1462,6 +1462,7 @@ const EmailTemplateEditor = () => {
   const { toast } = useToast();
   const [selectedTemplate, setSelectedTemplate] = useState('order-shipped');
   const [isEditing, setIsEditing] = useState(false);
+  const [showVariableHelp, setShowVariableHelp] = useState(false);
   
   // Template form
   const templateForm = useForm<z.infer<typeof templateEditSchema>>({

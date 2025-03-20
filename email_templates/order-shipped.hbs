@@ -4,35 +4,48 @@
   <meta charset="utf-8">
   <title>Order Shipped Notification</title>
   <style>
+    /* ===== BASIC STYLES (Edit colors as needed) ===== */
     body {
       font-family: Arial, sans-serif;
       line-height: 1.6;
       color: #333;
       margin: 0;
       padding: 0;
+      background-color: #f7f7f7;
     }
     .container {
       max-width: 600px;
       margin: 0 auto;
       padding: 20px;
+      background-color: #ffffff;
     }
+    
+    /* ===== HEADER SECTION (Change colors to match your brand) ===== */
     .header {
-      background-color: #4a6cf7;
+      background-color: #4a6cf7; /* Primary brand color */
       color: #fff;
       padding: 20px;
       text-align: center;
+      border-radius: 5px 5px 0 0;
     }
+    
+    /* ===== MAIN CONTENT AREA ===== */
     .content {
       padding: 20px;
       border: 1px solid #ddd;
       border-top: none;
     }
-    .footer {
-      text-align: center;
-      margin-top: 20px;
-      font-size: 12px;
-      color: #777;
+    
+    /* ===== TRACKING INFORMATION BOX ===== */
+    .tracking-info {
+      margin: 20px 0;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-left: 4px solid #4a6cf7;
+      border-radius: 3px;
     }
+    
+    /* ===== ORDER DETAILS TABLE ===== */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -48,32 +61,69 @@
     th {
       background-color: #f2f2f2;
     }
-    .tracking-info {
+    
+    /* ===== CALL TO ACTION BUTTON ===== */
+    .button {
+      display: inline-block;
+      background-color: #4a6cf7;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 5px;
       margin: 20px 0;
-      padding: 15px;
-      background-color: #f9f9f9;
-      border-left: 4px solid #4a6cf7;
+      text-align: center;
+    }
+    
+    /* ===== FOOTER SECTION ===== */
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+      font-size: 12px;
+      color: #777;
+    }
+    
+    /* ===== RESPONSIVE DESIGN ===== */
+    @media only screen and (max-width: 600px) {
+      .container {
+        padding: 10px;
+      }
+      .header, .content {
+        padding: 15px;
+      }
     }
   </style>
 </head>
 <body>
+  <!-- Main Container -->
   <div class="container">
+    <!-- Header Section -->
     <div class="header">
       <h1>Your Order Has Been Shipped</h1>
     </div>
+    
+    <!-- Content Section -->
     <div class="content">
+      <!-- Personalized Greeting -->
       <p>Dear {{customerName}},</p>
       
+      <!-- Order Shipped Notification -->
       <p>We're pleased to inform you that your order <strong>{{orderNumber}}</strong> has been shipped!</p>
       
+      <!-- CONDITIONAL SECTION: Only shows if tracking information exists -->
       {{#if trackingNumber}}
       <div class="tracking-info">
         <p><strong>Tracking Information:</strong></p>
         <p>Tracking Number: {{trackingNumber}}</p>
         <p>Shipping Company: {{shippingCompany}}</p>
+        
+        <!-- Optional: Add tracking link if you provide this info -->
+        <!-- <p><a href="https://example-shipping.com/track?number={{trackingNumber}}">Track Your Package</a></p> -->
       </div>
       {{/if}}
       
+      <!-- Order Details Table -->
       <h3>Order Details:</h3>
       <table>
         <thead>
@@ -92,17 +142,30 @@
         </tbody>
       </table>
       
+      <!-- CONDITIONAL SECTION: Order Notes -->
       {{#if notes}}
       <p><strong>Additional Notes:</strong> {{notes}}</p>
       {{/if}}
       
-      <p>If you have any questions about your order, please don't hesitate to contact us.</p>
+      <!-- Optional: Call to Action Button -->
+      <!-- 
+      <div style="text-align: center;">
+        <a href="https://yourwebsite.com/orders/{{orderNumber}}" class="button">View Order Details</a>
+      </div>
+      -->
       
+      <!-- Customer Support Info -->
+      <p>If you have any questions about your order, please don't hesitate to contact our customer service team.</p>
+      
+      <!-- Thank You Message -->
       <p>Thank you for your business!</p>
       
+      <!-- Signature -->
       <p>Best regards,<br>
-      {{companyName}} Team</p>
+      The {{companyName}} Team</p>
     </div>
+    
+    <!-- Footer Section -->
     <div class="footer">
       <p>This is an automated email, please do not reply directly to this message.</p>
       <p>&copy; {{currentYear}} {{companyName}}. All rights reserved.</p>
@@ -110,3 +173,16 @@
   </div>
 </body>
 </html>
+<!-- 
+AVAILABLE VARIABLES:
+- {{customerName}} - Customer's full name
+- {{orderNumber}} - Order number/ID
+- {{trackingNumber}} - Shipping tracking number (if available)
+- {{shippingCompany}} - Name of the shipping company
+- {{items}} - Array of ordered items (use with #each)
+  - {{this.name}} - Product name
+  - {{this.quantity}} - Ordered quantity
+- {{notes}} - Any additional order notes
+- {{companyName}} - Your company name from settings
+- {{currentYear}} - Current year (automatically inserted)
+-->
