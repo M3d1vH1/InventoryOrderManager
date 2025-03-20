@@ -76,37 +76,39 @@ const PickList = ({ order }: { order: Order }) => {
   const [lastScannedBarcode, setLastScannedBarcode] = useState<string | null>(null);
   const [sortByLocation, setSortByLocation] = useState(false);
   const [searchSku, setSearchSku] = useState('');
+  const [orderItemsWithProducts, setOrderItemsWithProducts] = useState<(OrderItem & {product?: Product, picked?: boolean, actualQuantity?: number})[]>([]);
 
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ['/api/products'],
   });
 
-  // Initialize actual quantities if not already set
+  // Initialize actual quantities and prepare order items when products or order changes
   useEffect(() => {
-    if (order.items && order.items.length > 0) {
-      setActualQuantities(prev => {
-        const newQuantities = { ...prev };
-        order.items?.forEach(item => {
-          // If not already set, initialize with the requested quantity
-          if (newQuantities[item.id] === undefined) {
-            newQuantities[item.id] = item.quantity;
-          }
-        });
-        return newQuantities;
+    if (order.items && order.items.length > 0 && products.length > 0) {
+      // Initialize actual quantities
+      const newQuantities: Record<number, number> = {};
+      order.items.forEach(item => {
+        if (actualQuantities[item.id] === undefined) {
+          newQuantities[item.id] = item.quantity;
+        } else {
+          newQuantities[item.id] = actualQuantities[item.id];
+        }
       });
+      setActualQuantities(prev => ({...prev, ...newQuantities}));
+      
+      // Create order items with products
+      const itemsWithProducts = order.items.map(item => {
+        const product = products.find(p => p.id === item.productId);
+        return {
+          ...item,
+          product,
+          picked: !!pickedItems[item.id],
+          actualQuantity: newQuantities[item.id] || item.quantity
+        };
+      });
+      setOrderItemsWithProducts(itemsWithProducts);
     }
-  }, [order.items]);
-
-  // Load product details for each order item
-  const orderItemsWithProducts = order.items?.map(item => {
-    const product = products.find(p => p.id === item.productId);
-    return {
-      ...item,
-      product,
-      picked: !!pickedItems[item.id],
-      actualQuantity: actualQuantities[item.id] || item.quantity
-    };
-  }) || [];
+  }, [order.items, products, pickedItems]);
 
   const updateOrderStatusMutation = useMutation({
     mutationFn: async (status: 'pending' | 'picked' | 'shipped' | 'cancelled', options?: any) => {
@@ -166,15 +168,6 @@ const PickList = ({ order }: { order: Order }) => {
         ...prev,
         [itemId]: numValue
       }));
-      
-      // Also update the orderItemsWithProducts array directly
-      setOrderItemsWithProducts(currentItems => 
-        currentItems.map(item => 
-          item.id === itemId 
-            ? { ...item, actualQuantity: numValue }
-            : item
-        )
-      );
     }
   };
 
@@ -425,21 +418,37 @@ const PickList = ({ order }: { order: Order }) => {
                 </TableCell>
                 <TableCell className="text-right">{item.quantity}</TableCell>
                 <TableCell>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={item.quantity}
-                    value={item.actualQuantity}
-                    onChange={(e) => handleActualQuantityChange(item.id, e.target.value)}
-                    disabled={order.status !== 'pending' || !item.picked}
-                    className="w-20 text-right ml-auto"
-                    aria-label={`Actual quantity for ${item.product?.name}`}
-                  />
-                  {item.actualQuantity !== item.quantity && item.picked && (
-                    <div className="text-xs text-amber-600 mt-1 text-right">
-                      Missing: {item.quantity - (item.actualQuantity || 0)}
-                    </div>
-                  )}
+                  <div className="flex flex-col items-end">
+                    <input
+                      type="number"
+                      min={0}
+                      max={item.quantity}
+                      value={item.actualQuantity || item.quantity}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        if (!isNaN(val) && val >= 0 && val <= item.quantity) {
+                          // Update directly in the array
+                          const updatedItems = [...orderItemsWithProducts];
+                          const index = updatedItems.findIndex(i => i.id === item.id);
+                          if (index !== -1) {
+                            updatedItems[index] = {
+                              ...updatedItems[index],
+                              actualQuantity: val
+                            };
+                            setOrderItemsWithProducts(updatedItems);
+                          }
+                        }
+                      }}
+                      disabled={order.status !== 'pending' || !item.picked}
+                      className="w-20 text-right p-2 border rounded"
+                      aria-label={`Actual quantity for ${item.product?.name}`}
+                    />
+                    {item.actualQuantity !== item.quantity && item.picked && (
+                      <div className="text-xs text-amber-600 mt-1 text-right">
+                        Missing: {item.quantity - (item.actualQuantity || 0)}
+                      </div>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
