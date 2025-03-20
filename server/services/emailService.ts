@@ -2,8 +2,13 @@ import nodemailer from 'nodemailer';
 import * as handlebars from 'handlebars';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { storage } from '../storage.postgresql';
 import { Order, Customer } from '@shared/schema';
+
+// Get the directory name in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Email templates directory
 const TEMPLATES_DIR = path.join(__dirname, '../../email_templates');

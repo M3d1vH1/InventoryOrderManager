@@ -1713,5 +1713,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.put('/api/email-templates/:templateName', isAuthenticated, hasRole(['admin']), updateEmailTemplate);
   
+  // Email notification endpoint for shipped orders
+  app.post('/api/orders/:id/send-email', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const order = await storage.getOrder(id);
+      
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      
+      if (order.status !== 'shipped') {
+        return res.status(400).json({ message: 'Can only send email notifications for shipped orders' });
+      }
+      
+      const items = await storage.getOrderItems(order.id);
+      
+      // Get associated products
+      const itemsWithProducts = await Promise.all(
+        items.map(async (item) => {
+          const product = await storage.getProduct(item.productId);
+          return {
+            productId: item.productId,
+            quantity: item.quantity,
+            name: product?.name || 'Unknown Product',
+            sku: product?.sku || 'N/A'
+          };
+        })
+      );
+      
+      // Get customer information
+      const customer = await storage.getCustomer(order.customerId);
+      
+      if (!customer) {
+        return res.status(400).json({ message: 'Customer information not found' });
+      }
+      
+      if (!customer.email) {
+        return res.status(400).json({ message: 'Customer email address not available' });
+      }
+      
+      // Send the email
+      const emailSent = await sendOrderShippedEmail(order, customer, itemsWithProducts);
+      
+      if (emailSent) {
+        // Create a changelog entry
+        await storage.addOrderChangelog({
+          orderId: order.id,
+          userId: (req.user as any)?.id || 1,
+          action: 'email_sent',
+          changes: { emailSent: true },
+          notes: 'Shipping notification email sent to customer'
+        });
+        
+        // Notify connected clients
+        broadcastMessage({
+          type: 'emailSent',
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          customerEmail: customer.email
+        });
+        
+        res.json({ success: true, message: `Email notification sent to ${customer.email}` });
+      } else {
+        res.status(500).json({ message: 'Failed to send email notification' });
+      }
+    } catch (error: any) {
+      console.error('Error sending order notification email:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
   return httpServer;
 }

@@ -11,7 +11,7 @@ import {
   Eye, Edit, ClipboardCheck, 
   Truck, CheckSquare, AlertTriangle,
   Upload, FileText, FilePlus, FileInput, X,
-  Trash2
+  Trash2, Mail
 } from "lucide-react";
 import { OrderChangelog } from "@/components/orders/OrderChangelog";
 
