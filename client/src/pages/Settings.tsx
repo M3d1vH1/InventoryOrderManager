@@ -1400,7 +1400,31 @@ const Settings = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <LabelTemplateEditor />
+              <div className="space-y-4">
+                <p className="text-muted-foreground">Configure label templates for your printer. These templates will be used when printing shipping labels.</p>
+                <Alert className="bg-yellow-50 border-yellow-200">
+                  <AlertTitle className="flex items-center text-yellow-800">
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    Template for CAB EOS1 Printer
+                  </AlertTitle>
+                  <AlertDescription className="text-yellow-800">
+                    The templates are configured specifically for the CAB EOS1 printer using JScript programming language.
+                  </AlertDescription>
+                </Alert>
+                
+                <Card>
+                  <CardHeader className="py-4">
+                    <CardTitle className="text-base font-medium">Shipping Label</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="mb-2 text-sm text-muted-foreground">This template is used for standard shipping labels.</p>
+                    <Button variant="outline" onClick={() => setActiveTab('shipping-label-editor')}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Template
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

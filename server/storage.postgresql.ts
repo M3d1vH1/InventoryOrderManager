@@ -1225,15 +1225,29 @@ export class DatabaseStorage implements IStorage {
           
         return newSettings;
       } else {
+        // Create an update object
+        const updateObject: any = {
+          ...settings,
+          updatedAt: new Date()
+        };
+        
+        // Only update password if provided
+        if (settings.authPass === '') {
+          delete updateObject.authPass;
+        }
+        
+        // Log the update for debugging
+        console.log("Updating email settings with:", JSON.stringify({
+          ...updateObject,
+          authPass: updateObject.authPass ? "******" : undefined
+        }));
+        
         // Update existing settings
         const [updatedSettings] = await this.db.update(emailSettings)
-          .set({
-            ...settings,
-            updatedAt: new Date(),
-          })
+          .set(updateObject)
           .where(eq(emailSettings.id, existingSettings.id))
           .returning();
-          
+        
         return updatedSettings;
       }
     } catch (error) {
