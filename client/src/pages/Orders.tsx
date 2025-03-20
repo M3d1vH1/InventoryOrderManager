@@ -363,6 +363,8 @@ const Orders = () => {
     onSuccess: (data, variables) => {
       setIsUploading(false);
       setShowUploadDialog(false);
+      setShowApprovalDialog(false); // Close approval dialog if it was open
+      setOrderRequiringApproval(null); // Reset approval state
       setDocumentFile(null);
       setDocumentNotes('');
       
@@ -1163,11 +1165,25 @@ const Orders = () => {
             <AlertDialogAction 
               onClick={() => {
                 if (orderRequiringApproval) {
-                  updateStatusMutation.mutate({
-                    orderId: orderRequiringApproval.orderId,
-                    status: orderRequiringApproval.status,
-                    approvePartialFulfillment: true
-                  });
+                  // Check if this was triggered from a document upload
+                  if (documentFile && documentType && orderToShip) {
+                    // Continue with document upload but with approved partial fulfillment
+                    uploadDocumentMutation.mutate({
+                      orderId: orderRequiringApproval.orderId,
+                      file: documentFile,
+                      documentType,
+                      notes: documentNotes,
+                      updateStatus: updateStatusOnUpload,
+                      approvePartialFulfillment: true
+                    });
+                  } else {
+                    // Regular status update with approval
+                    updateStatusMutation.mutate({
+                      orderId: orderRequiringApproval.orderId,
+                      status: orderRequiringApproval.status,
+                      approvePartialFulfillment: true
+                    });
+                  }
                 }
               }} 
               className="bg-green-600 hover:bg-green-700"
