@@ -240,53 +240,27 @@ export class DatabaseStorage implements IStorage {
       
       console.log('Attempting to create product with data:', JSON.stringify(productWithCategory, null, 2));
       
-      // Map categoryId to a valid enum value for backward compatibility
-      let categoryEnumValue = 'widgets'; // Default value for categoryId 1
+      // Use the Drizzle ORM's built-in insert method instead of raw SQL
+      // This handles arrays and all special types automatically
+      const [insertedProduct] = await this.db
+        .insert(products)
+        .values({
+          name: productWithCategory.name,
+          sku: productWithCategory.sku,
+          categoryId: productWithCategory.categoryId,
+          minStockLevel: productWithCategory.minStockLevel,
+          currentStock: productWithCategory.currentStock,
+          description: productWithCategory.description || null,
+          barcode: productWithCategory.barcode || null,
+          location: productWithCategory.location || null,
+          unitsPerBox: productWithCategory.unitsPerBox || null,
+          imagePath: productWithCategory.imagePath || null,
+          tags: productWithCategory.tags || []
+        })
+        .returning();
       
-      console.log(`Using category enum value: ${categoryEnumValue}`);
-      
-      // Execute the SQL insert - removed the non-existent 'category' column
-      // Let's handle the tags array separately since it needs special SQL syntax
-      const tagsArray = productWithCategory.tags || [];
-      
-      const result = await this.db.execute(sql`
-        INSERT INTO products (
-          name, 
-          sku, 
-          category_id,
-          min_stock_level, 
-          current_stock, 
-          description, 
-          barcode, 
-          location, 
-          units_per_box, 
-          image_path,
-          tags
-        ) VALUES (
-          ${productWithCategory.name}, 
-          ${productWithCategory.sku}, 
-          ${productWithCategory.categoryId},
-          ${productWithCategory.minStockLevel}, 
-          ${productWithCategory.currentStock}, 
-          ${productWithCategory.description || null}, 
-          ${productWithCategory.barcode || null}, 
-          ${productWithCategory.location || null}, 
-          ${productWithCategory.unitsPerBox || null}, 
-          ${productWithCategory.imagePath || null},
-          ${tagsArray}::text[]
-        )
-        RETURNING *
-      `);
-      
-      console.log('Insert result:', result);
-      
-      if (result.rows && result.rows.length > 0) {
-        const insertedProduct = result.rows[0];
-        console.log('Product created successfully:', insertedProduct);
-        return insertedProduct as Product;
-      } else {
-        throw new Error('Product insert succeeded but no product was returned');
-      }
+      console.log('Product created successfully:', insertedProduct);
+      return insertedProduct;
     } catch (error) {
       console.error('Error creating product:', error);
       if (error instanceof Error) {
