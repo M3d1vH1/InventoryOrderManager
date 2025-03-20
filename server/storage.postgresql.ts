@@ -577,17 +577,23 @@ export class DatabaseStorage implements IStorage {
         
         // Add the remaining quantity to unshipped_items for later fulfillment
         if (unshippedQuantity > 0) {
+          // Get the order data needed for unshipped item
+          const orderNumber = order.orderNumber;
+          
+          // Get customer ID from customer name if needed
+          let customerId: string | undefined;
+          const customer = await this.db.select().from(customers).where(eq(customers.name, order.customerName)).limit(1);
+          if (customer.length > 0) {
+            customerId = customer[0].id.toString();
+          }
+          
           const unshippedItem = await this.addUnshippedItem({
             orderId: orderItem.orderId,
             productId: orderItem.productId,
             quantity: unshippedQuantity,
-            customerId: order.customerId,
             customerName: order.customerName,
-            productName: product.name,
-            productSku: product.sku,
-            authorized: false,
-            shipped: false,
-            createdAt: new Date(),
+            customerId: customerId,
+            originalOrderNumber: orderNumber,
             notes: `Partially fulfilled. Original order requested ${orderItem.quantity}, shipped ${availableQuantity}, remaining: ${unshippedQuantity}.`
           });
           
