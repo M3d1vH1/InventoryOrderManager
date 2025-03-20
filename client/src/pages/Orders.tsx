@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useSidebar } from "@/context/SidebarContext";
+import { useAuth } from "@/context/AuthContext";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -9,7 +10,8 @@ import { useTranslation } from "react-i18next";
 import { 
   Eye, Edit, ClipboardCheck, 
   Truck, CheckSquare, AlertTriangle,
-  Upload, FileText, FilePlus, FileInput, X
+  Upload, FileText, FilePlus, FileInput, X,
+  Trash2
 } from "lucide-react";
 import { OrderChangelog } from "@/components/orders/OrderChangelog";
 
@@ -95,12 +97,15 @@ const Orders = () => {
   const { setCurrentPage } = useSidebar();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { hasPermission } = useAuth();
   const [location, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
   
   // Check if we're on a view or edit route
   const [isViewRoute, viewParams] = useRoute('/orders/:id');
