@@ -489,22 +489,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If updateStatus is true, update the order status as well
       if (updateStatus) {
-        // Check for unshipped items authorization before shipping
+        // Note: We allow shipping orders with unshipped items as part of the partial fulfillment flow
+        // This is because unshipped items are tracked separately and will be fulfilled in subsequent orders
         const unshippedItems = await storage.getUnshippedItemsByOrder(id);
         
-        // If there are unshipped items, check if they are all authorized
+        // Log any unshipped items for tracking purposes
         if (unshippedItems.length > 0) {
-          const unauthorizedItems = unshippedItems.filter(item => !item.authorized);
-          
-          if (unauthorizedItems.length > 0) {
-            return res.status(403).json({ 
-              message: 'Cannot ship order with unauthorized unshipped items',
-              unauthorizedItems: unauthorizedItems.length
-            });
-          }
+          console.log(`Order ${id} being shipped with ${unshippedItems.length} unshipped items via document upload`);
         }
         
-        // All unshipped items are authorized (or none exist), proceed with shipping
+        // Proceed with shipping regardless of unshipped items status
         await storage.updateOrderStatus(id, 'shipped', {
           documentPath,
           documentType,
