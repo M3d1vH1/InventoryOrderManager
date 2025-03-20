@@ -81,8 +81,7 @@ const customerFormSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }).optional().or(z.literal("")),
   phone: z.string().optional(),
   contactPerson: z.string().optional(),
-  preferredShippingCompany: z.enum(['dhl', 'fedex', 'ups', 'usps', 'royal_mail', 'other']).optional(),
-  customShippingCompany: z.string().optional(),
+  shippingCompany: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -100,8 +99,7 @@ interface Customer {
   email: string | null;
   phone: string | null;
   contactPerson: string | null;
-  preferredShippingCompany: 'dhl' | 'fedex' | 'ups' | 'usps' | 'royal_mail' | 'other' | null;
-  customShippingCompany: string | null;
+  shippingCompany: string | null;
   notes: string | null;
   createdAt: Date;
 }
@@ -245,8 +243,7 @@ const Customers = () => {
       email: '',
       phone: '',
       contactPerson: '',
-      preferredShippingCompany: undefined,
-      customShippingCompany: '',
+      shippingCompany: '',
       notes: '',
     },
   });
@@ -265,8 +262,7 @@ const Customers = () => {
       email: '',
       phone: '',
       contactPerson: '',
-      preferredShippingCompany: undefined,
-      customShippingCompany: '',
+      shippingCompany: '',
       notes: '',
     },
   });
@@ -299,8 +295,7 @@ const Customers = () => {
       email: customer.email || undefined,
       phone: customer.phone || undefined,
       contactPerson: customer.contactPerson || undefined,
-      preferredShippingCompany: customer.preferredShippingCompany || undefined,
-      customShippingCompany: customer.customShippingCompany || undefined,
+      shippingCompany: customer.shippingCompany || undefined,
       notes: customer.notes || undefined,
     });
     
@@ -332,19 +327,9 @@ const Customers = () => {
   };
 
   // Function to format shipping company names for display
-  const formatShippingCompany = (company: string | null, customCompany?: string | null) => {
+  const formatShippingCompany = (company: string | null) => {
     if (!company) return 'None';
-    
-    const lookup: Record<string, string> = {
-      dhl: 'DHL',
-      fedex: 'FedEx',
-      ups: 'UPS',
-      usps: 'USPS',
-      royal_mail: 'Royal Mail',
-      other: customCompany && customCompany.trim() !== '' ? customCompany : 'Other'
-    };
-    
-    return lookup[company] || company;
+    return company;
   };
 
   // Function to export customer data
@@ -371,7 +356,7 @@ const Customers = () => {
       Email: customer.email || '',
       Phone: customer.phone || '',
       'Contact Person': customer.contactPerson || '',
-      'Preferred Shipping': formatShippingCompany(customer.preferredShippingCompany, customer.customShippingCompany),
+      'Shipping Company': formatShippingCompany(customer.shippingCompany),
       Notes: customer.notes || '',
       'Created': new Date(customer.createdAt).toLocaleDateString()
     }));

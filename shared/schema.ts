@@ -193,15 +193,6 @@ export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 export type OrderItem = typeof orderItems.$inferSelect;
 
 // Shipping Companies Enum
-export const shippingCompanyEnum = pgEnum('shipping_company', [
-  'dhl',
-  'fedex',
-  'ups',
-  'usps',
-  'royal_mail',
-  'other'
-]);
-
 // Customer Schema (enhanced)
 export const customers = pgTable("customers", {
   id: serial("id").primaryKey(),
@@ -215,8 +206,7 @@ export const customers = pgTable("customers", {
   email: text("email"),
   phone: text("phone"),
   contactPerson: text("contact_person"),
-  preferredShippingCompany: shippingCompanyEnum("preferred_shipping_company"),
-  customShippingCompany: text("custom_shipping_company"),
+  shippingCompany: text("shipping_company"),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
@@ -234,8 +224,7 @@ export const insertCustomerSchema = createInsertSchema(customers)
     email: z.string().email({ message: "Invalid email address" }).optional(),
     phone: z.string().optional(),
     contactPerson: z.string().optional(),
-    preferredShippingCompany: z.enum(['dhl', 'fedex', 'ups', 'usps', 'royal_mail', 'other']).optional(),
-    customShippingCompany: z.string().nullish(),
+    shippingCompany: z.string().optional(),
     notes: z.string().optional(),
   });
 
