@@ -8,7 +8,8 @@ import {
   categories, type Category, type InsertCategory,
   orderChangelogs, type OrderChangelog, type InsertOrderChangelog,
   tags, type Tag, type InsertTag,
-  productTags, type ProductTag
+  productTags, type ProductTag,
+  unshippedItems, type UnshippedItem, type InsertUnshippedItem
 } from "@shared/schema";
 import { DatabaseStorage, initStorage } from './storage.postgresql';
 import { log } from './vite';
@@ -139,6 +140,14 @@ export interface IStorage {
       avgTimeMinutes: number;
     }[];
   }>;
+
+  // Unshipped Items methods
+  getUnshippedItems(customerId?: string): Promise<UnshippedItem[]>;
+  getUnshippedItemsByOrder(orderId: number): Promise<UnshippedItem[]>;
+  addUnshippedItem(item: InsertUnshippedItem): Promise<UnshippedItem>;
+  authorizeUnshippedItems(ids: number[], userId: number): Promise<void>;
+  markUnshippedItemsAsShipped(ids: number[], newOrderId: number): Promise<void>;
+  getUnshippedItemsForAuthorization(): Promise<UnshippedItem[]>;
 }
 
 // We're keeping the MemStorage class definition for fallback
@@ -153,6 +162,7 @@ export class MemStorage implements IStorage {
   private orderChangelogs: Map<number, OrderChangelog>;
   private tags: Map<number, Tag>;
   private productTagsMap: Map<string, number>; // key: productId-tagId, value: 1 (just for existence)
+  private unshippedItems: Map<number, UnshippedItem>;
   
   private userIdCounter: number;
   private categoryIdCounter: number;
@@ -163,6 +173,7 @@ export class MemStorage implements IStorage {
   private shippingDocumentIdCounter: number;
   private orderChangelogIdCounter: number;
   private tagIdCounter: number;
+  private unshippedItemIdCounter: number;
   
   constructor() {
     this.users = new Map();
@@ -175,6 +186,7 @@ export class MemStorage implements IStorage {
     this.orderChangelogs = new Map();
     this.tags = new Map();
     this.productTagsMap = new Map();
+    this.unshippedItems = new Map();
     
     this.userIdCounter = 1;
     this.categoryIdCounter = 1;
@@ -185,6 +197,7 @@ export class MemStorage implements IStorage {
     this.shippingDocumentIdCounter = 1;
     this.orderChangelogIdCounter = 1;
     this.tagIdCounter = 1;
+    this.unshippedItemIdCounter = 1;
     
     // Initialize with sample data (async)
     // We're calling this in a non-blocking way since constructor can't be async
@@ -1184,74 +1197,145 @@ export class MemStorage implements IStorage {
     };
   }
   
+  // Unshipped Items methods
+  async getUnshippedItems(customerName?: string): Promise<UnshippedItem[]> {
+    let items = Array.from(this.unshippedItems.values())
+      .filter(item => !item.shipped);
+    
+    if (customerName) {
+      items = items.filter(item => 
+        item.customerName.toLowerCase().includes(customerName.toLowerCase())
+      );
+    }
+    
+    return items;
+  }
+  
+  async getUnshippedItemsByOrder(orderId: number): Promise<UnshippedItem[]> {
+    return Array.from(this.unshippedItems.values())
+      .filter(item => item.orderId === orderId && !item.shipped);
+  }
+  
+  async addUnshippedItem(item: InsertUnshippedItem): Promise<UnshippedItem> {
+    const id = this.unshippedItemIdCounter++;
+    const unshippedItem: UnshippedItem = {
+      ...item,
+      id,
+      date: new Date(),
+      shipped: false,
+      shippedInOrderId: null,
+      authorized: false,
+      authorizedById: null,
+      notes: item.notes || null
+    };
+    
+    this.unshippedItems.set(id, unshippedItem);
+    return unshippedItem;
+  }
+  
+  async authorizeUnshippedItems(ids: number[], userId: number): Promise<void> {
+    for (const id of ids) {
+      const item = this.unshippedItems.get(id);
+      if (item) {
+        const updatedItem = {
+          ...item,
+          authorized: true,
+          authorizedById: userId
+        };
+        this.unshippedItems.set(id, updatedItem);
+      }
+    }
+  }
+  
+  async markUnshippedItemsAsShipped(ids: number[], newOrderId: number): Promise<void> {
+    for (const id of ids) {
+      const item = this.unshippedItems.get(id);
+      if (item) {
+        const updatedItem = {
+          ...item,
+          shipped: true,
+          shippedInOrderId: newOrderId
+        };
+        this.unshippedItems.set(id, updatedItem);
+      }
+    }
+  }
+  
+  async getUnshippedItemsForAuthorization(): Promise<UnshippedItem[]> {
+    return Array.from(this.unshippedItems.values())
+      .filter(item => !item.authorized && !item.shipped);
+  }
+  
   // Initialize with sample data
-  private async initSampleData() {
-    // Sample customers with extended data
-    await this.createCustomer({ 
-      name: "Acme Corporation", 
-      vatNumber: "GB123456789",
-      address: "123 Business Park",
-      city: "London",
-      state: "",
-      postalCode: "E1 6AN",
-      country: "United Kingdom",
-      email: "orders@acmecorp.example",
-      phone: "+44 20 1234 5678",
-      contactPerson: "John Smith",
-      preferredShippingCompany: "royal_mail",
-      customShippingCompany: "",
-      notes: "Major account - priority shipping"
-    });
-    
-    await this.createCustomer({ 
-      name: "TechStart Inc.", 
-      vatNumber: "US987654321",
-      address: "456 Innovation Avenue",
-      city: "San Francisco",
-      state: "CA",
-      postalCode: "94107",
-      country: "United States",
-      email: "purchasing@techstart.example",
-      phone: "+1 415 555 1234",
-      contactPerson: "Sarah Johnson",
-      preferredShippingCompany: "fedex",
-      customShippingCompany: "",
-      notes: "Requires special packaging"
-    });
-    
-    await this.createCustomer({ 
-      name: "Euro Distributors GmbH", 
-      vatNumber: "DE567891234",
-      address: "789 Industrie Strasse",
-      city: "Berlin",
-      state: "",
-      postalCode: "10115",
-      country: "Germany",
-      email: "info@eurodistributors.example",
-      phone: "+49 30 9876 5432",
-      contactPerson: "Klaus Mueller",
-      preferredShippingCompany: "dhl",
-      customShippingCompany: "",
-      notes: ""
-    });
-    
-    await this.createCustomer({ 
-      name: "Pacific Traders Ltd", 
-      vatNumber: "AU123789456",
-      address: "10 Harbor Road",
-      city: "Sydney",
-      state: "NSW",
-      postalCode: "2000",
-      country: "Australia",
-      email: "orders@pacifictraders.example",
-      phone: "+61 2 8765 4321",
-      contactPerson: "Emma Davis",
-      preferredShippingCompany: "ups",
-      customShippingCompany: "",
-      notes: "Bulk orders only"
-    });
-    
-    // No default categories or products - user will create their own
+  private async initSampleData(): Promise<void> {
+    try {
+      // Sample customers with extended data
+      await this.createCustomer({ 
+        name: "Acme Corporation", 
+        vatNumber: "GB123456789",
+        address: "123 Business Park",
+        city: "London",
+        state: "",
+        postalCode: "E1 6AN",
+        country: "United Kingdom",
+        email: "orders@acmecorp.example",
+        phone: "+44 20 1234 5678",
+        contactPerson: "John Smith",
+        preferredShippingCompany: "royal_mail",
+        customShippingCompany: null,
+        notes: "Major account - priority shipping"
+      });
+      
+      await this.createCustomer({ 
+        name: "TechStart Inc.", 
+        vatNumber: "US987654321",
+        address: "456 Innovation Avenue",
+        city: "San Francisco",
+        state: "CA",
+        postalCode: "94107",
+        country: "United States",
+        email: "purchasing@techstart.example",
+        phone: "+1 415 555 1234",
+        contactPerson: "Sarah Johnson",
+        preferredShippingCompany: "fedex",
+        customShippingCompany: null,
+        notes: "Requires special packaging"
+      });
+      
+      await this.createCustomer({ 
+        name: "Euro Distributors GmbH", 
+        vatNumber: "DE567891234",
+        address: "789 Industrie Strasse",
+        city: "Berlin",
+        state: "",
+        postalCode: "10115",
+        country: "Germany",
+        email: "info@eurodistributors.example",
+        phone: "+49 30 9876 5432",
+        contactPerson: "Klaus Mueller",
+        preferredShippingCompany: "dhl",
+        customShippingCompany: null,
+        notes: ""
+      });
+      
+      await this.createCustomer({ 
+        name: "Pacific Traders Ltd", 
+        vatNumber: "AU123789456",
+        address: "10 Harbor Road",
+        city: "Sydney",
+        state: "NSW",
+        postalCode: "2000",
+        country: "Australia",
+        email: "orders@pacifictraders.example",
+        phone: "+61 2 8765 4321",
+        contactPerson: "Emma Davis",
+        preferredShippingCompany: "ups",
+        customShippingCompany: null,
+        notes: "Bulk orders only"
+      });
+    } catch (error) {
+      console.error("Error initializing sample data:", error);
+    }
   }
 }
 

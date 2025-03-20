@@ -1044,6 +1044,94 @@ export class DatabaseStorage implements IStorage {
       return undefined;
     }
   }
+
+  // Unshipped items methods
+  async getUnshippedItems(customerId?: string): Promise<UnshippedItem[]> {
+    try {
+      // Create base query
+      const query = this.db.select()
+        .from(unshippedItems);
+      
+      // Add customer filter if specified
+      if (customerId) {
+        return await query
+          .where(eq(unshippedItems.customerId, customerId));
+      }
+      
+      // Return all unshipped items
+      return await query;
+    } catch (error) {
+      console.error("Error getting unshipped items:", error);
+      return [];
+    }
+  }
+
+  async getUnshippedItemsByOrder(orderId: number): Promise<UnshippedItem[]> {
+    try {
+      return await this.db.select()
+        .from(unshippedItems)
+        .where(eq(unshippedItems.orderId, orderId));
+    } catch (error) {
+      console.error(`Error getting unshipped items for order ${orderId}:`, error);
+      return [];
+    }
+  }
+
+  async addUnshippedItem(item: InsertUnshippedItem): Promise<UnshippedItem> {
+    try {
+      const [newItem] = await this.db.insert(unshippedItems)
+        .values(item)
+        .returning();
+      return newItem;
+    } catch (error) {
+      console.error("Error adding unshipped item:", error);
+      throw error;
+    }
+  }
+
+  async authorizeUnshippedItems(ids: number[], userId: number): Promise<void> {
+    try {
+      await this.db.update(unshippedItems)
+        .set({ 
+          authorized: true,
+          authorizedById: userId,
+          authorizedAt: new Date()
+        })
+        .where(inArray(unshippedItems.id, ids));
+    } catch (error) {
+      console.error("Error authorizing unshipped items:", error);
+      throw error;
+    }
+  }
+
+  async markUnshippedItemsAsShipped(ids: number[], newOrderId: number): Promise<void> {
+    try {
+      await this.db.update(unshippedItems)
+        .set({ 
+          shipped: true, 
+          shippedInOrderId: newOrderId,
+          shippedAt: new Date()
+        })
+        .where(inArray(unshippedItems.id, ids));
+    } catch (error) {
+      console.error("Error marking unshipped items as shipped:", error);
+      throw error;
+    }
+  }
+
+  async getUnshippedItemsForAuthorization(): Promise<UnshippedItem[]> {
+    try {
+      return await this.db.select()
+        .from(unshippedItems)
+        .where(and(
+          eq(unshippedItems.authorized, false),
+          eq(unshippedItems.shipped, false)
+        ));
+    } catch (error) {
+      console.error("Error getting unshipped items for authorization:", error);
+      return [];
+    }
+  }
 }
 
 // This will be initialized when the server starts
