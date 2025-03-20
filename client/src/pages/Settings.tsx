@@ -1391,6 +1391,20 @@ const Settings = () => {
           </Card>
         </TabsContent>
         
+        <TabsContent value="labels" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Shipping Label Templates</CardTitle>
+              <CardDescription>
+                Customize shipping label templates for the CAB EOS1 printer
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <LabelTemplateEditor />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
         <TabsContent value="users" className="mt-4">
           <Card>
             <CardHeader>
