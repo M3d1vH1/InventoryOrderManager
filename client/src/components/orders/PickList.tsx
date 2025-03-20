@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 import {
   Card,
   CardContent,
@@ -114,8 +115,19 @@ const PickList = ({ order }: { order: Order }) => {
     }
   }, [order.items, products, pickedItems]);
 
+  const [showApprovalDialog, setShowApprovalDialog] = useState(false);
+  const [hasPartialFulfillment, setHasPartialFulfillment] = useState(false);
+  const [approvalNotes, setApprovalNotes] = useState('');
+  const { user } = useAuth(); // Import useAuth at the top
+
   const updateOrderStatusMutation = useMutation({
-    mutationFn: async (status: 'pending' | 'picked' | 'shipped' | 'cancelled', options?: any) => {
+    mutationFn: async ({ 
+      status, 
+      approvePartialFulfillment = false 
+    }: { 
+      status: 'pending' | 'picked' | 'shipped' | 'cancelled', 
+      approvePartialFulfillment?: boolean 
+    }) => {
       // Collect actual quantity data for items that have been picked
       const itemQuantities = orderItemsWithProducts
         .filter(item => item.picked)
@@ -126,12 +138,21 @@ const PickList = ({ order }: { order: Order }) => {
           actualQuantity: item.actualQuantity || item.quantity
         }));
       
+      // Check if this is a partial fulfillment
+      const isPartialFulfillment = itemQuantities.some(
+        item => item.actualQuantity < item.requestedQuantity
+      );
+      
+      // Set state for later use
+      setHasPartialFulfillment(isPartialFulfillment);
+      
       return apiRequest({
         url: `/api/orders/${order.id}/status`,
         method: 'PATCH',
         body: JSON.stringify({ 
           status,
-          itemQuantities
+          itemQuantities,
+          approvePartialFulfillment
         }),
         headers: {
           'Content-Type': 'application/json',
@@ -144,11 +165,22 @@ const PickList = ({ order }: { order: Order }) => {
       queryClient.invalidateQueries({ queryKey: ['/api/unshipped-items'] });
       toast({
         title: "Order status updated",
-        description: "The order has been marked as picked",
+        description: hasPartialFulfillment 
+          ? "The partial order has been approved and marked as picked" 
+          : "The order has been marked as picked",
         variant: "default"
       });
+      
+      // Close any open dialogs
+      setShowApprovalDialog(false);
     },
     onError: (error: any) => {
+      // If this requires manager approval
+      if (error.status === 403 && error.data?.requiresApproval) {
+        setShowApprovalDialog(true);
+        return;
+      }
+      
       toast({
         title: "Error updating order",
         description: error.message,
@@ -191,29 +223,31 @@ const PickList = ({ order }: { order: Order }) => {
         actualQuantity: item.actualQuantity || item.quantity
       }));
 
-    // Send the data to update the order status and create any unshipped items
-    updateOrderStatusMutation.mutate('picked', {
-      onSuccess: () => {
-        // Check if any items have partial quantities
-        const hasPartialQuantities = itemsWithActualQuantities.some(
-          item => item.actualQuantity < item.requestedQuantity
-        );
+    // Check if this is a partial fulfillment
+    const isPartialFulfillment = itemsWithActualQuantities.some(
+      item => item.actualQuantity < item.requestedQuantity
+    );
+    
+    // Store for later use
+    setHasPartialFulfillment(isPartialFulfillment);
 
-        if (hasPartialQuantities) {
-          toast({
-            title: "Partial order fulfilled",
-            description: "Unshipped items have been created for items with insufficient quantity.",
-            variant: "destructive"
-          });
-        }
-        
-        // Generate shipping labels with the boxCount
-        generateShippingLabels(order, boxCount);
-      }
+    // Send the data to update the order status and create any unshipped items
+    updateOrderStatusMutation.mutate({ 
+      status: 'picked',
+      // If user is admin or manager, auto-approve
+      approvePartialFulfillment: (user?.role === 'admin' || user?.role === 'manager') && isPartialFulfillment
     });
     
     // Close dialog
     setShowBoxCountDialog(false);
+  };
+  
+  // Handle approval of partial fulfillment
+  const handleApprovePartialFulfillment = () => {
+    updateOrderStatusMutation.mutate({ 
+      status: 'picked',
+      approvePartialFulfillment: true 
+    });
   };
   
   // Function to generate shipping labels for CAB EOS printer
@@ -370,21 +404,89 @@ A 1
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex justify-between items-center">
-          <div className="flex items-center">
-            <Truck className="h-5 w-5 mr-2 text-blue-500" />
-            <span>Pick List: {order.orderNumber}</span>
+    <>
+      {/* Approval Dialog for Partial Fulfillment */}
+      <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Partial Order Fulfillment Requires Approval</DialogTitle>
+            <DialogDescription>
+              This order cannot be fully fulfilled due to insufficient stock. Manager or admin approval is required to proceed with partial fulfillment.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Alert variant="destructive" className="mb-4">
+              <AlertTitle className="flex items-center">
+                <span className="bg-red-100 p-1 rounded-full mr-2">
+                  <Info className="h-4 w-4 text-red-600" />
+                </span>
+                Insufficient Stock
+              </AlertTitle>
+              <AlertDescription>
+                Some items in this order cannot be fulfilled with the current inventory. These items will be marked as "unshipped" and will require future fulfillment.
+              </AlertDescription>
+            </Alert>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="approval-notes" className="text-sm font-medium">
+                  Notes for Approval (Optional)
+                </Label>
+                <textarea 
+                  id="approval-notes"
+                  className="w-full mt-1 p-2 border rounded-md"
+                  rows={3}
+                  placeholder="Add any notes regarding this partial fulfillment"
+                  value={approvalNotes}
+                  onChange={(e) => setApprovalNotes(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
-          <Badge variant={order.status === 'pending' ? "default" : "outline"} className={order.status !== 'pending' ? "border-green-500 text-green-700 bg-green-50" : ""}>
-            {order.status === 'pending' ? "Pending" : "Picked"}
-          </Badge>
-        </CardTitle>
-        <CardDescription>
-          Customer: {order.customerName} | Order Date: {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'N/A'}
-        </CardDescription>
-      </CardHeader>
+
+          <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowApprovalDialog(false)}
+            >
+              Cancel
+            </Button>
+            
+            {/* Only show this button if current user is admin or manager */}
+            {(user?.role === 'admin' || user?.role === 'manager') ? (
+              <Button 
+                type="submit"
+                onClick={handleApprovePartialFulfillment}
+                disabled={updateOrderStatusMutation.isPending}
+              >
+                {updateOrderStatusMutation.isPending ? "Approving..." : "Approve Partial Fulfillment"}
+              </Button>
+            ) : (
+              <div className="text-sm text-slate-500 italic">
+                Please contact a manager or administrator to approve this partial fulfillment.
+              </div>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex justify-between items-center">
+            <div className="flex items-center">
+              <Truck className="h-5 w-5 mr-2 text-blue-500" />
+              <span>Pick List: {order.orderNumber}</span>
+            </div>
+            <Badge variant={order.status === 'pending' ? "default" : "outline"} className={order.status !== 'pending' ? "border-green-500 text-green-700 bg-green-50" : ""}>
+              {order.status === 'pending' ? "Pending" : "Picked"}
+            </Badge>
+          </CardTitle>
+          <CardDescription>
+            Customer: {order.customerName} | Order Date: {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'N/A'}
+          </CardDescription>
+        </CardHeader>
       <CardContent>
         <div className="mb-4">
           <div className="flex justify-between mb-1">
@@ -659,6 +761,7 @@ A 1
         </DialogContent>
       </Dialog>
     </Card>
+    </>
   );
 };
 

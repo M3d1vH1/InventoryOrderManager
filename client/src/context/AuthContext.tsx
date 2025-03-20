@@ -9,7 +9,7 @@ export interface User {
   id: number;
   username: string;
   fullName: string;
-  role: 'admin' | 'front_office' | 'warehouse';
+  role: 'admin' | 'manager' | 'front_office' | 'warehouse';
   email: string | null;
   createdAt: string;
   lastLogin: string | null;

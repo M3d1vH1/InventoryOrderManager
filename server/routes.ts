@@ -575,6 +575,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (status === 'shipped') {
         // Get unshipped items for this order and log them for tracking purposes
         const unshippedItems = await storage.getUnshippedItemsByOrder(id);
+        const orderItems = await storage.getOrderItems(id);
+        
+        // Check if this is a partial order fulfillment (some items have actualQuantity < requestedQuantity)
+        const isPartialFulfillment = req.body.itemQuantities && req.body.itemQuantities.some(
+          (item: any) => item.actualQuantity < item.requestedQuantity
+        );
+        
+        // Check if user has authorization to ship partial orders
+        const hasApprovalPermission = userRole === 'admin' || userRole === 'manager';
+        const isApproved = req.body.approvePartialFulfillment === true;
+        
+        // If it's a partial fulfillment and approval is required
+        if (isPartialFulfillment && !isApproved && !hasApprovalPermission) {
+          return res.status(403).json({
+            message: "Partial order fulfillment requires manager approval",
+            requiresApproval: true,
+            isPartialFulfillment: true
+          });
+        }
         
         if (unshippedItems.length > 0) {
           console.log(`Order ${id} being shipped with ${unshippedItems.length} unshipped items`);
@@ -601,6 +620,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update the order status
       const updatedOrder = await storage.updateOrderStatus(id, status, undefined, userId);
+      
+      // If this was an approved partial fulfillment, log it
+      if (req.body.approvePartialFulfillment === true && userId) {
+        await storage.addOrderChangelog({
+          orderId: id,
+          userId: userId,
+          action: 'partial_approval',
+          changes: { status },
+          previousValues: { status: originalOrder.status },
+          notes: `Partial order fulfillment approved by manager/admin`
+        });
+      }
       
       if (!updatedOrder) {
         return res.status(404).json({ message: 'Order not found' });
