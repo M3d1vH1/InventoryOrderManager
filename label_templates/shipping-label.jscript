@@ -1,0 +1,11 @@
+m m
+J
+H 100,0,T
+S l1;0,0,68,71,100
+T 25,25,0,3,pt9;Order: {{orderNumber}}
+T 25,50,0,3,pt8;Customer: {{customerName}}
+T 25,75,0,3,pt8;Date: {{orderDate}}
+T 25,100,0,3,pt12;BOX {{boxNumber}} OF {{totalBoxes}}
+B 25,130,0,EAN13,60,0,3,3;{{barcode}}
+T 25,220,0,3,pt8;{{companyName}}
+A 1

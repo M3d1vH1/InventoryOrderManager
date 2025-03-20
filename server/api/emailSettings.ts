@@ -11,6 +11,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..', '..');
 
+// Define paths for templates
+const emailTemplatesDir = path.join(projectRoot, 'email_templates');
+const labelTemplatesDir = path.join(projectRoot, 'label_templates');
+
 /**
  * Get current email settings
  */
@@ -143,7 +147,7 @@ export async function getEmailTemplate(req: Request, res: Response) {
     }
     
     // Logic to get the email template by name
-    const templatePath = path.join(projectRoot, 'email_templates', `${templateName}.hbs`);
+    const templatePath = path.join(emailTemplatesDir, `${templateName}.hbs`);
     
     if (!fs.existsSync(templatePath)) {
       return res.status(404).json({ message: `Template '${templateName}' not found` });
@@ -174,12 +178,11 @@ export async function updateEmailTemplate(req: Request, res: Response) {
     }
     
     // Logic to update the email template
-    const templateDir = path.join(projectRoot, 'email_templates');
-    const templatePath = path.join(templateDir, `${templateName}.hbs`);
+    const templatePath = path.join(emailTemplatesDir, `${templateName}.hbs`);
     
     // Create directory if it doesn't exist
-    if (!fs.existsSync(templateDir)) {
-      fs.mkdirSync(templateDir, { recursive: true });
+    if (!fs.existsSync(emailTemplatesDir)) {
+      fs.mkdirSync(emailTemplatesDir, { recursive: true });
     }
     
     fs.writeFileSync(templatePath, content, 'utf8');
@@ -192,5 +195,68 @@ export async function updateEmailTemplate(req: Request, res: Response) {
   } catch (error) {
     console.error('Error updating email template:', error);
     return res.status(500).json({ message: 'Failed to update email template' });
+  }
+}
+
+/**
+ * Get label template
+ */
+export async function getLabelTemplate(req: Request, res: Response) {
+  try {
+    const { templateName } = req.params;
+    
+    if (!templateName) {
+      return res.status(400).json({ message: 'Template name is required' });
+    }
+    
+    // Logic to get the label template by name
+    const templatePath = path.join(labelTemplatesDir, `${templateName}.jscript`);
+    
+    if (!fs.existsSync(templatePath)) {
+      return res.status(404).json({ message: `Label template '${templateName}' not found` });
+    }
+    
+    const templateContent = fs.readFileSync(templatePath, 'utf8');
+    return res.json({ templateName, content: templateContent });
+  } catch (error) {
+    console.error('Error getting label template:', error);
+    return res.status(500).json({ message: 'Failed to get label template' });
+  }
+}
+
+/**
+ * Update label template
+ */
+export async function updateLabelTemplate(req: Request, res: Response) {
+  try {
+    const { templateName } = req.params;
+    const { content } = req.body;
+    
+    if (!templateName) {
+      return res.status(400).json({ message: 'Template name is required' });
+    }
+    
+    if (!content) {
+      return res.status(400).json({ message: 'Template content is required' });
+    }
+    
+    // Logic to update the label template
+    const templatePath = path.join(labelTemplatesDir, `${templateName}.jscript`);
+    
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(labelTemplatesDir)) {
+      fs.mkdirSync(labelTemplatesDir, { recursive: true });
+    }
+    
+    fs.writeFileSync(templatePath, content, 'utf8');
+    
+    return res.json({ 
+      success: true, 
+      message: 'Label template updated successfully',
+      templateName,
+    });
+  } catch (error) {
+    console.error('Error updating label template:', error);
+    return res.status(500).json({ message: 'Failed to update label template' });
   }
 }
