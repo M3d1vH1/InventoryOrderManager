@@ -57,43 +57,14 @@ const Sidebar = () => {
                 </Link>
               </li>
               <li className="mb-1">
-                <div>
+                <Link href="/orders" onClick={() => setCurrentPage("Orders")}>
                   <button 
-                    className={`flex items-center justify-between w-full p-2 text-left rounded ${(isActive("/orders") || isActive("/unshipped-items")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
-                    onClick={() => {
-                      setCurrentPage("Orders");
-                    }}
+                    className={`flex items-center w-full p-2 text-left rounded ${isActive("/orders") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
                   >
-                    <div className="flex items-center">
-                      <i className="fas fa-shopping-cart w-5"></i>
-                      <span className="ml-2">{t('orders.title')}</span>
-                    </div>
-                    <i className="fas fa-chevron-down text-xs"></i>
+                    <i className="fas fa-shopping-cart w-5"></i>
+                    <span className="ml-2">{t('orders.title')}</span>
                   </button>
-                  
-                  <ul id="orders-submenu" className="ml-4 mt-1">
-                    <li className="mb-1">
-                      <Link href="/orders" onClick={() => setCurrentPage("Orders")}>
-                        <button 
-                          className={`flex items-center w-full p-2 text-left rounded ${isActive("/orders") ? "bg-primary/60 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
-                        >
-                          <i className="fas fa-list w-5"></i>
-                          <span className="ml-2">{t('orders.management')}</span>
-                        </button>
-                      </Link>
-                    </li>
-                    <li className="mb-1">
-                      <Link href="/orders/unshipped-items" onClick={() => setCurrentPage("Unshipped Items")}>
-                        <button 
-                          className={`flex items-center w-full p-2 text-left rounded ${isActive("/orders/unshipped-items") || isActive("/unshipped-items") ? "bg-primary/60 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
-                        >
-                          <i className="fas fa-dolly w-5"></i>
-                          <span className="ml-2">{t('unshippedItems.sidebarTitle')}</span>
-                        </button>
-                      </Link>
-                    </li>
-                  </ul>
-                </div>
+                </Link>
               </li>
               <li className="mb-1">
                 <Link href="/products" onClick={() => setCurrentPage("Products")}>

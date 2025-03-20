@@ -403,14 +403,29 @@ const Orders = () => {
     }
   };
 
+  // Handle navigation to unshipped items
+  const handleGoToUnshippedItems = () => {
+    setLocation('/orders/unshipped-items');
+  };
+
   return (
     <div>
       <div className="bg-white rounded-lg shadow mb-6">
         <div className="p-4 border-b border-slate-200 flex justify-between items-center">
           <h2 className="font-semibold text-lg">{t('orders.management')}</h2>
-          <Button onClick={() => setShowOrderForm(!showOrderForm)}>
-            {showOrderForm ? t('orders.hideForm') : t('orders.createNew')}
-          </Button>
+          <div className="flex space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={handleGoToUnshippedItems}
+              className="flex items-center"
+            >
+              <i className="fas fa-dolly mr-2"></i>
+              {t('unshippedItems.sidebarTitle')}
+            </Button>
+            <Button onClick={() => setShowOrderForm(!showOrderForm)}>
+              {showOrderForm ? t('orders.hideForm') : t('orders.createNew')}
+            </Button>
+          </div>
         </div>
 
         {showOrderForm && (
