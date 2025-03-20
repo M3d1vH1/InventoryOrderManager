@@ -258,7 +258,8 @@ export const changelogActionEnum = pgEnum('changelog_action', [
   'status_change',
   'unshipped_authorization',
   'label_printed',
-  'partial_approval'
+  'partial_approval',
+  'email_sent'
 ]);
 
 // Changelog Schema for Orders
@@ -278,7 +279,7 @@ export const insertOrderChangelogSchema = createInsertSchema(orderChangelogs)
   .extend({
     orderId: z.number(),
     userId: z.number(),
-    action: z.enum(['create', 'update', 'delete', 'status_change', 'unshipped_authorization', 'label_printed', 'partial_approval']),
+    action: z.enum(['create', 'update', 'delete', 'status_change', 'unshipped_authorization', 'label_printed', 'partial_approval', 'email_sent']),
     changes: z.record(z.any()).optional(),
     previousValues: z.record(z.any()).optional(),
     notes: z.string().optional(),

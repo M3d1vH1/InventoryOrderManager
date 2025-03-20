@@ -169,7 +169,7 @@ function getTemplate(templateName: string): string {
 export async function sendOrderShippedEmail(
   order: Order, 
   customer: Customer, 
-  items: Array<{ id: number; name: string; quantity: number }>
+  items: Array<{ productId: number; name: string; quantity: number; sku: string }>
 ): Promise<boolean> {
   try {
     // Get email configuration

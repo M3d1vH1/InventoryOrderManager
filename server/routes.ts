@@ -1742,11 +1742,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
       
-      // Get customer information
-      const customer = await storage.getCustomer(order.customerId);
+      // Get customer information by customer name
+      // Since orders table stores customerName, not customerId
+      const customers = await storage.searchCustomers(order.customerName);
+      const customer = customers.length > 0 ? customers[0] : null;
       
       if (!customer) {
-        return res.status(400).json({ message: 'Customer information not found' });
+        return res.status(400).json({ message: 'Customer information not found. Make sure customer exists in database.' });
       }
       
       if (!customer.email) {
