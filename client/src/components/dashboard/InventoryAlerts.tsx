@@ -1,7 +1,5 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { queryClient } from "@/lib/queryClient";
-import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Upload } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -24,34 +22,7 @@ const InventoryAlerts = () => {
     queryKey: ['/api/products/low-stock'],
   });
 
-  const restockMutation = useMutation({
-    mutationFn: async (productId: number) => {
-      return apiRequest<Product>(`/api/products/${productId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentStock: 30 }) // Set a default restock amount
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/products/low-stock'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      toast({
-        title: t('inventory.productRestocked'),
-        description: t('inventory.inventoryUpdated'),
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: t('inventory.failedToRestock'),
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  });
-
-  const handleRestock = (productId: number) => {
-    restockMutation.mutate(productId);
-  };
+  // Removed the restockMutation and handleRestock functions to prevent accidental stock updates from the dashboard
 
   const renderLowStockItems = () => {
     if (isLoading) {
@@ -86,20 +57,14 @@ const InventoryAlerts = () => {
 
       return (
         <div key={product.id} className={`border-l-4 ${borderColor} p-3 rounded-r`}>
-          <div className="flex justify-between items-start">
+          <div className="flex items-start">
             <div>
               <h3 className="font-medium">{product.name}</h3>
               <p className="text-sm text-slate-600">
                 {t('inventory.stock')}: <span className={`font-medium ${textColor}`}>{product.currentStock}</span> ({t('inventory.min')}: {product.minStockLevel})
               </p>
+              <p className="text-xs text-slate-500 mt-1">SKU: {product.sku}</p>
             </div>
-            <button 
-              onClick={() => handleRestock(product.id)}
-              className="bg-white text-slate-600 hover:text-primary border border-slate-300 rounded-md px-2 py-1 text-sm"
-              disabled={restockMutation.isPending}
-            >
-              {restockMutation.isPending ? t('inventory.restocking') : t('inventory.restock')}
-            </button>
           </div>
         </div>
       );
