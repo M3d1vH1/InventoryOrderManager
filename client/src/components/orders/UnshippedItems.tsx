@@ -58,6 +58,10 @@ export default function UnshippedItems({ mode = 'all', customerId }: UnshippedIt
     queryKey: ['/api/products'],
     retry: 1,
   });
+  
+  // Calculate status counts
+  const pendingCount = unshippedItems.filter(item => !item.authorized).length;
+  const authorizedCount = unshippedItems.filter(item => item.authorized).length;
 
   const authorizeItemsMutation = useMutation({
     mutationFn: async (itemIds: number[]) => {
@@ -98,12 +102,27 @@ export default function UnshippedItems({ mode = 'all', customerId }: UnshippedIt
     });
   };
 
+  // Filter items based on current filter
+  const filteredItems = unshippedItems.filter((item: UnshippedItem) => {
+    if (filterStatus === 'all') return true;
+    if (filterStatus === 'pending') return !item.authorized;
+    if (filterStatus === 'authorized') return item.authorized;
+    return true;
+  });
+
+  // Handle select all based on filtered items
   const handleSelectAll = () => {
-    if (unshippedItems && unshippedItems.length > 0) {
-      if (selectedItems.length === unshippedItems.length) {
+    if (filteredItems && filteredItems.length > 0) {
+      const selectableItems = filteredItems
+        .filter(item => !item.authorized)
+        .map(item => item.id);
+        
+      const allSelected = selectableItems.every(id => selectedItems.includes(id));
+      
+      if (allSelected) {
         setSelectedItems([]);
       } else {
-        setSelectedItems(unshippedItems.map((item: UnshippedItem) => item.id));
+        setSelectedItems(selectableItems);
       }
     }
   };
@@ -190,6 +209,54 @@ export default function UnshippedItems({ mode = 'all', customerId }: UnshippedIt
         )}
       </CardHeader>
       <CardContent>
+        <div className="mb-4 flex items-center gap-2">
+          <div className="text-sm font-medium">{t('common.filter')}:</div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setFilterStatus('all')}
+              className={`px-3 py-1 rounded-full text-sm ${
+                filterStatus === 'all' 
+                  ? 'bg-primary text-white' 
+                  : 'bg-gray-100 hover:bg-gray-200'
+              }`}
+            >
+              {t('common.all')}
+              <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-white bg-opacity-20 px-1.5 text-xs">
+                {unshippedItems.length}
+              </span>
+            </button>
+            <button
+              onClick={() => setFilterStatus('pending')}
+              className={`px-3 py-1 rounded-full text-sm ${
+                filterStatus === 'pending' 
+                  ? 'bg-yellow-500 text-white' 
+                  : 'bg-gray-100 hover:bg-gray-200'
+              }`}
+            >
+              {t('unshippedItems.pendingAuthorization')}
+              <span className={`ml-1.5 inline-flex items-center justify-center rounded-full px-1.5 text-xs ${
+                filterStatus === 'pending' ? 'bg-white bg-opacity-20' : 'bg-yellow-500 text-white'
+              }`}>
+                {pendingCount}
+              </span>
+            </button>
+            <button
+              onClick={() => setFilterStatus('authorized')}
+              className={`px-3 py-1 rounded-full text-sm ${
+                filterStatus === 'authorized' 
+                  ? 'bg-green-500 text-white' 
+                  : 'bg-gray-100 hover:bg-gray-200'
+              }`}
+            >
+              {t('unshippedItems.authorized')}
+              <span className={`ml-1.5 inline-flex items-center justify-center rounded-full px-1.5 text-xs ${
+                filterStatus === 'authorized' ? 'bg-white bg-opacity-20' : 'bg-green-500 text-white'
+              }`}>
+                {authorizedCount}
+              </span>
+            </button>
+          </div>
+        </div>
         <div className="rounded-md border">
           <Table>
             <TableHeader>
@@ -197,7 +264,12 @@ export default function UnshippedItems({ mode = 'all', customerId }: UnshippedIt
                 {hasPermission(['admin', 'manager', 'front_office']) && (
                   <TableHead className="w-12">
                     <Checkbox 
-                      checked={selectedItems.length === unshippedItems.length && unshippedItems.length > 0}
+                      checked={
+                        filteredItems
+                          .filter(item => !item.authorized)
+                          .every(item => selectedItems.includes(item.id))
+                        && filteredItems.some(item => !item.authorized)
+                      }
                       onCheckedChange={handleSelectAll}
                     />
                   </TableHead>
@@ -212,7 +284,20 @@ export default function UnshippedItems({ mode = 'all', customerId }: UnshippedIt
               </TableRow>
             </TableHeader>
             <TableBody>
-              {unshippedItems.map((item: UnshippedItem) => (
+              {filteredItems.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={hasPermission(['admin', 'manager', 'front_office']) ? 8 : 7} className="h-24 text-center">
+                    <div className="text-muted-foreground">
+                      {filterStatus === 'all' 
+                        ? t('unshippedItems.noUnshippedItems')
+                        : filterStatus === 'pending'
+                          ? t('unshippedItems.noItemsPendingAuthorization')
+                          : t('unshippedItems.noAuthorizedItems')}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredItems.map((item: UnshippedItem) => (
                 <TableRow key={item.id}>
                   {hasPermission(['admin', 'manager', 'front_office']) && (
                     <TableCell>
@@ -260,7 +345,7 @@ export default function UnshippedItems({ mode = 'all', customerId }: UnshippedIt
                   </TableCell>
                   <TableCell>{item.notes || '-'}</TableCell>
                 </TableRow>
-              ))}
+              )))}
             </TableBody>
           </Table>
         </div>
