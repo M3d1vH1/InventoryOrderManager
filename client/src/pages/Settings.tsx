@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -1524,6 +1525,44 @@ const EmailTemplateEditor = () => {
     // Add more templates as needed
   ];
   
+  // Available variables for templates
+  const availableVariables = [
+    { name: "customerName", description: "Customer's full name" },
+    { name: "orderNumber", description: "Order number/ID" },
+    { name: "items", description: "List of order items (use with {{#each items}})" },
+    { name: "this.name", description: "Product name (use inside {{#each items}})" },
+    { name: "this.quantity", description: "Product quantity (use inside {{#each items}})" },
+    { name: "trackingNumber", description: "Shipping tracking number (if available)" },
+    { name: "shippingCompany", description: "Name of shipping company used" },
+    { name: "notes", description: "Additional order notes" },
+    { name: "companyName", description: "Your company name (from settings)" },
+    { name: "currentYear", description: "Current year (automatically inserted)" },
+  ];
+  
+  // Insert a variable at cursor position
+  const insertVariable = (variable: string) => {
+    // Get textarea element
+    const textarea = document.querySelector('textarea[name="content"]') as HTMLTextAreaElement;
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = templateForm.getValues().content;
+    const before = text.substring(0, start);
+    const after = text.substring(end, text.length);
+    
+    // Insert the variable at cursor position
+    const newText = `${before}{{${variable}}}${after}`;
+    templateForm.setValue('content', newText);
+    
+    // Set focus back to textarea and place cursor after inserted variable
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = start + variable.length + 4; // +4 for the {{}}
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  };
+  
   // Handler for template form submission
   const onTemplateSubmit = (values: z.infer<typeof templateEditSchema>) => {
     updateTemplateMutation.mutate(values);
@@ -1591,44 +1630,111 @@ const EmailTemplateEditor = () => {
           </div>
           
           {isLoadingTemplate ? (
-            <div className="text-center py-4">Loading template...</div>
+            <div className="text-center py-4">
+              <div className="flex justify-center items-center gap-2">
+                <span className="animate-spin">
+                  <svg className="h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </span>
+                <span>Loading template...</span>
+              </div>
+            </div>
           ) : (
             <div className="border rounded-md">
               {isEditing ? (
-                <Form {...templateForm}>
-                  <form onSubmit={templateForm.handleSubmit(onTemplateSubmit)} className="space-y-4 p-4">
-                    <FormField
-                      control={templateForm.control}
-                      name="content"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Template HTML</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              {...field} 
-                              className="font-mono text-sm h-[500px]"
-                              spellCheck={false}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Use Handlebars syntax for variables: {`{{variable_name}}`}
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </form>
-                </Form>
+                <div className="p-4">
+                  {/* Template editor with variable helper */}
+                  <div className="mb-4 flex justify-between items-center">
+                    <h4 className="font-medium">Edit Template</h4>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setShowVariableHelp(!showVariableHelp)}
+                    >
+                      <HelpCircle className="h-4 w-4 mr-2" />
+                      {showVariableHelp ? "Hide Variables" : "Show Variables"}
+                    </Button>
+                  </div>
+                  
+                  {showVariableHelp && (
+                    <div className="bg-slate-50 p-4 rounded-md mb-4">
+                      <h5 className="font-medium mb-2">Available Variables</h5>
+                      <p className="text-sm mb-2">Click a variable to insert it at cursor position:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {availableVariables.map((variable) => (
+                          <Badge 
+                            key={variable.name} 
+                            variant="outline" 
+                            className="cursor-pointer hover:bg-slate-100"
+                            onClick={() => insertVariable(variable.name)}
+                          >
+                            {variable.name}
+                          </Badge>
+                        ))}
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        <p className="text-xs text-slate-500">
+                          <strong>Conditional blocks:</strong> Use <code className="bg-slate-100 px-1">{"{{#if variableName}}"}</code> content <code className="bg-slate-100 px-1">{"{{/if}}"}</code>
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          <strong>Loops:</strong> Use <code className="bg-slate-100 px-1">{"{{#each items}}"}</code> content <code className="bg-slate-100 px-1">{"{{/each}}"}</code>
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <Form {...templateForm}>
+                    <form onSubmit={templateForm.handleSubmit(onTemplateSubmit)} className="space-y-4">
+                      <FormField
+                        control={templateForm.control}
+                        name="content"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Template HTML</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                {...field} 
+                                className="font-mono text-sm h-[500px]"
+                                spellCheck={false}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              HTML + Handlebars syntax for dynamic content. Variable format: {`{{variable_name}}`}
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </form>
+                  </Form>
+                </div>
               ) : (
                 <div className="p-4">
                   <div className="flex justify-between items-center mb-4">
                     <h4 className="font-medium">Template Preview</h4>
-                    <div className="text-sm text-slate-500">
-                      Available variables: customerName, orderNumber, items, notes, trackingNumber, shippingCompany
+                    <div className="flex items-center">
+                      <HelpCircle className="h-4 w-4 mr-2 text-slate-400" />
+                      <span className="text-sm text-slate-500">
+                        This template will be used for order shipped notifications
+                      </span>
                     </div>
                   </div>
                   <div className="bg-slate-50 p-4 rounded-md overflow-auto max-h-[500px]">
                     <pre className="text-xs font-mono whitespace-pre-wrap">{templateData?.content || 'No template content available'}</pre>
+                  </div>
+                  
+                  <div className="mt-4 p-4 border rounded-md bg-slate-50">
+                    <h5 className="font-medium text-sm mb-2">Available Variables</h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {availableVariables.map((variable) => (
+                        <div key={variable.name} className="text-xs">
+                          <code className="bg-slate-200 px-1 rounded">{`{{${variable.name}}}`}</code>
+                          <span className="text-slate-500 ml-2">{variable.description}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
