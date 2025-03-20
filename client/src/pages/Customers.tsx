@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -1006,6 +1007,57 @@ const Customers = () => {
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">Created At</h3>
                 <p className="text-base">{new Date(customerDetails.createdAt).toLocaleString()}</p>
+              </div>
+              
+              {/* Order History Section */}
+              <div className="pt-4 border-t">
+                <h3 className="text-lg font-semibold mb-3">Order History</h3>
+                {customerOrders.length === 0 ? (
+                  <p className="text-muted-foreground">No orders found for this customer</p>
+                ) : (
+                  <div className="rounded-md border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Order #</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {customerOrders.map((order) => (
+                          <TableRow key={order.id}>
+                            <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                            <TableCell>{new Date(order.orderDate).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              <Badge 
+                                variant={
+                                  order.status === 'shipped' ? 'success' : 
+                                  order.status === 'picked' ? 'warning' : 
+                                  order.status === 'cancelled' ? 'destructive' : 
+                                  'default'
+                                }
+                              >
+                                {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="h-8"
+                                onClick={() => window.open(`/orders?highlight=${order.id}`, '_blank')}
+                              >
+                                View
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
               </div>
               
               <DialogFooter>
