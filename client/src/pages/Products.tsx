@@ -145,6 +145,10 @@ export default function Products() {
     if (stockFilter === "out" && product.currentStock > 0) {
       return false;
     }
+    // Special filter for both low and out of stock products
+    if (stockFilter === "low-and-out" && product.currentStock > product.minStockLevel) {
+      return false;
+    }
 
     // Filter by tag
     if (tagFilter && tagFilter !== "all_tags" && (!product.tags || !product.tags.includes(tagFilter))) {
