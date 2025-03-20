@@ -9,7 +9,8 @@ import {
   orderChangelogs, type OrderChangelog, type InsertOrderChangelog,
   tags, type Tag, type InsertTag,
   productTags, type ProductTag,
-  unshippedItems, type UnshippedItem, type InsertUnshippedItem
+  unshippedItems, type UnshippedItem, type InsertUnshippedItem,
+  emailSettings, type EmailSettings, type InsertEmailSettings
 } from "@shared/schema";
 import { DatabaseStorage, initStorage } from './storage.postgresql';
 import { log } from './vite';
@@ -1332,6 +1333,39 @@ export class MemStorage implements IStorage {
   async getUnshippedItemsForAuthorization(): Promise<UnshippedItem[]> {
     return Array.from(this.unshippedItems.values())
       .filter(item => !item.authorized && !item.shipped);
+  }
+  
+  // Email Settings methods
+  async getEmailSettings(): Promise<EmailSettings | undefined> {
+    return this.emailSettingsData;
+  }
+  
+  async updateEmailSettings(settings: Partial<InsertEmailSettings>): Promise<EmailSettings | undefined> {
+    if (!this.emailSettingsData) {
+      // Create new settings if none exist
+      this.emailSettingsData = {
+        id: 1,
+        host: settings.host || 'smtp.gmail.com',
+        port: settings.port || 587,
+        secure: settings.secure ?? false,
+        authUser: settings.authUser || '',
+        authPass: settings.authPass || '',
+        fromEmail: settings.fromEmail || '',
+        companyName: settings.companyName || 'Warehouse Management System',
+        enableNotifications: settings.enableNotifications ?? true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+    } else {
+      // Update existing settings
+      this.emailSettingsData = {
+        ...this.emailSettingsData,
+        ...settings,
+        updatedAt: new Date()
+      };
+    }
+    
+    return this.emailSettingsData;
   }
   
   // Initialize with sample data
