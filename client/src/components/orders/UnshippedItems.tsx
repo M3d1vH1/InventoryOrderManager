@@ -46,7 +46,7 @@ export default function UnshippedItems({ mode = 'all', customerId }: UnshippedIt
       ? `/api/unshipped-items?customerId=${customerId}`
       : '/api/unshipped-items';
   
-  const { data: unshippedItems, isLoading, error } = useQuery({
+  const { data: unshippedItems = [], isLoading, error } = useQuery<UnshippedItem[]>({
     queryKey: [endpoint],
     retry: 1,
   });
@@ -65,7 +65,6 @@ export default function UnshippedItems({ mode = 'all', customerId }: UnshippedIt
       toast({
         title: t('unshippedItems.authorized'),
         description: t('unshippedItems.authorizedSuccess', { count: selectedItems.length }),
-        variant: 'success',
       });
       setSelectedItems([]);
       // Invalidate queries to refresh data
@@ -108,7 +107,6 @@ export default function UnshippedItems({ mode = 'all', customerId }: UnshippedIt
       toast({
         title: t('unshippedItems.noItemsSelected'),
         description: t('unshippedItems.selectItemsToAuthorize'),
-        variant: 'warning',
       });
     }
   };
@@ -226,9 +224,9 @@ export default function UnshippedItems({ mode = 'all', customerId }: UnshippedIt
                   </TableCell>
                   <TableCell>
                     {item.authorized ? (
-                      <Badge variant="success">{t('unshippedItems.authorized')}</Badge>
+                      <Badge className="bg-green-500 hover:bg-green-600">{t('unshippedItems.authorized')}</Badge>
                     ) : (
-                      <Badge variant="warning">{t('unshippedItems.pendingAuthorization')}</Badge>
+                      <Badge className="bg-yellow-500 hover:bg-yellow-600">{t('unshippedItems.pendingAuthorization')}</Badge>
                     )}
                   </TableCell>
                   <TableCell>{item.notes || '-'}</TableCell>

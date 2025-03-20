@@ -86,6 +86,16 @@ const Sidebar = () => {
                 </Link>
               </li>
               <li className="mb-1">
+                <Link href="/unshipped-items" onClick={() => setCurrentPage("Unshipped Items")}>
+                  <button 
+                    className={`flex items-center w-full p-2 text-left rounded ${isActive("/unshipped-items") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                  >
+                    <i className="fas fa-dolly w-5"></i>
+                    <span className="ml-2">{t('unshippedItems.sidebarTitle')}</span>
+                  </button>
+                </Link>
+              </li>
+              <li className="mb-1">
                 <Link href="/reports" onClick={() => setCurrentPage("Reports")}>
                   <button 
                     className={`flex items-center w-full p-2 text-left rounded ${isActive("/reports") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}

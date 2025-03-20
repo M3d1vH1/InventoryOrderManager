@@ -14,6 +14,7 @@ import OrderPicking from "@/pages/OrderPicking";
 import ProductBarcode from "@/pages/ProductBarcode";
 import Customers from "@/pages/Customers";
 import Categories from "@/pages/Categories";
+import UnshippedItems from "@/pages/UnshippedItems";
 import Login from "@/pages/Login";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
@@ -59,6 +60,7 @@ function AuthenticatedRouter() {
       <Route path="/categories" component={Categories} />
       <Route path="/customers" component={Customers} />
       <Route path="/inventory" component={Inventory} />
+      <Route path="/unshipped-items" component={UnshippedItems} />
       <Route path="/reports" component={Reports} />
       <Route path="/settings" component={Settings} />
       <Route path="/order-picking" component={OrderPicking} />
