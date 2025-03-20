@@ -528,6 +528,34 @@ export class DatabaseStorage implements IStorage {
     return updatedOrder;
   }
   
+  async deleteOrder(id: number): Promise<boolean> {
+    try {
+      // First check if the order exists
+      const existingOrder = await this.getOrder(id);
+      if (!existingOrder) return false;
+      
+      // 1. Delete related order items
+      await this.db.delete(orderItems).where(eq(orderItems.orderId, id));
+      
+      // 2. Delete shipping documents if any
+      await this.db.delete(shippingDocuments).where(eq(shippingDocuments.orderId, id));
+      
+      // 3. Delete order changelogs
+      await this.db.delete(orderChangelogs).where(eq(orderChangelogs.orderId, id));
+      
+      // 4. Delete unshipped items related to this order
+      await this.db.delete(unshippedItems).where(eq(unshippedItems.orderId, id));
+      
+      // 5. Finally delete the order itself
+      const result = await this.db.delete(orders).where(eq(orders.id, id));
+      
+      return result.count > 0;
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      return false;
+    }
+  }
+  
   // Order Item methods
   async getOrderItems(orderId: number): Promise<OrderItem[]> {
     return await this.db

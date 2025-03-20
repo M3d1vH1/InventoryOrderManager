@@ -62,6 +62,7 @@ export interface IStorage {
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrderStatus(id: number, status: 'pending' | 'picked' | 'shipped' | 'cancelled', documentInfo?: {documentPath: string, documentType: string, notes?: string}, updatedById?: number): Promise<Order | undefined>;
   updateOrder(id: number, orderData: Partial<InsertOrder>, updatedById?: number): Promise<Order | undefined>;
+  deleteOrder(id: number): Promise<boolean>;
   
   // Order Item methods
   getOrderItems(orderId: number): Promise<OrderItem[]>;
@@ -721,6 +722,56 @@ export class MemStorage implements IStorage {
     }
     
     return updatedOrder;
+  }
+  
+  async deleteOrder(id: number): Promise<boolean> {
+    try {
+      // First check if the order exists
+      const existingOrder = this.orders.get(id);
+      if (!existingOrder) return false;
+      
+      // 1. Delete related order items
+      const orderItemsToDelete = Array.from(this.orderItems.values())
+        .filter(item => item.orderId === id)
+        .map(item => item.id);
+      
+      for (const itemId of orderItemsToDelete) {
+        this.orderItems.delete(itemId);
+      }
+      
+      // 2. Delete shipping documents
+      const shippingDocsToDelete = Array.from(this.shippingDocuments.values())
+        .filter(doc => doc.orderId === id)
+        .map(doc => doc.id);
+        
+      for (const docId of shippingDocsToDelete) {
+        this.shippingDocuments.delete(docId);
+      }
+      
+      // 3. Delete order changelogs
+      const changelogsToDelete = Array.from(this.orderChangelogs.values())
+        .filter(log => log.orderId === id)
+        .map(log => log.id);
+        
+      for (const logId of changelogsToDelete) {
+        this.orderChangelogs.delete(logId);
+      }
+      
+      // 4. Delete unshipped items
+      const unshippedItemsToDelete = Array.from(this.unshippedItems.values())
+        .filter(item => item.orderId === id)
+        .map(item => item.id);
+        
+      for (const itemId of unshippedItemsToDelete) {
+        this.unshippedItems.delete(itemId);
+      }
+      
+      // 5. Finally delete the order itself
+      return this.orders.delete(id);
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      return false;
+    }
   }
   
   // Order Item methods
