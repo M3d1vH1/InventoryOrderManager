@@ -17,7 +17,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useNotifications } from '@/context/NotificationContext';
-import { Bell, Cog, Edit, HelpCircle, Plus, Save, Trash2, UserCog, Volume2, VolumeX } from 'lucide-react';
+import { Bell, Cog, Edit, HelpCircle, Mail, Plus, Save, Send, Trash2, UserCog, Volume2, VolumeX } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 const companySettingsSchema = z.object({
@@ -33,6 +33,23 @@ const notificationSettingsSchema = z.object({
   shippingUpdates: z.boolean(),
   dailyReports: z.boolean(),
   weeklyReports: z.boolean(),
+});
+
+// Email settings schema
+const emailSettingsSchema = z.object({
+  host: z.string().min(1, { message: "SMTP host is required" }),
+  port: z.coerce.number().int().positive({ message: "Port must be a positive number" }),
+  secure: z.boolean().default(false),
+  authUser: z.string().min(1, { message: "Username is required" }),
+  authPass: z.string().min(1, { message: "Password is required" }),
+  fromEmail: z.string().email({ message: "Valid email address is required" }),
+  companyName: z.string().min(1, { message: "Company name is required" }),
+  enableNotifications: z.boolean().default(true),
+});
+
+// Email test schema
+const emailTestSchema = z.object({
+  testEmail: z.string().email({ message: "Valid test email address is required" }),
 });
 
 // User form schema
@@ -583,7 +600,96 @@ const UserManagement = () => {
 const Settings = () => {
   const { toast } = useToast();
   const { playNotificationSound } = useNotifications();
+  const { hasPermission } = useAuth();
   const [activeTab, setActiveTab] = useState('general');
+  const [isTestEmailDialogOpen, setIsTestEmailDialogOpen] = useState(false);
+
+  // Email settings form
+  const emailForm = useForm<z.infer<typeof emailSettingsSchema>>({
+    resolver: zodResolver(emailSettingsSchema),
+    defaultValues: {
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      authUser: '',
+      authPass: '',
+      fromEmail: '',
+      companyName: 'Warehouse Management System',
+      enableNotifications: true,
+    }
+  });
+
+  // Test email form
+  const testEmailForm = useForm<z.infer<typeof emailTestSchema>>({
+    resolver: zodResolver(emailTestSchema),
+    defaultValues: {
+      testEmail: '',
+    }
+  });
+
+  // Email settings mutation
+  const emailSettingsMutation = useMutation({
+    mutationFn: async (values: z.infer<typeof emailSettingsSchema>) => {
+      return apiRequest('/api/email-settings', {
+        method: 'PUT',
+        body: JSON.stringify(values),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Email Settings Saved",
+        description: "Your email settings have been updated successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/email-settings'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to save email settings. " + (error instanceof Error ? error.message : String(error)),
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Test email mutation
+  const testEmailMutation = useMutation({
+    mutationFn: async (values: z.infer<typeof emailTestSchema>) => {
+      const emailConfig = emailForm.getValues();
+      return apiRequest('/api/email-settings/test-connection', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...emailConfig,
+          testEmail: values.testEmail,
+        }),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Test Email Sent",
+        description: "A test email has been sent successfully.",
+      });
+      setIsTestEmailDialogOpen(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to send test email. " + (error instanceof Error ? error.message : String(error)),
+        variant: "destructive",
+      });
+    }
+  });
+
+  const openTestEmailDialog = () => {
+    setIsTestEmailDialogOpen(true);
+  };
+
+  const handleTestEmail = (values: z.infer<typeof emailTestSchema>) => {
+    testEmailMutation.mutate(values);
+  };
+
+  const onEmailSettingsSubmit = (values: z.infer<typeof emailSettingsSchema>) => {
+    emailSettingsMutation.mutate(values);
+  };
 
   // Company settings form
   const companyForm = useForm<z.infer<typeof companySettingsSchema>>({
@@ -648,7 +754,7 @@ const Settings = () => {
       <h1 className="text-3xl font-bold mb-6">Settings</h1>
       
       <Tabs defaultValue="general" onValueChange={setActiveTab} value={activeTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="general">
             <Cog className="h-4 w-4 mr-2" />
             General
@@ -656,6 +762,10 @@ const Settings = () => {
           <TabsTrigger value="notifications">
             <Bell className="h-4 w-4 mr-2" />
             Notifications
+          </TabsTrigger>
+          <TabsTrigger value="email">
+            <Mail className="h-4 w-4 mr-2" />
+            Email Settings
           </TabsTrigger>
           <TabsTrigger value="users">
             <UserCog className="h-4 w-4 mr-2" />
@@ -973,6 +1083,235 @@ const Settings = () => {
                   </Button>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="email" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Email Settings</CardTitle>
+              <CardDescription>
+                Configure email server settings for notifications and alerts
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...emailForm}>
+                <form onSubmit={emailForm.handleSubmit(onEmailSettingsSubmit)} className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">SMTP Server Configuration</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={emailForm.control}
+                        name="host"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>SMTP Host</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="smtp.gmail.com" />
+                            </FormControl>
+                            <FormDescription>
+                              Your email server address
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={emailForm.control}
+                        name="port"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>SMTP Port</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="587" type="number" />
+                            </FormControl>
+                            <FormDescription>
+                              Usually 587 (TLS) or 465 (SSL)
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <FormField
+                      control={emailForm.control}
+                      name="secure"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Use Secure Connection (SSL)</FormLabel>
+                            <FormDescription>
+                              Enable for port 465, disable for port 587
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <h3 className="text-lg font-medium pt-4">Authentication</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={emailForm.control}
+                        name="authUser"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Username</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="your.email@gmail.com" />
+                            </FormControl>
+                            <FormDescription>
+                              Usually your email address
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={emailForm.control}
+                        name="authPass"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Password</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="password" placeholder="••••••••" />
+                            </FormControl>
+                            <FormDescription>
+                              For Gmail, use an app password
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <h3 className="text-lg font-medium pt-4">Sender Information</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={emailForm.control}
+                        name="fromEmail"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>From Email</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="warehouse@yourcompany.com" />
+                            </FormControl>
+                            <FormDescription>
+                              The email address to send from
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={emailForm.control}
+                        name="companyName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Company Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Your Company Name" />
+                            </FormControl>
+                            <FormDescription>
+                              Will appear as the sender name
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <FormField
+                      control={emailForm.control}
+                      name="enableNotifications"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Enable Email Notifications</FormLabel>
+                            <FormDescription>
+                              Turn on or off all email notifications
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={openTestEmailDialog}
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Test Connection
+                    </Button>
+                    
+                    <Button type="submit" disabled={emailSettingsMutation.isPending}>
+                      <Save className="h-4 w-4 mr-2" />
+                      {emailSettingsMutation.isPending ? "Saving..." : "Save Settings"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+              
+              <Dialog open={isTestEmailDialogOpen} onOpenChange={setIsTestEmailDialogOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Test Email Connection</DialogTitle>
+                    <DialogDescription>
+                      Send a test email to verify your configuration
+                    </DialogDescription>
+                  </DialogHeader>
+                  <Form {...testEmailForm}>
+                    <form onSubmit={testEmailForm.handleSubmit(handleTestEmail)} className="space-y-4">
+                      <FormField
+                        control={testEmailForm.control}
+                        name="testEmail"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Test Email Address</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="your@email.com" />
+                            </FormControl>
+                            <FormDescription>
+                              Where to send the test email
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <DialogFooter>
+                        <Button 
+                          type="submit" 
+                          disabled={testEmailMutation.isPending}
+                        >
+                          {testEmailMutation.isPending ? "Sending..." : "Send Test Email"}
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
         </TabsContent>
