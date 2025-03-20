@@ -158,6 +158,10 @@ export const orders = pgTable("orders", {
   status: orderStatusEnum("status").notNull().default('pending'),
   notes: text("notes"),
   hasShippingDocument: boolean("has_shipping_document").notNull().default(false),
+  isPartialFulfillment: boolean("is_partial_fulfillment").notNull().default(false),
+  partialFulfillmentApproved: boolean("partial_fulfillment_approved").notNull().default(false),
+  partialFulfillmentApprovedById: integer("partial_fulfillment_approved_by_id"), // References the user who approved partial fulfillment
+  partialFulfillmentApprovedAt: timestamp("partial_fulfillment_approved_at"), // When partial fulfillment was approved
   createdById: integer("created_by_id").notNull(), // References the user who created this order
   updatedById: integer("updated_by_id"), // Last user who updated this order
   lastUpdated: timestamp("last_updated"), // When the order was last updated
@@ -238,7 +242,8 @@ export const changelogActionEnum = pgEnum('changelog_action', [
   'delete',
   'status_change',
   'unshipped_authorization',
-  'label_printed'
+  'label_printed',
+  'partial_approval'
 ]);
 
 // Changelog Schema for Orders
@@ -258,7 +263,7 @@ export const insertOrderChangelogSchema = createInsertSchema(orderChangelogs)
   .extend({
     orderId: z.number(),
     userId: z.number(),
-    action: z.enum(['create', 'update', 'delete', 'status_change', 'unshipped_authorization', 'label_printed']),
+    action: z.enum(['create', 'update', 'delete', 'status_change', 'unshipped_authorization', 'label_printed', 'partial_approval']),
     changes: z.record(z.any()).optional(),
     previousValues: z.record(z.any()).optional(),
     notes: z.string().optional(),
