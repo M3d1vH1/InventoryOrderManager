@@ -52,6 +52,11 @@ const emailTestSchema = z.object({
   testEmail: z.string().email({ message: "Valid test email address is required" }),
 });
 
+// Template edit schema
+const templateEditSchema = z.object({
+  content: z.string().min(1, { message: "Template content is required" }),
+});
+
 // User form schema
 const userFormSchema = z.object({
   username: z.string().min(3, { message: "Username must be at least 3 characters" }),
@@ -1347,6 +1352,19 @@ const Settings = () => {
                   </Form>
                 </DialogContent>
               </Dialog>
+            </CardContent>
+          </Card>
+          
+          {/* Email Templates Card */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Email Templates</CardTitle>
+              <CardDescription>
+                Customize the email notifications sent by the system
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EmailTemplateEditor />
             </CardContent>
           </Card>
         </TabsContent>
