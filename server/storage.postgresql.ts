@@ -537,20 +537,69 @@ export class DatabaseStorage implements IStorage {
   }
   
   async addOrderItem(insertOrderItem: InsertOrderItem): Promise<OrderItem> {
-    // First insert the order item
-    const [orderItem] = await this.db
-      .insert(orderItems)
-      .values(insertOrderItem)
-      .returning();
-    
-    // Then reduce the product stock
-    const product = await this.getProduct(orderItem.productId);
-    if (product) {
-      const updatedStock = Math.max(0, product.currentStock - orderItem.quantity);
-      await this.updateProduct(product.id, { currentStock: updatedStock });
+    try {
+      // First insert the order item in the order_items table
+      const [orderItem] = await this.db
+        .insert(orderItems)
+        .values(insertOrderItem)
+        .returning();
+      
+      // Get the product details
+      const product = await this.getProduct(orderItem.productId);
+      if (!product) {
+        console.error(`Product with ID ${orderItem.productId} not found`);
+        return orderItem;
+      }
+      
+      // Get the order details to get customer info
+      const order = await this.getOrder(orderItem.orderId);
+      if (!order) {
+        console.error(`Order with ID ${orderItem.orderId} not found`);
+        return orderItem;
+      }
+      
+      // Check if we have enough stock
+      if (product.currentStock >= orderItem.quantity) {
+        // We have enough stock, just reduce it
+        const updatedStock = product.currentStock - orderItem.quantity;
+        await this.updateProduct(product.id, { currentStock: updatedStock });
+        console.log(`Product ${product.name} stock reduced from ${product.currentStock} to ${updatedStock}`);
+      } else {
+        // We don't have enough stock, implement partial fulfillment
+        const availableQuantity = product.currentStock;
+        const unshippedQuantity = orderItem.quantity - availableQuantity;
+        
+        // Reduce stock to zero (ship whatever we have)
+        if (availableQuantity > 0) {
+          await this.updateProduct(product.id, { currentStock: 0 });
+          console.log(`Product ${product.name} stock reduced from ${product.currentStock} to 0`);
+        }
+        
+        // Add the remaining quantity to unshipped_items for later fulfillment
+        if (unshippedQuantity > 0) {
+          const unshippedItem = await this.addUnshippedItem({
+            orderId: orderItem.orderId,
+            productId: orderItem.productId,
+            quantity: unshippedQuantity,
+            customerId: order.customerId,
+            customerName: order.customerName,
+            productName: product.name,
+            productSku: product.sku,
+            authorized: false,
+            shipped: false,
+            createdAt: new Date(),
+            notes: `Partially fulfilled. Original order requested ${orderItem.quantity}, shipped ${availableQuantity}, remaining: ${unshippedQuantity}.`
+          });
+          
+          console.log(`Added unshipped item for ${unshippedQuantity} units of product ${product.name}`);
+        }
+      }
+      
+      return orderItem;
+    } catch (error) {
+      console.error("Error in addOrderItem:", error);
+      throw error;
     }
-    
-    return orderItem;
   }
   
   // Customer methods
