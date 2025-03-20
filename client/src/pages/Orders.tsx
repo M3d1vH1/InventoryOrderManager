@@ -429,18 +429,39 @@ const Orders = () => {
   });
   
   const handleStatusChange = (orderId: number, newStatus: string) => {
-    // If changing to shipped status, we may need approval for partial fulfillment
+    // More detailed logging for debugging
+    console.log(`Status change request: Order ${orderId} to ${newStatus}`);
+    
+    // Especially log if we're changing to shipped, which might need approval
     if (newStatus === 'shipped') {
-      console.log(`Changing order ${orderId} status to ${newStatus}, checking for partial fulfillment`);
+      console.log(`Order ${orderId}: Potential partial fulfillment, will check on server`);
     }
     
     // Update the order status, with approvePartialFulfillment set to false initially
-    // This will trigger the approval dialog if needed for partial fulfillment
-    updateStatusMutation.mutate({ 
-      orderId, 
-      status: newStatus as 'pending' | 'picked' | 'shipped' | 'cancelled',
-      approvePartialFulfillment: false
-    });
+    // This should trigger the approval dialog if the server returns a 403 with requiresApproval=true
+    try {
+      updateStatusMutation.mutate({ 
+        orderId, 
+        status: newStatus as 'pending' | 'picked' | 'shipped' | 'cancelled',
+        approvePartialFulfillment: false
+      }, {
+        onError: (error: any) => {
+          console.log("Direct error handler:", error);
+          // This is a more direct way to handle errors than the mutation's onError
+          if (error.status === 403 && error.data?.requiresApproval) {
+            console.log("Immediate detection of approval required:", error.data);
+            setOrderRequiringApproval({
+              orderId: error.data.orderId || orderId,
+              status: newStatus,
+              unshippedItems: error.data.unshippedItems || 0
+            });
+            setShowApprovalDialog(true);
+          }
+        }
+      });
+    } catch (error) {
+      console.error("Unexpected error in status change handler:", error);
+    }
   };
   
   // Function to handle document upload for any order

@@ -100,6 +100,24 @@ export const getQueryFn: <T>(options: {
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;
     }
+    
+    // Special case for status 403 with JSON response - this is for approval workflows
+    if (res.status === 403) {
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        
+        // Check if this is specifically an approval required response
+        if (data.requiresApproval) {
+          console.log("Received approval required response:", data);
+          const error: any = new Error("Approval required");
+          error.status = 403;
+          error.data = data;
+          error.config = { url: queryKey[0] as string };
+          throw error;
+        }
+      }
+    }
 
     await throwIfResNotOk(res);
     return await res.json();

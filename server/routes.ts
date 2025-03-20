@@ -545,6 +545,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // and the user doesn't have permission to approve it themselves
           if (!isApproved && !hasApprovalPermission) {
             console.log(`Order ${id} requires approval for partial fulfillment. User role: ${userRole}`);
+            console.log('Sending approval required response with:', {
+              orderId: id,
+              unshippedItems: unshippedItems.length,
+              isApproved,
+              hasApprovalPermission,
+              userRole
+            });
+            
             return res.status(403).json({
               message: "Partial order fulfillment requires manager or admin approval",
               requiresApproval: true,
@@ -728,11 +736,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // If partial order and not approved and user doesn't have permission to approve
           if (!isApproved && !hasApprovalPermission) {
+            console.log(`Document upload: Order ${id} requires approval for partial fulfillment. User role: ${userRole}`);
+            console.log('Sending approval required response with:', {
+              orderId: id,
+              unshippedItems: unshippedItems.length,
+              isApproved,
+              hasApprovalPermission,
+              userRole
+            });
+            
             return res.status(403).json({
               message: "Partial order fulfillment requires manager or admin approval",
               requiresApproval: true,
               isPartialFulfillment: true,
-              unshippedItems: unshippedItems.length
+              unshippedItems: unshippedItems.length,
+              orderId: id
             });
           }
           
