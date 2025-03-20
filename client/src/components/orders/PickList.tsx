@@ -161,10 +161,20 @@ const PickList = ({ order }: { order: Order }) => {
   const handleActualQuantityChange = (itemId: number, value: string) => {
     const numValue = parseInt(value, 10);
     if (!isNaN(numValue) && numValue >= 0) {
+      // Update the actual quantities state
       setActualQuantities(prev => ({
         ...prev,
         [itemId]: numValue
       }));
+      
+      // Also update the orderItemsWithProducts array directly
+      setOrderItemsWithProducts(currentItems => 
+        currentItems.map(item => 
+          item.id === itemId 
+            ? { ...item, actualQuantity: numValue }
+            : item
+        )
+      );
     }
   };
 
