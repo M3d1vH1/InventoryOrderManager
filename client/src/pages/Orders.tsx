@@ -177,10 +177,13 @@ const Orders = () => {
       });
     },
     onError: (error: any) => {
+      console.log("Status update error:", error);
+      
       // Check if this is a partial fulfillment that requires approval
       if (error.status === 403 && error.data?.requiresApproval) {
+        console.log("Showing approval dialog for partial fulfillment");
         setOrderRequiringApproval({
-          orderId: error.data.orderId || error.config?.url?.split('/')[3],
+          orderId: error.data.orderId || parseInt(error.config?.url?.split('/')[2]),
           status: 'shipped',
           unshippedItems: error.data.unshippedItems || 0
         });
@@ -193,7 +196,7 @@ const Orders = () => {
         // Show error message
         toast({
           title: "Failed to update order status",
-          description: error.message,
+          description: error.message || "An error occurred while updating the order status",
           variant: "destructive",
         });
       }
@@ -426,11 +429,17 @@ const Orders = () => {
   });
   
   const handleStatusChange = (orderId: number, newStatus: string) => {
-    // Update the order status normally, without requiring document upload
+    // If changing to shipped status, we may need approval for partial fulfillment
+    if (newStatus === 'shipped') {
+      console.log(`Changing order ${orderId} status to ${newStatus}, checking for partial fulfillment`);
+    }
+    
+    // Update the order status, with approvePartialFulfillment set to false initially
+    // This will trigger the approval dialog if needed for partial fulfillment
     updateStatusMutation.mutate({ 
       orderId, 
       status: newStatus as 'pending' | 'picked' | 'shipped' | 'cancelled',
-      approvePartialFulfillment: false // Always set to false initially, will trigger approval dialog if needed
+      approvePartialFulfillment: false
     });
   };
   

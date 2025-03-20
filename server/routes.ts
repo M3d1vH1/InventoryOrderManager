@@ -537,9 +537,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Check if user has authorization to ship partial orders
           const hasApprovalPermission = userRole === 'admin' || userRole === 'manager';
-          const isApproved = approvePartialFulfillment === true;
           
-          // If partial order and not approved and user doesn't have permission to approve
+          // Convert approvePartialFulfillment to boolean to handle both string and boolean values
+          const isApproved = approvePartialFulfillment === true || approvePartialFulfillment === 'true';
+          
+          // If this is a partial order fulfillment that hasn't been approved 
+          // and the user doesn't have permission to approve it themselves
           if (!isApproved && !hasApprovalPermission) {
             console.log(`Order ${id} requires approval for partial fulfillment. User role: ${userRole}`);
             return res.status(403).json({
