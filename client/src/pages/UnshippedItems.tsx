@@ -3,8 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import UnshippedItemsComponent from '@/components/orders/UnshippedItems';
+import { Link } from 'wouter';
 
 export default function UnshippedItemsPage() {
   const { t } = useTranslation();
@@ -14,10 +17,20 @@ export default function UnshippedItemsPage() {
   return (
     <div className="container mx-auto py-6">
       <div className="flex flex-col gap-4">
-        <h1 className="text-3xl font-bold">{t('unshippedItems.pageTitle')}</h1>
-        <p className="text-muted-foreground max-w-4xl">
-          {t('unshippedItems.pageDescription')}
-        </p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">{t('unshippedItems.pageTitle')}</h1>
+            <p className="text-muted-foreground max-w-4xl mt-2">
+              {t('unshippedItems.pageDescription')}
+            </p>
+          </div>
+          <Link href="/orders">
+            <Button variant="outline" className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              {t('common.backToOrders', 'Back to Orders')}
+            </Button>
+          </Link>
+        </div>
         <Separator />
 
         <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full">
