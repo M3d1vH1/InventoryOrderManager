@@ -347,11 +347,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Route for authorizing unshipped items - requires manager or admin role
+  app.post('/api/unshipped-items/authorize', isAuthenticated, hasRole(['admin', 'manager']), async (req, res) => {
+    try {
+      const { itemIds } = req.body;
+      const userId = (req.user as any)?.id;
+      
+      if (!itemIds || !Array.isArray(itemIds) || itemIds.length === 0) {
+        return res.status(400).json({ message: 'Item IDs are required' });
+      }
+      
+      // Authorize the items
+      await storage.authorizeUnshippedItems(itemIds, userId);
+      
+      // Send notification via WebSocket
+      broadcastMessage({
+        type: 'unshippedItemsAuthorized',
+        itemCount: itemIds.length,
+        authorizedById: userId
+      });
+      
+      res.json({ success: true, authorizedItems: itemIds.length });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Get unshipped items pending authorization
+  app.get('/api/unshipped-items/pending-authorization', isAuthenticated, async (req, res) => {
+    try {
+      const items = await storage.getUnshippedItemsForAuthorization();
+      res.json(items);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
   app.patch('/api/orders/:id/status', isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { status } = req.body;
       const userId = (req.user as any)?.id;
+      const userRole = (req.user as any)?.role;
       
       if (!['pending', 'picked', 'shipped', 'cancelled'].includes(status)) {
         return res.status(400).json({ message: 'Invalid status value' });
@@ -364,6 +401,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const previousStatus = originalOrder.status;
+      
+      // Check for unshipped items authorization if trying to ship
+      if (status === 'shipped') {
+        // Get unshipped items for this order
+        const unshippedItems = await storage.getUnshippedItemsByOrder(id);
+        
+        // If there are unshipped items, check if they are all authorized
+        if (unshippedItems.length > 0) {
+          const unauthorizedItems = unshippedItems.filter(item => !item.authorized);
+          
+          if (unauthorizedItems.length > 0) {
+            return res.status(403).json({ 
+              message: 'Cannot ship order with unauthorized unshipped items',
+              unauthorizedItems: unauthorizedItems.length
+            });
+          }
+        }
+      }
       
       const updatedOrder = await storage.updateOrderStatus(id, status, undefined, userId);
       
@@ -430,7 +485,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If updateStatus is true, update the order status as well
       if (updateStatus) {
-        // Update order status with document info
+        // Check for unshipped items authorization before shipping
+        const unshippedItems = await storage.getUnshippedItemsByOrder(id);
+        
+        // If there are unshipped items, check if they are all authorized
+        if (unshippedItems.length > 0) {
+          const unauthorizedItems = unshippedItems.filter(item => !item.authorized);
+          
+          if (unauthorizedItems.length > 0) {
+            return res.status(403).json({ 
+              message: 'Cannot ship order with unauthorized unshipped items',
+              unauthorizedItems: unauthorizedItems.length
+            });
+          }
+        }
+        
+        // All unshipped items are authorized (or none exist), proceed with shipping
         await storage.updateOrderStatus(id, 'shipped', {
           documentPath,
           documentType,

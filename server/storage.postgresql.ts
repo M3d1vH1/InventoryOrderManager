@@ -1,5 +1,5 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { eq, like, desc, and, or, lte, gt, sql } from 'drizzle-orm';
+import { eq, like, desc, and, or, lte, gt, sql, inArray } from 'drizzle-orm';
 import { pool, initDatabase } from './db';
 import { 
   users, type User, type InsertUser,
@@ -11,7 +11,8 @@ import {
   categories, type Category, type InsertCategory,
   orderChangelogs, type OrderChangelog, type InsertOrderChangelog,
   tags, type Tag, type InsertTag,
-  productTags, type ProductTag
+  productTags, type ProductTag,
+  unshippedItems, type UnshippedItem, type InsertUnshippedItem
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { log } from './vite';
