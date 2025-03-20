@@ -12,7 +12,8 @@ import {
   orderChangelogs, type OrderChangelog, type InsertOrderChangelog,
   tags, type Tag, type InsertTag,
   productTags, type ProductTag,
-  unshippedItems, type UnshippedItem, type InsertUnshippedItem
+  unshippedItems, type UnshippedItem, type InsertUnshippedItem,
+  emailSettings, type EmailSettings, type InsertEmailSettings
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { log } from './vite';
@@ -1184,6 +1185,60 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting unshipped items for authorization:", error);
       return [];
+    }
+  }
+
+  // Email Settings methods
+  async getEmailSettings(): Promise<EmailSettings | undefined> {
+    try {
+      const settings = await this.db.select()
+        .from(emailSettings)
+        .limit(1);
+      
+      return settings.length > 0 ? settings[0] : undefined;
+    } catch (error) {
+      console.error("Error getting email settings:", error);
+      return undefined;
+    }
+  }
+  
+  async updateEmailSettings(settings: Partial<InsertEmailSettings>): Promise<EmailSettings | undefined> {
+    try {
+      const existingSettings = await this.getEmailSettings();
+      
+      if (!existingSettings) {
+        // Create new settings
+        const [newSettings] = await this.db.insert(emailSettings)
+          .values({
+            ...settings,
+            host: settings.host || 'smtp.gmail.com',
+            port: settings.port || 587,
+            secure: settings.secure ?? false,
+            authUser: settings.authUser || '',
+            authPass: settings.authPass || '',
+            fromEmail: settings.fromEmail || '',
+            companyName: settings.companyName || 'Warehouse Management System',
+            enableNotifications: settings.enableNotifications ?? true,
+            updatedAt: new Date(),
+          })
+          .returning();
+          
+        return newSettings;
+      } else {
+        // Update existing settings
+        const [updatedSettings] = await this.db.update(emailSettings)
+          .set({
+            ...settings,
+            updatedAt: new Date(),
+          })
+          .where(eq(emailSettings.id, existingSettings.id))
+          .returning();
+          
+        return updatedSettings;
+      }
+    } catch (error) {
+      console.error("Error updating email settings:", error);
+      return undefined;
     }
   }
 }
