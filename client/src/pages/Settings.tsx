@@ -14,6 +14,7 @@ import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessa
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -1526,6 +1527,296 @@ const Settings = () => {
         </TabsContent>
       </Tabs>
     </div>
+  );
+};
+
+// Label Template Editor Component
+const LabelTemplateEditor = () => {
+  const { toast } = useToast();
+  const [selectedTemplate, setSelectedTemplate] = useState('shipping-label');
+  const [isEditing, setIsEditing] = useState(false);
+  const [showVariableHelp, setShowVariableHelp] = useState(false);
+  
+  // Template form
+  const templateForm = useForm<z.infer<typeof templateEditSchema>>({
+    resolver: zodResolver(templateEditSchema),
+    defaultValues: {
+      content: '',
+    }
+  });
+  
+  // Get template content query
+  const { data: templateData, isLoading: isLoadingTemplate, refetch: refetchTemplate } = useQuery({
+    queryKey: ['/api/label-templates', selectedTemplate],
+    enabled: !!selectedTemplate,
+    queryFn: async () => {
+      const response = await apiRequest(`/api/label-templates/${selectedTemplate}`, {
+        method: 'GET',
+      });
+      return response;
+    }
+  });
+  
+  // Effect to update form when template data changes
+  useEffect(() => {
+    if (templateData && templateData.content) {
+      templateForm.reset({
+        content: templateData.content,
+      });
+    }
+  }, [templateData, templateForm]);
+  
+  // Update template mutation
+  const updateTemplateMutation = useMutation({
+    mutationFn: async (values: z.infer<typeof templateEditSchema>) => {
+      return apiRequest(`/api/label-templates/${selectedTemplate}`, {
+        method: 'PUT',
+        body: JSON.stringify(values),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Template Updated",
+        description: "The label template has been updated successfully.",
+      });
+      setIsEditing(false);
+      refetchTemplate();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update template. " + (error instanceof Error ? error.message : String(error)),
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Template selection options
+  const templateOptions = [
+    { value: 'shipping-label', label: 'Standard Shipping Label' },
+    // Add more templates as needed
+  ];
+  
+  // Available variables for templates
+  const availableVariables = [
+    { name: "orderNumber", description: "Order number/ID" },
+    { name: "customerName", description: "Customer's full name" },
+    { name: "customerAddress", description: "Customer's full address" },
+    { name: "customerCity", description: "Customer's city" },
+    { name: "customerState", description: "Customer's state/province" },
+    { name: "customerPostalCode", description: "Customer's postal code" },
+    { name: "customerCountry", description: "Customer's country" },
+    { name: "shippingCompany", description: "Name of shipping company used" },
+    { name: "trackingNumber", description: "Shipping tracking number (if available)" },
+    { name: "items", description: "List of order items (use with {{#each items}})" },
+    { name: "this.name", description: "Product name (use inside {{#each items}})" },
+    { name: "this.quantity", description: "Product quantity (use inside {{#each items}})" },
+    { name: "companyName", description: "Your company name (from settings)" },
+    { name: "shippingDate", description: "The shipping date" },
+  ];
+  
+  // Insert a variable at cursor position
+  const insertVariable = (variable: string) => {
+    // Get textarea element
+    const textarea = document.querySelector('textarea[name="content"]') as HTMLTextAreaElement;
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = templateForm.getValues().content;
+    const before = text.substring(0, start);
+    const after = text.substring(end, text.length);
+    
+    // Insert the variable at cursor position
+    const newText = `${before}{${variable}}${after}`;
+    templateForm.setValue('content', newText);
+    
+    // Set focus back to textarea and place cursor after inserted variable
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = start + variable.length + 2; // +2 for the {}
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  };
+  
+  // Handler for template form submission
+  const onTemplateSubmit = (values: z.infer<typeof templateEditSchema>) => {
+    updateTemplateMutation.mutate(values);
+  };
+  
+  if (isEditing) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h3 className="text-lg font-medium">Edit Label Template</h3>
+            <p className="text-sm text-slate-500">Editing template for the CAB EOS1 printer using JScript</p>
+          </div>
+          
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsEditing(false);
+                if (templateData && templateData.content) {
+                  templateForm.reset({
+                    content: templateData.content,
+                  });
+                }
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={templateForm.handleSubmit(onTemplateSubmit)}
+              disabled={updateTemplateMutation.isPending}
+            >
+              {updateTemplateMutation.isPending ? "Saving..." : "Save Template"}
+            </Button>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 gap-6">
+          <div className="space-y-4">
+            <div className="mb-4 flex justify-between items-center">
+              <h4 className="font-medium">Edit {templateOptions.find(t => t.value === selectedTemplate)?.label}</h4>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowVariableHelp(!showVariableHelp)}
+              >
+                <HelpCircle className="h-4 w-4 mr-2" />
+                {showVariableHelp ? "Hide Variables" : "Show Variables"}
+              </Button>
+            </div>
+            
+            {showVariableHelp && (
+              <div className="bg-slate-50 p-4 rounded-md mb-4">
+                <h5 className="font-medium mb-2">Available Variables</h5>
+                <p className="text-sm mb-2">Click a variable to insert it at cursor position:</p>
+                <div className="flex flex-wrap gap-2">
+                  {availableVariables.map((variable) => (
+                    <Badge 
+                      key={variable.name} 
+                      variant="outline" 
+                      className="cursor-pointer hover:bg-slate-100"
+                      onClick={() => insertVariable(variable.name)}
+                    >
+                      {variable.name}
+                    </Badge>
+                  ))}
+                </div>
+                <div className="mt-3 space-y-2">
+                  <Alert className="bg-yellow-50 border-yellow-200">
+                    <AlertTitle className="text-yellow-800 text-xs font-medium">
+                      CAB EOS1 JScript Format
+                    </AlertTitle>
+                    <AlertDescription className="text-yellow-800 text-xs">
+                      This template uses JScript for the CAB EOS1 printer. Variables are enclosed in curly braces like {`{variable}`}. 
+                      Refer to the <a href="#" className="underline">CAB programming manual</a> for JScript syntax.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              </div>
+            )}
+            
+            <Form {...templateForm}>
+              <form onSubmit={templateForm.handleSubmit(onTemplateSubmit)} className="space-y-4">
+                <FormField
+                  control={templateForm.control}
+                  name="content"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Template JScript</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          {...field} 
+                          className="font-mono text-sm h-[500px]"
+                          spellCheck={false}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        JScript code for label printing. Variable format: {`{variable_name}`}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </form>
+            </Form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <Card className="mt-4">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg font-medium">Shipping Label Editor</CardTitle>
+        <CardDescription>
+          Edit the shipping label template for the CAB EOS1 printer
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex items-center space-x-4">
+            <Select 
+              value={selectedTemplate} 
+              onValueChange={setSelectedTemplate}
+            >
+              <SelectTrigger className="w-[300px]">
+                <SelectValue placeholder="Select a template" />
+              </SelectTrigger>
+              <SelectContent>
+                {templateOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Button onClick={() => setIsEditing(true)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Template
+            </Button>
+          </div>
+          
+          {isLoadingTemplate ? (
+            <div className="text-center py-4">
+              <div className="flex justify-center items-center gap-2">
+                <span className="animate-spin">
+                  <svg className="h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </span>
+                <span>Loading template...</span>
+              </div>
+            </div>
+          ) : templateData ? (
+            <div className="mt-4">
+              <Alert className="bg-blue-50 border-blue-200">
+                <AlertTitle className="text-blue-800">Template Loaded</AlertTitle>
+                <AlertDescription className="text-blue-800">
+                  The template for {templateOptions.find(t => t.value === selectedTemplate)?.label} is loaded. Click Edit Template to modify it.
+                </AlertDescription>
+              </Alert>
+            </div>
+          ) : (
+            <div className="mt-4">
+              <Alert className="bg-yellow-50 border-yellow-200">
+                <AlertTitle className="text-yellow-800">Template Not Found</AlertTitle>
+                <AlertDescription className="text-yellow-800">
+                  This template doesn't exist yet. Click Edit Template to create it.
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
