@@ -476,22 +476,25 @@ const OrderForm = ({
       <div className="p-4">
         {/* Customer has unshipped items warning - shown when customer is selected */}
         {unshippedItemsWarning && unshippedItemsWarning.hasUnshippedItems && (
-          <Alert className="mb-6 bg-orange-50 border-orange-200">
-            <AlertTriangle className="h-5 w-5 text-orange-600" />
-            <AlertTitle className="text-orange-800 font-semibold text-base">
-              Customer Has Unfulfilled Items
-            </AlertTitle>
-            <AlertDescription className="text-orange-700 mt-1">
-              <p className="mb-2">
-                This customer has {unshippedItemsWarning.unshippedItemsCount} unfulfilled item(s) from previous orders
-                {unshippedItemsWarning.pendingOrders > 0 && ` and ${unshippedItemsWarning.pendingOrders} pending order(s)`}.
+          <div className="mb-6 bg-orange-100 border-2 border-orange-300 rounded-lg p-4 shadow-sm">
+            <div className="flex items-center text-orange-800 font-bold text-lg mb-2">
+              <AlertTriangle className="h-6 w-6 mr-2 text-orange-600" />
+              <span>Outstanding Items from Previous Orders</span>
+            </div>
+            <div className="text-orange-700 mt-2 text-base">
+              <p className="font-medium">
+                This customer has <span className="text-orange-800 underline">{unshippedItemsWarning.unshippedItemsCount} unfulfilled item{unshippedItemsWarning.unshippedItemsCount !== 1 ? 's' : ''}</span> from previous orders
+                {unshippedItemsWarning.pendingOrders > 0 && ` and ${unshippedItemsWarning.pendingOrders} pending order${unshippedItemsWarning.pendingOrders !== 1 ? 's' : ''}`}.
               </p>
-              <div className="flex items-center gap-2 mt-3">
+              <p className="text-orange-600 mt-2">
+                Consider including these items in the current order to complete the previous fulfillment.
+              </p>
+              <div className="flex items-center gap-3 mt-4">
                 <Button
                   type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-8 bg-white border-orange-300 text-orange-800 hover:bg-orange-100"
+                  variant="default"
+                  size="default"
+                  className="bg-orange-500 hover:bg-orange-600 text-white h-10"
                   onClick={() => {
                     // Scroll to unshipped products section
                     const unshippedSection = document.getElementById('unshipped-products-section');
@@ -500,17 +503,17 @@ const OrderForm = ({
                     }
                   }}
                 >
-                  <ShoppingCart className="h-4 w-4 mr-1" />
+                  <ShoppingCart className="h-4 w-4 mr-2" />
                   View Unfulfilled Items
                 </Button>
                 {unshippedItemsWarning.hasAuthorizedUnshippedItems && (
-                  <Badge className="bg-green-100 text-green-800 hover:bg-green-200 border-green-300">
+                  <Badge className="bg-green-100 text-green-800 hover:bg-green-200 border-green-300 px-3 py-1 text-sm font-medium">
                     Some Items Authorized
                   </Badge>
                 )}
               </div>
-            </AlertDescription>
-          </Alert>
+            </div>
+          </div>
         )}
 
         {/* Partial fulfillment info alert - only show when there's at least one item exceeding stock */}
@@ -619,44 +622,45 @@ const OrderForm = ({
               
               {/* Unshipped products reminder section */}
               {unshippedProducts.length > 0 && (
-                <div id="unshipped-products-section" className="mb-4">
-                  <Alert className="mb-4 border-amber-500 bg-amber-50">
-                    <AlertTriangle className="h-5 w-5 text-amber-600" />
-                    <AlertTitle className="text-amber-800">
-                      {t('orders.form.unshippedProductsTitle')}
-                    </AlertTitle>
-                    <AlertDescription className="text-amber-700">
-                      {t('orders.form.unshippedProductsDescription')}
-                    </AlertDescription>
-                  </Alert>
+                <div id="unshipped-products-section" className="mb-6 border border-amber-300 rounded-lg p-4 bg-amber-50">
+                  <div className="flex items-center text-base font-medium text-amber-800 mb-3">
+                    <AlertTriangle className="h-5 w-5 mr-2 text-amber-600" /> 
+                    <span className="text-lg">{t('orders.form.unshippedProductsTitle')}</span>
+                  </div>
+                  
+                  <p className="text-amber-700 mb-4">
+                    {t('orders.form.unshippedProductsDescription')} 
+                    <span className="font-medium"> ({unshippedProducts.length} {unshippedProducts.length === 1 ? 'item' : 'items'})</span>
+                  </p>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {unshippedProducts.map((product) => (
                       <div 
                         key={product.id}
-                        className="bg-amber-50 border border-amber-200 rounded-md p-3 hover:border-amber-400 transition-colors"
+                        className="bg-white border border-amber-200 rounded-md p-3 hover:border-amber-400 transition-colors shadow-sm"
                       >
                         <div className="flex items-start justify-between">
                           <div>
-                            <div className="font-medium text-sm text-amber-900">{product.name}</div>
-                            <div className="text-xs text-amber-800">SKU: {product.sku}</div>
-                            <div className="text-xs text-amber-700 mt-1">
-                              Order: {product.orderNumber} ({new Date(product.orderDate).toLocaleDateString()})
+                            <div className="font-medium text-base text-amber-900">{product.name}</div>
+                            <div className="text-sm text-amber-800">SKU: {product.sku}</div>
+                            <div className="text-sm text-amber-700 mt-1">
+                              From Order: <span className="font-medium">{product.orderNumber}</span>
+                              <span className="ml-2 text-amber-600">({new Date(product.orderDate).toLocaleDateString()})</span>
                             </div>
                           </div>
                           <Badge variant="outline" className="border-amber-500 text-amber-800 bg-amber-100">
                             {product.status === 'pending' ? 'Pending' : 'Picked'}
                           </Badge>
                         </div>
-                        <div className="flex justify-between mt-2 text-xs">
-                          <span className="text-amber-800">
-                            Quantity: <span className="font-medium">{product.quantity}</span>
+                        <div className="flex justify-between mt-3 items-center">
+                          <span className="text-sm text-amber-800">
+                            Quantity: <span className="font-medium text-base">{product.quantity}</span>
                           </span>
                           <Button 
                             type="button" 
                             size="sm" 
                             variant="default" 
-                            className="h-6 px-2 py-0 text-xs bg-amber-600 hover:bg-amber-700"
+                            className="bg-amber-600 hover:bg-amber-700 h-9"
                             onClick={() => {
                               // Check if product already exists in order
                               const existingItem = orderItems.find(item => item.productId === product.id);
@@ -689,7 +693,7 @@ const OrderForm = ({
                               }
                             }}
                           >
-                            <PackageOpen className="h-3 w-3 mr-1" /> Add to Order
+                            <PackageOpen className="h-4 w-4 mr-2" /> Add to Order
                           </Button>
                         </div>
                       </div>
