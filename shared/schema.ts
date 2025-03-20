@@ -325,3 +325,24 @@ export const sessions = pgTable("session", {
   sess: json("sess").notNull(),
   expire: timestamp("expire").notNull(),
 });
+
+// Email settings for notification system
+export const emailSettings = pgTable("email_settings", {
+  id: serial("id").primaryKey(),
+  host: text("host").notNull().default('smtp.gmail.com'),
+  port: integer("port").notNull().default(587),
+  secure: boolean("secure").notNull().default(false),
+  authUser: text("auth_user").notNull(),
+  authPass: text("auth_pass").notNull(),
+  fromEmail: text("from_email").notNull(),
+  companyName: text("company_name").notNull().default('Warehouse Management System'),
+  enableNotifications: boolean("enable_notifications").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull(),
+});
+
+export const insertEmailSettingsSchema = createInsertSchema(emailSettings)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+
+export type InsertEmailSettings = z.infer<typeof insertEmailSettingsSchema>;
+export type EmailSettings = typeof emailSettings.$inferSelect;
