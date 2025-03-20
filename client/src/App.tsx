@@ -33,16 +33,19 @@ function AuthenticatedRouter() {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
 
-  // Show warehouse staff only order picking
+  // Show warehouse staff only order picking and unshipped items
   if (user?.role === 'warehouse') {
     return (
       <Switch>
         <Route path="/order-picking" component={OrderPicking} />
         <Route path="/order-picking/:id" component={OrderPicking} />
         <Route path="/product-barcode/:id" component={ProductBarcode} />
+        <Route path="/unshipped-items" component={UnshippedItems} />
         <Route>
           {/* Redirect to order picking for warehouse staff if on any other route */}
-          {location !== '/order-picking' && (window.location.href = '/order-picking')}
+          {location !== '/order-picking' && 
+           location !== '/unshipped-items' && 
+           (window.location.href = '/order-picking')}
           <OrderPicking />
         </Route>
       </Switch>
