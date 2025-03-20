@@ -23,9 +23,10 @@ interface UnshippedItem {
   authorizedById: number | null;
   authorizedAt: string | null;
   date: string;
-  customer_name: string;
-  original_order_number: string;
+  customerName: string;        // Changed from customer_name to match schema
+  originalOrderNumber: string; // Changed from original_order_number to match schema
   notes: string | null;
+  customerId?: string | null;
 }
 
 interface UnshippedItemsProps {
@@ -37,6 +38,7 @@ export default function UnshippedItems({ mode = 'all', customerId }: UnshippedIt
   const { t } = useTranslation();
   const { user, hasPermission } = useAuth();
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'authorized'>('all');
   const queryClient = useQueryClient();
   
   // Determine endpoint based on mode
@@ -48,6 +50,12 @@ export default function UnshippedItems({ mode = 'all', customerId }: UnshippedIt
   
   const { data: unshippedItems = [], isLoading, error } = useQuery<UnshippedItem[]>({
     queryKey: [endpoint],
+    retry: 1,
+  });
+  
+  // Get all products to display product names
+  const { data: products = [] } = useQuery<any[]>({
+    queryKey: ['/api/products'],
     retry: 1,
   });
 
@@ -215,12 +223,33 @@ export default function UnshippedItems({ mode = 'all', customerId }: UnshippedIt
                       />
                     </TableCell>
                   )}
-                  <TableCell>{item.original_order_number}</TableCell>
-                  <TableCell>{item.customer_name}</TableCell>
-                  <TableCell>{item.productId}</TableCell>
-                  <TableCell>{item.quantity}</TableCell>
                   <TableCell>
-                    {new Date(item.date).toLocaleDateString()}
+                    <div className="font-medium">{item.originalOrderNumber}</div>
+                    <div className="text-xs text-slate-500">Order ID: {item.orderId}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium">{item.customerName}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium">
+                      {products.find(p => p.id === item.productId)?.name || `Product #${item.productId}`}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {products.find(p => p.id === item.productId)?.sku || 'Unknown SKU'}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="inline-flex items-center justify-center px-2.5 py-0.5 text-sm font-medium bg-blue-100 text-blue-800 rounded-full">
+                      {item.quantity}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="whitespace-nowrap">
+                      {new Date(item.date).toLocaleDateString()}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {item.authorized ? (
