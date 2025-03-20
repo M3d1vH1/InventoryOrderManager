@@ -62,11 +62,6 @@ const Sidebar = () => {
                     className={`flex items-center justify-between w-full p-2 text-left rounded ${(isActive("/orders") || isActive("/unshipped-items")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
                     onClick={() => {
                       setCurrentPage("Orders");
-                      // Toggle the orders submenu
-                      const ordersSubmenu = document.getElementById('orders-submenu');
-                      if (ordersSubmenu) {
-                        ordersSubmenu.classList.toggle('hidden');
-                      }
                     }}
                   >
                     <div className="flex items-center">
@@ -76,7 +71,7 @@ const Sidebar = () => {
                     <i className="fas fa-chevron-down text-xs"></i>
                   </button>
                   
-                  <ul id="orders-submenu" className={`ml-4 mt-1 ${!(isActive("/orders") || isActive("/unshipped-items")) ? 'hidden' : ''}`}>
+                  <ul id="orders-submenu" className="ml-4 mt-1">
                     <li className="mb-1">
                       <Link href="/orders" onClick={() => setCurrentPage("Orders")}>
                         <button 
