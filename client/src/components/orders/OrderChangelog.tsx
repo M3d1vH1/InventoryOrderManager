@@ -31,7 +31,7 @@ interface ChangelogItem {
   orderId: number;
   userId: number;
   user?: User;
-  action: 'create' | 'update' | 'status_change';
+  action: 'create' | 'update' | 'status_change' | 'unshipped_authorization';
   timestamp: string;
   changes: Record<string, any>;
   previousValues?: Record<string, any>;

@@ -1199,6 +1199,10 @@ export class MemStorage implements IStorage {
   }
   
   // Unshipped Items methods
+  async getUnshippedItem(id: number): Promise<UnshippedItem | undefined> {
+    return this.unshippedItems.get(id);
+  }
+  
   async getUnshippedItems(customerName?: string): Promise<UnshippedItem[]> {
     let items = Array.from(this.unshippedItems.values())
       .filter(item => !item.shipped);

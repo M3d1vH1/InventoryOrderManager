@@ -1047,6 +1047,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Unshipped items methods
+  async getUnshippedItem(id: number): Promise<UnshippedItem | undefined> {
+    try {
+      const results = await this.db.select().from(unshippedItems)
+        .where(eq(unshippedItems.id, id));
+      
+      return results[0];
+    } catch (error) {
+      console.error("Error getting unshipped item:", error);
+      return undefined;
+    }
+  }
+  
   async getUnshippedItems(customerId?: string): Promise<UnshippedItem[]> {
     try {
       // Create base query
