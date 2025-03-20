@@ -67,37 +67,39 @@ export async function testEmailConnection(req: Request, res: Response) {
   try {
     console.log('Email test request received:', JSON.stringify(req.body));
     
-    const schema = z.object({
-      host: z.string(),
-      port: z.number(),
-      secure: z.boolean(),
-      authUser: z.string(),
-      authPass: z.string(),
-      fromEmail: z.string().email(),
-      companyName: z.string().optional(),
-      enableNotifications: z.boolean().optional(),
-      testEmail: z.string().email(),
-    });
-
-    const validatedData = schema.parse(req.body);
+    // First get the existing settings
+    const existingSettings = await storage.getEmailSettings();
+    if (!existingSettings) {
+      return res.status(400).json({
+        success: false,
+        message: 'No email settings found. Please save settings first.'
+      });
+    }
     
-    // Create a test transporter
+    // Validate only the test email, use existing settings for everything else
+    const testEmailSchema = z.object({
+      testEmail: z.string().email('Please provide a valid email address'),
+    });
+    
+    const { testEmail } = testEmailSchema.parse(req.body);
+    
+    // Create a test transporter using the existing settings
     const transporter = nodemailer.createTransport({
-      host: validatedData.host,
-      port: validatedData.port,
-      secure: validatedData.secure,
+      host: existingSettings.host,
+      port: existingSettings.port,
+      secure: existingSettings.secure,
       auth: {
-        user: validatedData.authUser,
-        pass: validatedData.authPass,
+        user: existingSettings.authUser,
+        pass: existingSettings.authPass,
       },
     });
     
-    const companyName = validatedData.companyName || 'Warehouse Management System';
+    const companyName = existingSettings.companyName || 'Warehouse Management System';
     
     // Send a test email
     await transporter.sendMail({
-      from: `"${companyName}" <${validatedData.fromEmail}>`,
-      to: validatedData.testEmail,
+      from: `"${companyName}" <${existingSettings.fromEmail}>`,
+      to: testEmail,
       subject: 'Test Email from Warehouse Management System',
       text: 'This is a test email from your Warehouse Management System. If you received this email, your email configuration is working correctly.',
       html: '<p>This is a test email from your Warehouse Management System.</p><p>If you received this email, your email configuration is working correctly.</p>',

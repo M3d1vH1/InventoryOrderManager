@@ -681,27 +681,14 @@ const Settings = () => {
   // Test email mutation
   const testEmailMutation = useMutation({
     mutationFn: async (values: z.infer<typeof emailTestSchema>) => {
-      // Get form values and ensure they're all defined
-      const formValues = emailForm.getValues();
+      console.log('Sending test email to:', values.testEmail);
       
-      // Create a cleaned up config object with default values if needed
-      const emailConfig = {
-        host: formValues.host || 'smtp.gmail.com',
-        port: Number(formValues.port || 587),
-        secure: Boolean(formValues.secure),
-        authUser: formValues.authUser || '',
-        authPass: formValues.authPass || '',
-        fromEmail: formValues.fromEmail || '',
-        companyName: formValues.companyName || 'Warehouse Management System',
-        enableNotifications: Boolean(formValues.enableNotifications),
-        testEmail: values.testEmail,
-      };
-      
-      console.log('Sending test email with config:', JSON.stringify(emailConfig));
-      
+      // We've updated the API to only require the test email
       return apiRequest('/api/email-settings/test-connection', {
         method: 'POST',
-        body: JSON.stringify(emailConfig),
+        body: JSON.stringify({
+          testEmail: values.testEmail,
+        }),
       });
     },
     onSuccess: () => {
