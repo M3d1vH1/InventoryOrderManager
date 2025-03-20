@@ -510,7 +510,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/orders/:id/status', isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { status, itemQuantities } = req.body;
+      const { status, itemQuantities, approvePartialFulfillment } = req.body;
       const userId = (req.user as any)?.id;
       const userRole = (req.user as any)?.role;
       
@@ -525,6 +525,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const previousStatus = originalOrder.status;
+      
+      // If changing to shipped, check for unshipped items first before doing anything else
+      if (status === 'shipped') {
+        // Get unshipped items for this order
+        const unshippedItems = await storage.getUnshippedItemsByOrder(id);
+        
+        // If there are unshipped items, this is a partial fulfillment
+        if (unshippedItems.length > 0) {
+          console.log(`Order ${id} being shipped with ${unshippedItems.length} unshipped items`);
+          
+          // Check if user has authorization to ship partial orders
+          const hasApprovalPermission = userRole === 'admin' || userRole === 'manager';
+          const isApproved = approvePartialFulfillment === true;
+          
+          // If partial order and not approved and user doesn't have permission to approve
+          if (!isApproved && !hasApprovalPermission) {
+            console.log(`Order ${id} requires approval for partial fulfillment. User role: ${userRole}`);
+            return res.status(403).json({
+              message: "Partial order fulfillment requires manager or admin approval",
+              requiresApproval: true,
+              isPartialFulfillment: true,
+              unshippedItems: unshippedItems.length,
+              orderId: id
+            });
+          }
+          
+          // Log that we're proceeding with partial fulfillment
+          console.log(`Order ${id} partial fulfillment approved by ${userRole}`);
+        }
+      }
       
       // Handle partial shipments if we have item quantities data and we're marking as picked
       if (status === 'picked' && itemQuantities && Array.isArray(itemQuantities)) {
@@ -572,6 +602,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // If status is being changed to shipped, check for any unshipped items
+      // Note: We already checked for unshipped items and approval earlier, so we'll just
+      // send a notification if needed
       if (status === 'shipped') {
         console.log(`Order ${id} being shipped, checking for unshipped items`);
         
@@ -579,29 +611,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const unshippedItems = await storage.getUnshippedItemsByOrder(id);
         const orderItems = await storage.getOrderItems(id);
         
-        // Set a flag indicating if this is a partial fulfillment - either from unshipped items or from request body
-        const isPartialFromUnshipped = unshippedItems.length > 0;
-        const isPartialFromRequest = req.body.isPartialFulfillment === true;
-        const isPartialFulfillment = isPartialFromUnshipped || isPartialFromRequest;
-        
-        // Check if user has authorization to ship partial orders
-        const hasApprovalPermission = userRole === 'admin' || userRole === 'manager';
-        const isApproved = req.body.approvePartialFulfillment === true;
-        
-        if (isPartialFulfillment) {
-          console.log(`Order ${id} is a partial fulfillment. unshipped items: ${unshippedItems.length}, explicit partial: ${isPartialFromRequest}`);
-          
-          // If partial order and not approved and user doesn't have permission to approve
-          if (!isApproved && !hasApprovalPermission) {
-            console.log(`Order ${id} requires approval for partial fulfillment. User role: ${userRole}`);
-            return res.status(403).json({
-              message: "Partial order fulfillment requires manager or admin approval",
-              requiresApproval: true, 
-              isPartialFulfillment: true,
-              unshippedItems: unshippedItems.length
-            });
-          }
-          
+        // If there are unshipped items, send notification
+        if (unshippedItems.length > 0) {
           // Send notification to managers about unshipped items that need authorization
           const notificationId = Math.random().toString(36).substring(2, 15);
           broadcastMessage({
@@ -619,8 +630,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               unshippedItems: unshippedItems.length
             }
           });
-          
-          console.log(`Order ${id} partial fulfillment approved by ${userRole}`);
         }
       }
       
@@ -712,10 +721,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Check if user has authorization to ship partial orders
           const hasApprovalPermission = userRole === 'admin' || userRole === 'manager';
-          const isApproved = req.body.approvePartialFulfillment === true;
+          const isApproved = req.body.approvePartialFulfillment === 'true' || req.body.approvePartialFulfillment === true;
           
-          // If partial order and user doesn't have permission to approve
-          if (!hasApprovalPermission) {
+          // If partial order and not approved and user doesn't have permission to approve
+          if (!isApproved && !hasApprovalPermission) {
             return res.status(403).json({
               message: "Partial order fulfillment requires manager or admin approval",
               requiresApproval: true,
