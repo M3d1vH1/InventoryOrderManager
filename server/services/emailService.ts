@@ -110,7 +110,7 @@ const defaultConfig: EmailConfig = {
     user: process.env.EMAIL_USER || '',
     pass: process.env.EMAIL_PASSWORD || '',
   },
-  from: process.env.EMAIL_FROM || '',
+  from: process.env.EMAIL_USER || '', // Use EMAIL_USER as the default from address
   companyName: process.env.COMPANY_NAME || 'Warehouse Management System',
 };
 
@@ -176,9 +176,19 @@ export async function sendOrderShippedEmail(
     const config = await getEmailConfig();
     
     // Check if email configuration is set
+    // Try using environment variables as a fallback if settings auth is not available
     if (!config.auth.user || !config.auth.pass) {
-      console.error('Email credentials not configured');
-      return false;
+      if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
+        console.log('Using email credentials from environment variables');
+        config.auth.user = process.env.EMAIL_USER;
+        config.auth.pass = process.env.EMAIL_PASSWORD;
+        if (!config.from) {
+          config.from = process.env.EMAIL_USER;
+        }
+      } else {
+        console.error('Email credentials not configured');
+        return false;
+      }
     }
     
     // Create email transporter
