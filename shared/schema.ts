@@ -283,22 +283,26 @@ export const unshippedItems = pgTable("unshipped_items", {
   productId: integer("product_id").notNull(),
   quantity: integer("quantity").notNull(),
   customerName: text("customer_name").notNull(),
+  customerId: text("customer_id"),
   originalOrderNumber: text("original_order_number").notNull(),
   date: timestamp("date").notNull().defaultNow(),
   shipped: boolean("shipped").notNull().default(false),
   shippedInOrderId: integer("shipped_in_order_id"),
+  shippedAt: timestamp("shipped_at"),
   authorized: boolean("authorized").notNull().default(false),
   authorizedById: integer("authorized_by_id"),
+  authorizedAt: timestamp("authorized_at"),
   notes: text("notes"),
 });
 
 export const insertUnshippedItemSchema = createInsertSchema(unshippedItems)
-  .omit({ id: true, date: true, shipped: true, shippedInOrderId: true, authorized: true, authorizedById: true })
+  .omit({ id: true, date: true, shipped: true, shippedInOrderId: true, shippedAt: true, authorized: true, authorizedById: true, authorizedAt: true })
   .extend({
     orderId: z.number(),
     productId: z.number(),
     quantity: z.number().min(1),
     customerName: z.string(),
+    customerId: z.string().optional(),
     originalOrderNumber: z.string(),
     notes: z.string().optional(),
   });
