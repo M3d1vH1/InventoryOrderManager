@@ -12,6 +12,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { exec } from "child_process";
 import { promisify } from "util";
 import { getEmailSettings, updateEmailSettings, testEmailConnection, getEmailTemplate, updateEmailTemplate } from "./api/emailSettings";
+import { sendOrderShippedEmail } from "./services/emailService";
 
 // Define WebSocket server and connected clients
 let wss: WebSocketServer;
