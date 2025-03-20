@@ -346,6 +346,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message });
     }
   });
+  
+  // Delete an order and all its related data
+  app.delete('/api/orders/:id', isAuthenticated, hasRole(['admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid order ID' });
+      }
+      
+      // Get order details for notification before deletion
+      const order = await storage.getOrder(id);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      
+      const result = await storage.deleteOrder(id);
+      
+      if (!result) {
+        return res.status(404).json({ message: 'Order not found or could not be deleted' });
+      }
+      
+      // Broadcast the deletion
+      broadcastMessage({
+        type: 'orderDeleted',
+        orderId: id,
+        orderNumber: order.orderNumber
+      });
+      
+      res.json({ success: true, message: `Order ${order.orderNumber} has been deleted` });
+    } catch (error: any) {
+      console.error('Error deleting order:', error);
+      res.status(500).json({ message: error.message || 'An error occurred while deleting the order' });
+    }
+  });
 
   // Route for authorizing unshipped items - now allows front_office users too
   app.post('/api/unshipped-items/authorize', isAuthenticated, hasRole(['admin', 'manager', 'front_office']), async (req, res) => {
