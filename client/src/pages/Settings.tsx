@@ -618,6 +618,26 @@ const Settings = () => {
       enableNotifications: true,
     }
   });
+  
+  // Get current email settings query
+  const { data: emailSettings, isLoading: isLoadingEmailSettings } = useQuery({
+    queryKey: ['/api/email-settings'],
+    onSuccess: (data: any) => {
+      if (data) {
+        // Only reset form if we got data from the server
+        emailForm.reset({
+          host: data.host || 'smtp.gmail.com',
+          port: data.port || 587,
+          secure: data.secure || false,
+          authUser: data.authUser || '',
+          authPass: '', // Never pre-fill password field for security
+          fromEmail: data.fromEmail || '',
+          companyName: data.companyName || 'Warehouse Management System',
+          enableNotifications: data.enableNotifications ?? true,
+        });
+      }
+    }
+  });
 
   // Test email form
   const testEmailForm = useForm<z.infer<typeof emailTestSchema>>({
