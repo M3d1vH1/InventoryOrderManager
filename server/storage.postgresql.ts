@@ -1107,14 +1107,10 @@ export class DatabaseStorage implements IStorage {
       await this.db.update(unshippedItems)
         .set({ 
           authorized: true,
-          authorizedById: userId
+          authorizedById: userId,
+          authorizedAt: new Date() // Use the ORM for this instead of raw SQL
         })
         .where(inArray(unshippedItems.id, ids));
-        
-      // Use raw SQL for setting authorized_at since it's not in the schema object
-      await this.db.execute(
-        sql`UPDATE unshipped_items SET authorized_at = NOW() WHERE id IN (${ids.join(',')})`
-      );
     } catch (error) {
       console.error("Error authorizing unshipped items:", error);
       throw error;
