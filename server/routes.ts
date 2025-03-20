@@ -361,6 +361,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Authorize the items
       await storage.authorizeUnshippedItems(itemIds, userId);
       
+      // Get the unshipped items details to add to changelog
+      const items = await Promise.all(
+        itemIds.map(async (id) => {
+          try {
+            // For each unshipped item, find its original order
+            const unshippedItem = await storage.getUnshippedItem(id);
+            if (unshippedItem) {
+              // Add to the order's changelog
+              await storage.addOrderChangelog({
+                orderId: unshippedItem.orderId,
+                userId: userId,
+                action: 'unshipped_authorization',
+                changes: {
+                  itemId: id,
+                  productId: unshippedItem.productId,
+                  quantity: unshippedItem.quantity,
+                  authorizedById: userId,
+                  authorizedByRole: userRole
+                },
+                notes: `Authorized unshipped item for future fulfillment by ${userRole}`
+              });
+              
+              return unshippedItem;
+            }
+            return null;
+          } catch (err) {
+            console.error(`Error processing unshipped item ${id}:`, err);
+            return null;
+          }
+        })
+      );
+      
+      // Filter out any null items
+      const validItems = items.filter(item => item !== null);
+      
       // Send notification via WebSocket
       broadcastMessage({
         type: 'unshippedItemsAuthorized',

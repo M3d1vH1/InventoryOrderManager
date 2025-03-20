@@ -142,6 +142,7 @@ export interface IStorage {
   }>;
 
   // Unshipped Items methods
+  getUnshippedItem(id: number): Promise<UnshippedItem | undefined>;
   getUnshippedItems(customerId?: string): Promise<UnshippedItem[]>;
   getUnshippedItemsByOrder(orderId: number): Promise<UnshippedItem[]>;
   addUnshippedItem(item: InsertUnshippedItem): Promise<UnshippedItem>;
