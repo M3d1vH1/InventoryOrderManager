@@ -298,6 +298,16 @@ export class DatabaseStorage implements IStorage {
       .where(lte(products.currentStock, products.minStockLevel));
   }
   
+  async getLowAndOutOfStockProducts(): Promise<Product[]> {
+    return await this.db
+      .select()
+      .from(products)
+      .where(or(
+        lte(products.currentStock, products.minStockLevel),
+        eq(products.currentStock, 0)
+      ));
+  }
+  
   async searchProducts(query: string, category?: string, stockStatus?: string): Promise<Product[]> {
     let conditions = [];
     
