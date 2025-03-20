@@ -421,6 +421,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (unshippedItems.length > 0) {
           console.log(`Order ${id} being shipped with ${unshippedItems.length} unshipped items`);
+          
+          // Send notification to managers about unshipped items that need authorization
+          const notificationId = Math.random().toString(36).substring(2, 15);
+          broadcastMessage({
+            type: 'notification',
+            notification: {
+              id: notificationId,
+              title: `Partial Order Fulfillment: ${originalOrder.orderNumber}`,
+              message: `Order ${originalOrder.orderNumber} has been shipped with ${unshippedItems.length} unshipped items that require manager authorization.`,
+              type: 'warning',
+              timestamp: new Date(),
+              read: false,
+              orderId: id,
+              orderNumber: originalOrder.orderNumber,
+              requiresAuthorization: true,
+              unshippedItems: unshippedItems.length
+            }
+          });
         }
       }
       
@@ -496,6 +514,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Log any unshipped items for tracking purposes
         if (unshippedItems.length > 0) {
           console.log(`Order ${id} being shipped with ${unshippedItems.length} unshipped items via document upload`);
+          
+          // Send notification to managers about unshipped items that need authorization
+          const notificationId = Math.random().toString(36).substring(2, 15);
+          broadcastMessage({
+            type: 'notification',
+            notification: {
+              id: notificationId,
+              title: `Partial Order Fulfillment: ${order.orderNumber}`,
+              message: `Order ${order.orderNumber} has been shipped with ${unshippedItems.length} unshipped items that require manager authorization.`,
+              type: 'warning',
+              timestamp: new Date(),
+              read: false,
+              orderId: id,
+              orderNumber: order.orderNumber,
+              requiresAuthorization: true,
+              unshippedItems: unshippedItems.length
+            }
+          });
         }
         
         // Proceed with shipping regardless of unshipped items status

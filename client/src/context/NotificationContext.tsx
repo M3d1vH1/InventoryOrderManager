@@ -11,6 +11,8 @@ interface Notification {
   read: boolean;
   orderId?: number;
   orderNumber?: string;
+  requiresAuthorization?: boolean;
+  unshippedItems?: number;
 }
 
 interface NotificationContextType {
