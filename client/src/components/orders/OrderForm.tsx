@@ -476,25 +476,21 @@ const OrderForm = ({
       <div className="p-4">
         {/* Customer has unshipped items warning - shown when customer is selected */}
         {unshippedItemsWarning && unshippedItemsWarning.hasUnshippedItems && (
-          <div className="mb-6 bg-orange-100 border-2 border-orange-300 rounded-lg p-4 shadow-sm">
-            <div className="flex items-center text-orange-800 font-bold text-lg mb-2">
-              <AlertTriangle className="h-6 w-6 mr-2 text-orange-600" />
-              <span>Outstanding Items from Previous Orders</span>
-            </div>
-            <div className="text-orange-700 mt-2 text-base">
-              <p className="font-medium">
-                This customer has <span className="text-orange-800 underline">{unshippedItemsWarning.unshippedItemsCount} unfulfilled item{unshippedItemsWarning.unshippedItemsCount !== 1 ? 's' : ''}</span> from previous orders
-                {unshippedItemsWarning.pendingOrders > 0 && ` and ${unshippedItemsWarning.pendingOrders} pending order${unshippedItemsWarning.pendingOrders !== 1 ? 's' : ''}`}.
-              </p>
-              <p className="text-orange-600 mt-2">
-                Consider including these items in the current order to complete the previous fulfillment.
-              </p>
-              <div className="flex items-center gap-3 mt-4">
+          <div className="mb-4 bg-orange-50 border border-orange-200 rounded-lg p-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center text-orange-800 text-sm">
+                <AlertTriangle className="h-4 w-4 mr-2 text-orange-500 flex-shrink-0" />
+                <span>
+                  <span className="font-medium">This customer has {unshippedItemsWarning.unshippedItemsCount} unfulfilled item{unshippedItemsWarning.unshippedItemsCount !== 1 ? 's' : ''}</span>
+                  {unshippedItemsWarning.pendingOrders > 0 && ` and ${unshippedItemsWarning.pendingOrders} pending order${unshippedItemsWarning.pendingOrders !== 1 ? 's' : ''}`}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
                 <Button
                   type="button"
-                  variant="default"
-                  size="default"
-                  className="bg-orange-500 hover:bg-orange-600 text-white h-10"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-orange-600 border-orange-200 hover:bg-orange-100"
                   onClick={() => {
                     // Scroll to unshipped products section
                     const unshippedSection = document.getElementById('unshipped-products-section');
@@ -503,12 +499,12 @@ const OrderForm = ({
                     }
                   }}
                 >
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  View Unfulfilled Items
+                  <ShoppingCart className="h-3 w-3 mr-1" />
+                  View Items
                 </Button>
                 {unshippedItemsWarning.hasAuthorizedUnshippedItems && (
-                  <Badge className="bg-green-100 text-green-800 hover:bg-green-200 border-green-300 px-3 py-1 text-sm font-medium">
-                    Some Items Authorized
+                  <Badge className="bg-green-50 text-green-700 hover:bg-green-100 border-green-200 px-2 py-0.5 text-xs">
+                    Authorized
                   </Badge>
                 )}
               </div>
@@ -622,16 +618,56 @@ const OrderForm = ({
               
               {/* Unshipped products reminder section */}
               {unshippedProducts.length > 0 && (
-                <div id="unshipped-products-section" className="mb-6 border border-amber-300 rounded-lg p-4 bg-amber-50">
-                  <div className="flex items-center text-base font-medium text-amber-800 mb-3">
-                    <AlertTriangle className="h-5 w-5 mr-2 text-amber-600" /> 
-                    <span className="text-lg">{t('orders.form.unshippedProductsTitle')}</span>
+                <div id="unshipped-products-section" className="mb-4 border border-amber-200 rounded-lg p-3 bg-amber-50">
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="flex items-center text-amber-800">
+                      <AlertTriangle className="h-4 w-4 mr-2 text-amber-500 flex-shrink-0" /> 
+                      <span className="text-sm font-medium">{t('orders.form.unshippedProductsTitle')} ({unshippedProducts.length})</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-amber-600 border-amber-200 hover:bg-amber-100 text-xs"
+                      onClick={() => {
+                        // Add all unshipped products at once
+                        let newOrderItems = [...orderItems];
+                        let addedCount = 0;
+                        
+                        unshippedProducts.forEach(product => {
+                          // Check if product already exists in order
+                          const existingItemIndex = newOrderItems.findIndex(item => item.productId === product.id);
+                          
+                          if (existingItemIndex >= 0) {
+                            // Update existing item quantity
+                            newOrderItems[existingItemIndex] = {
+                              ...newOrderItems[existingItemIndex],
+                              quantity: newOrderItems[existingItemIndex].quantity + product.quantity
+                            };
+                          } else {
+                            // Add as new item
+                            newOrderItems.push({
+                              productId: product.id,
+                              product,
+                              quantity: product.quantity
+                            });
+                          }
+                          addedCount++;
+                        });
+                        
+                        setOrderItems(newOrderItems);
+                        
+                        if (addedCount > 0) {
+                          toast({
+                            title: t('orders.form.productsAdded'),
+                            description: t('orders.form.allUnshippedItemsAdded', { count: addedCount }),
+                          });
+                        }
+                      }}
+                    >
+                      <PackageOpen className="h-3 w-3 mr-1" /> Add All Items
+                    </Button>
                   </div>
-                  
-                  <p className="text-amber-700 mb-4">
-                    {t('orders.form.unshippedProductsDescription')} 
-                    <span className="font-medium"> ({unshippedProducts.length} {unshippedProducts.length === 1 ? 'item' : 'items'})</span>
-                  </p>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {unshippedProducts.map((product) => (
