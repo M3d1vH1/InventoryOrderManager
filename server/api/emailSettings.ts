@@ -167,7 +167,7 @@ export async function testEmailConnection(req: Request, res: Response) {
       success: true, 
       message: 'Test email sent successfully. Please check your email inbox (and spam folder).'
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error testing email connection:', error);
     
     if (error instanceof z.ZodError) {
@@ -179,7 +179,7 @@ export async function testEmailConnection(req: Request, res: Response) {
     }
     
     // For Gmail users with less secure apps turned off or 2FA enabled
-    if (error.message?.includes('535')) {
+    if (error instanceof Error && error.message?.includes('535')) {
       return res.status(500).json({
         success: false,
         message: 'Authentication failed. If using Gmail, you need an app password. Go to your Google Account > Security > App passwords.',
@@ -189,7 +189,7 @@ export async function testEmailConnection(req: Request, res: Response) {
     
     return res.status(500).json({ 
       success: false, 
-      message: 'Failed to send test email: ' + (error.message || 'Unknown error'),
+      message: 'Failed to send test email: ' + (error instanceof Error ? error.message : 'Unknown error'),
       error: error instanceof Error ? error.message : String(error)
     });
   }
@@ -215,9 +215,12 @@ export async function getEmailTemplate(req: Request, res: Response) {
     
     const templateContent = fs.readFileSync(templatePath, 'utf8');
     return res.json({ templateName, content: templateContent });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error getting email template:', error);
-    return res.status(500).json({ message: 'Failed to get email template' });
+    return res.status(500).json({ 
+      message: 'Failed to get email template',
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
 }
 
@@ -252,9 +255,12 @@ export async function updateEmailTemplate(req: Request, res: Response) {
       message: 'Template updated successfully',
       templateName,
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error updating email template:', error);
-    return res.status(500).json({ message: 'Failed to update email template' });
+    return res.status(500).json({ 
+      message: 'Failed to update email template',
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
 }
 
@@ -278,9 +284,12 @@ export async function getLabelTemplate(req: Request, res: Response) {
     
     const templateContent = fs.readFileSync(templatePath, 'utf8');
     return res.json({ templateName, content: templateContent });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error getting label template:', error);
-    return res.status(500).json({ message: 'Failed to get label template' });
+    return res.status(500).json({ 
+      message: 'Failed to get label template',
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
 }
 
@@ -315,8 +324,11 @@ export async function updateLabelTemplate(req: Request, res: Response) {
       message: 'Label template updated successfully',
       templateName,
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error updating label template:', error);
-    return res.status(500).json({ message: 'Failed to update label template' });
+    return res.status(500).json({ 
+      message: 'Failed to update label template',
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
 }

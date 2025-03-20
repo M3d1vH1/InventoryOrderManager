@@ -19,7 +19,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useNotifications } from '@/context/NotificationContext';
-import { Bell, Cog, Edit, HelpCircle, Mail, Plus, Save, Send, Trash2, UserCog, Volume2, VolumeX } from 'lucide-react';
+import { AlertCircle, Bell, Cog, Edit, HelpCircle, Mail, Plus, Save, Send, Trash2, UserCog, Volume2, VolumeX } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 const companySettingsSchema = z.object({
