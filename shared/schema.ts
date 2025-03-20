@@ -197,6 +197,15 @@ export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 export type OrderItem = typeof orderItems.$inferSelect;
 
 // Shipping Companies Enum
+export const shippingCompanyEnum = pgEnum('shipping_company', [
+  'dhl',
+  'fedex',
+  'ups',
+  'usps',
+  'royal_mail',
+  'other'
+]);
+
 // Customer Schema (enhanced)
 export const customers = pgTable("customers", {
   id: serial("id").primaryKey(),
@@ -211,6 +220,8 @@ export const customers = pgTable("customers", {
   phone: text("phone"),
   contactPerson: text("contact_person"),
   shippingCompany: text("shipping_company"),
+  preferredShippingCompany: shippingCompanyEnum("preferred_shipping_company"),
+  customShippingCompany: text("custom_shipping_company"),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
@@ -229,6 +240,8 @@ export const insertCustomerSchema = createInsertSchema(customers)
     phone: z.string().optional(),
     contactPerson: z.string().optional(),
     shippingCompany: z.string().optional(),
+    preferredShippingCompany: z.enum(['dhl', 'fedex', 'ups', 'usps', 'royal_mail', 'other']).optional(),
+    customShippingCompany: z.string().optional(),
     notes: z.string().optional(),
   });
 
@@ -305,3 +318,10 @@ export const insertUnshippedItemSchema = createInsertSchema(unshippedItems)
 
 export type InsertUnshippedItem = z.infer<typeof insertUnshippedItemSchema>;
 export type UnshippedItem = typeof unshippedItems.$inferSelect;
+
+// Session table for express-session with PostgreSQL store
+export const sessions = pgTable("session", {
+  sid: text("sid").primaryKey(),
+  sess: json("sess").notNull(),
+  expire: timestamp("expire").notNull(),
+});
