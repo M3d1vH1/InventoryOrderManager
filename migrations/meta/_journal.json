@@ -1,5 +1,13 @@
 {
   "version": "5",
   "dialect": "pg",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1742457130660,
+      "tag": "0000_skinny_the_hunter",
+      "breakpoints": true
+    }
+  ]
 }

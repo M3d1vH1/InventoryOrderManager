@@ -1095,10 +1095,14 @@ export class DatabaseStorage implements IStorage {
       await this.db.update(unshippedItems)
         .set({ 
           authorized: true,
-          authorizedById: userId,
-          authorizedAt: new Date()
+          authorizedById: userId
         })
         .where(inArray(unshippedItems.id, ids));
+        
+      // Use raw SQL for setting authorized_at since it's not in the schema object
+      await this.db.execute(
+        sql`UPDATE unshipped_items SET authorized_at = NOW() WHERE id IN (${ids.join(',')})`
+      );
     } catch (error) {
       console.error("Error authorizing unshipped items:", error);
       throw error;
@@ -1110,10 +1114,14 @@ export class DatabaseStorage implements IStorage {
       await this.db.update(unshippedItems)
         .set({ 
           shipped: true, 
-          shippedInOrderId: newOrderId,
-          shippedAt: new Date()
+          shippedInOrderId: newOrderId
         })
         .where(inArray(unshippedItems.id, ids));
+        
+      // Use raw SQL for setting shipped_at since it's not in the schema object
+      await this.db.execute(
+        sql`UPDATE unshipped_items SET shipped_at = NOW() WHERE id IN (${ids.join(',')})`
+      );
     } catch (error) {
       console.error("Error marking unshipped items as shipped:", error);
       throw error;
