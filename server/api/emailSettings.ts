@@ -2,6 +2,14 @@ import { Request, Response } from 'express';
 import { storage } from '../storage';
 import nodemailer from 'nodemailer';
 import { z } from 'zod';
+import * as fs from 'fs';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+// Setup for file paths using ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, '..', '..');
 
 /**
  * Get current email settings
@@ -135,11 +143,7 @@ export async function getEmailTemplate(req: Request, res: Response) {
     }
     
     // Logic to get the email template by name
-    // This would typically read from a file or database
-    const fs = require('fs');
-    const path = require('path');
-    
-    const templatePath = path.join(process.cwd(), 'email_templates', `${templateName}.hbs`);
+    const templatePath = path.join(projectRoot, 'email_templates', `${templateName}.hbs`);
     
     if (!fs.existsSync(templatePath)) {
       return res.status(404).json({ message: `Template '${templateName}' not found` });
@@ -170,10 +174,7 @@ export async function updateEmailTemplate(req: Request, res: Response) {
     }
     
     // Logic to update the email template
-    const fs = require('fs');
-    const path = require('path');
-    
-    const templateDir = path.join(process.cwd(), 'email_templates');
+    const templateDir = path.join(projectRoot, 'email_templates');
     const templatePath = path.join(templateDir, `${templateName}.hbs`);
     
     // Create directory if it doesn't exist
