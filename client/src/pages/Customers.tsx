@@ -407,12 +407,24 @@ const Customers = () => {
             Manage your customer information
           </CardDescription>
           <div className="flex w-full max-w-sm items-center space-x-2 mt-2">
-            <Input 
-              placeholder="Search customers..." 
-              className={touchFriendlyStyle}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <div className="relative w-full">
+              <Input 
+                placeholder="Search customers..." 
+                className={touchFriendlyStyle + (searchQuery ? " pr-10" : "")}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 h-full"
+                  onClick={() => setSearchQuery('')}
+                >
+                  <X className="h-4 w-4 text-slate-400" />
+                </Button>
+              )}
+            </div>
             <Button type="submit" size="icon" className="h-12 w-12">
               <Search className="h-5 w-5" />
             </Button>

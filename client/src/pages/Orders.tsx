@@ -442,10 +442,20 @@ const Orders = () => {
               </span>
               <Input
                 placeholder={t('orders.searchOrders')}
-                className="pl-10"
+                className={`pl-10 ${searchTerm ? "pr-10" : ""}`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
+              {searchTerm && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 h-full"
+                  onClick={() => setSearchTerm('')}
+                >
+                  <i className="fas fa-times text-slate-400"></i>
+                </Button>
+              )}
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full md:w-48">
