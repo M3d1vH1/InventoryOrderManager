@@ -173,7 +173,8 @@
       "pickOrder": "Pick Order",
       "shipOrder": "Ship Order",
       "uploadDocument": "Upload Document",
-      "viewDocument": "View Document"
+      "viewDocument": "View Document",
+      "delete": "Delete Order"
     },
     "status": {
       "pending": "Pending",
@@ -281,5 +282,17 @@
     "unshippedItemsRequireAuthorizationMessage": "{{count}} unshipped item(s) from order {{orderNumber}} require manager authorization.",
     "unshippedItemsAuthorized": "Unshipped Items Authorized",
     "unshippedItemsAuthorizedMessage": "{{count}} unshipped item(s) have been authorized for fulfillment"
+  },
+  "deleteOrder": {
+    "title": "Delete Order",
+    "confirmation": "Are you sure you want to delete order #{{orderNumber}}?",
+    "description": "This action cannot be undone. This will permanently delete the order and all related data, including order items, shipping documents and history.",
+    "confirm": "Yes, delete order",
+    "cancel": "Cancel",
+    "deleting": "Deleting...",
+    "warning": "Warning: This will delete all data associated with this order including order items, shipping documents, and order history.",
+    "orderInfo": "Order Information",
+    "deleteSuccess": "Order deleted successfully",
+    "deleteError": "Failed to delete order"
   }
 }
