@@ -108,6 +108,7 @@ const OrderForm = ({
 }: OrderFormProps = {}) => {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
   const [orderItems, setOrderItems] = useState<OrderItemInput[]>([]);
   const [isNewCustomerDialogOpen, setIsNewCustomerDialogOpen] = useState(false);
@@ -289,6 +290,11 @@ const OrderForm = ({
 
   const createOrderMutation = useMutation({
     mutationFn: async (values: OrderFormValues) => {
+      // Ensure user is authenticated
+      if (!user || !user.id) {
+        throw new Error("You must be logged in to create an order");
+      }
+
       // Send only the data that the server expects
       return apiRequest({
         url: '/api/orders',
@@ -296,7 +302,8 @@ const OrderForm = ({
         body: JSON.stringify({
           customerName: values.customerName,
           notes: values.notes,
-          items: values.items
+          items: values.items,
+          createdById: user.id
         }),
         headers: {
           'Content-Type': 'application/json',
@@ -332,6 +339,11 @@ const OrderForm = ({
 
   const updateOrderMutation = useMutation({
     mutationFn: async ({ id, values }: { id: number; values: OrderFormValues }) => {
+      // Ensure user is authenticated
+      if (!user || !user.id) {
+        throw new Error("You must be logged in to update an order");
+      }
+      
       // Send only the data that the server expects
       return apiRequest({
         url: `/api/orders/${id}`,
@@ -339,7 +351,8 @@ const OrderForm = ({
         body: JSON.stringify({
           customerName: values.customerName,
           notes: values.notes,
-          items: values.items
+          items: values.items,
+          updatedById: user.id
         }),
         headers: {
           'Content-Type': 'application/json',
