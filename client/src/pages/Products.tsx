@@ -411,10 +411,20 @@ export default function Products() {
                   </span>
                   <Input
                     placeholder={t('products.searchPlaceholder')}
-                    className="pl-10"
+                    className="pl-10 pr-10"
                     value={searchQuery}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                   />
+                  {searchQuery && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 h-full"
+                      onClick={() => setSearchQuery('')}
+                    >
+                      <X className="h-4 w-4 text-slate-400" />
+                    </Button>
+                  )}
                 </div>
 
                 <Select value={stockFilter} onValueChange={setStockFilter}>
