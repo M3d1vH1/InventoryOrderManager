@@ -245,33 +245,32 @@ export class DatabaseStorage implements IStorage {
       
       console.log(`Using category enum value: ${categoryEnumValue}`);
       
-      // Instead of doing a separate INSERT and UPDATE, let's do it in one step
-      // Use SQL.raw to directly set both categoryId and category columns
+      // Execute the SQL insert - removed the non-existent 'category' column
       const result = await this.db.execute(sql`
         INSERT INTO products (
           name, 
           sku, 
-          category_id, 
-          category,
+          category_id,
           min_stock_level, 
           current_stock, 
           description, 
           barcode, 
           location, 
           units_per_box, 
-          image_path
+          image_path,
+          tags
         ) VALUES (
           ${productWithCategory.name}, 
           ${productWithCategory.sku}, 
-          ${productWithCategory.categoryId}, 
-          ${categoryEnumValue}::category,
+          ${productWithCategory.categoryId},
           ${productWithCategory.minStockLevel}, 
           ${productWithCategory.currentStock}, 
           ${productWithCategory.description || null}, 
           ${productWithCategory.barcode || null}, 
           ${productWithCategory.location || null}, 
           ${productWithCategory.unitsPerBox || null}, 
-          ${productWithCategory.imagePath || null}
+          ${productWithCategory.imagePath || null},
+          ${productWithCategory.tags || null}
         )
         RETURNING *
       `);
@@ -297,51 +296,13 @@ export class DatabaseStorage implements IStorage {
   
   async updateProduct(id: number, productUpdate: Partial<InsertProduct>): Promise<Product | undefined> {
     try {
-      // If categoryId is being updated, we need to also update the category column
-      if (productUpdate.categoryId) {
-        // First update the product with the data in our schema
-        const [updatedProduct] = await this.db
-          .update(products)
-          .set(productUpdate)
-          .where(eq(products.id, id))
-          .returning();
-        
-        if (updatedProduct) {
-          // Map categoryId to a valid enum value
-          // The category column is an ENUM that only accepts specific values:
-          // 'widgets', 'connectors', 'brackets', 'mounts', 'other'
-          let categoryEnumValue = 'other';
-          
-          // Map categoryId to a valid enum value if possible
-          switch(productUpdate.categoryId) {
-            case 1: categoryEnumValue = 'widgets'; break;
-            case 2: categoryEnumValue = 'connectors'; break;
-            case 3: categoryEnumValue = 'brackets'; break;
-            case 4: categoryEnumValue = 'mounts'; break;
-            case 5: // Any other category will default to 'other'
-            default: categoryEnumValue = 'other'; break;
-          }
-          
-          // Update the category column using raw SQL with a valid enum value
-          await this.db.execute(
-            sql`UPDATE products SET category = ${categoryEnumValue}::category WHERE id = ${id}`
-          );
-          
-          // Refresh the product data to include the updated category
-          const refreshedProduct = await this.getProduct(id);
-          return refreshedProduct || updatedProduct;
-        }
-        
-        return updatedProduct;
-      } else {
-        // Regular update without category changes
-        const [updatedProduct] = await this.db
-          .update(products)
-          .set(productUpdate)
-          .where(eq(products.id, id))
-          .returning();
-        return updatedProduct;
-      }
+      // Regular update without special handling for category
+      const [updatedProduct] = await this.db
+        .update(products)
+        .set(productUpdate)
+        .where(eq(products.id, id))
+        .returning();
+      return updatedProduct;
     } catch (error) {
       console.error('Error updating product:', error);
       throw error;
