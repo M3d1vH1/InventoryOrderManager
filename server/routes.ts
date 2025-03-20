@@ -577,26 +577,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const unshippedItems = await storage.getUnshippedItemsByOrder(id);
         const orderItems = await storage.getOrderItems(id);
         
-        // Check if this is a partial order fulfillment (some items have actualQuantity < requestedQuantity)
-        const isPartialFulfillment = req.body.itemQuantities && req.body.itemQuantities.some(
-          (item: any) => item.actualQuantity < item.requestedQuantity
-        );
-        
-        // Check if user has authorization to ship partial orders
-        const hasApprovalPermission = userRole === 'admin' || userRole === 'manager';
-        const isApproved = req.body.approvePartialFulfillment === true;
-        
-        // If it's a partial fulfillment and approval is required
-        if (isPartialFulfillment && !isApproved && !hasApprovalPermission) {
-          return res.status(403).json({
-            message: "Partial order fulfillment requires manager approval",
-            requiresApproval: true,
-            isPartialFulfillment: true
-          });
-        }
-        
+        // If there are unshipped items, this is a partial fulfillment that requires approval
         if (unshippedItems.length > 0) {
           console.log(`Order ${id} being shipped with ${unshippedItems.length} unshipped items`);
+          
+          // Check if user has authorization to ship partial orders
+          const hasApprovalPermission = userRole === 'admin' || userRole === 'manager';
+          const isApproved = req.body.approvePartialFulfillment === true;
+          
+          // If partial order and not approved and user doesn't have permission to approve
+          if (!isApproved && !hasApprovalPermission) {
+            return res.status(403).json({
+              message: "Partial order fulfillment requires manager or admin approval",
+              requiresApproval: true,
+              isPartialFulfillment: true,
+              unshippedItems: unshippedItems.length
+            });
+          }
           
           // Send notification to managers about unshipped items that need authorization
           const notificationId = Math.random().toString(36).substring(2, 15);
@@ -696,13 +693,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If updateStatus is true, update the order status as well
       if (updateStatus) {
-        // Note: We allow shipping orders with unshipped items as part of the partial fulfillment flow
-        // This is because unshipped items are tracked separately and will be fulfilled in subsequent orders
+        // Check for unshipped items that would require approval
         const unshippedItems = await storage.getUnshippedItemsByOrder(id);
+        const userRole = (req.user as any)?.role;
         
-        // Log any unshipped items for tracking purposes
+        // If there are unshipped items, this is a partial fulfillment that requires manager approval
         if (unshippedItems.length > 0) {
           console.log(`Order ${id} being shipped with ${unshippedItems.length} unshipped items via document upload`);
+          
+          // Check if user has authorization to ship partial orders
+          const hasApprovalPermission = userRole === 'admin' || userRole === 'manager';
+          const isApproved = req.body.approvePartialFulfillment === true;
+          
+          // If partial order and user doesn't have permission to approve
+          if (!hasApprovalPermission) {
+            return res.status(403).json({
+              message: "Partial order fulfillment requires manager or admin approval",
+              requiresApproval: true,
+              isPartialFulfillment: true,
+              unshippedItems: unshippedItems.length
+            });
+          }
           
           // Send notification to managers about unshipped items that need authorization
           const notificationId = Math.random().toString(36).substring(2, 15);
@@ -723,7 +734,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
-        // Proceed with shipping regardless of unshipped items status
+        // Proceed with shipping since we've passed the approval check
         await storage.updateOrderStatus(id, 'shipped', {
           documentPath,
           documentType,
