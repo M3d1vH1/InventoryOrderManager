@@ -126,12 +126,31 @@ const Orders = () => {
     queryKey: ['/api/orders'],
   });
 
+  // State for handling partial order approval
+  const [orderRequiringApproval, setOrderRequiringApproval] = useState<{
+    orderId: number;
+    status: string;
+    unshippedItems: number;
+  } | null>(null);
+  const [showApprovalDialog, setShowApprovalDialog] = useState(false);
+
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ orderId, status }: { orderId: number; status: string }) => {
+    mutationFn: async ({ 
+      orderId, 
+      status, 
+      approvePartialFulfillment = false 
+    }: { 
+      orderId: number; 
+      status: string; 
+      approvePartialFulfillment?: boolean 
+    }) => {
       return apiRequest({
         url: `/api/orders/${orderId}/status`,
         method: 'PATCH',
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ 
+          status,
+          approvePartialFulfillment
+        }),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -140,17 +159,29 @@ const Orders = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      setShowApprovalDialog(false);
+      setOrderRequiringApproval(null);
       toast({
         title: "Order status updated",
         description: "The order status has been updated successfully.",
       });
     },
-    onError: (error) => {
-      toast({
-        title: "Failed to update order status",
-        description: error.message,
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      // Check if this is a partial fulfillment that requires approval
+      if (error.status === 403 && error.data?.requiresApproval) {
+        setOrderRequiringApproval({
+          orderId: error.data.orderId || error.config?.url?.split('/')[3],
+          status: 'shipped',
+          unshippedItems: error.data.unshippedItems || 0
+        });
+        setShowApprovalDialog(true);
+      } else {
+        toast({
+          title: "Failed to update order status",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     }
   });
 
