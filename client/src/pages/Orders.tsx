@@ -349,6 +349,7 @@ const Orders = () => {
       } catch (error: any) {
         // Check if this is a partial fulfillment that requires approval
         if (error.status === 403 && error.data?.requiresApproval) {
+          // Save the original order ID and document information for later use if approved
           setOrderRequiringApproval({
             orderId: orderId,
             status: 'shipped',
@@ -356,7 +357,8 @@ const Orders = () => {
           });
           setShowApprovalDialog(true);
           setIsUploading(false);
-          setShowUploadDialog(false);
+          // Don't close the upload dialog immediately, as we might need it after approval
+          // setShowUploadDialog(false);
           // Don't throw an error since we're showing the approval dialog
           throw new Error("Requires manager approval");
         }
@@ -1166,6 +1168,8 @@ const Orders = () => {
             <AlertDialogCancel onClick={() => {
               setShowApprovalDialog(false);
               setOrderRequiringApproval(null);
+              // Also close document upload dialog if it was open
+              setShowUploadDialog(false);
             }}>
               Cancel
             </AlertDialogCancel>
@@ -1173,7 +1177,8 @@ const Orders = () => {
               onClick={() => {
                 if (orderRequiringApproval) {
                   // Check if this was triggered from a document upload
-                  if (documentFile && documentType && orderToShip) {
+                  if (documentFile && documentType) {
+                    console.log("Approving partial fulfillment with document upload");
                     // Continue with document upload but with approved partial fulfillment
                     uploadDocumentMutation.mutate({
                       orderId: orderRequiringApproval.orderId,
@@ -1183,7 +1188,11 @@ const Orders = () => {
                       updateStatus: updateStatusOnUpload,
                       approvePartialFulfillment: true
                     });
+                    
+                    // Close the upload dialog after submission
+                    setShowUploadDialog(false);
                   } else {
+                    console.log("Approving partial fulfillment with status update");
                     // Regular status update with approval
                     updateStatusMutation.mutate({
                       orderId: orderRequiringApproval.orderId,
@@ -1191,6 +1200,11 @@ const Orders = () => {
                       approvePartialFulfillment: true
                     });
                   }
+                  // Toast message for better feedback
+                  toast({
+                    title: "Partial Fulfillment Approved",
+                    description: "The order will be processed with partial fulfillment.",
+                  });
                 }
               }} 
               className="bg-green-600 hover:bg-green-700"
