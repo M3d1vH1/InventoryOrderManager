@@ -112,8 +112,23 @@ const defaultConfig: EmailConfig = {
 // Read email configuration from settings
 async function getEmailConfig(): Promise<EmailConfig> {
   try {
-    // TODO: Add method to storage to fetch email settings from database
-    // For now, return default configuration
+    const settings = await storage.getEmailSettings();
+    
+    if (settings && settings.host && settings.authUser && settings.authPass && settings.fromEmail) {
+      return {
+        host: settings.host,
+        port: settings.port || 587,
+        secure: settings.secure || false,
+        auth: {
+          user: settings.authUser,
+          pass: settings.authPass,
+        },
+        from: settings.fromEmail,
+        companyName: settings.companyName || 'Warehouse Management System',
+      };
+    }
+    
+    // If no valid settings found, return default config
     return defaultConfig;
   } catch (error) {
     console.error('Error loading email configuration:', error);
@@ -123,11 +138,17 @@ async function getEmailConfig(): Promise<EmailConfig> {
 
 // Get template content
 function getTemplate(templateName: string): string {
-  const templatePath = path.join(TEMPLATES_DIR, `${templateName}.html`);
+  const templatePath = path.join(TEMPLATES_DIR, `${templateName}.hbs`);
   
   try {
     if (fs.existsSync(templatePath)) {
       return fs.readFileSync(templatePath, 'utf-8');
+    }
+    
+    // Try with .html extension as fallback
+    const htmlTemplatePath = path.join(TEMPLATES_DIR, `${templateName}.html`);
+    if (fs.existsSync(htmlTemplatePath)) {
+      return fs.readFileSync(htmlTemplatePath, 'utf-8');
     }
     
     // If template doesn't exist, return default template
@@ -167,7 +188,7 @@ export async function sendOrderShippedEmail(
     });
     
     // Get email template
-    const template = getTemplate('order_shipped');
+    const template = getTemplate('order-shipped');
     const compiledTemplate = handlebars.compile(template);
     
     // Get shipping document information
@@ -207,7 +228,13 @@ export async function sendOrderShippedEmail(
 // Save or update email template
 export async function saveEmailTemplate(templateName: string, content: string): Promise<boolean> {
   try {
-    const templatePath = path.join(TEMPLATES_DIR, `${templateName}.html`);
+    const templatePath = path.join(TEMPLATES_DIR, `${templateName}.hbs`);
+    
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(TEMPLATES_DIR)) {
+      fs.mkdirSync(TEMPLATES_DIR, { recursive: true });
+    }
+    
     fs.writeFileSync(templatePath, content);
     return true;
   } catch (error) {

@@ -11,6 +11,7 @@ import fs from "fs";
 import { WebSocketServer, WebSocket } from 'ws';
 import { exec } from "child_process";
 import { promisify } from "util";
+import { getEmailSettings, updateEmailSettings, testEmailConnection, getEmailTemplate, updateEmailTemplate } from "./api/emailSettings";
 
 // Define WebSocket server and connected clients
 let wss: WebSocketServer;
@@ -1699,6 +1700,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message });
     }
   });
+  
+  // Email settings routes
+  app.get('/api/email-settings', isAuthenticated, hasRole(['admin']), getEmailSettings);
+  
+  app.put('/api/email-settings', isAuthenticated, hasRole(['admin']), updateEmailSettings);
+  
+  app.post('/api/email-settings/test-connection', isAuthenticated, hasRole(['admin']), testEmailConnection);
+  
+  app.get('/api/email-templates/:templateName', isAuthenticated, hasRole(['admin']), getEmailTemplate);
+  
+  app.put('/api/email-templates/:templateName', isAuthenticated, hasRole(['admin']), updateEmailTemplate);
   
   return httpServer;
 }
