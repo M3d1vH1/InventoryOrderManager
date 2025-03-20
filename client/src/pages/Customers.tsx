@@ -194,6 +194,38 @@ const Customers = () => {
     },
     enabled: viewDetailsId !== null,
   });
+  
+  // Fetch specific order details with product details
+  const { data: orderDetails, isLoading: isOrderDetailsLoading } = useQuery<Order>({
+    queryKey: ['/api/orders', selectedOrder?.id],
+    enabled: !!selectedOrder,
+    queryFn: async () => {
+      const response = await apiRequest({
+        url: `/api/orders/${selectedOrder?.id}`,
+      });
+      
+      // If order has items, fetch product details for each item
+      if (response.items && response.items.length > 0) {
+        const itemsWithProducts = await Promise.all(
+          response.items.map(async (item: OrderItem) => {
+            try {
+              const productData = await apiRequest<Product>({
+                url: `/api/products/${item.productId}`,
+              });
+              return { ...item, product: productData };
+            } catch (error) {
+              console.error(`Failed to fetch product ${item.productId}:`, error);
+              return item;
+            }
+          })
+        );
+        
+        return { ...response, items: itemsWithProducts };
+      }
+      
+      return response;
+    },
+  });
 
   // Mutation for creating a new customer
   const createCustomerMutation = useMutation({
@@ -361,6 +393,18 @@ const Customers = () => {
   // Handler for viewing customer details
   const handleViewCustomer = (id: number) => {
     setViewDetailsId(id);
+  };
+
+  // Handler for viewing order details
+  const handleViewOrder = (order: Order) => {
+    setSelectedOrder(order);
+    setIsOrderDialogOpen(true);
+  };
+
+  // Handler for closing the order dialog
+  const handleOrderDialogClose = () => {
+    setIsOrderDialogOpen(false);
+    setSelectedOrder(null);
   };
 
   // Handler for closing the create dialog
@@ -1078,12 +1122,7 @@ const Customers = () => {
                                 variant="outline" 
                                 size="sm"
                                 className="h-8"
-                                onClick={() => {
-                                  // Close the details dialog first
-                                  setViewDetailsId(null);
-                                  // Navigate to the orders page with this order highlighted
-                                  window.location.href = `/orders?highlight=${order.id}`;
-                                }}
+                                onClick={() => handleViewOrder(order)}
                               >
                                 View
                               </Button>
@@ -1111,6 +1150,108 @@ const Customers = () => {
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Order Details Dialog */}
+      <Dialog open={isOrderDialogOpen} onOpenChange={handleOrderDialogClose}>
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Order Details
+              {orderDetails && (
+                <span className="ml-2 text-sm font-normal text-slate-500">
+                  ({orderDetails.orderNumber})
+                </span>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              View the complete details of this order.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isOrderDetailsLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : orderDetails ? (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-sm font-medium text-slate-500 mb-1">Order Number</h3>
+                  <p className="text-base">{orderDetails.orderNumber}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-slate-500 mb-1">Customer</h3>
+                  <p className="text-base">{orderDetails.customerName}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-slate-500 mb-1">Date</h3>
+                  <p className="text-base">{format(new Date(orderDetails.orderDate), "MMMM dd, yyyy")}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-slate-500 mb-1">Status</h3>
+                  <Badge 
+                    className={
+                      orderDetails.status === 'shipped' ? 'bg-green-100 text-green-800 hover:bg-green-100' : 
+                      orderDetails.status === 'picked' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100' : 
+                      orderDetails.status === 'cancelled' ? '' : 
+                      'bg-blue-100 text-blue-800 hover:bg-blue-100'
+                    }
+                  >
+                    {orderDetails.status.charAt(0).toUpperCase() + orderDetails.status.slice(1)}
+                  </Badge>
+                </div>
+              </div>
+              
+              {orderDetails.notes && (
+                <div>
+                  <h3 className="text-sm font-medium text-slate-500 mb-1">Order Notes</h3>
+                  <p className="text-base">{orderDetails.notes}</p>
+                </div>
+              )}
+              
+              <div>
+                <h3 className="text-sm font-medium text-slate-500 mb-2">Order Items</h3>
+                {orderDetails.items && orderDetails.items.length > 0 ? (
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Product</TableHead>
+                          <TableHead>SKU</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead className="text-right">Quantity</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {orderDetails.items.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">
+                              {item.product ? item.product.name : `Product ID: ${item.productId}`}
+                            </TableCell>
+                            <TableCell>{item.product ? item.product.sku : '-'}</TableCell>
+                            <TableCell>{item.product ? item.product.category : '-'}</TableCell>
+                            <TableCell className="text-right">{item.quantity}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <p className="text-slate-500 italic">No items found for this order.</p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="text-center py-8 text-muted-foreground">Order details not available</p>
+          )}
+          
+          <DialogFooter>
+            <Button onClick={handleOrderDialogClose} className="h-10">
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       
