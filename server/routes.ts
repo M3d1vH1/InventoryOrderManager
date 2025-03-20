@@ -709,7 +709,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Document path for storage
       const documentPath = `/uploads/documents/${filename}`;
       
-      // If updateStatus is true, update the order status as well
+      // If updateStatus is true, update the order status to shipped
       if (updateStatus) {
         // Check for unshipped items that would require approval
         const unshippedItems = await storage.getUnshippedItemsByOrder(id);
@@ -758,14 +758,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
           documentType,
           notes
         }, userId);
+        
+        // Create changelog for the approval if it was needed
+        if (req.body.approvePartialFulfillment === 'true' || req.body.approvePartialFulfillment === true) {
+          await storage.addOrderChangelog({
+            orderId: id,
+            userId: userId,
+            action: 'partial_approval',
+            changes: { status: 'shipped' },
+            previousValues: { status: order.status },
+            notes: `Partial order fulfillment approved by ${userRole}`
+          });
+          console.log(`Order ${id} partial fulfillment approved by ${userRole}`);
+        }
       } else {
-        // Just attach the document without changing status
-        await storage.addShippingDocument({
-          orderId: id,
-          documentPath,
-          documentType,
-          notes: notes || null
-        });
+        // Check if a document already exists for this order
+        const existingDocument = await storage.getShippingDocument(id);
+        
+        if (existingDocument) {
+          // Update the existing document
+          await storage.updateShippingDocument(existingDocument.id, {
+            documentPath,
+            documentType,
+            notes: notes || null
+          });
+          console.log(`Order ${id} existing document updated`);
+        } else {
+          // Create a new document
+          await storage.addShippingDocument({
+            orderId: id,
+            documentPath,
+            documentType,
+            notes: notes || null
+          });
+          console.log(`Order ${id} new document attached`);
+        }
         
         // Send notification via WebSocket for document attachment
         broadcastMessage({
@@ -776,12 +803,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Get the updated document to send in the response
+      const document = await storage.getShippingDocument(id);
+      
       res.json({ 
         success: true, 
         documentPath,
-        orderStatus: updateStatus ? 'shipped' : order.status 
+        orderStatus: updateStatus ? 'shipped' : order.status,
+        document
       });
     } catch (error: any) {
+      console.error("Error uploading document:", error);
       res.status(500).json({ message: error.message });
     }
   });

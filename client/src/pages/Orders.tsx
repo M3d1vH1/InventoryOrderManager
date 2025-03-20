@@ -429,7 +429,8 @@ const Orders = () => {
     // Update the order status normally, without requiring document upload
     updateStatusMutation.mutate({ 
       orderId, 
-      status: newStatus as 'pending' | 'picked' | 'shipped' | 'cancelled' 
+      status: newStatus as 'pending' | 'picked' | 'shipped' | 'cancelled',
+      approvePartialFulfillment: false // Always set to false initially, will trigger approval dialog if needed
     });
   };
   
