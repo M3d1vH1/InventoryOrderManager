@@ -22,17 +22,10 @@ export async function updateCompanySettings(req: Request, res: Response) {
   try {
     const schema = z.object({
       companyName: z.string().optional(),
-      companyLogo: z.string().optional(),
-      address: z.string().optional(),
-      city: z.string().optional(),
-      postalCode: z.string().optional(),
-      country: z.string().optional(),
+      email: z.string().optional(),
       phone: z.string().optional(),
-      vatNumber: z.string().optional(),
-      website: z.string().optional(),
-      defaultCurrency: z.string().optional(),
-      defaultLanguage: z.string().optional(),
-      timezone: z.string().optional()
+      address: z.string().optional(),
+      logoPath: z.string().optional()
     });
 
     const validatedData = schema.parse(req.body);
@@ -74,14 +67,12 @@ export async function getNotificationSettings(req: Request, res: Response) {
 export async function updateNotificationSettings(req: Request, res: Response) {
   try {
     const schema = z.object({
-      enableEmailNotifications: z.boolean().optional(),
-      enableBrowserNotifications: z.boolean().optional(),
-      enableSoundAlerts: z.boolean().optional(),
-      lowStockThreshold: z.number().optional(),
-      orderStatusChangeNotifications: z.boolean().optional(),
-      newOrderNotifications: z.boolean().optional(),
-      stockAlertNotifications: z.boolean().optional(),
-      emailRecipients: z.string().optional()
+      lowStockAlerts: z.boolean().optional(),
+      orderConfirmation: z.boolean().optional(),
+      shippingUpdates: z.boolean().optional(),
+      dailyReports: z.boolean().optional(),
+      weeklyReports: z.boolean().optional(),
+      soundEnabled: z.boolean().optional()
     });
 
     const validatedData = schema.parse(req.body);
