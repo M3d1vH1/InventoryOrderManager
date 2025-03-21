@@ -32,13 +32,6 @@ const QuickStats = () => {
     );
   }
   
-  // Determine color for low stock alert
-  const lowStockCount = stats?.lowStockItems || 0;
-  const lowStockColors = {
-    bgColor: lowStockCount === 0 ? "bg-green-100" : "bg-red-100",
-    textColor: lowStockCount === 0 ? "text-green-500" : "text-red-500"
-  };
-  
   const statCards = [
     {
       title: t('dashboard.stats.pendingOrders'),
@@ -68,10 +61,10 @@ const QuickStats = () => {
     },
     {
       title: t('dashboard.stats.lowStock'),
-      value: lowStockCount,
+      value: stats?.lowStockItems || 0,
       icon: <AlertTriangle className="h-6 w-6" />,
-      bgColor: lowStockColors.bgColor,
-      textColor: lowStockColors.textColor,
+      bgColor: "bg-red-100",
+      textColor: "text-red-500",
       path: "/products",
       filter: "?stock=low"
     }
@@ -86,14 +79,7 @@ const QuickStats = () => {
               <span className={card.textColor}>{card.icon}</span>
             </div>
             <div>
-              <h3 className="text-sm text-slate-500 font-medium">
-                {card.title}
-                {card.title === t('dashboard.stats.lowStock') && card.value > 0 && (
-                  <span className="ml-2 px-1.5 py-0.5 bg-red-100 text-red-800 text-xs font-semibold rounded-full">
-                    {card.value}
-                  </span>
-                )}
-              </h3>
+              <h3 className="text-sm text-slate-500 font-medium">{card.title}</h3>
               <p className="text-2xl font-semibold">{card.value}</p>
             </div>
           </div>
