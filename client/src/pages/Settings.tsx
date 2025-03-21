@@ -1120,50 +1120,50 @@ const Settings = () => {
                     <FormField
                       control={notificationForm.control}
                       name="shippingUpdates"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Shipping Updates</FormLabel>
-                            <FormDescription>
-                              Receive notifications when order status changes
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
+                          render={({ field }) => (
+                            <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">Shipping Updates</FormLabel>
+                                <FormDescription>
+                                  Receive notifications when order status changes
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
                     />
                     
-                    <h3 className="text-lg font-medium pt-4">Reports</h3>
-                    
-                    <FormField
-                      control={notificationForm.control}
-                      name="dailyReports"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Daily Reports</FormLabel>
-                            <FormDescription>
-                              Receive daily summary reports
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
+                        <h3 className="text-lg font-medium pt-4">Reports</h3>
+                        
+                        <FormField
+                          control={notificationForm.control}
+                          name="dailyReports"
+                          render={({ field }) => (
+                            <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">Daily Reports</FormLabel>
+                                <FormDescription>
+                                  Receive daily summary reports
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
                     />
                     
-                    <FormField
-                      control={notificationForm.control}
-                      name="weeklyReports"
+                        <FormField
+                          control={notificationForm.control}
+                          name="weeklyReports"
                       render={({ field }) => (
                         <FormItem className="flex items-center justify-between rounded-lg border p-4">
                           <div className="space-y-0.5">
