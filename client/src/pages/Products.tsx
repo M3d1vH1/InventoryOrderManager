@@ -1157,8 +1157,8 @@ export default function Products() {
                           alt="Current" 
                           className="object-contain w-full h-full"
                           onError={(e) => {
-                            console.error("Error loading product image in form:", e);
-                            (e.target as HTMLImageElement).src = '/placeholder-image.png';
+                            console.error("Error loading product image in form:", form.getValues('imagePath'));
+                            (e.target as HTMLImageElement).src = '/placeholder-image.svg';
                           }}
                         />
                         <div className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm p-2 text-xs text-center">
@@ -1214,8 +1214,8 @@ export default function Products() {
                     alt={viewingProduct.name}
                     className="object-contain w-full h-full"
                     onError={(e) => {
-                      console.error("Error loading product image:", e);
-                      (e.target as HTMLImageElement).src = '/placeholder-image.png';
+                      console.error("Error loading product image:", viewingProduct.imagePath);
+                      (e.target as HTMLImageElement).src = '/placeholder-image.svg';
                     }}
                   />
                 ) : (
