@@ -1487,6 +1487,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create new user (admin only)
   app.post('/api/users', isAuthenticated, hasRole(['admin']), async (req, res) => {
     try {
+      // Debug log
+      console.log("Creating user with data:", JSON.stringify(req.body));
+      
       // Parse and validate user data
       const userData = insertUserSchema.parse(req.body);
       
@@ -1510,8 +1513,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(safeUser);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
+        console.error("Validation error details:", JSON.stringify(error.errors));
         return res.status(400).json({ message: 'Validation error', errors: error.errors });
       }
+      console.error("Error creating user:", error.message);
       res.status(500).json({ message: error.message });
     }
   });

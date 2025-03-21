@@ -64,14 +64,19 @@ const templateEditSchema = z.object({
   content: z.string().min(1, { message: "Template content is required" }),
 });
 
-// User form schema
+// User form schema for new users
 const userFormSchema = z.object({
   username: z.string().min(3, { message: "Username must be at least 3 characters" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }).optional(),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }),  // Required for new users
   fullName: z.string().min(2, { message: "Full name is required" }),
-  role: z.enum(['admin', 'front_office', 'warehouse']),
+  role: z.enum(['admin', 'front_office', 'warehouse']).default('front_office'),
   email: z.string().email({ message: "Invalid email address" }).optional().or(z.literal('')),
   active: z.boolean().default(true),
+});
+
+// User form schema for updates where password is optional
+const userUpdateFormSchema = userFormSchema.extend({
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }).optional().or(z.literal(''))
 });
 
 type UserType = {
@@ -140,7 +145,7 @@ const UserManagement = () => {
 
   // Update user mutation
   const updateUserMutation = useMutation({
-    mutationFn: async ({ id, values }: { id: number; values: z.infer<typeof userFormSchema> }) => {
+    mutationFn: async ({ id, values }: { id: number; values: Partial<z.infer<typeof userFormSchema>> }) => {
       return apiRequest(`/api/users/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(values),
@@ -211,12 +216,20 @@ const UserManagement = () => {
   // Handler for updating a user
   const handleUpdateUser = (values: z.infer<typeof userFormSchema>) => {
     if (selectedUser) {
-      // Remove password if it's empty string
-      if (values.password === '') {
-        const { password, ...dataWithoutPassword } = values;
-        updateUserMutation.mutate({ id: selectedUser.id, values: dataWithoutPassword });
+      // Validate with the update schema that allows empty password
+      const updateResult = userUpdateFormSchema.safeParse(values);
+      
+      if (updateResult.success) {
+        // If password is empty, remove it from the data
+        if (values.password === '') {
+          const { password, ...dataWithoutPassword } = values;
+          updateUserMutation.mutate({ id: selectedUser.id, values: dataWithoutPassword });
+        } else {
+          updateUserMutation.mutate({ id: selectedUser.id, values });
+        }
       } else {
-        updateUserMutation.mutate({ id: selectedUser.id, values });
+        // Show validation errors if any
+        console.error("Update validation errors:", updateResult.error);
       }
     }
   };
