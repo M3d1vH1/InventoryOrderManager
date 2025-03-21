@@ -1225,8 +1225,10 @@ export class DatabaseStorage implements IStorage {
   // Company Settings methods
   async getCompanySettings(): Promise<CompanySettings | undefined> {
     try {
+      // Order by ID ascending to always get the lowest ID (first created record)
       const settings = await this.db.select()
         .from(companySettings)
+        .orderBy(asc(companySettings.id))
         .limit(1);
       
       return settings.length > 0 ? settings[0] : undefined;
@@ -1290,8 +1292,10 @@ export class DatabaseStorage implements IStorage {
   // Notification Settings methods
   async getNotificationSettings(): Promise<NotificationSettings | undefined> {
     try {
+      // Order by ID ascending to always get the lowest ID (first created record)
       const settings = await this.db.select()
         .from(notificationSettings)
+        .orderBy(asc(notificationSettings.id))
         .limit(1);
       
       return settings.length > 0 ? settings[0] : undefined;
