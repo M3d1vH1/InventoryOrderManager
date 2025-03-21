@@ -60,37 +60,64 @@ const InventoryAlerts = () => {
     }
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-        {sortedProducts.slice(0, 4).map((product) => {
-          const borderColor = product.currentStock === 0 ? 'border-red-500 bg-red-50' : 'border-amber-500 bg-amber-50';
-          const textColor = product.currentStock === 0 ? 'text-red-600' : 'text-amber-600';
-          
-          return (
-            <div key={product.id} className={`border-l-4 ${borderColor} p-3 rounded-r`}>
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-medium truncate max-w-[160px]" title={product.name}>{product.name}</h3>
-                  <p className="text-sm text-slate-600">
-                    {t('inventory.stock')}: <span className={`font-medium ${textColor}`}>{product.currentStock}</span> ({t('inventory.min')}: {product.minStockLevel})
-                  </p>
-                  <p className="text-xs text-slate-500 mt-1">{t('products.sku')}: {product.sku}</p>
-                </div>
-                <Link href={`/products/${product.id}`}>
-                  <button className="text-primary hover:text-blue-700">
-                    <i className="fas fa-arrow-right text-xs"></i>
-                  </button>
-                </Link>
-              </div>
-            </div>
-          );
-        })}
-        {lowStockProducts.length > 4 && (
-          <div className="col-span-1 md:col-span-2 text-center mt-2 mb-2">
-            <Link href="/products?stock=low" className="text-primary hover:text-blue-700 text-sm font-medium">
-              {t('common.showMore')} ({lowStockProducts.length - 4})
-            </Link>
-          </div>
-        )}
+      <div className="overflow-hidden rounded-md p-2">
+        <table className="min-w-full divide-y divide-slate-200">
+          <thead className="bg-slate-50">
+            <tr>
+              <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                {t('products.name')}
+              </th>
+              <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                {t('products.sku')}
+              </th>
+              <th scope="col" className="px-3 py-2 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">
+                {t('inventory.stock')}
+              </th>
+              <th scope="col" className="px-3 py-2 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">
+                {t('inventory.min')}
+              </th>
+              <th scope="col" className="px-3 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
+                {t('common.actions')}
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-slate-200">
+            {sortedProducts.map((product) => {
+              const textColor = product.currentStock === 0 ? 'text-red-600' : 
+                                product.currentStock < product.minStockLevel / 2 ? 'text-red-600' : 
+                                'text-amber-600';
+              const bgColor = product.currentStock === 0 ? 'bg-red-50' : 
+                               product.currentStock < product.minStockLevel / 2 ? 'bg-red-50' : 
+                               'bg-amber-50';
+              
+              return (
+                <tr key={product.id} className="hover:bg-slate-50">
+                  <td className="px-3 py-2 whitespace-nowrap text-sm">
+                    <div className="font-medium text-slate-900 truncate max-w-[160px]" title={product.name}>
+                      {product.name}
+                    </div>
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-500">
+                    {product.sku}
+                  </td>
+                  <td className={`px-3 py-2 whitespace-nowrap text-sm text-center ${textColor} ${bgColor} font-bold`}>
+                    {product.currentStock}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-center text-slate-500">
+                    {product.minStockLevel}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-right">
+                    <Link href={`/products/${product.id}`}>
+                      <button className="text-primary hover:text-blue-700">
+                        <i className="fas fa-arrow-right text-xs"></i>
+                      </button>
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     );
   };
