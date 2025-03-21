@@ -261,7 +261,8 @@ export const changelogActionEnum = pgEnum('changelog_action', [
   'unshipped_authorization',
   'label_printed',
   'partial_approval',
-  'email_sent'
+  'email_sent',
+  'error_report'
 ]);
 
 // Changelog Schema for Orders
@@ -281,7 +282,7 @@ export const insertOrderChangelogSchema = createInsertSchema(orderChangelogs)
   .extend({
     orderId: z.number(),
     userId: z.number(),
-    action: z.enum(['create', 'update', 'delete', 'status_change', 'unshipped_authorization', 'label_printed', 'partial_approval', 'email_sent']),
+    action: z.enum(['create', 'update', 'delete', 'status_change', 'unshipped_authorization', 'label_printed', 'partial_approval', 'email_sent', 'error_report']),
     changes: z.record(z.any()).optional(),
     previousValues: z.record(z.any()).optional(),
     notes: z.string().optional(),
@@ -427,3 +428,54 @@ export const insertRolePermissionSchema = createInsertSchema(rolePermissions)
 
 export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
 export type RolePermission = typeof rolePermissions.$inferSelect;
+
+// Order Error Types Enum
+export const orderErrorTypeEnum = pgEnum('order_error_type', [
+  'missing_item',        // Item was recorded as shipped but missing from package
+  'wrong_item',          // Wrong item was picked and shipped
+  'damaged_item',        // Item was damaged during picking/shipping
+  'wrong_quantity',      // Incorrect quantity shipped
+  'duplicate_item',      // Duplicate item was shipped
+  'wrong_address',       // Package shipped to incorrect address
+  'picking_error',       // Error in picking process
+  'packing_error',       // Error in packing process
+  'system_error',        // Error caused by system failure/bug
+  'other'                // Other unclassified errors
+]);
+
+// Order Errors Schema - For tracking order issues
+export const orderErrors = pgTable("order_errors", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull(),
+  orderNumber: text("order_number").notNull(),
+  reportDate: timestamp("report_date").notNull().defaultNow(),
+  reportedById: integer("reported_by_id").notNull(),
+  errorType: orderErrorTypeEnum("error_type").notNull(),
+  description: text("description").notNull(),
+  affectedProductIds: text("affected_product_ids").array(),
+  correctiveAction: text("corrective_action"),
+  inventoryAdjusted: boolean("inventory_adjusted").notNull().default(false),
+  resolved: boolean("resolved").notNull().default(false),
+  resolvedById: integer("resolved_by_id"),
+  resolvedDate: timestamp("resolved_date"),
+  rootCause: text("root_cause"),
+  preventiveMeasures: text("preventive_measures"),
+});
+
+export const insertOrderErrorSchema = createInsertSchema(orderErrors)
+  .omit({ id: true, reportDate: true, resolved: true, resolvedById: true, resolvedDate: true })
+  .extend({
+    orderId: z.number(),
+    orderNumber: z.string(),
+    reportedById: z.number(),
+    errorType: z.enum(['missing_item', 'wrong_item', 'damaged_item', 'wrong_quantity', 'duplicate_item', 'wrong_address', 'picking_error', 'packing_error', 'system_error', 'other']),
+    description: z.string().min(1),
+    affectedProductIds: z.array(z.string()).optional().default([]),
+    correctiveAction: z.string().optional(),
+    inventoryAdjusted: z.boolean().default(false),
+    rootCause: z.string().optional(),
+    preventiveMeasures: z.string().optional(),
+  });
+
+export type InsertOrderError = z.infer<typeof insertOrderErrorSchema>;
+export type OrderError = typeof orderErrors.$inferSelect;

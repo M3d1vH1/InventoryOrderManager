@@ -16,7 +16,8 @@ import {
   emailSettings, type EmailSettings, type InsertEmailSettings,
   companySettings, type CompanySettings, type InsertCompanySettings,
   notificationSettings, type NotificationSettings, type InsertNotificationSettings,
-  rolePermissions, type RolePermission, type InsertRolePermission
+  rolePermissions, type RolePermission, type InsertRolePermission,
+  orderErrors, type OrderError, type InsertOrderError
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { log } from './vite';

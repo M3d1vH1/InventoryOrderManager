@@ -37,6 +37,21 @@ export interface IStorage {
   updateRolePermission(role: string, permission: string, enabled: boolean): Promise<RolePermission | undefined>;
   checkPermission(role: string, permission: string): Promise<boolean>;
   
+  // Order Error methods
+  getOrderErrors(orderId?: number): Promise<OrderError[]>;
+  getOrderError(id: number): Promise<OrderError | undefined>;
+  createOrderError(error: InsertOrderError): Promise<OrderError>;
+  updateOrderError(id: number, error: Partial<InsertOrderError>): Promise<OrderError | undefined>;
+  resolveOrderError(id: number, userId: number, resolution: { rootCause?: string, preventiveMeasures?: string }): Promise<OrderError | undefined>;
+  getErrorStats(period?: number): Promise<{
+    totalErrors: number,
+    totalShippedOrders: number,
+    errorRate: number,
+    errorsByType: { type: string, count: number }[],
+    trending: { date: string, errorRate: number }[]
+  }>;
+  adjustInventoryForError(errorId: number, adjustments: { productId: number, quantity: number }[]): Promise<boolean>;
+  
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
