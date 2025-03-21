@@ -27,7 +27,7 @@ import { Textarea } from "@components/ui/textarea";
 import {
   ArrowDown, ArrowUp, Box, ChevronDown, ClipboardList, Download, Edit, 
   Loader2, PackageCheck, PlusCircle, QrCode, Search, SlidersHorizontal, Trash2, X,
-  Info as InfoIcon
+  Info as InfoIcon, Tag
 } from "lucide-react";
 import { BarcodeScanner } from "@components/barcode/BarcodeScanner";
 import { BarcodeGenerator } from "@components/barcode/BarcodeGenerator";
@@ -1131,7 +1131,10 @@ export default function Products() {
               <Tabs defaultValue="details">
                 <TabsList className="grid w-full grid-cols-2 mb-4">
                   <TabsTrigger value="details">{t('products.productDetails')}</TabsTrigger>
-                  <TabsTrigger value="barcode">{t('products.barcode')}</TabsTrigger>
+                  <TabsTrigger value="tags">
+                    <Tag className="h-4 w-4 mr-2" />
+                    {t('products.tags')}
+                  </TabsTrigger>
                 </TabsList>
                 <TabsContent value="details">
                   <Card>
@@ -1242,27 +1245,66 @@ export default function Products() {
                     </CardFooter>
                   </Card>
                 </TabsContent>
-                <TabsContent value="barcode">
+                <TabsContent value="tags">
                   <Card>
                     <CardHeader>
-                      <CardTitle>{t('products.barcodeInformation')}</CardTitle>
-                      <CardDescription>{t('products.scanOrPrintBarcode')}</CardDescription>
+                      <CardTitle>{t('products.productTags')}</CardTitle>
+                      <CardDescription>{t('products.tagsDescription')}</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex items-center justify-center p-8">
-                      <div className="text-center">
-                        <BarcodeGenerator
-                          value={viewingProduct.barcode || viewingProduct.sku}
-                          displayValue={true}
-                          size="lg"
-                          className="mb-4"
-                        />
-                        <p className="text-sm text-slate-500 mb-2">{viewingProduct.barcode || viewingProduct.sku}</p>
-                        <Button variant="outline" size="sm">
-                          <Download className="h-4 w-4 mr-2" />
-                          {t('products.downloadBarcode')}
-                        </Button>
-                      </div>
+                    <CardContent>
+                      {viewingProduct.tags && viewingProduct.tags.length > 0 ? (
+                        <div className="space-y-6">
+                          <div className="flex flex-wrap gap-2">
+                            {viewingProduct.tags.map((tag, index) => (
+                              <Badge 
+                                key={index} 
+                                variant="outline" 
+                                className="px-3 py-1 text-sm bg-slate-50 border border-slate-200"
+                              >
+                                <span className="flex items-center">
+                                  <Tag className="h-3 w-3 mr-1" />
+                                  {tag}
+                                </span>
+                              </Badge>
+                            ))}
+                          </div>
+                          <div className="bg-slate-50 p-4 rounded-md border border-slate-200">
+                            <h3 className="text-sm font-medium text-slate-700 mb-2">{t('products.aboutProductTags')}</h3>
+                            <p className="text-sm text-slate-600">
+                              {t('products.tagsHelpText')}
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-10">
+                          <Tag className="h-12 w-12 text-slate-300 mb-2" />
+                          <p className="text-slate-500">{t('products.noTagsAdded')}</p>
+                          <Button 
+                            className="mt-4"
+                            variant="outline"
+                            onClick={() => {
+                              setIsDetailsDialogOpen(false);
+                              handleEditProduct(viewingProduct);
+                            }}
+                          >
+                            <Tag className="h-4 w-4 mr-2" />
+                            {t('products.addTags')}
+                          </Button>
+                        </div>
+                      )}
                     </CardContent>
+                    <CardFooter className="flex justify-center border-t pt-4">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setIsDetailsDialogOpen(false);
+                          handleEditProduct(viewingProduct);
+                        }}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        {t('products.editTags')}
+                      </Button>
+                    </CardFooter>
                   </Card>
                 </TabsContent>
               </Tabs>
