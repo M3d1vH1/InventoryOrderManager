@@ -71,6 +71,12 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Product {
   id: number;
@@ -118,6 +124,9 @@ const Products = () => {
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState("info");
+
+  // State for view mode
+  const [viewMode, setViewMode] = useState<"grid" | "table" | "list">("grid");
 
   // State to track file uploads
   const [imageFile, setImageFile] = useState<File | null>(null);
