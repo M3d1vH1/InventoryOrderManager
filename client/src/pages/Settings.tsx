@@ -75,8 +75,13 @@ const userFormSchema = z.object({
 });
 
 // User form schema for updates where password is optional
-const userUpdateFormSchema = userFormSchema.extend({
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }).optional().or(z.literal(''))
+const userUpdateFormSchema = z.object({
+  username: z.string().min(3, { message: "Username must be at least 3 characters" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }).optional().or(z.literal('')),
+  fullName: z.string().min(2, { message: "Full name is required" }),
+  role: z.enum(['admin', 'front_office', 'warehouse']).default('front_office'),
+  email: z.string().email({ message: "Invalid email address" }).optional().or(z.literal('')),
+  active: z.boolean().default(true),
 });
 
 type UserType = {
@@ -102,6 +107,19 @@ const UserManagement = () => {
   // User form with default values
   const userForm = useForm<z.infer<typeof userFormSchema>>({
     resolver: zodResolver(userFormSchema),
+    defaultValues: {
+      username: '',
+      password: '',
+      fullName: '',
+      role: 'front_office',
+      email: '',
+      active: true,
+    },
+  });
+  
+  // User update form with custom resolver
+  const userUpdateForm = useForm<z.infer<typeof userUpdateFormSchema>>({
+    resolver: zodResolver(userUpdateFormSchema),
     defaultValues: {
       username: '',
       password: '',
@@ -211,7 +229,7 @@ const UserManagement = () => {
   // Handler for editing a user
   const handleEditUser = (user: UserType) => {
     setSelectedUser(user);
-    userForm.reset({
+    userUpdateForm.reset({
       username: user.username,
       fullName: user.fullName,
       role: user.role,
@@ -223,22 +241,17 @@ const UserManagement = () => {
   };
 
   // Handler for updating a user
-  const handleUpdateUser = (values: z.infer<typeof userFormSchema>) => {
+  const handleUpdateUser = (values: z.infer<typeof userUpdateFormSchema>) => {
     if (selectedUser) {
-      // Validate with the update schema that allows empty password
-      const updateResult = userUpdateFormSchema.safeParse(values);
+      console.log("Update user form values:", values);
       
-      if (updateResult.success) {
-        // If password is empty, remove it from the data
-        if (values.password === '') {
-          const { password, ...dataWithoutPassword } = values;
-          updateUserMutation.mutate({ id: selectedUser.id, values: dataWithoutPassword });
-        } else {
-          updateUserMutation.mutate({ id: selectedUser.id, values });
-        }
+      // If password is empty, remove it from the data
+      if (values.password === '') {
+        const { password, ...dataWithoutPassword } = values;
+        console.log("Sending update without password:", dataWithoutPassword);
+        updateUserMutation.mutate({ id: selectedUser.id, values: dataWithoutPassword });
       } else {
-        // Show validation errors if any
-        console.error("Update validation errors:", updateResult.error);
+        updateUserMutation.mutate({ id: selectedUser.id, values });
       }
     }
   };
@@ -485,10 +498,10 @@ const UserManagement = () => {
               Update user information and permissions.
             </DialogDescription>
           </DialogHeader>
-          <Form {...userForm}>
-            <form onSubmit={userForm.handleSubmit(handleUpdateUser)} className="space-y-4">
+          <Form {...userUpdateForm}>
+            <form onSubmit={userUpdateForm.handleSubmit(handleUpdateUser)} className="space-y-4">
               <FormField
-                control={userForm.control}
+                control={userUpdateForm.control}
                 name="username"
                 render={({ field }) => (
                   <FormItem>
@@ -504,7 +517,7 @@ const UserManagement = () => {
                 )}
               />
               <FormField
-                control={userForm.control}
+                control={userUpdateForm.control}
                 name="password"
                 render={({ field }) => (
                   <FormItem>
@@ -524,7 +537,7 @@ const UserManagement = () => {
                 )}
               />
               <FormField
-                control={userForm.control}
+                control={userUpdateForm.control}
                 name="fullName"
                 render={({ field }) => (
                   <FormItem>
@@ -537,7 +550,7 @@ const UserManagement = () => {
                 )}
               />
               <FormField
-                control={userForm.control}
+                control={userUpdateForm.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
@@ -550,7 +563,7 @@ const UserManagement = () => {
                 )}
               />
               <FormField
-                control={userForm.control}
+                control={userUpdateForm.control}
                 name="role"
                 render={({ field }) => (
                   <FormItem>
@@ -576,7 +589,7 @@ const UserManagement = () => {
                 )}
               />
               <FormField
-                control={userForm.control}
+                control={userUpdateForm.control}
                 name="active"
                 render={({ field }) => (
                   <FormItem className="flex items-center justify-between">
