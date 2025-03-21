@@ -10,7 +10,9 @@ import {
   tags, type Tag, type InsertTag,
   productTags, type ProductTag,
   unshippedItems, type UnshippedItem, type InsertUnshippedItem,
-  emailSettings, type EmailSettings, type InsertEmailSettings
+  emailSettings, type EmailSettings, type InsertEmailSettings,
+  companySettings, type CompanySettings, type InsertCompanySettings,
+  notificationSettings, type NotificationSettings, type InsertNotificationSettings
 } from "@shared/schema";
 import { DatabaseStorage, initStorage } from './storage.postgresql';
 import { log } from './vite';
@@ -19,6 +21,14 @@ export interface IStorage {
   // Email settings methods
   getEmailSettings(): Promise<EmailSettings | undefined>;
   updateEmailSettings(settings: Partial<InsertEmailSettings>): Promise<EmailSettings | undefined>;
+  
+  // Company settings methods
+  getCompanySettings(): Promise<CompanySettings | undefined>;
+  updateCompanySettings(settings: Partial<InsertCompanySettings>): Promise<CompanySettings | undefined>;
+  
+  // Notification settings methods
+  getNotificationSettings(): Promise<NotificationSettings | undefined>;
+  updateNotificationSettings(settings: Partial<InsertNotificationSettings>): Promise<NotificationSettings | undefined>;
   
   // User methods
   getUser(id: number): Promise<User | undefined>;
@@ -172,6 +182,8 @@ export class MemStorage implements IStorage {
   private productTagsMap: Map<string, number>; // key: productId-tagId, value: 1 (just for existence)
   private unshippedItems: Map<number, UnshippedItem>;
   private emailSettingsData: EmailSettings | undefined;
+  private companySettingsData: CompanySettings | undefined;
+  private notificationSettingsData: NotificationSettings | undefined;
   
   private userIdCounter: number;
   private categoryIdCounter: number;
@@ -1366,6 +1378,67 @@ export class MemStorage implements IStorage {
     }
     
     return this.emailSettingsData;
+  }
+  
+  // Company settings methods
+  async getCompanySettings(): Promise<CompanySettings | undefined> {
+    return this.companySettingsData;
+  }
+  
+  async updateCompanySettings(settings: Partial<InsertCompanySettings>): Promise<CompanySettings | undefined> {
+    if (!this.companySettingsData) {
+      // Create new settings if none exist
+      this.companySettingsData = {
+        id: 1,
+        companyName: settings.companyName || 'Warehouse Systems Inc.',
+        email: settings.email || 'info@warehousesys.com',
+        phone: settings.phone || '',
+        address: settings.address || '',
+        logoPath: settings.logoPath || '',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+    } else {
+      // Update existing settings
+      this.companySettingsData = {
+        ...this.companySettingsData,
+        ...settings,
+        updatedAt: new Date()
+      };
+    }
+    
+    return this.companySettingsData;
+  }
+  
+  // Notification settings methods
+  async getNotificationSettings(): Promise<NotificationSettings | undefined> {
+    return this.notificationSettingsData;
+  }
+  
+  async updateNotificationSettings(settings: Partial<InsertNotificationSettings>): Promise<NotificationSettings | undefined> {
+    if (!this.notificationSettingsData) {
+      // Create new settings if none exist
+      this.notificationSettingsData = {
+        id: 1,
+        lowStockAlerts: settings.lowStockAlerts ?? true,
+        orderConfirmation: settings.orderConfirmation ?? true,
+        shippingUpdates: settings.shippingUpdates ?? true,
+        dailyReports: settings.dailyReports ?? false,
+        weeklyReports: settings.weeklyReports ?? true,
+        soundEnabled: settings.soundEnabled ?? true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+    } else {
+      // Update existing settings
+      this.notificationSettingsData = {
+        ...this.notificationSettingsData,
+        ...settings,
+        updatedAt: new Date()
+      };
+    }
+    
+    return this.notificationSettingsData;
   }
   
   // Initialize with sample data
