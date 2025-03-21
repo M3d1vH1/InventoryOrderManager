@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Upload, ArrowUpDown } from "lucide-react";
+import { Plus, Upload, ArrowUpDown, Eye, Edit } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useState, useMemo } from "react";
 
