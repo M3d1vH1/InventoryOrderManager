@@ -1693,7 +1693,7 @@ const LabelTemplateEditor = () => {
   });
   
   // Get template content query
-  const { data: templateData, isLoading: isLoadingTemplate, refetch: refetchTemplate } = useQuery({
+  const { data: labelTemplateData, isLoading: isLoadingLabelTemplate, refetch: refetchTemplate } = useQuery({
     queryKey: ['/api/label-templates', selectedTemplate],
     enabled: !!selectedTemplate,
     queryFn: async () => {
@@ -1930,7 +1930,7 @@ const LabelTemplateEditor = () => {
             </Button>
           </div>
           
-          {isLoadingTemplate ? (
+          {isLoadingLabelTemplate ? (
             <div className="text-center py-4">
               <div className="flex justify-center items-center gap-2">
                 <span className="animate-spin">
@@ -2138,7 +2138,7 @@ const EmailTemplateEditor = () => {
             </Select>
           </div>
           
-          {isLoadingTemplate ? (
+          {isLoadingEmailTemplate ? (
             <div className="text-center py-4">
               <div className="flex justify-center items-center gap-2">
                 <span className="animate-spin">
@@ -2231,7 +2231,7 @@ const EmailTemplateEditor = () => {
                     </div>
                   </div>
                   <div className="bg-slate-50 p-4 rounded-md overflow-auto max-h-[500px]">
-                    <pre className="text-xs font-mono whitespace-pre-wrap">{templateData?.content || 'No template content available'}</pre>
+                    <pre className="text-xs font-mono whitespace-pre-wrap">{emailTemplateData?.content || 'No template content available'}</pre>
                   </div>
                   
                   <div className="mt-4 p-4 border rounded-md bg-slate-50">
