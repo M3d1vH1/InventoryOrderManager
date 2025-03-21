@@ -612,8 +612,9 @@ const Products = () => {
             </div>
           ) : (
             <>
-              {/* Grid view */}
-              {viewMode === "grid" && (
+              {/* Product display section */}
+              {viewMode === "grid" ? (
+                // Grid View
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {filteredProducts && filteredProducts.map((product) => (
                     <div 
@@ -727,10 +728,8 @@ const Products = () => {
                     </div>
                   ))}
                 </div>
-              )}
-              
-              {/* Table view */}
-              {viewMode === "table" && (
+              ) : viewMode === "table" ? (
+                // Table View
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
@@ -829,10 +828,8 @@ const Products = () => {
                     </tbody>
                   </table>
                 </div>
-              )}
-              
-              {/* List view */}
-              {viewMode === "list" && (
+              ) : (
+                // List View
                 <div className="space-y-3">
                   {filteredProducts && filteredProducts.map((product) => (
                     <div 
