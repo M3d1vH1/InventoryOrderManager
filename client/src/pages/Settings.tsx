@@ -120,9 +120,13 @@ const UserManagement = () => {
   // Create user mutation
   const createUserMutation = useMutation({
     mutationFn: async (values: z.infer<typeof userFormSchema>) => {
+      console.log("Creating user mutation with:", JSON.stringify(values));
       return apiRequest('/api/users', {
         method: 'POST',
         body: JSON.stringify(values),
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
     },
     onSuccess: () => {
@@ -196,6 +200,7 @@ const UserManagement = () => {
 
   // Handler for creating a new user
   const handleCreateUser = (values: z.infer<typeof userFormSchema>) => {
+    console.log("Create user form values:", values);
     createUserMutation.mutate(values);
   };
 
