@@ -27,7 +27,7 @@ import { Textarea } from "@components/ui/textarea";
 import {
   ArrowDown, ArrowUp, Box, ChevronDown, ClipboardList, Download, Edit, 
   Loader2, PackageCheck, PlusCircle, QrCode, Search, SlidersHorizontal, Trash2, X,
-  Info as InfoIcon, Tag
+  Info as InfoIcon, Tag, AlertTriangle
 } from "lucide-react";
 import { BarcodeScanner } from "@components/barcode/BarcodeScanner";
 import { BarcodeGenerator } from "@components/barcode/BarcodeGenerator";

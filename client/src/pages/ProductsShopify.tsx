@@ -21,7 +21,8 @@ import {
   Image,
   X,
   Plus,
-  Tag
+  Tag,
+  AlertTriangle
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -918,9 +919,18 @@ const Products = () => {
                         <FormItem>
                           <FormLabel>SKU</FormLabel>
                           <FormControl>
-                            <Input {...field} disabled={!!editingProduct} />
+                            <Input 
+                              {...field} 
+                              disabled={!!editingProduct && user?.role !== "admin"} 
+                            />
                           </FormControl>
                           <FormMessage />
+                          {!!editingProduct && user?.role === "admin" && (
+                            <FormDescription className="text-amber-500">
+                              <AlertTriangle className="h-3 w-3 inline mr-1" />
+                              Warning: Changing SKU may affect other systems that reference this product
+                            </FormDescription>
+                          )}
                         </FormItem>
                       )}
                     />
