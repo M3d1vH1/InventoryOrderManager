@@ -1394,6 +1394,90 @@ A 1
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Print Label Dialog */}
+      <Dialog open={showPrintLabelDialog} onOpenChange={(open) => {
+        setShowPrintLabelDialog(open);
+        if (!open) {
+          setOrderToPrint(null);
+          setBoxCount(1);
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {t('orders.printLabels.title', 'Print Shipping Labels')}
+              {orderToPrint && (
+                <span className="ml-2 text-sm font-normal text-slate-500">
+                  ({orderToPrint.orderNumber})
+                </span>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {t('orders.printLabels.description', 'Specify how many boxes are used for this order. A shipping label will be generated for each box.')}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="boxCount">{t('orders.printLabels.boxCount', 'Number of Boxes')}</Label>
+              <div className="flex items-center space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setBoxCount(Math.max(1, boxCount - 1))}
+                  disabled={boxCount <= 1}
+                >
+                  <span>-</span>
+                </Button>
+                <Input
+                  id="boxCount"
+                  type="number"
+                  min="1"
+                  value={boxCount}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    if (!isNaN(val) && val >= 1) {
+                      setBoxCount(val);
+                    }
+                  }}
+                  className="text-center w-20"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setBoxCount(boxCount + 1)}
+                >
+                  <span>+</span>
+                </Button>
+              </div>
+              <p className="text-xs text-slate-500">
+                {t('orders.printLabels.boxCountHelp', 'Labels will be printed with order number, customer name, and box numbers.')}
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter className="flex justify-between sm:justify-between gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowPrintLabelDialog(false)}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              type="button"
+              onClick={handlePrintLabels}
+              disabled={boxCount < 1}
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              {t('orders.printLabels.print', 'Print Labels')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
