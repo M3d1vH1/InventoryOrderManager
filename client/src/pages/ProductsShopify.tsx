@@ -943,12 +943,14 @@ const Products = () => {
                           <CardContent className="p-4">
                             <div className="relative aspect-square rounded-md overflow-hidden">
                               <img 
-                                src={`/uploads/${viewingProduct.imagePath.split('/').pop()}`} 
+                                src={viewingProduct.imagePath.startsWith('http') ? 
+                                     viewingProduct.imagePath : 
+                                     `/${viewingProduct.imagePath.replace(/^\/+/, '')}`}
                                 alt={viewingProduct.name}
                                 className="object-cover w-full h-full"
                                 onError={(e) => {
-                                  // On error, show a placeholder
-                                  e.currentTarget.src = 'https://via.placeholder.com/400?text=Product+Image';
+                                  console.error("Error loading product detail image:", e);
+                                  (e.target as HTMLImageElement).src = 'https://placehold.co/400x400?text=No+Image';
                                 }}
                               />
                             </div>
