@@ -923,7 +923,7 @@ A 1
             setLocation('/orders');
           }
         }}>
-        <DialogContent className="sm:max-w-3xl">
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {isEditMode ? t('orders.editOrder') : t('orders.orderDetails')}
@@ -944,7 +944,7 @@ A 1
             <div className="space-y-4">
               {!isEditMode ? (
                 // View mode
-                <div className="space-y-4">
+                <div className="space-y-4 py-2">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <h3 className="text-sm font-medium text-slate-500">{t('orders.details.customer')}</h3>
@@ -1119,8 +1119,11 @@ A 1
                       )}
                     </div>
                     
-                    <Button onClick={handleCloseDialog}>
-                      {t('common.close')}
+                    <Button 
+                      onClick={handleCloseDialog}
+                      variant="outline"
+                    >
+                      {t('common.close', 'Close')}
                     </Button>
                   </>
                 )}
