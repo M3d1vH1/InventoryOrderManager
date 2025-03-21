@@ -22,7 +22,11 @@ import {
   X,
   Plus,
   Tag,
-  AlertTriangle
+  AlertTriangle,
+  ChevronDown,
+  LayoutGrid,
+  Table,
+  List
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -576,11 +580,7 @@ const Products = () => {
                     <div className="aspect-video bg-slate-100 relative flex items-center justify-center overflow-hidden">
                       {product.imagePath ? (
                         <img 
-                          src={product.imagePath.startsWith('http') ? 
-                               product.imagePath : 
-                               product.imagePath.startsWith('/') ? 
-                               product.imagePath : 
-                               `/${product.imagePath}`}
+                          src={product.imagePath.startsWith('/') ? product.imagePath : `/${product.imagePath}`}
                           alt={product.name}
                           className="w-full h-full object-cover"
                           onError={(e) => {
