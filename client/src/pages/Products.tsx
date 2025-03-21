@@ -1157,15 +1157,13 @@ export default function Products() {
                             </div>
                           </div>
                           <div>
+                            <h3 className="text-sm font-medium text-slate-500">{t('products.unitsPerBox')}</h3>
+                            <p className="mt-1">{viewingProduct.unitsPerBox || t('products.notAvailable')}</p>
+                          </div>
+                          <div>
                             <h3 className="text-sm font-medium text-slate-500">{t('products.location')}</h3>
                             <p className="mt-1">{viewingProduct.location || t('products.notAvailable')}</p>
                           </div>
-                          {viewingProduct.unitsPerBox && (
-                            <div>
-                              <h3 className="text-sm font-medium text-slate-500">{t('products.unitsPerBox')}</h3>
-                              <p className="mt-1">{viewingProduct.unitsPerBox}</p>
-                            </div>
-                          )}
                         </div>
                       </div>
                       <div>
