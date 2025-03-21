@@ -755,16 +755,58 @@ const Settings = () => {
     }
   };
 
+  // Define company settings interface
+  interface CompanySettingsData {
+    id: number;
+    companyName: string;
+    email: string;
+    phone: string;
+    address: string;
+    logoPath?: string;
+    createdAt: string;
+    updatedAt: string;
+  }
+  
+  // Define notification settings interface
+  interface NotificationSettingsData {
+    id: number;
+    lowStockAlerts: boolean;
+    orderConfirmation: boolean;
+    shippingUpdates: boolean;
+    dailyReports: boolean;
+    weeklyReports: boolean;
+    soundEnabled: boolean;
+    createdAt: string;
+    updatedAt: string;
+  }
+  
+  // Company settings query
+  const { data: companySettingsData, isLoading: isCompanyLoading } = useQuery<CompanySettingsData>({
+    queryKey: ['/api/company-settings']
+  });
+  
   // Company settings form
   const companyForm = useForm<z.infer<typeof companySettingsSchema>>({
     resolver: zodResolver(companySettingsSchema),
     defaultValues: {
-      companyName: "Warehouse Systems Inc.",
-      email: "info@warehousesys.com",
-      phone: "1234567890",
-      address: "123 Inventory Street, Logistics City",
+      companyName: "",
+      email: "",
+      phone: "",
+      address: "",
     },
   });
+  
+  // Update company form when settings are loaded
+  useEffect(() => {
+    if (companySettingsData) {
+      companyForm.reset({
+        companyName: companySettingsData.companyName || '',
+        email: companySettingsData.email || '',
+        phone: companySettingsData.phone || '',
+        address: companySettingsData.address || '',
+      });
+    }
+  }, [companySettingsData, companyForm]);
 
   // Notification settings form
   const notificationForm = useForm<z.infer<typeof notificationSettingsSchema>>({
@@ -778,26 +820,7 @@ const Settings = () => {
     },
   });
 
-  // Company settings query
-  const { data: companySettingsData, isLoading: isCompanyLoading } = useQuery({
-    queryKey: ['/api/company-settings'],
-    queryFn: () => apiRequest('/api/company-settings'),
-    onSuccess: (data) => {
-      companyForm.reset({
-        companyName: data.companyName || '',
-        email: data.email || '',
-        phone: data.phone || '',
-        address: data.address || '',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to load company settings. " + (error instanceof Error ? error.message : String(error)),
-        variant: "destructive",
-      });
-    }
-  });
+  // Company settings query removed - defined earlier
 
   // Company settings mutation
   const companyMutation = useMutation({
@@ -832,26 +855,22 @@ const Settings = () => {
   };
 
   // Notification settings query
-  const { data: notificationSettingsData, isLoading: isNotificationLoading } = useQuery({
-    queryKey: ['/api/notification-settings'],
-    queryFn: () => apiRequest('/api/notification-settings'),
-    onSuccess: (data) => {
+  const { data: notificationSettingsData, isLoading: isNotificationLoading } = useQuery<NotificationSettingsData>({
+    queryKey: ['/api/notification-settings']
+  });
+  
+  // Update notification form when settings are loaded
+  useEffect(() => {
+    if (notificationSettingsData) {
       notificationForm.reset({
-        lowStockAlerts: data.lowStockAlerts || false,
-        orderConfirmation: data.orderConfirmation || false,
-        shippingUpdates: data.shippingUpdates || false,
-        dailyReports: data.dailyReports || false,
-        weeklyReports: data.weeklyReports || false,
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to load notification settings. " + (error instanceof Error ? error.message : String(error)),
-        variant: "destructive",
+        lowStockAlerts: notificationSettingsData.lowStockAlerts || false,
+        orderConfirmation: notificationSettingsData.orderConfirmation || false,
+        shippingUpdates: notificationSettingsData.shippingUpdates || false,
+        dailyReports: notificationSettingsData.dailyReports || false,
+        weeklyReports: notificationSettingsData.weeklyReports || false,
       });
     }
-  });
+  }, [notificationSettingsData, notificationForm]);
 
   // Notification settings mutation
   const notificationMutation = useMutation({
@@ -1964,7 +1983,7 @@ const EmailTemplateEditor = () => {
   });
   
   // Get template content query
-  const { data: templateData, isLoading: isLoadingTemplate, refetch: refetchTemplate } = useQuery({
+  const { data: emailTemplateData, isLoading: isLoadingEmailTemplate, refetch: refetchEmailTemplate } = useQuery({
     queryKey: ['/api/email-settings/templates', selectedTemplate],
     enabled: !!selectedTemplate,
     queryFn: async () => {
@@ -1977,12 +1996,12 @@ const EmailTemplateEditor = () => {
   
   // Effect to update form when template data changes
   useEffect(() => {
-    if (templateData && templateData.content) {
+    if (emailTemplateData && emailTemplateData.content) {
       templateForm.reset({
-        content: templateData.content,
+        content: emailTemplateData.content,
       });
     }
-  }, [templateData, templateForm]);
+  }, [emailTemplateData, templateForm]);
   
   // Update template mutation
   const updateTemplateMutation = useMutation({
