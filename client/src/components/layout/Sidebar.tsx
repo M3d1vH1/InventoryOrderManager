@@ -59,50 +59,55 @@ const Sidebar = () => {
               <li className="mb-1">
                 <Link href="/orders" onClick={() => setCurrentPage("Orders")}>
                   <button 
-                    className={`flex items-center w-full p-2 text-left rounded ${isActive("/orders") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                    className={`flex items-center w-full p-2 text-left rounded ${isActive("/orders") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                    title={t('orders.title')}
                   >
                     <i className="fas fa-shopping-cart w-5"></i>
-                    <span className="ml-2">{t('orders.title')}</span>
+                    {isSidebarOpen && <span className="ml-2">{t('orders.title')}</span>}
                   </button>
                 </Link>
               </li>
               <li className="mb-1">
                 <Link href="/products" onClick={() => setCurrentPage("Products")}>
                   <button 
-                    className={`flex items-center w-full p-2 text-left rounded ${isActive("/products") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                    className={`flex items-center w-full p-2 text-left rounded ${isActive("/products") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                    title={t('products.title')}
                   >
                     <i className="fas fa-box w-5"></i>
-                    <span className="ml-2">{t('products.title')}</span>
+                    {isSidebarOpen && <span className="ml-2">{t('products.title')}</span>}
                   </button>
                 </Link>
               </li>
               <li className="mb-1">
                 <Link href="/customers" onClick={() => setCurrentPage("Customers")}>
                   <button 
-                    className={`flex items-center w-full p-2 text-left rounded ${isActive("/customers") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                    className={`flex items-center w-full p-2 text-left rounded ${isActive("/customers") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                    title={t('app.customers')}
                   >
                     <i className="fas fa-users w-5"></i>
-                    <span className="ml-2">{t('app.customers')}</span>
+                    {isSidebarOpen && <span className="ml-2">{t('app.customers')}</span>}
                   </button>
                 </Link>
               </li>
               <li className="mb-1">
                 <Link href="/inventory" onClick={() => setCurrentPage("Inventory")}>
                   <button 
-                    className={`flex items-center w-full p-2 text-left rounded ${isActive("/inventory") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                    className={`flex items-center w-full p-2 text-left rounded ${isActive("/inventory") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                    title={t('app.inventory')}
                   >
                     <i className="fas fa-warehouse w-5"></i>
-                    <span className="ml-2">{t('app.inventory')}</span>
+                    {isSidebarOpen && <span className="ml-2">{t('app.inventory')}</span>}
                   </button>
                 </Link>
               </li>
               <li className="mb-1">
                 <Link href="/reports" onClick={() => setCurrentPage("Reports")}>
                   <button 
-                    className={`flex items-center w-full p-2 text-left rounded ${isActive("/reports") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                    className={`flex items-center w-full p-2 text-left rounded ${isActive("/reports") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                    title={t('app.reports')}
                   >
                     <i className="fas fa-chart-bar w-5"></i>
-                    <span className="ml-2">{t('app.reports')}</span>
+                    {isSidebarOpen && <span className="ml-2">{t('app.reports')}</span>}
                   </button>
                 </Link>
               </li>
@@ -113,10 +118,11 @@ const Sidebar = () => {
           <li className="mb-1">
             <Link href="/order-picking" onClick={() => setCurrentPage("Order Picking")}>
               <button 
-                className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-picking") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-picking") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                title={t('app.orderPicking')}
               >
                 <i className="fas fa-clipboard-check w-5"></i>
-                <span className="ml-2">{t('app.orderPicking')}</span>
+                {isSidebarOpen && <span className="ml-2">{t('app.orderPicking')}</span>}
               </button>
             </Link>
           </li>
@@ -126,10 +132,11 @@ const Sidebar = () => {
             <li className="mb-1">
               <Link href="/settings" onClick={() => setCurrentPage("Settings")}>
                 <button 
-                  className={`flex items-center w-full p-2 text-left rounded ${isActive("/settings") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                  className={`flex items-center w-full p-2 text-left rounded ${isActive("/settings") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                  title={t('app.settings')}
                 >
                   <i className="fas fa-cog w-5"></i>
-                  <span className="ml-2">{t('app.settings')}</span>
+                  {isSidebarOpen && <span className="ml-2">{t('app.settings')}</span>}
                 </button>
               </Link>
             </li>
