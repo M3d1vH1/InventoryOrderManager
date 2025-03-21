@@ -1095,12 +1095,26 @@ const Products = () => {
                                 <p>{viewingProduct.location}</p>
                               </div>
                             )}
-                            {viewingProduct.barcode && (
-                              <div>
-                                <h3 className="text-sm font-medium text-slate-500">Barcode</h3>
-                                <p>{viewingProduct.barcode}</p>
+                            <div>
+                              <h3 className="text-sm font-medium text-slate-500">Tags</h3>
+                              <div className="mt-1">
+                                {viewingProduct.tags && viewingProduct.tags.length > 0 ? (
+                                  <div className="flex flex-wrap gap-1">
+                                    {viewingProduct.tags.map((tag, index) => (
+                                      <Badge 
+                                        key={index} 
+                                        variant="outline" 
+                                        className="text-xs bg-slate-50"
+                                      >
+                                        {tag}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p>No tags</p>
+                                )}
                               </div>
-                            )}
+                            </div>
                             {viewingProduct.unitsPerBox !== undefined && viewingProduct.unitsPerBox > 0 && (
                               <div>
                                 <h3 className="text-sm font-medium text-slate-500 flex items-center">
@@ -1119,18 +1133,7 @@ const Products = () => {
                             </div>
                           )}
                           
-                          {viewingProduct.tags && viewingProduct.tags.length > 0 && (
-                            <div className="mt-4">
-                              <h3 className="text-sm font-medium text-slate-500 mb-2">Tags</h3>
-                              <div className="flex flex-wrap gap-2">
-                                {viewingProduct.tags.map((tag, index) => (
-                                  <Badge key={index} variant="outline" className="bg-slate-100">
-                                    {tag}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+
                         </CardContent>
                       </Card>
                     </div>

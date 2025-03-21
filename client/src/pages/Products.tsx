@@ -1164,8 +1164,24 @@ export default function Products() {
                         </div>
                         <div className="space-y-4">
                           <div>
-                            <h3 className="text-sm font-medium text-slate-500">{t('products.barcode')}</h3>
-                            <p className="mt-1">{viewingProduct.barcode || t('products.notAvailable')}</p>
+                            <h3 className="text-sm font-medium text-slate-500">{t('products.tags')}</h3>
+                            <div className="mt-1">
+                              {viewingProduct.tags && viewingProduct.tags.length > 0 ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {viewingProduct.tags.map((tag, index) => (
+                                    <Badge 
+                                      key={index} 
+                                      variant="outline" 
+                                      className="text-xs bg-slate-50"
+                                    >
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p>{t('products.noTags')}</p>
+                              )}
+                            </div>
                           </div>
                           <div>
                             <h3 className="text-sm font-medium text-slate-500">{t('products.stockInformation')}</h3>
@@ -1192,18 +1208,7 @@ export default function Products() {
                           {viewingProduct.description || t('products.noDescription')}
                         </p>
                       </div>
-                      {viewingProduct.tags && viewingProduct.tags.length > 0 && (
-                        <div>
-                          <h3 className="text-sm font-medium text-slate-500">Tags</h3>
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {viewingProduct.tags.map((tag, index) => (
-                              <Badge key={index} variant="outline" className="bg-slate-100">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+
                     </CardContent>
                     <CardFooter className="flex justify-between border-t pt-5">
                       <Button 
