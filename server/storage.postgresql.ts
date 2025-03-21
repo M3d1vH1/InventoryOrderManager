@@ -17,7 +17,8 @@ import {
   companySettings, type CompanySettings, type InsertCompanySettings,
   notificationSettings, type NotificationSettings, type InsertNotificationSettings,
   rolePermissions, type RolePermission, type InsertRolePermission,
-  orderErrors, type OrderError, type InsertOrderError
+  orderErrors, type OrderError, type InsertOrderError,
+  inventoryChanges, type InventoryChange, type InsertInventoryChange
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { log } from './vite';
@@ -2094,6 +2095,80 @@ export class DatabaseStorage implements IStorage {
       }
     } catch (error) {
       console.error('Error initializing default role permissions:', error);
+    }
+  }
+
+  // Inventory Change Methods
+  async getInventoryChanges(productId?: number): Promise<InventoryChange[]> {
+    try {
+      let query = this.db
+        .select()
+        .from(inventoryChanges)
+        .orderBy(desc(inventoryChanges.timestamp));
+      
+      if (productId) {
+        query = query.where(eq(inventoryChanges.productId, productId));
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error("Error fetching inventory changes:", error);
+      return [];
+    }
+  }
+  
+  async getInventoryChange(id: number): Promise<InventoryChange | undefined> {
+    try {
+      const results = await this.db
+        .select()
+        .from(inventoryChanges)
+        .where(eq(inventoryChanges.id, id))
+        .limit(1);
+      
+      return results.length > 0 ? results[0] : undefined;
+    } catch (error) {
+      console.error("Error fetching inventory change:", error);
+      return undefined;
+    }
+  }
+  
+  async addInventoryChange(change: InsertInventoryChange): Promise<InventoryChange> {
+    try {
+      const [newChange] = await this.db
+        .insert(inventoryChanges)
+        .values(change)
+        .returning();
+      
+      return newChange;
+    } catch (error) {
+      console.error("Error adding inventory change:", error);
+      throw error;
+    }
+  }
+  
+  async getRecentInventoryChanges(limit: number): Promise<InventoryChange[]> {
+    try {
+      return await this.db
+        .select()
+        .from(inventoryChanges)
+        .orderBy(desc(inventoryChanges.timestamp))
+        .limit(limit);
+    } catch (error) {
+      console.error("Error fetching recent inventory changes:", error);
+      return [];
+    }
+  }
+  
+  async getInventoryChangesByType(changeType: string): Promise<InventoryChange[]> {
+    try {
+      return await this.db
+        .select()
+        .from(inventoryChanges)
+        .where(eq(inventoryChanges.changeType, changeType as any))
+        .orderBy(desc(inventoryChanges.timestamp));
+    } catch (error) {
+      console.error("Error fetching inventory changes by type:", error);
+      return [];
     }
   }
 }
