@@ -153,8 +153,12 @@ export default function Products() {
   // Mutations
   const createProductMutation = useMutation({
     mutationFn: async (values: ProductFormValues) => {
-      // Add default categoryId=1 for compatibility
-      const productData = { ...values, categoryId: 1 };
+      // Add default categoryId=1 for compatibility and ensure tags is always an array
+      const productData = { 
+        ...values, 
+        categoryId: 1,
+        tags: Array.isArray(values.tags) ? values.tags : []
+      };
       
       // If there's an image file, don't send it via JSON
       // The server expects multipart form data for file uploads
@@ -1144,7 +1148,7 @@ export default function Products() {
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
-                    ) : form.getValues('imagePath') ? (
+                    ) : form.getValues('imagePath') && !imageFile ? (
                       <div className="relative w-full h-full">
                         <img 
                           src={form.getValues('imagePath')} 
