@@ -278,7 +278,15 @@
     "lowStock": "Low stock",
     "outOfStock": "Out of stock",
     "filterByTags": "Filter by tags",
-    "allTags": "All tags"
+    "allTags": "All tags",
+    "filterByTag": "Filter by tag",
+    "productTags": "Product Tags",
+    "tagsDescription": "View and manage product categorization tags",
+    "aboutProductTags": "About Product Tags",
+    "tagsHelpText": "Tags help categorize products and make them easier to find. They are also used for filtering and organizing inventory reports.",
+    "noTagsAdded": "No tags have been added to this product.",
+    "addTags": "Add Tags",
+    "editTags": "Edit Tags"
   },
   "customers": {
     "title": "Customers",
