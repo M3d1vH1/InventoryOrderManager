@@ -37,7 +37,8 @@
     "save": "Save",
     "saving": "Saving...",
     "actions": "Actions",
-    "viewAll": "View All"
+    "viewAll": "View All",
+    "sortBy": "Sort by"
   },
   "categories": {
     "title": "Product Categories",
@@ -221,7 +222,8 @@
     "import": "Import",
     "productRestocked": "Product Restocked",
     "inventoryUpdated": "Product inventory has been updated.",
-    "failedToRestock": "Failed to restock product"
+    "failedToRestock": "Failed to restock product",
+    "criticalFirst": "Critical first"
   },
   "products": {
     "title": "Products",
