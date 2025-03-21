@@ -784,11 +784,21 @@ export default function Products() {
                           htmlFor="image-upload"
                           className="cursor-pointer bg-white border border-slate-200 rounded-md p-8 flex items-center justify-center flex-col"
                         >
-                          {imagePreview || (editingProduct && editingProduct.imagePath) ? (
+                          {imagePreview ? (
                             <img
-                              src={imagePreview || editingProduct?.imagePath}
+                              src={imagePreview}
                               alt="Preview"
                               className="max-h-32 object-contain mb-2"
+                            />
+                          ) : (editingProduct && editingProduct.imagePath) ? (
+                            <img
+                              src={editingProduct.imagePath.startsWith('http') ? editingProduct.imagePath : `/${editingProduct.imagePath.replace(/^\/+/, '')}`}
+                              alt={editingProduct.name}
+                              className="max-h-32 object-contain mb-2"
+                              onError={(e) => {
+                                console.error("Error loading image:", e);
+                                (e.target as HTMLImageElement).src = 'https://placehold.co/200x200?text=No+Image';
+                              }}
                             />
                           ) : (
                             <Box className="h-12 w-12 text-slate-300 mb-2" />
