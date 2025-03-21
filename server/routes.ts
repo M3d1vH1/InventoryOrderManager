@@ -117,6 +117,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Handle tags[] array format - our new implementation sends individual tags this way
+      if (req.body['tags[]'] && (!reqBody.tags || reqBody.tags.length === 0)) {
+        console.log('Found tags[] format in create product:', req.body['tags[]']);
+        // If it's a single value, convert to array
+        if (!Array.isArray(req.body['tags[]'])) {
+          reqBody.tags = [req.body['tags[]']];
+        } else {
+          reqBody.tags = req.body['tags[]'];
+        }
+      }
+      
+      // Use tagsJson as a fallback if available
+      if (req.body.tagsJson && (!reqBody.tags || reqBody.tags.length === 0)) {
+        try {
+          reqBody.tags = JSON.parse(req.body.tagsJson);
+          console.log('Using tagsJson fallback in create product:', reqBody.tags);
+        } catch (e) {
+          console.error('Error parsing tagsJson:', e);
+        }
+      }
+      
       console.log('Creating product with data:', JSON.stringify(reqBody));
       
       // Parse and validate product data with default categoryId
@@ -183,6 +204,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Ensure tags is always an array
         if (!Array.isArray(updateData.tags)) {
           updateData.tags = [];
+        }
+      }
+      
+      // Handle tags[] array format - our new implementation sends individual tags this way
+      if (req.body['tags[]'] && !updateData.tags?.length) {
+        console.log('Found tags[] format:', req.body['tags[]']);
+        // If it's a single value, convert to array
+        if (!Array.isArray(req.body['tags[]'])) {
+          updateData.tags = [req.body['tags[]']];
+        } else {
+          updateData.tags = req.body['tags[]'];
+        }
+      }
+      
+      // Use tagsJson as a fallback if available
+      if (req.body.tagsJson && (!updateData.tags || updateData.tags.length === 0)) {
+        try {
+          updateData.tags = JSON.parse(req.body.tagsJson);
+          console.log('Using tagsJson fallback:', updateData.tags);
+        } catch (e) {
+          console.error('Error parsing tagsJson:', e);
         }
       }
       
