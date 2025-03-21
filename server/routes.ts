@@ -1879,6 +1879,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.put('/api/notification-settings', isAuthenticated, hasRole(['admin']), updateNotificationSettings);
   
+  // Role permissions management routes
+  app.get('/api/role-permissions', isAuthenticated, hasRole(['admin']), async (req, res) => {
+    try {
+      const allPermissions = await storage.getAllRolePermissions();
+      res.json(allPermissions);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.get('/api/role-permissions/:role', isAuthenticated, hasRole(['admin']), async (req, res) => {
+    try {
+      const role = req.params.role;
+      const rolePermissions = await storage.getRolePermissions(role);
+      res.json(rolePermissions);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.post('/api/role-permissions', isAuthenticated, hasRole(['admin']), async (req, res) => {
+    try {
+      const { role, permission, enabled } = req.body;
+      
+      if (!role || !permission || enabled === undefined) {
+        return res.status(400).json({ message: "Role, permission, and enabled status are required" });
+      }
+      
+      const result = await storage.updateRolePermission(role, permission, enabled);
+      
+      if (result) {
+        res.json(result);
+      } else {
+        res.status(400).json({ message: "Failed to update permission" });
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Route to check a specific permission for the current user
+  app.get('/api/check-permission/:permission', isAuthenticated, async (req, res) => {
+    try {
+      const permission = req.params.permission;
+      const userRole = (req.user as any)?.role || '';
+      
+      if (!userRole) {
+        return res.status(403).json({ hasPermission: false });
+      }
+      
+      const hasPermission = await storage.checkPermission(userRole, permission);
+      res.json({ hasPermission });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
   // Email notification endpoint for shipped orders
   app.post('/api/orders/:id/send-email', isAuthenticated, async (req, res) => {
     try {
