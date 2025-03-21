@@ -222,8 +222,22 @@ const Products = () => {
         description: "The product has been created successfully.",
       });
       setIsDialogOpen(false);
-      setImageFile(null); // Clear the file state
-      setImagePreview(null); // Clear the preview
+      // Clear the file state and preview only after successful creation
+      setImageFile(null);
+      setImagePreview(null);
+      // Clear form only after successful save
+      form.reset({
+        name: "",
+        sku: "",
+        barcode: "",
+        description: "",
+        minStockLevel: 10,
+        currentStock: 0,
+        location: "",
+        unitsPerBox: 0,
+        imagePath: "",
+        tags: []
+      });
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
     },
     onError: (error) => {
@@ -279,9 +293,10 @@ const Products = () => {
         description: "The product has been updated successfully.",
       });
       setIsDialogOpen(false);
+      // Only reset these values after a successful update
       setEditingProduct(null);
-      setImageFile(null); // Clear the file state
-      setImagePreview(null); // Clear the preview
+      setImageFile(null);
+      setImagePreview(null);
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
     },
     onError: (error) => {
@@ -640,8 +655,12 @@ const Products = () => {
       <Dialog 
         open={isDialogOpen} 
         onOpenChange={(open) => {
+          // Only update dialog state, don't reset form values
           setIsDialogOpen(open);
-          if (!open) {
+          
+          // Only clear image preview and file if dialog is closed without saving
+          // and it's a new product (not editing an existing one)
+          if (!open && !editingProduct) {
             setImageFile(null);
             setImagePreview(null);
           }

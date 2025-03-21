@@ -816,7 +816,19 @@ export default function Products() {
       </div>
 
       {/* Product Form Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog 
+        open={isDialogOpen} 
+        onOpenChange={(open) => {
+          // Only update dialog state, don't reset form values
+          setIsDialogOpen(open);
+          
+          // Only clear image preview and file if dialog is closed without saving
+          // and it's a new product (not editing an existing one)
+          if (!open && !editingProduct) {
+            setImageFile(null);
+            setImagePreview(null);
+          }
+        }}>
         <DialogContent className="sm:max-w-[720px] p-0 overflow-hidden">
           <div className="flex h-full">
             <div className="w-1/3 bg-slate-50 p-6 border-r border-slate-200">
