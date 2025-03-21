@@ -115,6 +115,7 @@ const Products = () => {
 
   // State to track file uploads
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     setCurrentPage("Products");
@@ -706,8 +707,74 @@ const Products = () => {
                               accept="image/*"
                               onChange={(e) => {
                                 if (e.target.files && e.target.files[0]) {
-                                  setImageFile(e.target.files[0]);
-                                  field.onChange(e.target.files[0]?.name || "");
+                                  const file = e.target.files[0];
+                                  
+                                  // Check file size (max 2MB)
+                                  const maxSizeInBytes = 2 * 1024 * 1024; // 2MB
+                                  if (file.size > maxSizeInBytes) {
+                                    toast({
+                                      title: "Image too large",
+                                      description: "Maximum file size is 2MB",
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
+                                  
+                                  // Check file dimensions by loading it into an Image object
+                                  const img = new Image();
+                                  const objectUrl = URL.createObjectURL(file);
+                                  
+                                  img.onload = () => {
+                                    // Release object URL after dimensions are checked
+                                    URL.revokeObjectURL(objectUrl);
+                                    
+                                    // Check dimensions
+                                    const minWidth = 200;
+                                    const minHeight = 200;
+                                    const maxWidth = 1200;
+                                    const maxHeight = 1200;
+                                    
+                                    if (img.width < minWidth || img.height < minHeight) {
+                                      toast({
+                                        title: "Image too small",
+                                        description: `Image must be at least ${minWidth}x${minHeight} pixels`,
+                                        variant: "destructive",
+                                      });
+                                      return;
+                                    }
+                                    
+                                    if (img.width > maxWidth || img.height > maxHeight) {
+                                      toast({
+                                        title: "Image too large",
+                                        description: `Image must be no larger than ${maxWidth}x${maxHeight} pixels`,
+                                        variant: "destructive",
+                                      });
+                                      return;
+                                    }
+                                    
+                                    // If all checks pass, set the image file and create preview
+                                    setImageFile(file);
+                                    
+                                    // Create a preview
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => {
+                                      setImagePreview(reader.result as string);
+                                    };
+                                    reader.readAsDataURL(file);
+                                    
+                                    field.onChange(file.name || "");
+                                  };
+                                  
+                                  img.onerror = () => {
+                                    URL.revokeObjectURL(objectUrl);
+                                    toast({
+                                      title: "Invalid image",
+                                      description: "The selected file could not be loaded as an image",
+                                      variant: "destructive",
+                                    });
+                                  };
+                                  
+                                  img.src = objectUrl;
                                 }
                               }}
                               className="hidden"
