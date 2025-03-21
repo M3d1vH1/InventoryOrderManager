@@ -394,6 +394,10 @@ export default function Products() {
 
   // Image change handler
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Clear the input file first to prevent duplicate images
+    setImagePreview(null);
+    setImageFile(null);
+    
     const file = e.target.files?.[0];
     if (file) {
       // Check file size (max 2MB)
@@ -409,7 +413,7 @@ export default function Products() {
 
       try {
         // Skip dimension check, it was causing errors in some environments
-        // Instead, just create a preview and set the file directly
+        // Set the file
         setImageFile(file);
         
         // Create preview

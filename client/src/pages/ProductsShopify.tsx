@@ -756,6 +756,10 @@ const Products = () => {
                                     return;
                                   }
                                   
+                                  // Clear the input file first to prevent duplicate images
+                                  setImagePreview(null);
+                                  setImageFile(null);
+                                  
                                   // Skip dimension checking as it's causing errors in some environments
                                   try {
                                     // Simply set the image file and create preview
@@ -765,6 +769,7 @@ const Products = () => {
                                     const reader = new FileReader();
                                     reader.onloadend = () => {
                                       setImagePreview(reader.result as string);
+                                      // Make sure to set the field value to the filename string
                                       field.onChange(file.name || "");
                                     };
                                     reader.onerror = () => {
@@ -773,6 +778,9 @@ const Products = () => {
                                         description: "The selected file could not be loaded as an image",
                                         variant: "destructive",
                                       });
+                                      setImageFile(null);
+                                      setImagePreview(null);
+                                      field.onChange("");
                                     };
                                     reader.readAsDataURL(file);
                                   } catch (error) {
@@ -782,6 +790,9 @@ const Products = () => {
                                       description: "The selected file could not be processed",
                                       variant: "destructive",
                                     });
+                                    setImageFile(null);
+                                    setImagePreview(null);
+                                    field.onChange("");
                                   }
                                 }
                               }}
