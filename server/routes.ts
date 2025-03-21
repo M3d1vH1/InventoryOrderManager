@@ -78,6 +78,7 @@ function ensurePublicAccess(sourcePath: string, publicPath: string): void {
 ensurePublicAccess(PRODUCTS_UPLOAD_PATH, 'uploads/products');
 import { getSlowMovingProducts, updateProductStock } from "./api/inventory";
 import { sendOrderShippedEmail } from "./services/emailService";
+import { migrateImages } from "./api/migrateImages";
 
 // Define WebSocket server and connected clients
 let wss: WebSocketServer;
