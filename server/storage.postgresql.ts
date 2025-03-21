@@ -277,12 +277,24 @@ export class DatabaseStorage implements IStorage {
   
   async updateProduct(id: number, productUpdate: Partial<InsertProduct>): Promise<Product | undefined> {
     try {
+      // Check if this is a stock update - if currentStock is being changed
+      const stockBeingUpdated = productUpdate.currentStock !== undefined;
+      
+      // If stock is being updated, also update the lastStockUpdate timestamp
+      let updateData = { ...productUpdate };
+      
+      if (stockBeingUpdated) {
+        console.log(`Updating stock level for product ${id} to ${productUpdate.currentStock}, updating lastStockUpdate timestamp`);
+        updateData.lastStockUpdate = new Date();
+      }
+      
       // Regular update without special handling for category
       const [updatedProduct] = await this.db
         .update(products)
-        .set(productUpdate)
+        .set(updateData)
         .where(eq(products.id, id))
         .returning();
+      
       return updatedProduct;
     } catch (error) {
       console.error('Error updating product:', error);

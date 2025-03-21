@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, json, primaryKey } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -100,7 +101,7 @@ export const products = pgTable("products", {
   unitsPerBox: integer("units_per_box"),
   imagePath: text("image_path"),
   tags: text("tags").array(),
-  lastStockUpdate: timestamp("last_stock_update"),
+  lastStockUpdate: timestamp("last_stock_update").default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const insertProductSchema = createInsertSchema(products)

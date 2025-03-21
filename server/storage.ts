@@ -487,6 +487,19 @@ export class MemStorage implements IStorage {
       .filter(product => product.currentStock <= product.minStockLevel);
   }
   
+  async getSlowMovingProducts(dayThreshold: number = 60): Promise<Product[]> {
+    // Calculate the date threshold
+    const thresholdDate = new Date();
+    thresholdDate.setDate(thresholdDate.getDate() - dayThreshold);
+    
+    return Array.from(this.products.values())
+      .filter(product => {
+        // Products without lastStockUpdate or with lastStockUpdate older than the threshold
+        return !product.lastStockUpdate || 
+               (product.lastStockUpdate && product.lastStockUpdate < thresholdDate);
+      });
+  }
+  
   async searchProducts(query: string, category?: string, stockStatus?: string, tag?: string): Promise<Product[]> {
     let filteredProducts = Array.from(this.products.values());
     

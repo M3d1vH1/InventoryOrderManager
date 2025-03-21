@@ -18,7 +18,8 @@
     "settings": "Settings",
     "orderPicking": "Order Picking",
     "expandSidebar": "Expand sidebar",
-    "collapseSidebar": "Collapse sidebar"
+    "collapseSidebar": "Collapse sidebar",
+    "days": "days"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -214,6 +215,13 @@
     "alerts": "Inventory Alerts",
     "viewAllLowStockItems": "View All Low Stock Items",
     "noLowStockItems": "No low stock items. All inventory levels are healthy.",
+    "slowMovingItems": "Slow Moving Products",
+    "noSlowMovingItems": "No slow moving items found.",
+    "notMovedInDays": "Not moved in days",
+    "lastUpdate": "Last Update",
+    "unknown": "Unknown",
+    "stockLevel": "Stock Level",
+    "export": "Export",
     "stock": "Stock",
     "min": "Min",
     "restock": "Restock",
