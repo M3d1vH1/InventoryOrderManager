@@ -1368,6 +1368,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Inventory management routes
+  app.get('/api/inventory/slow-moving', isAuthenticated, async (req, res) => {
+    await getSlowMovingProducts(req, res);
+  });
+  
+  app.post('/api/inventory/update-stock', isAuthenticated, async (req, res) => {
+    await updateProductStock(req, res);
+  });
+  
   // Endpoint handled below
   
   // Advanced Analytics Routes

@@ -30,7 +30,9 @@
       "lowStock": "Low Stock Items"
     },
     "recentOrders": "Recent Orders",
-    "lowStockItems": "Low Stock Items"
+    "lowStockItems": "Low Stock Items",
+    "slowMovingInventory": "Slow Moving Inventory",
+    "selectDays": "Select Days Threshold"
   },
   "common": {
     "loading": "Loading...",
@@ -39,7 +41,14 @@
     "saving": "Saving...",
     "actions": "Actions",
     "viewAll": "View All",
-    "sortBy": "Sort by"
+    "sortBy": "Sort by",
+    "search": "Search",
+    "export": "Export",
+    "open": "Open",
+    "days": "days",
+    "never": "Never",
+    "noData": "No data available",
+    "error": "Error"
   },
   "categories": {
     "title": "Product Categories",
@@ -296,7 +305,12 @@
     "tagsHelpText": "Tags help categorize products and make them easier to find. They are also used for filtering and organizing inventory reports.",
     "noTagsAdded": "No tags have been added to this product.",
     "addTags": "Add Tags",
-    "editTags": "Edit Tags"
+    "editTags": "Edit Tags",
+    "name": "Product Name",
+    "view": "View Product",
+    "update": "Update Product",
+    "daysWithoutMovement": "Days Without Movement",
+    "lastUpdated": "Last Stock Update"
   },
   "customers": {
     "title": "Customers",

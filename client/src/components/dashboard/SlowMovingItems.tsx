@@ -1,208 +1,273 @@
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { exportData } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
-import { CalendarIcon, ArrowUpDown, Download } from "lucide-react";
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import { apiRequest } from '@/lib/queryClient';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { MoreHorizontal, SortAsc, SortDesc, Download } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { exportData } from '@/lib/utils';
 
-// For managing the sorting state
-type SortDirection = "asc" | "desc";
-type SortColumn = "name" | "days" | "stock";
-
-interface SortState {
-  column: SortColumn;
-  direction: SortDirection;
-}
-
-// Types for SlowMovingProduct from API response
 interface SlowMovingProduct {
   id: number;
   name: string;
   sku: string;
-  category?: string;
+  category: string;
   currentStock: number;
   lastStockUpdate: string | null;
   daysWithoutMovement: number;
 }
 
-const SlowMovingItems = () => {
-  const { t, i18n } = useTranslation();
-  const isMobile = useIsMobile();
-  const [sortState, setSortState] = useState<SortState>({
-    column: "days",
-    direction: "desc"
-  });
+export default function SlowMovingItems() {
+  const { t } = useTranslation();
+  const [daysThreshold, setDaysThreshold] = useState<number>(60);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortField, setSortField] = useState<keyof SlowMovingProduct>('daysWithoutMovement');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
+  // Fetch slow-moving products
   const { data, isLoading, error } = useQuery({
-    queryKey: ["/api/inventory/slow-moving"],
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    queryKey: ['/api/inventory/slow-moving', daysThreshold],
+    queryFn: async () => {
+      return apiRequest(`/api/inventory/slow-moving?days=${daysThreshold}`);
+    },
   });
 
-  const handleSort = (column: SortColumn) => {
-    setSortState((prev) => ({
-      column,
-      direction: prev.column === column && prev.direction === "asc" ? "desc" : "asc",
+  const products = data?.products || [];
+
+  // Filter products based on search term
+  const filteredProducts = products.filter((product: SlowMovingProduct) => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      product.name.toLowerCase().includes(searchLower) ||
+      product.sku.toLowerCase().includes(searchLower) ||
+      product.category.toLowerCase().includes(searchLower)
+    );
+  });
+
+  // Sort products
+  const sortedProducts = [...filteredProducts].sort((a: SlowMovingProduct, b: SlowMovingProduct) => {
+    // Handle special case for daysWithoutMovement
+    if (sortField === 'daysWithoutMovement') {
+      return sortDirection === 'asc'
+        ? a.daysWithoutMovement - b.daysWithoutMovement
+        : b.daysWithoutMovement - a.daysWithoutMovement;
+    }
+
+    // Handle standard string fields
+    if (typeof a[sortField] === 'string' && typeof b[sortField] === 'string') {
+      const valA = a[sortField] as string;
+      const valB = b[sortField] as string;
+      return sortDirection === 'asc'
+        ? valA.localeCompare(valB)
+        : valB.localeCompare(valA);
+    }
+
+    // Handle numeric fields
+    if (typeof a[sortField] === 'number' && typeof b[sortField] === 'number') {
+      const valA = a[sortField] as number;
+      const valB = b[sortField] as number;
+      return sortDirection === 'asc'
+        ? valA - valB
+        : valB - valA;
+    }
+
+    return 0;
+  });
+
+  // Handler for toggling sort direction or changing sort field
+  const handleSort = (field: keyof SlowMovingProduct) => {
+    if (field === sortField) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc'); // Default to descending when changing fields
+    }
+  };
+
+  // Export data function
+  const handleExport = (format: 'csv' | 'excel' | 'pdf') => {
+    const exportData = sortedProducts.map((product: SlowMovingProduct) => ({
+      [t('product.name')]: product.name,
+      [t('product.sku')]: product.sku,
+      [t('product.category')]: product.category,
+      [t('product.currentStock')]: product.currentStock,
+      [t('product.daysWithoutMovement')]: product.daysWithoutMovement,
+      [t('product.lastUpdated')]: product.lastStockUpdate ? new Date(product.lastStockUpdate).toLocaleDateString() : t('common.never'),
     }));
+
+    exportData(exportData, format, t('dashboard.slowMovingInventory'));
   };
 
-  const sortedData = () => {
-    if (!data?.products) return [];
-    
-    return [...data.products].sort((a: SlowMovingProduct, b: SlowMovingProduct) => {
-      const { column, direction } = sortState;
-      const factor = direction === "asc" ? 1 : -1;
-      
-      if (column === "name") {
-        return a.name.localeCompare(b.name) * factor;
-      } else if (column === "days") {
-        return (a.daysWithoutMovement - b.daysWithoutMovement) * factor;
-      } else if (column === "stock") {
-        return (a.currentStock - b.currentStock) * factor;
-      }
-      return 0;
-    });
+  // Render badge for products based on days without movement
+  const renderAgeBadge = (days: number) => {
+    if (days > 120) {
+      return <Badge variant="destructive">{days} {t('common.days')}</Badge>;
+    } else if (days > 90) {
+      return <Badge variant="warning">{days} {t('common.days')}</Badge>;
+    } else {
+      return <Badge variant="outline">{days} {t('common.days')}</Badge>;
+    }
   };
 
-  // Format the date or return 'Unknown'
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return t("inventory.unknown");
-    return format(new Date(dateString), "dd MMM yyyy");
-  };
-
-  // Handle exporting the data
-  const handleExport = (format: string) => {
-    if (!data?.products || data.products.length === 0) return;
-    
-    const exportProducts = data.products.map((product: SlowMovingProduct) => ({
-      [t("products.productName")]: product.name,
-      [t("products.sku")]: product.sku,
-      [t("products.category")]: product.category || "",
-      [t("inventory.stockLevel")]: product.currentStock,
-      [t("inventory.notMovedInDays")]: product.daysWithoutMovement,
-      [t("inventory.lastUpdate")]: formatDate(product.lastStockUpdate)
-    }));
-    
-    exportData(exportProducts, format, t("inventory.slowMovingItems"));
-  };
+  if (error) return <div className="text-red-500">{t('common.error')}: {String(error)}</div>;
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <div>
-          <CardTitle>{t("inventory.slowMovingItems")}</CardTitle>
-          <CardDescription>
-            {t("inventory.slowMovingItems")}
-          </CardDescription>
-        </div>
-        <div className="flex space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => handleExport("csv")}
-            disabled={isLoading || !data?.products || data.products.length === 0}
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h3 className="text-lg font-semibold">{t('dashboard.slowMovingInventory')}</h3>
+        
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Select
+            value={daysThreshold.toString()}
+            onValueChange={(value) => setDaysThreshold(parseInt(value))}
           >
-            <Download className="mr-2 h-4 w-4" />
-            {t("inventory.export")}
-          </Button>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder={t('dashboard.selectDays')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="30">30 {t('common.days')}</SelectItem>
+              <SelectItem value="60">60 {t('common.days')}</SelectItem>
+              <SelectItem value="90">90 {t('common.days')}</SelectItem>
+              <SelectItem value="120">120 {t('common.days')}</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Input
+            placeholder={t('common.search')}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full sm:w-auto"
+          />
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Download className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>{t('common.export')}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleExport('csv')}>CSV</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('excel')}>Excel</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('pdf')}>PDF</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="space-y-2">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-        ) : error ? (
-          <div className="text-center py-4 text-red-500">
-            {t("app.error")}
-          </div>
-        ) : data?.products && data.products.length > 0 ? (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead 
-                    className="cursor-pointer"
-                    onClick={() => handleSort("name")}
-                  >
-                    <div className="flex items-center">
-                      {t("products.productName")}
-                      <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </div>
-                  </TableHead>
-                  <TableHead>
-                    {t("products.sku")}
-                  </TableHead>
-                  <TableHead 
-                    className="cursor-pointer text-right"
-                    onClick={() => handleSort("days")}
-                  >
-                    <div className="flex items-center justify-end">
-                      {t("inventory.notMovedInDays")}
-                      <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </div>
-                  </TableHead>
-                  {!isMobile && (
-                    <TableHead>
-                      <div className="flex items-center">
-                        {t("inventory.lastUpdate")}
-                      </div>
-                    </TableHead>
-                  )}
-                  <TableHead 
-                    className="cursor-pointer text-right"
-                    onClick={() => handleSort("stock")}
-                  >
-                    <div className="flex items-center justify-end">
-                      {t("inventory.stock")}
-                      <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </div>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedData().map((product: SlowMovingProduct) => (
-                  <TableRow key={product.id}>
-                    <TableCell className="font-medium">
-                      {product.name}
-                    </TableCell>
-                    <TableCell>{product.sku}</TableCell>
-                    <TableCell className="text-right">
-                      <Badge variant={product.daysWithoutMovement > 90 ? "destructive" : "secondary"}>
-                        {product.daysWithoutMovement} {t("app.days")}
-                      </Badge>
-                    </TableCell>
-                    {!isMobile && (
-                      <TableCell>
-                        <div className="flex items-center">
-                          <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                          {formatDate(product.lastStockUpdate)}
-                        </div>
-                      </TableCell>
-                    )}
-                    <TableCell className="text-right">
-                      {product.currentStock}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            {t("inventory.noSlowMovingItems")}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
+      </div>
 
-export default SlowMovingItems;
+      {isLoading ? (
+        <div className="text-center py-4">{t('common.loading')}...</div>
+      ) : sortedProducts.length === 0 ? (
+        <div className="text-center py-4">{t('common.noData')}</div>
+      ) : (
+        <div className="border rounded-md">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort('name')}
+                >
+                  {t('product.name')} 
+                  {sortField === 'name' && (
+                    sortDirection === 'asc' ? <SortAsc className="inline ml-1 h-4 w-4" /> : <SortDesc className="inline ml-1 h-4 w-4" />
+                  )}
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort('sku')}
+                >
+                  {t('product.sku')}
+                  {sortField === 'sku' && (
+                    sortDirection === 'asc' ? <SortAsc className="inline ml-1 h-4 w-4" /> : <SortDesc className="inline ml-1 h-4 w-4" />
+                  )}
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort('category')}
+                >
+                  {t('product.category')}
+                  {sortField === 'category' && (
+                    sortDirection === 'asc' ? <SortAsc className="inline ml-1 h-4 w-4" /> : <SortDesc className="inline ml-1 h-4 w-4" />
+                  )}
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer text-right"
+                  onClick={() => handleSort('currentStock')}
+                >
+                  {t('product.currentStock')}
+                  {sortField === 'currentStock' && (
+                    sortDirection === 'asc' ? <SortAsc className="inline ml-1 h-4 w-4" /> : <SortDesc className="inline ml-1 h-4 w-4" />
+                  )}
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer text-right"
+                  onClick={() => handleSort('daysWithoutMovement')}
+                >
+                  {t('product.daysWithoutMovement')}
+                  {sortField === 'daysWithoutMovement' && (
+                    sortDirection === 'asc' ? <SortAsc className="inline ml-1 h-4 w-4" /> : <SortDesc className="inline ml-1 h-4 w-4" />
+                  )}
+                </TableHead>
+                <TableHead className="text-right">{t('common.actions')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedProducts.map((product: SlowMovingProduct) => (
+                <TableRow key={product.id}>
+                  <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell>{product.sku}</TableCell>
+                  <TableCell>{product.category}</TableCell>
+                  <TableCell className="text-right">{product.currentStock}</TableCell>
+                  <TableCell className="text-right">
+                    {renderAgeBadge(product.daysWithoutMovement)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">{t('common.open')}</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>
+                          {t('product.view')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          {t('product.update')}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
+  );
+}
