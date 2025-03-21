@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Οδηγός Καταχώρησης Παραγγελιών - Σύστημα Διαχείρισης Αποθήκης</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2, h3 {
+            color: #2563eb;
+            margin-top: 30px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 24pt;
+            margin-bottom: 40px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        h2 {
+            font-size: 18pt;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 8px;
+        }
+        h3 {
+            font-size: 14pt;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header img {
+            max-width: 150px;
+            margin-bottom: 20px;
+        }
+        .note {
+            background-color: #f8fafc;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .warning {
+            background-color: #fff7ed;
+            border-left: 4px solid #f97316;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .step {
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+        }
+        .step-number {
+            display: inline-block;
+            background-color: #2563eb;
+            color: white;
+            width: 30px;
+            height: 30px;
+            text-align: center;
+            line-height: 30px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .step-title {
+            font-weight: bold;
+            font-size: 16pt;
+            display: inline-block;
+        }
+        .step-content {
+            margin-left: 40px;
+            margin-top: 10px;
+        }
+        img {
+            max-width: 100%;
+            border: 1px solid #e5e7eb;
+            border-radius: 5px;
+            margin: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #e5e7eb;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f1f5f9;
+        }
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 10pt;
+            color: #64748b;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 20px;
+            page-break-inside: avoid;
+        }
+        @media print {
+            body {
+                font-size: 12pt;
+            }
+            h1 {
+                font-size: 22pt;
+            }
+            h2 {
+                font-size: 16pt;
+            }
+            h3 {
+                font-size: 14pt;
+            }
+            .no-print {
+                display: none;
+            }
+            @page {
+                size: A4;
+                margin: 2cm;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Οδηγός Καταχώρησης Παραγγελιών</h1>
+        <h3>Σύστημα Διαχείρισης Αποθήκης</h3>
+    </div>
+
+    <div class="no-print">
+        <p style="text-align: center; padding: 10px; background-color: #f0f9ff; border: 1px solid #bae6fd; border-radius: 5px;">
+            Μπορείτε να εκτυπώσετε αυτό το έγγραφο επιλέγοντας "Εκτύπωση" από το πρόγραμμα περιήγησής σας ή αποθηκεύοντάς το ως PDF.
+        </p>
+    </div>
+
+    <h2>Περιεχόμενα</h2>
+    <ol>
+        <li><a href="#introduction">Εισαγωγή</a></li>
+        <li><a href="#login">Σύνδεση στο Σύστημα</a></li>
+        <li><a href="#new-order">Δημιουργία Νέας Παραγγελίας</a></li>
+        <li><a href="#customer-info">Καταχώρηση Πληροφοριών Πελάτη</a></li>
+        <li><a href="#products">Προσθήκη Προϊόντων</a></li>
+        <li><a href="#order-review">Επισκόπηση Παραγγελίας</a></li>
+        <li><a href="#order-submit">Υποβολή Παραγγελίας</a></li>
+        <li><a href="#order-tracking">Παρακολούθηση Παραγγελιών</a></li>
+        <li><a href="#edit-order">Επεξεργασία Υφιστάμενης Παραγγελίας</a></li>
+        <li><a href="#order-status">Αλλαγή Κατάστασης Παραγγελίας</a></li>
+        <li><a href="#tips">Συμβουλές και Βέλτιστες Πρακτικές</a></li>
+    </ol>
+
+    <h2 id="introduction">1. Εισαγωγή</h2>
+    <p>
+        Το Σύστημα Διαχείρισης Αποθήκης σας επιτρέπει να καταχωρείτε, να διαχειρίζεστε και να παρακολουθείτε παραγγελίες πελατών με εύκολο και αποτελεσματικό τρόπο. 
+        Ο παρών οδηγός περιγράφει αναλυτικά τη διαδικασία καταχώρησης νέων παραγγελιών και τη διαχείρισή τους μέσω του συστήματος.
+    </p>
+
+    <div class="note">
+        <strong>Σημείωση:</strong> Η καταχώρηση παραγγελιών απαιτεί δικαιώματα χρήστη "Front Office" ή "Admin".
+    </div>
+
+    <h2 id="login">2. Σύνδεση στο Σύστημα</h2>
+    
+    <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-title">Άνοιγμα της εφαρμογής</div>
+        <div class="step-content">
+            <p>Ανοίξτε το πρόγραμμα περιήγησής σας (Chrome, Firefox, Edge, Safari) και πληκτρολογήστε τη διεύθυνση του συστήματος.</p>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-title">Καταχώρηση στοιχείων σύνδεσης</div>
+        <div class="step-content">
+            <p>Στη φόρμα σύνδεσης, εισάγετε το όνομα χρήστη (username) και τον κωδικό πρόσβασης (password) που σας έχουν δοθεί.</p>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-title">Επιλογή γλώσσας</div>
+        <div class="step-content">
+            <p>Από το μενού γλωσσών στην επάνω δεξιά γωνία, επιλέξτε "Ελληνικά" εάν δεν είναι ήδη επιλεγμένη.</p>
+        </div>
+    </div>
+
+    <h2 id="new-order">3. Δημιουργία Νέας Παραγγελίας</h2>
+    
+    <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-title">Πρόσβαση στη φόρμα παραγγελίας</div>
+        <div class="step-content">
+            <p>Μπορείτε να δημιουργήσετε μια νέα παραγγελία με έναν από τους παρακάτω τρόπους:</p>
+            <ul>
+                <li>Κάντε κλικ στο πράσινο κουμπί <strong>+ Νέα Παραγγελία</strong> στην επάνω δεξιά γωνία της οθόνης</li>
+                <li>Πηγαίνετε στην καρτέλα <strong>Παραγγελίες</strong> και κάντε κλικ στο κουμπί <strong>+ Νέα Παραγγελία</strong></li>
+            </ul>
+        </div>
+    </div>
+
+    <h2 id="customer-info">4. Καταχώρηση Πληροφοριών Πελάτη</h2>
+    
+    <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-title">Επιλογή υφιστάμενου πελάτη</div>
+        <div class="step-content">
+            <p>Χρησιμοποιήστε το πεδίο αναζήτησης για να βρείτε τον πελάτη. Μπορείτε να αναζητήσετε με βάση το όνομα, τον ΑΦΜ ή την επωνυμία της εταιρείας.</p>
+            <p>Καθώς πληκτρολογείτε, θα εμφανίζονται προτάσεις με τους πελάτες που ταιριάζουν με την αναζήτησή σας.</p>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-title">Δημιουργία νέου πελάτη</div>
+        <div class="step-content">
+            <p>Εάν ο πελάτης δεν υπάρχει στο σύστημα, μπορείτε να δημιουργήσετε νέο πελάτη κάνοντας κλικ στο σύνδεσμο <strong>+ Δημιουργία νέου πελάτη</strong> κάτω από το πεδίο αναζήτησης.</p>
+            <p>Συμπληρώστε τα απαραίτητα στοιχεία του πελάτη:</p>
+            <ul>
+                <li><strong>Επωνυμία:</strong> Το πλήρες όνομα του πελάτη ή της επιχείρησης</li>
+                <li><strong>ΑΦΜ:</strong> Ο Αριθμός Φορολογικού Μητρώου του πελάτη</li>
+                <li><strong>Διεύθυνση:</strong> Η πλήρης διεύθυνση αποστολής</li>
+                <li><strong>Πόλη:</strong> Η πόλη του πελάτη</li>
+                <li><strong>Ταχυδρομικός Κώδικας:</strong> Ο ταχυδρομικός κώδικας του πελάτη</li>
+                <li><strong>Χώρα:</strong> Η χώρα του πελάτη</li>
+                <li><strong>Email:</strong> Η διεύθυνση email επικοινωνίας</li>
+                <li><strong>Τηλέφωνο:</strong> Αριθμός τηλεφώνου επικοινωνίας</li>
+                <li><strong>Υπεύθυνος Επικοινωνίας:</strong> Το όνομα του ατόμου επικοινωνίας</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-title">Προσθήκη στοιχείων παραγγελίας</div>
+        <div class="step-content">
+            <p>Συμπληρώστε τα βασικά στοιχεία της παραγγελίας:</p>
+            <ul>
+                <li><strong>Ημερομηνία Παραγγελίας:</strong> Η ημερομηνία που έγινε η παραγγελία</li>
+                <li><strong>Προτιμώμενη Εταιρεία Αποστολής:</strong> Επιλέξτε από τη λίστα την εταιρεία αποστολής που προτιμά ο πελάτης</li>
+                <li><strong>Σημειώσεις:</strong> Προσθέστε τυχόν σημειώσεις ή ειδικές οδηγίες για την παραγγελία</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="warning">
+        <strong>Προσοχή:</strong> Αν ο πελάτης έχει εκκρεμείς μη αποσταλμένες παραγγελίες, θα εμφανιστεί σχετική προειδοποίηση. Συνιστάται να ενημερώσετε τον πελάτη για τις εκκρεμότητες.
+    </div>
+
+    <h2 id="products">5. Προσθήκη Προϊόντων</h2>
+    
+    <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-title">Αναζήτηση προϊόντων</div>
+        <div class="step-content">
+            <p>Χρησιμοποιήστε το πεδίο αναζήτησης προϊόντων για να βρείτε τα προϊόντα που θέλετε να προσθέσετε στην παραγγελία.</p>
+            <p>Μπορείτε να αναζητήσετε με βάση:</p>
+            <ul>
+                <li>Όνομα προϊόντος</li>
+                <li>Κωδικό προϊόντος (SKU)</li>
+                <li>Barcode (αν είναι διαθέσιμο)</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-title">Προσθήκη προϊόντων στην παραγγελία</div>
+        <div class="step-content">
+            <p>Για κάθε προϊόν που θέλετε να προσθέσετε:</p>
+            <ol>
+                <li>Επιλέξτε το προϊόν από τα αποτελέσματα αναζήτησης</li>
+                <li>Ορίστε την ποσότητα που επιθυμείτε</li>
+                <li>Κάντε κλικ στο κουμπί <strong>Προσθήκη</strong></li>
+            </ol>
+            <p>Το προϊόν θα προστεθεί στη λίστα προϊόντων της παραγγελίας.</p>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-title">Διαχείριση προϊόντων παραγγελίας</div>
+        <div class="step-content">
+            <p>Στη λίστα προϊόντων της παραγγελίας, μπορείτε να:</p>
+            <ul>
+                <li><strong>Τροποποιήσετε την ποσότητα:</strong> Χρησιμοποιήστε τα βέλη πάνω/κάτω ή πληκτρολογήστε απευθείας την ποσότητα</li>
+                <li><strong>Αφαιρέσετε ένα προϊόν:</strong> Κάντε κλικ στο εικονίδιο του κάδου απορριμμάτων δίπλα στο προϊόν</li>
+                <li><strong>Δείτε τη διαθεσιμότητα:</strong> Το σύστημα εμφανίζει αυτόματα την τρέχουσα διαθεσιμότητα κάθε προϊόντος</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="note">
+        <strong>Σημείωση για τη διαθεσιμότητα:</strong> Εάν η ποσότητα που ζητάτε είναι μεγαλύτερη από τη διαθέσιμη, το σύστημα θα εμφανίσει προειδοποίηση με κόκκινο χρώμα. Η παραγγελία μπορεί να καταχωρηθεί, αλλά η αποστολή θα είναι μερική, απαιτώντας έγκριση από διαχειριστή.
+    </div>
+
+    <h2 id="order-review">6. Επισκόπηση Παραγγελίας</h2>
+    
+    <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-title">Έλεγχος στοιχείων παραγγελίας</div>
+        <div class="step-content">
+            <p>Πριν την υποβολή της παραγγελίας, ελέγξτε προσεκτικά:</p>
+            <ul>
+                <li>Τα στοιχεία του πελάτη</li>
+                <li>Τα προϊόντα και τις ποσότητες</li>
+                <li>Την ημερομηνία παραγγελίας</li>
+                <li>Την προτιμώμενη εταιρεία αποστολής</li>
+                <li>Τις σημειώσεις ή ειδικές οδηγίες</li>
+            </ul>
+        </div>
+    </div>
+
+    <h2 id="order-submit">7. Υποβολή Παραγγελίας</h2>
+    
+    <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-title">Οριστικοποίηση παραγγελίας</div>
+        <div class="step-content">
+            <p>Αφού ελέγξετε όλα τα στοιχεία, κάντε κλικ στο κουμπί <strong>Αποθήκευση Παραγγελίας</strong> στο κάτω μέρος της φόρμας.</p>
+            <p>Το σύστημα θα δημιουργήσει την παραγγελία και θα σας ανακατευθύνει στη λίστα παραγγελιών.</p>
+        </div>
+    </div>
+
+    <div class="note">
+        <strong>Σημείωση:</strong> Μετά την υποβολή, η παραγγελία θα έχει κατάσταση "Εκκρεμής" (Pending) και θα δημιουργηθεί αυτόματα ένας μοναδικός αριθμός παραγγελίας (Order Number) με τη μορφή "ORD-XXXX".
+    </div>
+
+    <h2 id="order-tracking">8. Παρακολούθηση Παραγγελιών</h2>
+    
+    <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-title">Προβολή όλων των παραγγελιών</div>
+        <div class="step-content">
+            <p>Για να δείτε όλες τις παραγγελίες:</p>
+            <ol>
+                <li>Πηγαίνετε στην καρτέλα <strong>Παραγγελίες</strong> στο κύριο μενού</li>
+                <li>Εδώ θα εμφανιστεί μια λίστα με όλες τις παραγγελίες, ταξινομημένες με βάση την ημερομηνία καταχώρησης (πιο πρόσφατες πρώτα)</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-title">Φιλτράρισμα και αναζήτηση παραγγελιών</div>
+        <div class="step-content">
+            <p>Μπορείτε να χρησιμοποιήσετε τα φίλτρα για να εντοπίσετε συγκεκριμένες παραγγελίες:</p>
+            <ul>
+                <li><strong>Αναζήτηση:</strong> Αναζητήστε με βάση τον αριθμό παραγγελίας ή το όνομα πελάτη</li>
+                <li><strong>Κατάσταση:</strong> Φιλτράρετε με βάση την κατάσταση (Εκκρεμής, Συλλογή, Απεσταλμένη, Ακυρωμένη)</li>
+                <li><strong>Ημερομηνία:</strong> Φιλτράρετε με βάση την ημερομηνία παραγγελίας</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-title">Προβολή λεπτομερειών παραγγελίας</div>
+        <div class="step-content">
+            <p>Για να δείτε τις λεπτομέρειες μιας συγκεκριμένης παραγγελίας:</p>
+            <ol>
+                <li>Βρείτε την παραγγελία στη λίστα</li>
+                <li>Κάντε κλικ στο εικονίδιο <strong>Προβολή</strong> (εικονίδιο ματιού) δίπλα στην παραγγελία</li>
+                <li>Θα ανοίξει ένα παράθυρο διαλόγου με όλες τις λεπτομέρειες της παραγγελίας</li>
+            </ol>
+        </div>
+    </div>
+
+    <h2 id="edit-order">9. Επεξεργασία Υφιστάμενης Παραγγελίας</h2>
+    
+    <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-title">Επεξεργασία παραγγελίας</div>
+        <div class="step-content">
+            <p>Για να επεξεργαστείτε μια παραγγελία:</p>
+            <ol>
+                <li>Βρείτε την παραγγελία στη λίστα παραγγελιών</li>
+                <li>Κάντε κλικ στο εικονίδιο <strong>Επεξεργασία</strong> (εικονίδιο μολυβιού) δίπλα στην παραγγελία</li>
+                <li>Η φόρμα επεξεργασίας θα εμφανιστεί, προσυμπληρωμένη με τα τρέχοντα στοιχεία της παραγγελίας</li>
+            </ol>
+            <p>Μπορείτε να τροποποιήσετε:</p>
+            <ul>
+                <li>Στοιχεία πελάτη (αν απαιτείται αλλαγή πελάτη)</li>
+                <li>Προσθήκη ή αφαίρεση προϊόντων</li>
+                <li>Τροποποίηση ποσοτήτων</li>
+                <li>Αλλαγή σημειώσεων και προτιμήσεων αποστολής</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="warning">
+        <strong>Προσοχή:</strong> Η επεξεργασία επιτρέπεται μόνο για παραγγελίες σε κατάσταση "Εκκρεμής" (Pending). Παραγγελίες σε κατάσταση "Συλλογή", "Απεσταλμένη" ή "Ακυρωμένη" δεν μπορούν να τροποποιηθούν.
+    </div>
+
+    <h2 id="order-status">10. Αλλαγή Κατάστασης Παραγγελίας</h2>
+    
+    <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-title">Ενημέρωση κατάστασης παραγγελίας</div>
+        <div class="step-content">
+            <p>Η κατάσταση μιας παραγγελίας αλλάζει αυτόματα μέσω των ροών εργασίας του συστήματος:</p>
+            <ul>
+                <li><strong>Εκκρεμής (Pending):</strong> Η αρχική κατάσταση μετά τη δημιουργία της παραγγελίας</li>
+                <li><strong>Συλλογή (Picked):</strong> Όταν το προσωπικό της αποθήκης συλλέξει τα προϊόντα</li>
+                <li><strong>Απεσταλμένη (Shipped):</strong> Όταν η παραγγελία έχει αποσταλεί στον πελάτη</li>
+                <li><strong>Ακυρωμένη (Cancelled):</strong> Όταν η παραγγελία ακυρωθεί</li>
+            </ul>
+            <p>Ως χρήστης Front Office, μπορείτε να ακυρώσετε μια παραγγελία κάνοντας κλικ στο κουμπί <strong>Ακύρωση Παραγγελίας</strong> στη σελίδα λεπτομερειών της παραγγελίας.</p>
+        </div>
+    </div>
+
+    <h2 id="tips">11. Συμβουλές και Βέλτιστες Πρακτικές</h2>
+    
+    <div class="step">
+        <div class="step-title">Βέλτιστες πρακτικές για την καταχώρηση παραγγελιών</div>
+        <div class="step-content">
+            <ul>
+                <li><strong>Ελέγχετε τη διαθεσιμότητα:</strong> Πριν την καταχώρηση παραγγελίας, ελέγξτε τη διαθεσιμότητα των προϊόντων</li>
+                <li><strong>Καταχωρείτε ακριβείς ποσότητες:</strong> Βεβαιωθείτε ότι οι ποσότητες που καταχωρείτε είναι ακριβείς</li>
+                <li><strong>Προσθέτετε λεπτομερείς σημειώσεις:</strong> Συμπεριλάβετε τυχόν ειδικές οδηγίες ή απαιτήσεις του πελάτη</li>
+                <li><strong>Ενημερώνετε τους πελάτες:</strong> Ενημερώστε τους πελάτες για τυχόν καθυστερήσεις ή ελλείψεις προϊόντων</li>
+                <li><strong>Ελέγχετε τις εκκρεμείς παραγγελίες:</strong> Παρακολουθείτε τακτικά τις εκκρεμείς παραγγελίες για να διασφαλίσετε την έγκαιρη επεξεργασία τους</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="note">
+        <strong>Συμβουλή:</strong> Για γρήγορη καταχώρηση παραγγελιών, μπορείτε να χρησιμοποιήσετε τη λειτουργία σάρωσης barcode εάν έχετε συνδεδεμένο σαρωτή barcode με τον υπολογιστή σας. Απλά κάντε κλικ στο πεδίο αναζήτησης προϊόντων και σαρώστε τον κωδικό barcode του προϊόντος.
+    </div>
+
+    <div class="footer">
+        <p>© 2025 - Σύστημα Διαχείρισης Αποθήκης</p>
+        <p>Έκδοση Εγγράφου 1.0</p>
+    </div>
+</body>
+</html>
