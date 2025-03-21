@@ -14,6 +14,7 @@ import { promisify } from "util";
 import { getEmailSettings, updateEmailSettings, testEmailConnection, getEmailTemplate, updateEmailTemplate, getLabelTemplate, updateLabelTemplate } from "./api/emailSettings";
 import { getCompanySettings, updateCompanySettings, getNotificationSettings, updateNotificationSettings } from "./api/settings";
 import { getOrderErrors, getOrderError, createOrderError, updateOrderError, resolveOrderError, adjustInventoryForError, getErrorStats } from "./api/orderErrors";
+import { getInventoryChanges, getInventoryChange, addInventoryChange, getRecentInventoryChanges, getInventoryChangesByType } from "./api/inventoryChanges";
 
 // Function to determine the appropriate storage path based on environment
 function getStoragePath(): string {
@@ -2149,6 +2150,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/order-errors/:id/resolve', isAuthenticated, resolveOrderError);
   app.post('/api/order-errors/:id/adjust-inventory', isAuthenticated, hasRole(['admin']), adjustInventoryForError);
   app.get('/api/order-errors-stats', isAuthenticated, getErrorStats);
+  
+  // Inventory Change Tracking routes
+  app.get('/api/inventory-changes', isAuthenticated, getInventoryChanges);
+  app.get('/api/inventory-changes/:id', isAuthenticated, getInventoryChange);
+  app.post('/api/inventory-changes', isAuthenticated, hasRole(['admin', 'warehouse']), addInventoryChange);
+  app.get('/api/inventory-changes/recent', isAuthenticated, getRecentInventoryChanges);
+  app.get('/api/inventory-changes/by-type/:type', isAuthenticated, getInventoryChangesByType);
   
   return httpServer;
 }
