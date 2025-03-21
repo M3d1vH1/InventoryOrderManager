@@ -15,7 +15,8 @@ import {
   unshippedItems, type UnshippedItem, type InsertUnshippedItem,
   emailSettings, type EmailSettings, type InsertEmailSettings,
   companySettings, type CompanySettings, type InsertCompanySettings,
-  notificationSettings, type NotificationSettings, type InsertNotificationSettings
+  notificationSettings, type NotificationSettings, type InsertNotificationSettings,
+  rolePermissions, type RolePermission, type InsertRolePermission
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { log } from './vite';
@@ -1505,6 +1506,223 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error updating email settings:", error);
       return undefined;
+    }
+  }
+
+  // Role Permissions methods
+  async getRolePermissions(role: string): Promise<RolePermission[]> {
+    try {
+      // Get all permissions for this role
+      const permissions = await this.db
+        .select()
+        .from(rolePermissions)
+        .where(eq(rolePermissions.role, role as any));
+        
+      if (permissions.length === 0) {
+        // If no permissions found, initialize default ones
+        await this.initDefaultRolePermissions(role);
+        
+        // Fetch again after initialization
+        return await this.db
+          .select()
+          .from(rolePermissions)
+          .where(eq(rolePermissions.role, role as any));
+      }
+      
+      return permissions;
+    } catch (error) {
+      console.error(`Error getting permissions for role ${role}:`, error);
+      return [];
+    }
+  }
+  
+  async getAllRolePermissions(): Promise<RolePermission[]> {
+    try {
+      // Get all role permissions
+      const allPermissions = await this.db
+        .select()
+        .from(rolePermissions);
+        
+      if (allPermissions.length === 0) {
+        // If no permissions found, initialize default ones for all roles
+        await this.initDefaultRolePermissions();
+        
+        // Fetch again after initialization
+        return await this.db
+          .select()
+          .from(rolePermissions);
+      }
+      
+      return allPermissions;
+    } catch (error) {
+      console.error('Error getting all role permissions:', error);
+      return [];
+    }
+  }
+  
+  async updateRolePermission(role: string, permission: string, enabled: boolean): Promise<RolePermission | undefined> {
+    try {
+      // Check if this permission exists for this role
+      const existingPermission = await this.db
+        .select()
+        .from(rolePermissions)
+        .where(and(
+          eq(rolePermissions.role, role as any),
+          eq(rolePermissions.permission, permission as any)
+        ));
+      
+      if (existingPermission.length === 0) {
+        // Create new permission
+        const [newPermission] = await this.db
+          .insert(rolePermissions)
+          .values({
+            role: role as any,
+            permission: permission as any,
+            enabled,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          })
+          .returning();
+          
+        console.log(`Created new permission: ${role}:${permission} = ${enabled}`);
+        return newPermission;
+      } else {
+        // Update existing permission
+        const [updatedPermission] = await this.db
+          .update(rolePermissions)
+          .set({ 
+            enabled,
+            updatedAt: new Date()
+          })
+          .where(and(
+            eq(rolePermissions.role, role as any),
+            eq(rolePermissions.permission, permission as any)
+          ))
+          .returning();
+          
+        console.log(`Updated permission: ${role}:${permission} = ${enabled}`);
+        return updatedPermission;
+      }
+    } catch (error) {
+      console.error(`Error updating permission ${role}:${permission}:`, error);
+      return undefined;
+    }
+  }
+  
+  async checkPermission(role: string, permission: string): Promise<boolean> {
+    try {
+      // Admin always has all permissions
+      if (role === 'admin') {
+        return true;
+      }
+      
+      // Check if this permission exists for this role
+      const permissions = await this.db
+        .select()
+        .from(rolePermissions)
+        .where(and(
+          eq(rolePermissions.role, role as any),
+          eq(rolePermissions.permission, permission as any)
+        ));
+      
+      if (permissions.length === 0) {
+        // Permission doesn't exist, initialize it with default value
+        // and return the default
+        await this.initDefaultRolePermissions(role, [permission]);
+        
+        // Fetch the newly created permission
+        const newPermissions = await this.db
+          .select()
+          .from(rolePermissions)
+          .where(and(
+            eq(rolePermissions.role, role as any),
+            eq(rolePermissions.permission, permission as any)
+          ));
+          
+        return newPermissions.length > 0 ? newPermissions[0].enabled : false;
+      }
+      
+      // Return the enabled status of the permission
+      return permissions[0].enabled;
+    } catch (error) {
+      console.error(`Error checking permission ${role}:${permission}:`, error);
+      return false; // Default to denying access on error
+    }
+  }
+  
+  // Helper method to create default role permissions
+  private async initDefaultRolePermissions(specificRole?: string, specificPermissions?: string[]): Promise<void> {
+    try {
+      const allPermissions = [
+        'view_dashboard', 'view_products', 'edit_products', 
+        'view_customers', 'edit_customers', 'view_orders', 'create_orders', 
+        'edit_orders', 'delete_orders', 'view_reports', 'order_picking',
+        'view_unshipped_items', 'authorize_unshipped_items', 'view_settings',
+        'edit_settings', 'view_users', 'edit_users', 'view_email_templates',
+        'edit_email_templates'
+      ];
+      
+      // If specific permissions are provided, only initialize those
+      const permissionsToInit = specificPermissions || allPermissions;
+      
+      // Default permissions for each role
+      const defaultPermissions: Record<string, string[]> = {
+        'admin': allPermissions, // Admin has all permissions
+        'manager': [
+          'view_dashboard', 'view_products', 'edit_products', 
+          'view_customers', 'edit_customers', 'view_orders', 'create_orders', 
+          'edit_orders', 'view_reports', 'order_picking',
+          'view_unshipped_items', 'authorize_unshipped_items'
+        ],
+        'front_office': [
+          'view_dashboard', 'view_products', 
+          'view_customers', 'edit_customers', 'view_orders', 'create_orders',
+          'view_unshipped_items', 'authorize_unshipped_items'
+        ],
+        'warehouse': [
+          'view_dashboard', 'view_products', 
+          'view_orders', 'order_picking',
+          'view_unshipped_items'
+        ]
+      };
+      
+      // Determine which roles to initialize
+      const rolesToInit = specificRole 
+        ? [specificRole] 
+        : ['admin', 'manager', 'front_office', 'warehouse'];
+      
+      // Create default permissions for each role
+      for (const role of rolesToInit) {
+        for (const permission of permissionsToInit) {
+          const enabled = defaultPermissions[role].includes(permission);
+          
+          // Check if the permission already exists
+          const existing = await this.db
+            .select()
+            .from(rolePermissions)
+            .where(and(
+              eq(rolePermissions.role, role as any),
+              eq(rolePermissions.permission, permission as any)
+            ));
+          
+          if (existing.length === 0) {
+            // Create new permission with default value
+            await this.db
+              .insert(rolePermissions)
+              .values({
+                role: role as any,
+                permission: permission as any,
+                enabled,
+                createdAt: new Date(),
+                updatedAt: new Date()
+              });
+            
+            console.log(`Initialized default permission: ${role}:${permission} = ${enabled}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error initializing default role permissions:', error);
     }
   }
 }
