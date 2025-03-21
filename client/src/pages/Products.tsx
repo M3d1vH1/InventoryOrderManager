@@ -1067,7 +1067,20 @@ export default function Products() {
                                 .split(',')
                                 .map(tag => tag.trim())
                                 .filter(tag => tag.length > 0);
+                              
+                              console.log("Tags array before set:", tagsArray);
                               field.onChange(tagsArray);
+                            }}
+                            // Add onBlur to ensure proper tag handling
+                            onBlur={() => {
+                              // Ensure we have a clean array of tags when the field loses focus
+                              if (field.value) {
+                                const cleanTags = field.value
+                                  .filter((tag: string) => typeof tag === 'string' && tag.trim().length > 0)
+                                  .map((tag: string) => tag.trim());
+                                console.log("Clean tags on blur:", cleanTags);
+                                field.onChange(cleanTags);
+                              }
                             }}
                           />
                         </FormControl>
