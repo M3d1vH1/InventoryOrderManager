@@ -1693,7 +1693,7 @@ const LabelTemplateEditor = () => {
   });
   
   // Get template content query
-  const { data: labelTemplateData, isLoading: isLoadingLabelTemplate, refetch: refetchTemplate } = useQuery({
+  const { data: labelTemplateData, isLoading: isLoadingLabelTemplate, refetch: refetchLabelTemplate } = useQuery({
     queryKey: ['/api/label-templates', selectedTemplate],
     enabled: !!selectedTemplate,
     queryFn: async () => {
@@ -1706,12 +1706,12 @@ const LabelTemplateEditor = () => {
   
   // Effect to update form when template data changes
   useEffect(() => {
-    if (templateData && templateData.content) {
+    if (labelTemplateData && labelTemplateData.content) {
       templateForm.reset({
-        content: templateData.content,
+        content: labelTemplateData.content,
       });
     }
-  }, [templateData, templateForm]);
+  }, [labelTemplateData, templateForm]);
   
   // Update template mutation
   const updateTemplateMutation = useMutation({
@@ -1727,7 +1727,7 @@ const LabelTemplateEditor = () => {
         description: "The label template has been updated successfully.",
       });
       setIsEditing(false);
-      refetchTemplate();
+      refetchLabelTemplate();
     },
     onError: (error) => {
       toast({
@@ -1805,9 +1805,9 @@ const LabelTemplateEditor = () => {
               variant="outline" 
               onClick={() => {
                 setIsEditing(false);
-                if (templateData && templateData.content) {
+                if (labelTemplateData && labelTemplateData.content) {
                   templateForm.reset({
-                    content: templateData.content,
+                    content: labelTemplateData.content,
                   });
                 }
               }}
@@ -1942,7 +1942,7 @@ const LabelTemplateEditor = () => {
                 <span>Loading template...</span>
               </div>
             </div>
-          ) : templateData ? (
+          ) : labelTemplateData ? (
             <div className="mt-4">
               <Alert className="bg-blue-50 border-blue-200">
                 <AlertTitle className="text-blue-800">Template Loaded</AlertTitle>
