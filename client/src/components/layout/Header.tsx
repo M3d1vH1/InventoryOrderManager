@@ -3,7 +3,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/context/NotificationContext";
 import { apiRequest } from "@/lib/queryClient";
-import { Menu, Bell, PlusCircle } from "lucide-react";
+import { Menu, Bell, PlusCircle, Globe } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import OrderForm from "@/components/orders/OrderForm";
 import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 
 const Header = () => {
   const { toggleSidebar, currentPage } = useSidebar();
@@ -26,6 +27,17 @@ const Header = () => {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [showOrderForm, setShowOrderForm] = useState(false);
   const { t } = useTranslation();
+
+  const toggleLanguage = () => {
+    const currentLang = i18n.language;
+    const newLang = currentLang === 'en' ? 'el' : 'en';
+    i18n.changeLanguage(newLang);
+    toast({
+      title: t('settings.languageChanged'),
+      description: newLang === 'en' ? 'English' : 'Ελληνικά',
+      duration: 3000,
+    });
+  };
 
   const handleLogout = async () => {
     try {
@@ -56,6 +68,16 @@ const Header = () => {
           <h2 className="text-xl font-semibold ml-2">{currentPage}</h2>
         </div>
         <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleLanguage}
+            className="bg-blue-100 hover:bg-blue-200 text-blue-600"
+            title={t('settings.changeLanguage')}
+          >
+            <Globe className="h-5 w-5" />
+          </Button>
+          
           <Button
             variant="default"
             size="sm"

@@ -26,16 +26,7 @@ const InventoryAlerts = () => {
     queryKey: ['/api/products/low-stock'],
   });
 
-  const toggleLanguage = () => {
-    const currentLang = i18n.language;
-    const newLang = currentLang === 'en' ? 'el' : 'en';
-    i18n.changeLanguage(newLang);
-    toast({
-      title: t('settings.languageChanged'),
-      description: newLang === 'en' ? 'English' : 'Ελληνικά',
-      duration: 3000,
-    });
-  };
+
 
   // Sort products by severity (stock level) or name
   const sortedProducts = useMemo(() => {
@@ -214,14 +205,7 @@ const InventoryAlerts = () => {
               {lowStockProducts.length}
             </span>
           )}
-          <button 
-            onClick={toggleLanguage}
-            className="ml-3 p-1.5 bg-blue-100 hover:bg-blue-200 rounded-full flex items-center justify-center"
-            title={t('settings.changeLanguage')}
-            style={{ width: '28px', height: '28px' }}
-          >
-            <Globe className="h-4 w-4 text-blue-600" />
-          </button>
+
         </div>
         <div className="flex items-center space-x-4">
           {lowStockProducts && lowStockProducts.length > 0 && (
