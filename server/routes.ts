@@ -96,10 +96,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         imagePath = `/uploads/products/${filename}`;
       }
       
+      // Get body data and handle tags properly
+      let reqBody = { ...req.body };
+      
+      // Handle tags properly if they're coming from form data
+      if (reqBody.tags) {
+        // If tags is a string that looks like JSON array, parse it
+        if (typeof reqBody.tags === 'string' && 
+           (reqBody.tags.startsWith('[') || reqBody.tags === '[]')) {
+          try {
+            reqBody.tags = JSON.parse(reqBody.tags);
+          } catch (e) {
+            console.error('Error parsing tags JSON:', e);
+            reqBody.tags = []; // Default to empty array if parsing fails
+          }
+        } 
+        // Ensure tags is always an array
+        if (!Array.isArray(reqBody.tags)) {
+          reqBody.tags = [];
+        }
+      }
+      
+      console.log('Creating product with data:', JSON.stringify(reqBody));
+      
       // Parse and validate product data with default categoryId
       const productData = insertProductSchema.parse({
-        ...req.body,
-        imagePath: imagePath || req.body.imagePath,
+        ...reqBody,
+        imagePath: imagePath || reqBody.imagePath,
         categoryId: 1 // Set default categoryId for all products
       });
       
@@ -120,6 +143,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         categoryId: 1 // Ensure categoryId is always set to 1
       };
+      
+      // Handle tags properly if they're coming from form data
+      if (updateData.tags) {
+        // If tags is a string that looks like JSON array, parse it
+        if (typeof updateData.tags === 'string' && 
+           (updateData.tags.startsWith('[') || updateData.tags === '[]')) {
+          try {
+            updateData.tags = JSON.parse(updateData.tags);
+          } catch (e) {
+            console.error('Error parsing tags JSON:', e);
+            updateData.tags = []; // Default to empty array if parsing fails
+          }
+        } 
+        // Ensure tags is always an array
+        if (!Array.isArray(updateData.tags)) {
+          updateData.tags = [];
+        }
+      }
+      
+      console.log('Updating product with data:', JSON.stringify(updateData));
       
       // Handle file upload if present
       if (req.files && req.files.image) {
