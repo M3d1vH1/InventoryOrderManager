@@ -384,12 +384,70 @@ export default function Products() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+      // Check file size (max 2MB)
+      const maxSizeInBytes = 2 * 1024 * 1024; // 2MB
+      if (file.size > maxSizeInBytes) {
+        toast({
+          title: t('products.imageTooLarge'),
+          description: t('products.imageSizeLimit', { size: '2MB' }),
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check file dimensions by loading it into an Image object
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      
+      img.onload = () => {
+        // Release object URL after dimensions are checked
+        URL.revokeObjectURL(objectUrl);
+        
+        // Check dimensions
+        const minWidth = 200;
+        const minHeight = 200;
+        const maxWidth = 1200;
+        const maxHeight = 1200;
+        
+        if (img.width < minWidth || img.height < minHeight) {
+          toast({
+            title: t('products.imageTooSmall'),
+            description: t('products.minImageDimensions', { width: minWidth, height: minHeight }),
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        if (img.width > maxWidth || img.height > maxHeight) {
+          toast({
+            title: t('products.imageTooLarge'),
+            description: t('products.maxImageDimensions', { width: maxWidth, height: maxHeight }),
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // If all checks pass, set the image file
+        setImageFile(file);
+        
+        // Create preview
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
       };
-      reader.readAsDataURL(file);
+      
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        toast({
+          title: t('products.invalidImage'),
+          description: t('products.imageLoadError'),
+          variant: "destructive",
+        });
+      };
+      
+      img.src = objectUrl;
     }
   };
   
@@ -808,9 +866,19 @@ export default function Products() {
                           </span>
                         </label>
                       </div>
-                      <p className="text-xs text-slate-500 mt-2">
-                        {t('products.recommendedImageSize')}
-                      </p>
+                      {/* Image requirements notice */}
+                      <div className="mt-2 p-3 bg-slate-50 rounded-md border border-slate-200">
+                        <h4 className="text-xs font-medium text-slate-700 mb-1">
+                          <InfoIcon className="inline-block h-3 w-3 mr-1" /> {t('products.imageRequirements')}
+                        </h4>
+                        <ul className="text-xs text-slate-600 space-y-1 pl-4 list-disc">
+                          <li><span className="font-semibold">Size:</span> {t('common.maxSize')}: 2MB</li>
+                          <li>
+                            <span className="font-semibold">{t('common.dimensions')}:</span> {t('common.min')}: 200x200px, {t('common.max')}: 1200x1200px
+                          </li>
+                          <li><span className="font-semibold">{t('common.format')}:</span> JPG, PNG, GIF</li>
+                        </ul>
+                      </div>
                     </FormItem>
                   )}
                 />
