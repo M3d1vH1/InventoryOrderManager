@@ -762,7 +762,7 @@ export default function Products() {
                       <div className="aspect-square relative bg-muted/50">
                         {product.imagePath ? (
                           <img
-                            src={product.imagePath}
+                            src={product.imagePath.startsWith('/') ? product.imagePath : `/${product.imagePath}`}
                             alt={product.name}
                             className="object-cover w-full h-full"
                             onError={(e) => {
