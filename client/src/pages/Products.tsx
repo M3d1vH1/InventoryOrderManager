@@ -27,7 +27,7 @@ import { Textarea } from "@components/ui/textarea";
 import {
   ArrowDown, ArrowUp, Box, ChevronDown, ClipboardList, Download, Edit, 
   Loader2, PackageCheck, PlusCircle, QrCode, Search, SlidersHorizontal, Trash2, X,
-  Info as InfoIcon, Tag, AlertTriangle
+  Info as InfoIcon, Tag, AlertTriangle, LayoutGrid, Table, List
 } from "lucide-react";
 import { BarcodeScanner } from "@components/barcode/BarcodeScanner";
 import { BarcodeGenerator } from "@components/barcode/BarcodeGenerator";
@@ -744,13 +744,44 @@ export default function Products() {
               </CardContent>
             </Card>
           ) : (
-            <Tabs defaultValue="grid" className="w-full">
+            <Tabs defaultValue="grid" className="w-full" onValueChange={(value) => {
+                console.log("Tab changed to:", value); // For debugging
+              }}>
               <div className="flex items-center justify-between mb-4">
-                <TabsList>
-                  <TabsTrigger value="grid">{t('products.gridView')}</TabsTrigger>
-                  <TabsTrigger value="table">{t('products.tableView')}</TabsTrigger>
-                  <TabsTrigger value="list">{t('products.listView')}</TabsTrigger>
-                </TabsList>
+                <div className="flex items-center gap-4">
+                  <TabsList>
+                    <TabsTrigger value="grid">{t('products.gridView')}</TabsTrigger>
+                    <TabsTrigger value="table">{t('products.tableView')}</TabsTrigger>
+                    <TabsTrigger value="list">{t('products.listView')}</TabsTrigger>
+                  </TabsList>
+                  
+                  {/* Standalone view toggle button */}
+                  <div className="flex items-center">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="flex items-center gap-1">
+                          <LayoutGrid className="h-4 w-4" />
+                          {t('products.changeView')}
+                          <ChevronDown className="h-4 w-4 opacity-50" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        <DropdownMenuItem onClick={() => document.querySelector('[value="grid"]')?.click()}>
+                          <LayoutGrid className="mr-2 h-4 w-4" />
+                          <span>{t('products.gridView')}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => document.querySelector('[value="table"]')?.click()}>
+                          <Table className="mr-2 h-4 w-4" />
+                          <span>{t('products.tableView')}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => document.querySelector('[value="list"]')?.click()}>
+                          <List className="mr-2 h-4 w-4" />
+                          <span>{t('products.listView')}</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
                 <p className="text-sm text-muted-foreground">
                   {productCountMessage}
                 </p>
