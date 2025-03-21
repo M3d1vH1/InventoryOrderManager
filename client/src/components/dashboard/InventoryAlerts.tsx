@@ -60,16 +60,16 @@ const InventoryAlerts = () => {
     }
 
     return (
-      <div className="overflow-hidden p-2">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="md:pr-2">
+      <div className="overflow-hidden p-0 md:p-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-1 md:gap-2">
+          <div className="md:pr-1">
             <table className="w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <th scope="col" className="px-2 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     {t('products.details')}
                   </th>
-                  <th scope="col" className="px-3 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider w-24">
+                  <th scope="col" className="px-2 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider w-20">
                     {t('inventory.stock')}
                   </th>
                 </tr>
@@ -85,17 +85,17 @@ const InventoryAlerts = () => {
                   
                   return (
                     <tr key={product.id} className="hover:bg-slate-50">
-                      <td className="px-3 py-2 whitespace-nowrap text-sm">
+                      <td className="px-2 py-1.5 whitespace-nowrap text-sm">
                         <Link href={`/products/${product.id}`}>
-                          <div className="font-medium text-slate-900 truncate max-w-[120px] hover:text-primary" title={product.name}>
+                          <div className="font-medium text-slate-900 truncate max-w-full hover:text-primary" title={product.name}>
                             {product.name}
                           </div>
                         </Link>
-                        <div className="text-xs text-slate-500 truncate max-w-[120px]">
+                        <div className="text-xs text-slate-500 truncate max-w-full">
                           {product.sku}
                         </div>
                       </td>
-                      <td className={`px-3 py-2 whitespace-nowrap text-sm text-right ${bgColor}`}>
+                      <td className={`px-2 py-1.5 whitespace-nowrap text-sm text-right ${bgColor}`}>
                         <span className={`font-semibold ${textColor}`}>{product.currentStock}</span>
                         <span className="text-slate-500"> / {product.minStockLevel}</span>
                       </td>
@@ -106,14 +106,14 @@ const InventoryAlerts = () => {
             </table>
           </div>
           
-          <div className="md:pl-2 md:border-l md:border-slate-200">
+          <div className="md:border-l md:border-slate-200">
             <table className="w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <th scope="col" className="px-2 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     {t('products.details')}
                   </th>
-                  <th scope="col" className="px-3 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider w-24">
+                  <th scope="col" className="px-2 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider w-20">
                     {t('inventory.stock')}
                   </th>
                 </tr>
@@ -129,17 +129,17 @@ const InventoryAlerts = () => {
                   
                   return (
                     <tr key={product.id} className="hover:bg-slate-50">
-                      <td className="px-3 py-2 whitespace-nowrap text-sm">
+                      <td className="px-2 py-1.5 whitespace-nowrap text-sm">
                         <Link href={`/products/${product.id}`}>
-                          <div className="font-medium text-slate-900 truncate max-w-[120px] hover:text-primary" title={product.name}>
+                          <div className="font-medium text-slate-900 truncate max-w-full hover:text-primary" title={product.name}>
                             {product.name}
                           </div>
                         </Link>
-                        <div className="text-xs text-slate-500 truncate max-w-[120px]">
+                        <div className="text-xs text-slate-500 truncate max-w-full">
                           {product.sku}
                         </div>
                       </td>
-                      <td className={`px-3 py-2 whitespace-nowrap text-sm text-right ${bgColor}`}>
+                      <td className={`px-2 py-1.5 whitespace-nowrap text-sm text-right ${bgColor}`}>
                         <span className={`font-semibold ${textColor}`}>{product.currentStock}</span>
                         <span className="text-slate-500"> / {product.minStockLevel}</span>
                       </td>
