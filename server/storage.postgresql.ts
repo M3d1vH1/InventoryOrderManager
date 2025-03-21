@@ -320,30 +320,41 @@ export class DatabaseStorage implements IStorage {
     thresholdDate.setDate(thresholdDate.getDate() - dayThreshold);
     
     try {
-      // First, get products that have a lastStockUpdate timestamp
-      // and it's older than the threshold date
-      const productsWithOldTimestamp = await this.db
-        .select()
+      // Query products that haven't been restocked for X days or have never been updated
+      // Include category name in the results
+      const query = this.db
+        .select({
+          id: products.id,
+          name: products.name,
+          sku: products.sku,
+          barcode: products.barcode,
+          categoryId: products.categoryId,
+          category: sql`(SELECT name FROM categories WHERE id = ${products.categoryId})`.as('category'),
+          description: products.description,
+          minStockLevel: products.minStockLevel,
+          currentStock: products.currentStock,
+          location: products.location,
+          unitsPerBox: products.unitsPerBox,
+          imagePath: products.imagePath,
+          tags: products.tags,
+          lastStockUpdate: products.lastStockUpdate
+        })
         .from(products)
         .where(
-          and(
-            // Product must have a lastStockUpdate timestamp
-            sql`${products.lastStockUpdate} IS NOT NULL`,
-            // And that timestamp must be older than our threshold
-            sql`${products.lastStockUpdate} < ${thresholdDate}`
+          or(
+            // Products with lastStockUpdate older than the threshold
+            and(
+              sql`${products.lastStockUpdate} IS NOT NULL`,
+              sql`${products.lastStockUpdate} < ${thresholdDate.toISOString()}`
+            ),
+            // Products with no lastStockUpdate (legacy or new products)
+            sql`${products.lastStockUpdate} IS NULL`
           )
-        );
+        )
+        .orderBy(sql`COALESCE(${products.lastStockUpdate}, '1970-01-01')`);
       
-      // Next, get products that don't have a lastStockUpdate at all
-      // These are considered legacy products that haven't been updated since
-      // the new timestamp field was added
-      const productsWithoutTimestamp = await this.db
-        .select()
-        .from(products)
-        .where(sql`${products.lastStockUpdate} IS NULL`);
-      
-      // Combine both result sets
-      return [...productsWithOldTimestamp, ...productsWithoutTimestamp];
+      const result = await query;
+      return result;
     } catch (error) {
       console.error('Error getting slow moving products:', error);
       // If there's an issue with the new field, return an empty array

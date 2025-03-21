@@ -23,7 +23,8 @@
     "actions": "Ενέργειες",
     "notSpecified": "Δεν καθορίστηκε",
     "expandSidebar": "Επέκταση μενού",
-    "collapseSidebar": "Σύμπτυξη μενού"
+    "collapseSidebar": "Σύμπτυξη μενού",
+    "days": "μέρες"
   },
   "dashboard": {
     "title": "Πίνακας Ελέγχου",
