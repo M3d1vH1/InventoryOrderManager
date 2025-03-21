@@ -2141,5 +2141,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Order Error routes
+  app.get('/api/order-errors', isAuthenticated, getOrderErrors);
+  app.get('/api/order-errors/:id', isAuthenticated, getOrderError);
+  app.post('/api/order-errors', isAuthenticated, createOrderError);
+  app.patch('/api/order-errors/:id', isAuthenticated, updateOrderError);
+  app.post('/api/order-errors/:id/resolve', isAuthenticated, resolveOrderError);
+  app.post('/api/order-errors/:id/adjust-inventory', isAuthenticated, hasRole(['admin']), adjustInventoryForError);
+  app.get('/api/order-errors-stats', isAuthenticated, getErrorStats);
+  
   return httpServer;
 }
