@@ -776,23 +776,6 @@ export default function Products() {
                             <td className="px-4 py-3 text-sm text-slate-500">
                               <div>
                                 {product.sku}
-                                {product.tags && product.tags.length > 0 && (
-                                  <div className="flex flex-wrap gap-1 mt-1">
-                                    {product.tags.map((tag, index) => (
-                                      <Badge 
-                                        key={index} 
-                                        variant="outline" 
-                                        className="text-xs bg-slate-50 cursor-pointer hover:bg-slate-100"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setTagFilter(tag);
-                                        }}
-                                      >
-                                        {tag}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                )}
                               </div>
                             </td>
 
