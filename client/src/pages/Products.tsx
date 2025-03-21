@@ -749,6 +749,7 @@ export default function Products() {
                 <TabsList>
                   <TabsTrigger value="grid">{t('products.gridView')}</TabsTrigger>
                   <TabsTrigger value="table">{t('products.tableView')}</TabsTrigger>
+                  <TabsTrigger value="list">{t('products.listView')}</TabsTrigger>
                 </TabsList>
                 <p className="text-sm text-muted-foreground">
                   {productCountMessage}
@@ -912,6 +913,96 @@ export default function Products() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="list">
+                <div className="space-y-2">
+                  {sortedProducts.map((product) => (
+                    <Card key={product.id} className="overflow-hidden">
+                      <div className="flex items-center p-4">
+                        <div className="w-16 h-16 bg-muted/50 rounded-md mr-4 flex-shrink-0 overflow-hidden">
+                          {product.imagePath ? (
+                            <img
+                              src={product.imagePath.startsWith('/') ? product.imagePath : `/${product.imagePath}`}
+                              alt={product.name}
+                              className="object-cover w-full h-full"
+                              onError={(e) => {
+                                console.error("Error loading product image:", product.imagePath);
+                                (e.target as HTMLImageElement).src = '/placeholder-image.svg';
+                              }}
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center h-full">
+                              <Box className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex-grow">
+                          <div className="flex justify-between">
+                            <h3 className="font-semibold text-lg">{product.name}</h3>
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => handleViewProduct(product)}
+                              >
+                                <Search className="h-4 w-4" />
+                              </Button>
+                              {user?.role === "admin" && (
+                                <>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    onClick={() => handleEditProduct(product)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    onClick={() => handleDeleteProduct(product.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between mt-1">
+                            <div className="flex items-center space-x-4">
+                              <p className="text-sm text-muted-foreground">SKU: {product.sku}</p>
+                              {product.location && (
+                                <p className="text-sm text-muted-foreground">{t('products.location')}: {product.location}</p>
+                              )}
+                            </div>
+                            <Badge 
+                              variant={product.currentStock === 0 
+                                ? "destructive" 
+                                : (product.currentStock <= product.minStockLevel ? "warning" : "success")}
+                              className="capitalize"
+                            >
+                              {product.currentStock} {t('products.units')}
+                            </Badge>
+                          </div>
+                          
+                          {/* Show tags */}
+                          {product.tags && product.tags.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {product.tags.map(tag => (
+                                <Badge key={tag} variant="outline" className="flex items-center">
+                                  <Tag className="mr-1 h-3 w-3" />
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
                 </div>
               </TabsContent>
             </Tabs>
