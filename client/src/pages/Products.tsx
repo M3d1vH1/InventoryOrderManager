@@ -50,7 +50,7 @@ interface Product {
 // Simplified form schema without categories
 const productFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  sku: z.string().min(2, "SKU must be at least 2 characters"),
+  sku: z.string().min(1, "SKU is required"),
   barcode: z.string().optional(),
   description: z.string().optional(),
   minStockLevel: z.coerce.number().min(0, "Min stock level cannot be negative"),

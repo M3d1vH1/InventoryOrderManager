@@ -84,7 +84,7 @@ interface Product {
 // Simplified form schema without categories
 const productFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  sku: z.string().min(3, { message: "SKU must be at least 3 characters" }),
+  sku: z.string().min(1, { message: "SKU is required" }),
   barcode: z.string().optional(),
   description: z.string().optional(),
   minStockLevel: z.coerce.number().min(0, { message: "Minimum stock level must be 0 or greater" }),
@@ -223,6 +223,7 @@ const Products = () => {
       });
       setIsDialogOpen(false);
       setImageFile(null); // Clear the file state
+      setImagePreview(null); // Clear the preview
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
     },
     onError: (error) => {
@@ -280,6 +281,7 @@ const Products = () => {
       setIsDialogOpen(false);
       setEditingProduct(null);
       setImageFile(null); // Clear the file state
+      setImagePreview(null); // Clear the preview
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
     },
     onError: (error) => {
@@ -635,7 +637,15 @@ const Products = () => {
       </div>
 
       {/* Add/Edit Product Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog 
+        open={isDialogOpen} 
+        onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) {
+            setImageFile(null);
+            setImagePreview(null);
+          }
+        }}>
         <DialogContent className="sm:max-w-[720px] p-0 overflow-hidden">
           <div className="flex h-full">
             {/* Left sidebar with image upload */}
@@ -687,7 +697,16 @@ const Products = () => {
                                 </button>
                               </div>
                             )}
-                            {!imageFile && !editingProduct?.imagePath && (
+                            {imagePreview && (
+                              <div className="relative w-full h-40 border rounded-md overflow-hidden">
+                                <img 
+                                  src={imagePreview} 
+                                  alt="Product preview" 
+                                  className="w-full h-full object-contain"
+                                />
+                              </div>
+                            )}
+                            {!imageFile && !imagePreview && !editingProduct?.imagePath && (
                               <div className="w-full h-40 border-2 border-dashed rounded-md flex flex-col items-center justify-center text-gray-400">
                                 <Image size={40} />
                                 <span className="mt-2 text-sm">No image</span>
