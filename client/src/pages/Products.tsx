@@ -163,8 +163,22 @@ export default function Products() {
         // Add all product data fields to the form
         Object.entries(productData).forEach(([key, value]) => {
           if (key !== 'imagePath' && value !== undefined) {
-            if (Array.isArray(value)) {
-              // Handle arrays (like tags)
+            if (key === 'tags') {
+              // For tags, we need special handling since it's an array
+              if (Array.isArray(value)) {
+                // Empty array check
+                if (value.length === 0) {
+                  formData.append('tags', '[]');
+                } else {
+                  // Send tags as string representation of JSON array
+                  formData.append('tags', JSON.stringify(value));
+                }
+              } else {
+                // In case it's somehow not an array, send empty array
+                formData.append('tags', '[]');
+              }
+            } else if (Array.isArray(value)) {
+              // Handle other arrays
               formData.append(key, JSON.stringify(value));
             } else {
               formData.append(key, String(value));
@@ -238,8 +252,22 @@ export default function Products() {
         // Add all product data fields to the form
         Object.entries(productData).forEach(([key, value]) => {
           if (key !== 'imagePath' && value !== undefined) {
-            if (Array.isArray(value)) {
-              // Handle arrays (like tags)
+            if (key === 'tags') {
+              // For tags, we need special handling since it's an array
+              if (Array.isArray(value)) {
+                // Empty array check
+                if (value.length === 0) {
+                  formData.append('tags', '[]');
+                } else {
+                  // Send tags as string representation of JSON array
+                  formData.append('tags', JSON.stringify(value));
+                }
+              } else {
+                // In case it's somehow not an array, send empty array
+                formData.append('tags', '[]');
+              }
+            } else if (Array.isArray(value)) {
+              // Handle other arrays
               formData.append(key, JSON.stringify(value));
             } else {
               formData.append(key, String(value));
