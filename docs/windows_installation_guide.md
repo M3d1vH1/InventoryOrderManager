@@ -207,26 +207,184 @@ By default, the application only listens on `localhost` (127.0.0.1), which means
    Replace `YOUR_IP_ADDRESS` with the IP address you found in step 2.
    Example: `http://192.168.1.100:5000`
 
-### 5. Making the Server Accessible from Outside Your Network (Optional)
+## Making the Server Accessible from the Internet
 
-To access your application from the internet:
+> **IMPORTANT**: Before exposing your application to the internet, carefully review the security guidelines in the following documents:
+> - [Internet Access Security Guide](./internet_access_security.md)
+> - [HTTPS Setup Guide](./https_setup_guide.md)
 
-1. **Static IP or Dynamic DNS**: Set up a static IP address or use a Dynamic DNS service like No-IP, DynDNS, or Duck DNS.
+To make your application accessible from anywhere on the internet, follow these comprehensive steps:
 
-2. **Port Forwarding**:
-   - Access your router's admin panel (typically at `192.168.1.1` or `192.168.0.1`)
-   - Find the port forwarding section
-   - Create a new rule that forwards port 5000 to your computer's local IP address
-   - Save the settings
+### 1. Set Up a Static IP or Dynamic DNS
 
-3. **Domain Name (Optional)**:
-   - Register a domain name
-   - Point it to your public IP address
+#### Option A: Static IP (if available from your ISP)
+1. Contact your Internet Service Provider (ISP)
+2. Request a static IP address (may involve additional cost)
+3. Configure your router with the provided static IP settings
 
-4. **Security Considerations**:
-   - Use HTTPS for public access
-   - Set up a reverse proxy like NGINX
-   - Consider using a VPN instead of direct internet access
+#### Option B: Dynamic DNS (recommended for home setups)
+1. Create an account with a Dynamic DNS service:
+   - [No-IP](https://www.noip.com/) (offers free tier)
+   - [DuckDNS](https://www.duckdns.org/) (free)
+   - [Dynu](https://www.dynu.com/) (free tier available)
+
+2. Download and install the Dynamic DNS client for Windows
+3. Configure the client with your account information
+4. The client will keep your domain name pointed to your changing IP address
+
+### 2. Configure Port Forwarding on Your Router
+
+1. Find your computer's local IP address:
+   ```
+   ipconfig
+   ```
+   Note the "IPv4 Address" (typically like 192.168.1.x)
+
+2. Access your router's admin panel:
+   - Open a browser and enter your router's IP (typically `192.168.1.1` or `192.168.0.1`)
+   - Log in with your router's admin credentials
+
+3. Locate the Port Forwarding section:
+   - May be under "Advanced Settings," "NAT/Gaming," or "Virtual Server"
+   - Each router brand has different menu layouts
+
+4. Create a new port forwarding rule:
+   - External/Public Port: 5000
+   - Internal/Private Port: 5000
+   - Internal IP Address: Your computer's local IP address (from step 1)
+   - Protocol: TCP (or TCP/UDP)
+   - Enable the rule and save changes
+
+5. Test if port forwarding is working:
+   - Visit [canyouseeme.org](https://canyouseeme.org/)
+   - Enter port 5000 and check if it's open
+
+### 3. Set Up Security Measures (Critical for Internet Access)
+
+#### A. Enable HTTPS with a Reverse Proxy
+
+For secure internet access, install and configure NGINX as a reverse proxy:
+
+1. Download and install [NGINX for Windows](https://nginx.org/en/download.html)
+
+2. Create an SSL certificate:
+   - For testing: Create a self-signed certificate using OpenSSL
+   - For production: Use [Let's Encrypt](https://letsencrypt.org/) with [Certbot](https://certbot.eff.org/)
+
+3. Configure NGINX (`C:\nginx\conf\nginx.conf`):
+   ```nginx
+   http {
+     server {
+       listen 443 ssl;
+       server_name your-domain.duckdns.org;  # Your dynamic DNS domain
+
+       ssl_certificate C:/path/to/certificate.crt;
+       ssl_certificate_key C:/path/to/private.key;
+
+       location / {
+         proxy_pass http://localhost:5000;
+         proxy_http_version 1.1;
+         proxy_set_header Upgrade $http_upgrade;
+         proxy_set_header Connection 'upgrade';
+         proxy_set_header Host $host;
+         proxy_cache_bypass $http_upgrade;
+       }
+     }
+
+     # Redirect HTTP to HTTPS
+     server {
+       listen 80;
+       server_name your-domain.duckdns.org;
+       return 301 https://$host$request_uri;
+     }
+   }
+   ```
+
+4. Start NGINX service and set to auto-start
+
+5. Update port forwarding rules:
+   - Forward port 80 → your server's local IP, port 80
+   - Forward port 443 → your server's local IP, port 443
+
+#### B. Configure a Firewall
+
+1. Configure Windows Firewall:
+   - Allow inbound connections on ports 80 and 443 for NGINX
+   - Block direct access to port 5000 from the internet
+   - Allow local network access to port 5000
+
+2. Install and configure a security tool like [Fail2Ban](https://www.fail2ban.org/) to prevent brute force attacks
+
+### 4. Access Your Application
+
+Once everything is configured:
+
+1. From anywhere on the internet, access your application using:
+   ```
+   https://your-domain.duckdns.org
+   ```
+
+2. If using a self-signed certificate, you'll need to accept the security warning the first time
+
+### 5. Set Up Regular Backups
+
+Before making your application public, implement a backup strategy:
+
+1. Schedule regular database backups:
+   ```
+   pg_dump -U postgres warehouse_db > backup_$(date +%Y%m%d).sql
+   ```
+
+2. Back up your application code and configuration files
+
+3. Store backups in a separate location from your server
+
+### 6. Strengthen User Authentication
+
+For internet-facing applications, standard authentication is not enough:
+
+1. **Set Strong Password Policies**:
+   - Update the authentication system to enforce strong passwords
+   - Require minimum length (10+ characters)
+   - Require complexity (letters, numbers, special characters)
+   - Implement account lockout after failed attempts
+
+2. **Consider Two-Factor Authentication**:
+   - Add a second authentication factor for extra security
+   - Options include email verification codes, authenticator apps, or SMS
+
+3. **Implement Session Management**:
+   - Set reasonable session timeouts (e.g., 30 minutes of inactivity)
+   - Allow only one active session per user
+   - Provide a "logout from all devices" option for administrators
+
+4. **Review and Limit User Permissions**:
+   - Audit all user accounts regularly
+   - Remove inactive accounts
+   - Ensure each user has only the necessary permissions
+   - Limit administrator accounts to absolute minimum
+
+### 7. Monitor and Maintain
+
+1. **Set Up Monitoring**:
+   - Install and configure [Prometheus](https://prometheus.io/) and [Grafana](https://grafana.com/) for metrics monitoring
+   - Set up email alerts for server issues (high CPU, memory usage, disk space)
+   - Monitor application errors and response times
+
+2. **Security Vigilance**:
+   - Regularly check logs for suspicious activity
+   - Implement a log rotation policy to prevent disk space issues
+   - Consider a security information and event management (SIEM) solution
+
+3. **Keep Everything Updated**:
+   - Create a regular update schedule for Windows, Node.js, and all dependencies
+   - Test updates in a staging environment before applying to production
+   - Subscribe to security mailing lists for critical updates
+
+4. **Incident Response Plan**:
+   - Create a documented plan for security incidents
+   - Include steps for containment, analysis, and recovery
+   - Practice the plan periodically
 
 ## System Requirements
 
