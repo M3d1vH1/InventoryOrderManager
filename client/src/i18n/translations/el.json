@@ -21,7 +21,9 @@
     "search": "Αναζήτηση",
     "filter": "Φίλτρο",
     "actions": "Ενέργειες",
-    "notSpecified": "Δεν καθορίστηκε"
+    "notSpecified": "Δεν καθορίστηκε",
+    "expandSidebar": "Επέκταση μενού",
+    "collapseSidebar": "Σύμπτυξη μενού"
   },
   "dashboard": {
     "title": "Πίνακας Ελέγχου",

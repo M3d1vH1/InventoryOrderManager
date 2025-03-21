@@ -16,7 +16,9 @@
     "reports": "Reports",
     "customers": "Customers",
     "settings": "Settings",
-    "orderPicking": "Order Picking"
+    "orderPicking": "Order Picking",
+    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Collapse sidebar"
   },
   "dashboard": {
     "title": "Dashboard",

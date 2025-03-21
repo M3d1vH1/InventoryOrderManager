@@ -53,7 +53,7 @@ const Sidebar = () => {
                       className={`flex items-center w-full p-2 text-left rounded ${isActive("/") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
                       title={t('dashboard.title')}
                     >
-                      <i className="fas fa-tachometer-alt w-5 flex-shrink-0"></i>
+                      <i className="fas fa-tachometer-alt w-5 h-5 flex-shrink-0 text-center"></i>
                       {isSidebarOpen && <span className="ml-2">{t('dashboard.title')}</span>}
                     </button>
                   </Link>
@@ -64,7 +64,7 @@ const Sidebar = () => {
                       className={`flex items-center w-full p-2 text-left rounded ${isActive("/orders") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
                       title={t('orders.title')}
                     >
-                      <i className="fas fa-shopping-cart w-5 flex-shrink-0"></i>
+                      <i className="fas fa-shopping-cart w-5 h-5 flex-shrink-0 text-center"></i>
                       {isSidebarOpen && <span className="ml-2">{t('orders.title')}</span>}
                     </button>
                   </Link>
@@ -75,7 +75,7 @@ const Sidebar = () => {
                       className={`flex items-center w-full p-2 text-left rounded ${isActive("/products") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
                       title={t('products.title')}
                     >
-                      <i className="fas fa-box w-5 flex-shrink-0"></i>
+                      <i className="fas fa-box w-5 h-5 flex-shrink-0 text-center"></i>
                       {isSidebarOpen && <span className="ml-2">{t('products.title')}</span>}
                     </button>
                   </Link>
