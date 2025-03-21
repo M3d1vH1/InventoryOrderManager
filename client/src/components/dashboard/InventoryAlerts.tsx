@@ -148,7 +148,7 @@ const InventoryAlerts = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow">
+    <div className="lg:col-span-2 bg-white rounded-lg shadow">
       <div className="p-4 border-b border-slate-200 flex justify-between items-center">
         <div className="flex items-center">
           <h2 className="font-semibold text-lg">{t('inventory.alerts')}</h2>
