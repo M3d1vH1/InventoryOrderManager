@@ -407,39 +407,9 @@ export default function Products() {
         return;
       }
 
-      // Check file dimensions by loading it into an Image object
-      const img = new Image();
-      const objectUrl = URL.createObjectURL(file);
-      
-      img.onload = () => {
-        // Release object URL after dimensions are checked
-        URL.revokeObjectURL(objectUrl);
-        
-        // Check dimensions
-        const minWidth = 200;
-        const minHeight = 200;
-        const maxWidth = 1200;
-        const maxHeight = 1200;
-        
-        if (img.width < minWidth || img.height < minHeight) {
-          toast({
-            title: t('products.imageTooSmall'),
-            description: t('products.minImageDimensions', { width: minWidth, height: minHeight }),
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        if (img.width > maxWidth || img.height > maxHeight) {
-          toast({
-            title: t('products.imageTooLarge'),
-            description: t('products.maxImageDimensions', { width: maxWidth, height: maxHeight }),
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        // If all checks pass, set the image file
+      try {
+        // Skip dimension check, it was causing errors in some environments
+        // Instead, just create a preview and set the file directly
         setImageFile(file);
         
         // Create preview
@@ -447,19 +417,24 @@ export default function Products() {
         reader.onloadend = () => {
           setImagePreview(reader.result as string);
         };
+        reader.onerror = () => {
+          toast({
+            title: t('products.invalidImage'),
+            description: t('products.imageLoadError'),
+            variant: "destructive",
+          });
+          setImageFile(null);
+          setImagePreview(null);
+        };
         reader.readAsDataURL(file);
-      };
-      
-      img.onerror = () => {
-        URL.revokeObjectURL(objectUrl);
+      } catch (error) {
+        console.error("Error processing image:", error);
         toast({
           title: t('products.invalidImage'),
           description: t('products.imageLoadError'),
           variant: "destructive",
         });
-      };
-      
-      img.src = objectUrl;
+      }
     }
   };
   
