@@ -1073,33 +1073,32 @@ const Settings = () => {
                     <form onSubmit={notificationForm.handleSubmit(onNotificationSubmit)} className="space-y-6">
                       <div className="space-y-4">
                         <h3 className="text-lg font-medium">System Alerts</h3>
-                    
-                    <FormField
-                      control={notificationForm.control}
-                      name="lowStockAlerts"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Low Stock Alerts</FormLabel>
-                            <FormDescription>
-                              Receive notifications when products are running low
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <h3 className="text-lg font-medium pt-4">Order Notifications</h3>
-                    
-                    <FormField
-                      control={notificationForm.control}
-                      name="orderConfirmation"
+                        <FormField
+                          control={notificationForm.control}
+                          name="lowStockAlerts"
+                          render={({ field }) => (
+                            <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">Low Stock Alerts</FormLabel>
+                                <FormDescription>
+                                  Receive notifications when products are running low
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <h3 className="text-lg font-medium pt-4">Order Notifications</h3>
+                        
+                        <FormField
+                          control={notificationForm.control}
+                          name="orderConfirmation"
                       render={({ field }) => (
                         <FormItem className="flex items-center justify-between rounded-lg border p-4">
                           <div className="space-y-0.5">
