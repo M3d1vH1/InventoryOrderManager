@@ -95,6 +95,15 @@ type UserType = {
   lastLogin: string | null;
 };
 
+type RolePermissionType = {
+  id: number;
+  role: string;
+  permission: string;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string | null;
+};
+
 // User Management Component
 const UserManagement = () => {
   const { toast } = useToast();
