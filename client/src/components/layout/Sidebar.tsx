@@ -86,7 +86,7 @@ const Sidebar = () => {
                       className={`flex items-center w-full p-2 text-left rounded ${isActive("/customers") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
                       title={t('app.customers')}
                     >
-                      <i className="fas fa-users w-5 flex-shrink-0"></i>
+                      <i className="fas fa-users w-5 h-5 flex-shrink-0 text-center"></i>
                       {isSidebarOpen && <span className="ml-2">{t('app.customers')}</span>}
                     </button>
                   </Link>
@@ -97,7 +97,7 @@ const Sidebar = () => {
                       className={`flex items-center w-full p-2 text-left rounded ${isActive("/inventory") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
                       title={t('app.inventory')}
                     >
-                      <i className="fas fa-warehouse w-5 flex-shrink-0"></i>
+                      <i className="fas fa-warehouse w-5 h-5 flex-shrink-0 text-center"></i>
                       {isSidebarOpen && <span className="ml-2">{t('app.inventory')}</span>}
                     </button>
                   </Link>
@@ -108,7 +108,7 @@ const Sidebar = () => {
                       className={`flex items-center w-full p-2 text-left rounded ${isActive("/reports") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
                       title={t('app.reports')}
                     >
-                      <i className="fas fa-chart-bar w-5 flex-shrink-0"></i>
+                      <i className="fas fa-chart-bar w-5 h-5 flex-shrink-0 text-center"></i>
                       {isSidebarOpen && <span className="ml-2">{t('app.reports')}</span>}
                     </button>
                   </Link>
@@ -123,7 +123,7 @@ const Sidebar = () => {
                   className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-picking") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
                   title={t('app.orderPicking')}
                 >
-                  <i className="fas fa-clipboard-check w-5 flex-shrink-0"></i>
+                  <i className="fas fa-clipboard-check w-5 h-5 flex-shrink-0 text-center"></i>
                   {isSidebarOpen && <span className="ml-2">{t('app.orderPicking')}</span>}
                 </button>
               </Link>
@@ -137,7 +137,7 @@ const Sidebar = () => {
                     className={`flex items-center w-full p-2 text-left rounded ${isActive("/settings") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
                     title={t('app.settings')}
                   >
-                    <i className="fas fa-cog w-5 flex-shrink-0"></i>
+                    <i className="fas fa-cog w-5 h-5 flex-shrink-0 text-center"></i>
                     {isSidebarOpen && <span className="ml-2">{t('app.settings')}</span>}
                   </button>
                 </Link>
@@ -153,8 +153,8 @@ const Sidebar = () => {
             className={`flex items-center w-full p-2 text-left rounded hover:bg-slate-700 transition-colors ${!isSidebarOpen ? "justify-center" : ""}`}
             title={isSidebarOpen ? t('app.collapseSidebar') : t('app.expandSidebar')}
           >
-            <i className={`fas ${isSidebarOpen ? 'fa-angle-double-left' : 'fa-angle-double-right'} w-5 flex-shrink-0 text-blue-400`}></i>
-            {isSidebarOpen && <span className="ml-2">{t('app.collapseSidebar') || "Collapse"}</span>}
+            <i className={`fas ${isSidebarOpen ? 'fa-angle-double-left' : 'fa-angle-double-right'} w-5 h-5 flex-shrink-0 text-center text-blue-400`}></i>
+            {isSidebarOpen && <span className="ml-2">{t('app.collapseSidebar')}</span>}
           </button>
         </div>
       </aside>
