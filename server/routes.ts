@@ -13,6 +13,69 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { getEmailSettings, updateEmailSettings, testEmailConnection, getEmailTemplate, updateEmailTemplate, getLabelTemplate, updateLabelTemplate } from "./api/emailSettings";
 import { getCompanySettings, updateCompanySettings, getNotificationSettings, updateNotificationSettings } from "./api/settings";
+
+// Function to determine the appropriate storage path based on environment
+function getStoragePath(): string {
+  // Check for environment variable first (most flexible for self-hosting)
+  if (process.env.STORAGE_PATH) {
+    return process.env.STORAGE_PATH;
+  }
+  
+  // Check if .data directory exists (Replit-specific persistent storage)
+  const replitDataPath = path.join(process.cwd(), '.data');
+  if (fs.existsSync(replitDataPath)) {
+    return replitDataPath;
+  }
+  
+  // Default to a 'storage' directory in the project root
+  const defaultStoragePath = path.join(process.cwd(), 'storage');
+  if (!fs.existsSync(defaultStoragePath)) {
+    fs.mkdirSync(defaultStoragePath, { recursive: true });
+  }
+  
+  return defaultStoragePath;
+}
+
+// Base path for persistent file storage (works on Replit and self-hosted)
+const STORAGE_BASE_PATH = getStoragePath();
+const UPLOADS_PATH = path.join(STORAGE_BASE_PATH, 'uploads');
+const PRODUCTS_UPLOAD_PATH = path.join(UPLOADS_PATH, 'products');
+
+// Ensure upload directories exist
+if (!fs.existsSync(UPLOADS_PATH)) {
+  fs.mkdirSync(UPLOADS_PATH, { recursive: true });
+}
+if (!fs.existsSync(PRODUCTS_UPLOAD_PATH)) {
+  fs.mkdirSync(PRODUCTS_UPLOAD_PATH, { recursive: true });
+}
+
+// Function to ensure public folder has access to files in the storage
+function ensurePublicAccess(sourcePath: string, publicPath: string): void {
+  const publicDir = path.join(process.cwd(), 'public', publicPath);
+  
+  // Create parent directories if they don't exist
+  if (!fs.existsSync(path.dirname(publicDir))) {
+    fs.mkdirSync(path.dirname(publicDir), { recursive: true });
+  }
+  
+  // Try to create a symbolic link if it doesn't exist
+  if (!fs.existsSync(publicDir)) {
+    try {
+      fs.symlinkSync(sourcePath, publicDir, 'dir');
+    } catch (err) {
+      console.error(`Failed to create symbolic link from ${sourcePath} to ${publicDir}:`, err);
+      // If symlink fails (common on Windows), we'll use a file copy approach instead
+      // This won't automatically sync new files but ensures basic functionality
+      if (!fs.existsSync(publicDir)) {
+        fs.mkdirSync(publicDir, { recursive: true });
+      }
+      // We don't copy files here - individual file operations handle this when needed
+    }
+  }
+}
+
+// Setup required symbolic links (or fallback directories)
+ensurePublicAccess(PRODUCTS_UPLOAD_PATH, 'uploads/products');
 import { getSlowMovingProducts, updateProductStock } from "./api/inventory";
 import { sendOrderShippedEmail } from "./services/emailService";
 
@@ -90,43 +153,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Handle file upload if present
       if (req.files && req.files.image) {
         const imageFile = req.files.image as UploadedFile;
-        // Use .data directory which persists across deployments
-        const uploadDir = path.join(process.cwd(), '.data/uploads/products');
-        
-        // Ensure upload directory exists
-        if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
-        }
         
         // Generate unique filename
         const filename = `${Date.now()}-${imageFile.name.replace(/\s+/g, '-')}`;
-        const filePath = path.join(uploadDir, filename);
+        const filePath = path.join(PRODUCTS_UPLOAD_PATH, filename);
         
         // Move file to uploads directory
         await imageFile.mv(filePath);
         
-        // Set image path for storage (still use /uploads path for URL)
+        // Set image path for storage (URL path)
         imagePath = `/uploads/products/${filename}`;
         
-        // Ensure the public folder has access to the images
-        const publicDir = path.join(process.cwd(), 'public/uploads');
-        const productsDir = path.join(publicDir, 'products');
+        // Ensure public access (in case symlink was removed)
+        ensurePublicAccess(PRODUCTS_UPLOAD_PATH, 'uploads/products');
         
-        if (!fs.existsSync(publicDir)) {
-          fs.mkdirSync(publicDir, { recursive: true });
+        // If symlink failed, copy the file directly as fallback
+        const publicFilePath = path.join(process.cwd(), 'public/uploads/products', filename);
+        if (!fs.existsSync(path.dirname(publicFilePath))) {
+          fs.mkdirSync(path.dirname(publicFilePath), { recursive: true });
         }
         
-        // Create symbolic link if it doesn't exist
-        if (!fs.existsSync(productsDir)) {
+        // Only copy if symlink doesn't exist and the file isn't already in public
+        if (!fs.existsSync(publicFilePath)) {
           try {
-            fs.symlinkSync(uploadDir, productsDir, 'dir');
+            fs.copyFileSync(filePath, publicFilePath);
           } catch (err) {
-            console.error('Failed to create symbolic link:', err);
-            // If symlink fails, try to create the directory and copy the file
-            if (!fs.existsSync(productsDir)) {
-              fs.mkdirSync(productsDir, { recursive: true });
-            }
-            fs.copyFileSync(filePath, path.join(productsDir, filename));
+            console.error('Failed to copy file to public directory:', err);
           }
         }
       }
@@ -268,16 +320,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Handle file upload if present
       if (req.files && req.files.image) {
         const imageFile = req.files.image as UploadedFile;
-        const uploadDir = path.join(process.cwd(), 'public/uploads/products');
-        
-        // Ensure upload directory exists
-        if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
-        }
         
         // Generate unique filename
         const filename = `${Date.now()}-${imageFile.name.replace(/\s+/g, '-')}`;
-        const filePath = path.join(uploadDir, filename);
+        const filePath = path.join(PRODUCTS_UPLOAD_PATH, filename);
         
         // Move file to uploads directory
         await imageFile.mv(filePath);
@@ -288,14 +334,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
           imagePath: `/uploads/products/${filename}`
         };
         
-        // If there's an existing image file, we could delete it here
-        // Get the current product to find the old image path
+        // Ensure public access (in case symlink was removed)
+        ensurePublicAccess(PRODUCTS_UPLOAD_PATH, 'uploads/products');
+        
+        // If symlink failed, copy the file directly as fallback
+        const publicFilePath = path.join(process.cwd(), 'public/uploads/products', filename);
+        if (!fs.existsSync(path.dirname(publicFilePath))) {
+          fs.mkdirSync(path.dirname(publicFilePath), { recursive: true });
+        }
+        
+        // Only copy if symlink doesn't exist and the file isn't already in public
+        if (!fs.existsSync(publicFilePath)) {
+          try {
+            fs.copyFileSync(filePath, publicFilePath);
+          } catch (err) {
+            console.error('Failed to copy file to public directory:', err);
+          }
+        }
+        
+        // Delete the old image file if it exists
         const existingProduct = await storage.getProduct(id);
         if (existingProduct && existingProduct.imagePath) {
-          const oldImagePath = path.join(process.cwd(), 'public', existingProduct.imagePath);
+          const oldFilename = path.basename(existingProduct.imagePath);
+          const oldImagePath = path.join(PRODUCTS_UPLOAD_PATH, oldFilename);
           if (fs.existsSync(oldImagePath)) {
-            // Optional: Delete the old image file
-            // fs.unlinkSync(oldImagePath);
+            try {
+              fs.unlinkSync(oldImagePath);
+            } catch (err) {
+              console.error('Failed to delete old image file:', err);
+            }
           }
         }
       }
@@ -377,25 +444,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const imageFile = req.files.image as UploadedFile;
-      const uploadDir = path.join(process.cwd(), 'public/uploads/products');
-      
-      // Ensure upload directory exists
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
       
       // Generate unique filename
       const filename = `${Date.now()}-${imageFile.name.replace(/\s+/g, '-')}`;
-      const filePath = path.join(uploadDir, filename);
+      const filePath = path.join(PRODUCTS_UPLOAD_PATH, filename);
       
       // Move file to uploads directory
       await imageFile.mv(filePath);
       
+      // Ensure public access (in case symlink was removed)
+      ensurePublicAccess(PRODUCTS_UPLOAD_PATH, 'uploads/products');
+      
+      // If symlink failed, copy the file directly as fallback
+      const publicFilePath = path.join(process.cwd(), 'public/uploads/products', filename);
+      if (!fs.existsSync(path.dirname(publicFilePath))) {
+        fs.mkdirSync(path.dirname(publicFilePath), { recursive: true });
+      }
+      
+      // Only copy if symlink doesn't exist and the file isn't already in public
+      if (!fs.existsSync(publicFilePath)) {
+        try {
+          fs.copyFileSync(filePath, publicFilePath);
+        } catch (err) {
+          console.error('Failed to copy file to public directory:', err);
+        }
+      }
+      
       // Delete old image if it exists
       if (product.imagePath) {
-        const oldImagePath = path.join(process.cwd(), 'public', product.imagePath);
+        const oldFilename = path.basename(product.imagePath);
+        const oldImagePath = path.join(PRODUCTS_UPLOAD_PATH, oldFilename);
         if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
+          try {
+            fs.unlinkSync(oldImagePath);
+          } catch (err) {
+            console.error('Failed to delete old image file:', err);
+          }
         }
       }
       
