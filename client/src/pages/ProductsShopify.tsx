@@ -20,7 +20,8 @@ import {
   Upload,
   Image,
   X,
-  Plus
+  Plus,
+  Tag
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -1051,9 +1052,9 @@ const Products = () => {
                     <Info className="mr-2 h-4 w-4" />
                     Information
                   </TabsTrigger>
-                  <TabsTrigger value="barcode">
-                    <Package className="mr-2 h-4 w-4" />
-                    Barcode
+                  <TabsTrigger value="tags">
+                    <Tag className="mr-2 h-4 w-4" />
+                    Tags
                   </TabsTrigger>
                   <TabsTrigger value="inventory">
                     <Box className="mr-2 h-4 w-4" />
@@ -1147,35 +1148,50 @@ const Products = () => {
                   </div>
                 </TabsContent>
                 
-                <TabsContent value="barcode" className="mt-4">
+                <TabsContent value="tags" className="mt-4">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Product Barcode</CardTitle>
-                      <CardDescription>Scan this barcode to identify the product</CardDescription>
+                      <CardTitle>Product Tags</CardTitle>
+                      <CardDescription>View and manage product categorization tags</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex flex-col items-center">
-                      {viewingProduct.barcode ? (
-                        <div className="flex flex-col items-center">
-                          <div className="bg-white p-6 border border-slate-200 rounded-lg">
-                            <BarcodeGenerator value={viewingProduct.barcode} />
+                    <CardContent>
+                      {viewingProduct.tags && viewingProduct.tags.length > 0 ? (
+                        <div className="space-y-6">
+                          <div className="flex flex-wrap gap-2">
+                            {viewingProduct.tags.map((tag, index) => (
+                              <Badge 
+                                key={index} 
+                                variant="outline" 
+                                className="px-3 py-1 text-sm bg-slate-50 border border-slate-200"
+                              >
+                                <span className="flex items-center">
+                                  <Tag className="h-3 w-3 mr-1" />
+                                  {tag}
+                                </span>
+                              </Badge>
+                            ))}
                           </div>
-                          <p className="mt-4 text-center font-mono">{viewingProduct.barcode}</p>
+                          <div className="bg-slate-50 p-4 rounded-md border border-slate-200">
+                            <h3 className="text-sm font-medium text-slate-700 mb-2">About Product Tags</h3>
+                            <p className="text-sm text-slate-600">
+                              Tags help categorize products and make them easier to find. They are also used for filtering and organizing inventory reports.
+                            </p>
+                          </div>
                         </div>
                       ) : (
                         <div className="text-center py-10">
-                          <p className="text-slate-500">No barcode available for this product.</p>
+                          <Tag className="h-12 w-12 text-slate-300 mb-2" />
+                          <p className="text-slate-500">No tags have been added to this product.</p>
                           <Button 
                             className="mt-4"
                             variant="outline"
                             onClick={() => {
-                              setSelectedTab("info");
-                              setTimeout(() => {
-                                setIsDetailsDialogOpen(false);
-                                handleEditProduct(viewingProduct);
-                              }, 100);
+                              setIsDetailsDialogOpen(false);
+                              handleEditProduct(viewingProduct);
                             }}
                           >
-                            Add Barcode
+                            <Tag className="h-4 w-4 mr-2" />
+                            Add Tags
                           </Button>
                         </div>
                       )}
@@ -1183,10 +1199,13 @@ const Products = () => {
                     <CardFooter className="flex justify-center border-t pt-4">
                       <Button 
                         variant="outline" 
-                        onClick={() => window.open(`/product-barcode/${viewingProduct.id}`, '_blank')}
+                        onClick={() => {
+                          setIsDetailsDialogOpen(false);
+                          handleEditProduct(viewingProduct);
+                        }}
                       >
-                        <i className="fas fa-print mr-2"></i> 
-                        Print Barcode
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Tags
                       </Button>
                     </CardFooter>
                   </Card>
