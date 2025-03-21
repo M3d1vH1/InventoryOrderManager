@@ -181,6 +181,12 @@ const Products = () => {
 
   const createProductMutation = useMutation({
     mutationFn: async (values: ProductFormValues) => {
+      // Ensure tags is always an array to prevent "value.map is not a function" error
+      const productData = {
+        ...values,
+        tags: Array.isArray(values.tags) ? values.tags : []
+      };
+      
       // If there's an image file, use FormData to handle multipart/form-data
       if (imageFile) {
         const formData = new FormData();
@@ -189,9 +195,28 @@ const Products = () => {
         formData.append('image', imageFile);
         
         // Add other form values
-        Object.entries(values).forEach(([key, value]) => {
+        Object.entries(productData).forEach(([key, value]) => {
           if (key !== 'imagePath' && value !== undefined && value !== null) {
-            formData.append(key, value.toString());
+            if (key === 'tags') {
+              // Handle arrays specially
+              if (Array.isArray(value)) {
+                if (value.length === 0) {
+                  formData.append('tags', '[]');
+                } else {
+                  // Send each tag as a separate item in the FormData
+                  value.forEach(tag => {
+                    formData.append('tags[]', tag);
+                  });
+                  
+                  // Also include JSON as fallback
+                  formData.append('tagsJson', JSON.stringify(value));
+                }
+              } else {
+                formData.append('tags', '[]');
+              }
+            } else {
+              formData.append(key, value.toString());
+            }
           }
         });
         
@@ -212,7 +237,7 @@ const Products = () => {
         return apiRequest({
           url: '/api/products', 
           method: 'POST', 
-          body: JSON.stringify(values),
+          body: JSON.stringify(productData),
           headers: { 'Content-Type': 'application/json' }
         });
       }
@@ -252,6 +277,12 @@ const Products = () => {
 
   const updateProductMutation = useMutation({
     mutationFn: async ({ id, values }: { id: number; values: ProductFormValues }) => {
+      // Ensure tags is always an array to prevent "value.map is not a function" error
+      const productData = {
+        ...values,
+        tags: Array.isArray(values.tags) ? values.tags : []
+      };
+      
       // If there's an image file, use FormData to handle multipart/form-data
       if (imageFile) {
         const formData = new FormData();
@@ -260,9 +291,28 @@ const Products = () => {
         formData.append('image', imageFile);
         
         // Add other form values
-        Object.entries(values).forEach(([key, value]) => {
+        Object.entries(productData).forEach(([key, value]) => {
           if (key !== 'imagePath' && value !== undefined && value !== null) {
-            formData.append(key, value.toString());
+            if (key === 'tags') {
+              // Handle arrays specially
+              if (Array.isArray(value)) {
+                if (value.length === 0) {
+                  formData.append('tags', '[]');
+                } else {
+                  // Send each tag as a separate item in the FormData
+                  value.forEach(tag => {
+                    formData.append('tags[]', tag);
+                  });
+                  
+                  // Also include JSON as fallback
+                  formData.append('tagsJson', JSON.stringify(value));
+                }
+              } else {
+                formData.append('tags', '[]');
+              }
+            } else {
+              formData.append(key, value.toString());
+            }
           }
         });
         
@@ -283,7 +333,7 @@ const Products = () => {
         return apiRequest({
           url: `/api/products/${id}`,
           method: 'PATCH',
-          body: JSON.stringify(values),
+          body: JSON.stringify(productData),
           headers: { 'Content-Type': 'application/json' }
         });
       }
