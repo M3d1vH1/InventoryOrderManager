@@ -154,7 +154,7 @@ const Sidebar = () => {
             title={isSidebarOpen ? t('app.collapseSidebar') : t('app.expandSidebar')}
           >
             <i className={`fas ${isSidebarOpen ? 'fa-chevron-left' : 'fa-chevron-right'} w-5 flex-shrink-0`}></i>
-            {isSidebarOpen && <span className="ml-2">{isSidebarOpen ? t('app.collapseSidebar') : t('app.expandSidebar')}</span>}
+            {isSidebarOpen && <span className="ml-2">{t('app.collapseSidebar')}</span>}
           </button>
         </div>
       </aside>
