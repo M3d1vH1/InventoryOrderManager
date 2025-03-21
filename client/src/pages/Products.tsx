@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import { BarcodeScanner } from "@components/barcode/BarcodeScanner";
 import { BarcodeGenerator } from "@components/barcode/BarcodeGenerator";
-import { InventoryChangeHistory } from "@/components/inventory/InventoryChangeHistory";
+import { InventoryChangeHistory } from "../components/inventory/InventoryChangeHistory";
 
 // Interface for a Product
 interface Product {

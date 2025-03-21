@@ -40,7 +40,7 @@ interface InventoryChangeHistoryProps {
   productId: number;
 }
 
-function InventoryChangeHistory({ productId }: InventoryChangeHistoryProps) {
+export function InventoryChangeHistory({ productId }: InventoryChangeHistoryProps) {
   const { t } = useTranslation();
   
   // Fetch inventory changes for this product
