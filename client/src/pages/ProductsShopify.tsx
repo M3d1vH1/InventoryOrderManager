@@ -1110,8 +1110,8 @@ const Products = () => {
                                 alt={viewingProduct.name}
                                 className="object-cover w-full h-full"
                                 onError={(e) => {
-                                  console.error("Error loading product detail image:", e);
-                                  (e.target as HTMLImageElement).src = 'https://placehold.co/400x400?text=No+Image';
+                                  console.error("Error loading product detail image:", viewingProduct.imagePath);
+                                  (e.target as HTMLImageElement).src = '/placeholder-image.svg';
                                 }}
                               />
                             </div>
