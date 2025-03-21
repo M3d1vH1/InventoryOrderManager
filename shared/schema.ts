@@ -348,3 +348,40 @@ export const insertEmailSettingsSchema = createInsertSchema(emailSettings)
 
 export type InsertEmailSettings = z.infer<typeof insertEmailSettingsSchema>;
 export type EmailSettings = typeof emailSettings.$inferSelect;
+
+// Company Settings schema
+export const companySettings = pgTable("company_settings", {
+  id: serial("id").primaryKey(),
+  companyName: text("company_name").notNull().default('Warehouse Systems Inc.'),
+  email: text("email").notNull().default('info@warehousesys.com'),
+  phone: text("phone").default(''),
+  address: text("address").default(''),
+  logoPath: text("logo_path").default(''),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull(),
+});
+
+export const insertCompanySettingsSchema = createInsertSchema(companySettings)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+
+export type InsertCompanySettings = z.infer<typeof insertCompanySettingsSchema>;
+export type CompanySettings = typeof companySettings.$inferSelect;
+
+// Notification Settings schema
+export const notificationSettings = pgTable("notification_settings", {
+  id: serial("id").primaryKey(),
+  lowStockAlerts: boolean("low_stock_alerts").notNull().default(true),
+  orderConfirmation: boolean("order_confirmation").notNull().default(true),
+  shippingUpdates: boolean("shipping_updates").notNull().default(true),
+  dailyReports: boolean("daily_reports").notNull().default(false),
+  weeklyReports: boolean("weekly_reports").notNull().default(true),
+  soundEnabled: boolean("sound_enabled").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull(),
+});
+
+export const insertNotificationSettingsSchema = createInsertSchema(notificationSettings)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+
+export type InsertNotificationSettings = z.infer<typeof insertNotificationSettingsSchema>;
+export type NotificationSettings = typeof notificationSettings.$inferSelect;

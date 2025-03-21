@@ -1226,9 +1226,13 @@ export class DatabaseStorage implements IStorage {
       
       if (!existingSettings) {
         // Create new settings
+        console.log("Creating new email settings:", JSON.stringify({
+          ...settings,
+          authPass: settings.authPass ? "******" : undefined
+        }));
+        
         const [newSettings] = await this.db.insert(emailSettings)
           .values({
-            ...settings,
             host: settings.host || 'smtp.gmail.com',
             port: settings.port || 587,
             secure: settings.secure ?? false,
@@ -1244,7 +1248,7 @@ export class DatabaseStorage implements IStorage {
         return newSettings;
       } else {
         // Create an update object with all fields that are not undefined
-        const updateObject: any = {
+        const updateObject: Record<string, any> = {
           updatedAt: new Date()
         };
         
@@ -1254,18 +1258,12 @@ export class DatabaseStorage implements IStorage {
         if (settings.secure !== undefined) updateObject.secure = settings.secure;
         if (settings.enableNotifications !== undefined) updateObject.enableNotifications = settings.enableNotifications;
         if (settings.companyName !== undefined) updateObject.companyName = settings.companyName;
+        if (settings.fromEmail !== undefined) updateObject.fromEmail = settings.fromEmail;
+        if (settings.authUser !== undefined) updateObject.authUser = settings.authUser;
         
-        // Handle authentication fields - keep existing values if empty strings are provided
-        if (settings.authUser !== undefined && settings.authUser !== '') {
-          updateObject.authUser = settings.authUser;
-        }
-        
+        // Only update password if provided
         if (settings.authPass !== undefined && settings.authPass !== '') {
           updateObject.authPass = settings.authPass;
-        }
-        
-        if (settings.fromEmail !== undefined && settings.fromEmail !== '') {
-          updateObject.fromEmail = settings.fromEmail;
         }
         
         // Log the update for debugging
@@ -1274,12 +1272,13 @@ export class DatabaseStorage implements IStorage {
           authPass: updateObject.authPass ? "******" : "(unchanged)"
         }));
         
-        // Update existing settings
+        // Update existing settings with explicit where clause
         const [updatedSettings] = await this.db.update(emailSettings)
           .set(updateObject)
           .where(eq(emailSettings.id, existingSettings.id))
           .returning();
         
+        console.log("Email settings updated successfully, ID:", updatedSettings.id);
         return updatedSettings;
       }
     } catch (error) {

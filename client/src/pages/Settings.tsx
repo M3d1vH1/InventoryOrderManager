@@ -44,7 +44,11 @@ const emailSettingsSchema = z.object({
   port: z.coerce.number().int().positive({ message: "Port must be a positive number" }),
   secure: z.boolean().default(false),
   authUser: z.string().min(1, { message: "Username is required" }),
-  authPass: z.string().min(1, { message: "Password is required" }),
+  authPass: z.string().optional().refine(val => {
+    // For new settings, password is required
+    // For updates, empty password means "keep existing password"
+    return true;
+  }),
   fromEmail: z.string().email({ message: "Valid email address is required" }),
   companyName: z.string().min(1, { message: "Company name is required" }),
   enableNotifications: z.boolean().default(true),
@@ -627,8 +631,20 @@ const Settings = () => {
     }
   });
   
+  // Define email settings interface
+  interface EmailSettingsData {
+    id: number;
+    host: string;
+    port: number;
+    secure: boolean;
+    authUser: string;
+    fromEmail: string;
+    companyName: string;
+    enableNotifications: boolean;
+  }
+  
   // Get current email settings query
-  const { data: emailSettings, isLoading: isLoadingEmailSettings } = useQuery({
+  const { data: emailSettings, isLoading: isLoadingEmailSettings } = useQuery<EmailSettingsData>({
     queryKey: ['/api/email-settings'],
   });
   
@@ -730,7 +746,13 @@ const Settings = () => {
   };
 
   const onEmailSettingsSubmit = (values: z.infer<typeof emailSettingsSchema>) => {
-    emailSettingsMutation.mutate(values);
+    // If password is empty, remove it from the request to keep the existing password
+    if (values.authPass === '') {
+      const { authPass, ...valuesWithoutPassword } = values;
+      emailSettingsMutation.mutate(valuesWithoutPassword);
+    } else {
+      emailSettingsMutation.mutate(values);
+    }
   };
 
   // Company settings form
