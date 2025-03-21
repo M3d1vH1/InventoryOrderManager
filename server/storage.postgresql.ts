@@ -300,50 +300,54 @@ export class DatabaseStorage implements IStorage {
   }
   
   async searchProducts(query: string, category?: string, stockStatus?: string): Promise<Product[]> {
-    let conditions = [];
-    
-    // Add search condition if query provided
-    if (query) {
-      const lowerQuery = `%${query.toLowerCase()}%`;
-      conditions.push(
-        or(
-          like(products.name, lowerQuery),
-          like(products.sku, lowerQuery)
-        )
-      );
-    }
-    
-    // Note: Category filtering has been removed as part of the simplified system
-    // The category parameter is retained for backward compatibility but is ignored
-    
-    // Add stock status filter if provided
-    if (stockStatus) {
-      switch(stockStatus) {
-        case 'in-stock':
-          conditions.push(gt(products.currentStock, products.minStockLevel));
-          break;
-        case 'low-stock':
-          conditions.push(
-            and(
-              gt(products.currentStock, 0),
-              lte(products.currentStock, products.minStockLevel)
-            )
-          );
-          break;
-        case 'out-stock':
-          conditions.push(eq(products.currentStock, 0));
-          break;
+    try {
+      let conditions = [];
+      
+      // Add search condition if query provided using case-insensitive ILIKE for better Unicode support
+      if (query) {
+        conditions.push(
+          or(
+            sql`${products.name} ILIKE ${'%' + query + '%'}`,
+            sql`${products.sku} ILIKE ${'%' + query + '%'}`
+          )
+        );
       }
-    }
-    
-    // Execute query with conditions
-    if (conditions.length > 0) {
-      return await this.db
-        .select()
-        .from(products)
-        .where(and(...conditions));
-    } else {
-      return await this.getAllProducts();
+      
+      // Note: Category filtering has been removed as part of the simplified system
+      // The category parameter is retained for backward compatibility but is ignored
+      
+      // Add stock status filter if provided
+      if (stockStatus) {
+        switch(stockStatus) {
+          case 'in-stock':
+            conditions.push(gt(products.currentStock, products.minStockLevel));
+            break;
+          case 'low-stock':
+            conditions.push(
+              and(
+                gt(products.currentStock, 0),
+                lte(products.currentStock, products.minStockLevel)
+              )
+            );
+            break;
+          case 'out-stock':
+            conditions.push(eq(products.currentStock, 0));
+            break;
+        }
+      }
+      
+      // Execute query with conditions
+      if (conditions.length > 0) {
+        return await this.db
+          .select()
+          .from(products)
+          .where(and(...conditions));
+      } else {
+        return await this.getAllProducts();
+      }
+    } catch (error) {
+      console.error('Error searching products:', error);
+      return [];
     }
   }
   
@@ -371,11 +375,17 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getOrdersByCustomer(customerName: string): Promise<Order[]> {
-    return await this.db
-      .select()
-      .from(orders)
-      .where(eq(orders.customerName, customerName))
-      .orderBy(desc(orders.orderDate));
+    try {
+      // Use case-insensitive exact match with the ILIKE operator for better Unicode support
+      return await this.db
+        .select()
+        .from(orders)
+        .where(sql`LOWER(${orders.customerName}) = LOWER(${customerName})`)
+        .orderBy(desc(orders.orderDate));
+    } catch (error) {
+      console.error('Error getting orders by customer:', error);
+      return [];
+    }
   }
   
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
