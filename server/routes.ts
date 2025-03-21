@@ -2047,6 +2047,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Route to migrate product images to the persistent storage
+  app.post('/api/migrate-images', isAuthenticated, hasRole(['admin']), migrateImages);
+
   // Route to check a specific permission for the current user
   app.get('/api/check-permission/:permission', isAuthenticated, async (req, res) => {
     try {
