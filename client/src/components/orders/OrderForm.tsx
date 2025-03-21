@@ -559,8 +559,14 @@ const OrderForm = ({
                               </CommandEmpty>
                               <CommandGroup>
                                 {customers
-                                  ?.filter(customer => 
-                                    customer.name.toLowerCase().includes(field.value.toLowerCase()))
+                                  ?.filter(customer => {
+                                    // Use normalization to properly handle Greek characters and other Unicode characters
+                                    const normalizedCustomerName = customer.name.normalize('NFD');
+                                    const normalizedSearch = field.value.normalize('NFD');
+                                    
+                                    // Now create a case-insensitive search (more reliable than toLowerCase() for Greek)
+                                    return normalizedCustomerName.toLocaleLowerCase().includes(normalizedSearch.toLocaleLowerCase());
+                                  })
                                   .map(customer => (
                                     <CommandItem
                                       key={customer.id}

@@ -695,19 +695,22 @@ export class DatabaseStorage implements IStorage {
   async searchCustomers(query: string): Promise<Customer[]> {
     if (!query) return this.getAllCustomers();
     
-    // Use ILIKE for case-insensitive search that also handles non-Latin characters (like Greek)
-    const searchPattern = `%${query}%`;
+    // Simple SQL-based search for better Unicode character support
     try {
-      console.log(`Searching customers with pattern: ${searchPattern}`);
+      console.log(`Searching customers with query: ${query}`);
       
-      // Use raw SQL with ILIKE for better Unicode character handling
-      return await this.db.execute(
-        sql`SELECT * FROM "customers" 
-            WHERE "name" ILIKE ${searchPattern}
-            OR COALESCE("vat_number", '') ILIKE ${searchPattern}
-            OR COALESCE("email", '') ILIKE ${searchPattern}
-            OR COALESCE("contact_person", '') ILIKE ${searchPattern}`
-      );
+      // Use ILIKE operator which is case-insensitive and works well with Unicode
+      return await this.db
+        .select()
+        .from(customers)
+        .where(
+          or(
+            sql`${customers.name} ILIKE ${'%' + query + '%'}`,
+            sql`COALESCE(${customers.vatNumber}, '') ILIKE ${'%' + query + '%'}`,
+            sql`COALESCE(${customers.email}, '') ILIKE ${'%' + query + '%'}`,
+            sql`COALESCE(${customers.contactPerson}, '') ILIKE ${'%' + query + '%'}`
+          )
+        );
     } catch (error) {
       console.error('Error searching customers:', error);
       return [];
