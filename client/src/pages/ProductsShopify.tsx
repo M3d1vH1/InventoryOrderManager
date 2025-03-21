@@ -732,7 +732,27 @@ const Products = () => {
                         <div className="flex flex-col items-center justify-center">
                           {/* Image Preview */}
                           <div className="w-full flex justify-center mb-3">
-                            {(imageFile || editingProduct?.imagePath) && (
+                            {imagePreview ? (
+                              <div className="relative w-full h-40 border rounded-md overflow-hidden">
+                                <img 
+                                  src={imagePreview} 
+                                  alt="Product preview" 
+                                  className="w-full h-full object-contain"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setImageFile(null);
+                                    setImagePreview(null);
+                                    field.onChange("");
+                                  }}
+                                  className="absolute top-1 right-1 bg-white p-1 rounded-full shadow-md"
+                                  title="Remove Image"
+                                >
+                                  <X size={14} />
+                                </button>
+                              </div>
+                            ) : (imageFile || editingProduct?.imagePath) && !imagePreview ? (
                               <div className="relative w-full h-40 border rounded-md overflow-hidden">
                                 <img 
                                   src={
@@ -763,16 +783,7 @@ const Products = () => {
                                   <X size={14} />
                                 </button>
                               </div>
-                            )}
-                            {imagePreview && (
-                              <div className="relative w-full h-40 border rounded-md overflow-hidden">
-                                <img 
-                                  src={imagePreview} 
-                                  alt="Product preview" 
-                                  className="w-full h-full object-contain"
-                                />
-                              </div>
-                            )}
+                            ) : null}
                             {!imageFile && !imagePreview && !editingProduct?.imagePath && (
                               <div className="w-full h-40 border-2 border-dashed rounded-md flex flex-col items-center justify-center text-gray-400">
                                 <Image size={40} />
