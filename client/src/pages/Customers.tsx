@@ -242,6 +242,21 @@ const Customers = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
       setIsCreateDialogOpen(false);
+      // Reset the create form to its default values
+      createForm.reset({
+        name: '',
+        vatNumber: '',
+        address: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        country: '',
+        email: '',
+        phone: '',
+        contactPerson: '',
+        shippingCompany: '',
+        notes: '',
+      });
       toast({
         title: "Success",
         description: "Customer created successfully",

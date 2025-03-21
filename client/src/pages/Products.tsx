@@ -179,6 +179,22 @@ export default function Products() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
       setIsDialogOpen(false);
+      // Reset form to default values
+      form.reset({
+        name: '',
+        sku: '',
+        barcode: '',
+        description: '',
+        minStockLevel: 5,
+        currentStock: 0,
+        location: '',
+        unitsPerBox: 1,
+        imagePath: '',
+        tags: [],
+      });
+      // Reset image state
+      setImagePreview(null);
+      setImageFile(null);
     },
     onError: (error) => {
       console.error("Error creating product:", error);
