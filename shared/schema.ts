@@ -385,3 +385,42 @@ export const insertNotificationSettingsSchema = createInsertSchema(notificationS
 
 export type InsertNotificationSettings = z.infer<typeof insertNotificationSettingsSchema>;
 export type NotificationSettings = typeof notificationSettings.$inferSelect;
+
+// Define permission types
+export const permissionEnum = pgEnum('permission_type', [
+  'view_dashboard',
+  'view_products',
+  'edit_products',
+  'view_customers',
+  'edit_customers',
+  'view_orders',
+  'create_orders',
+  'edit_orders',
+  'delete_orders',
+  'view_reports',
+  'order_picking',
+  'view_unshipped_items',
+  'authorize_unshipped_items',
+  'view_settings',
+  'edit_settings',
+  'view_users',
+  'edit_users',
+  'view_email_templates',
+  'edit_email_templates',
+]);
+
+// Role permissions
+export const rolePermissions = pgTable("role_permissions", {
+  id: serial("id").primaryKey(),
+  role: userRoleEnum("role").notNull(),
+  permission: permissionEnum("permission").notNull(),
+  enabled: boolean("enabled").default(false).notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull(),
+});
+
+export const insertRolePermissionSchema = createInsertSchema(rolePermissions)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+
+export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
+export type RolePermission = typeof rolePermissions.$inferSelect;

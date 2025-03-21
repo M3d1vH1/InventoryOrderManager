@@ -12,7 +12,8 @@ import {
   unshippedItems, type UnshippedItem, type InsertUnshippedItem,
   emailSettings, type EmailSettings, type InsertEmailSettings,
   companySettings, type CompanySettings, type InsertCompanySettings,
-  notificationSettings, type NotificationSettings, type InsertNotificationSettings
+  notificationSettings, type NotificationSettings, type InsertNotificationSettings,
+  rolePermissions, type RolePermission, type InsertRolePermission
 } from "@shared/schema";
 import { DatabaseStorage, initStorage } from './storage.postgresql';
 import { log } from './vite';
@@ -29,6 +30,12 @@ export interface IStorage {
   // Notification settings methods
   getNotificationSettings(): Promise<NotificationSettings | undefined>;
   updateNotificationSettings(settings: Partial<InsertNotificationSettings>): Promise<NotificationSettings | undefined>;
+  
+  // Role Permissions methods
+  getRolePermissions(role: string): Promise<RolePermission[]>;
+  getAllRolePermissions(): Promise<RolePermission[]>;
+  updateRolePermission(role: string, permission: string, enabled: boolean): Promise<RolePermission | undefined>;
+  checkPermission(role: string, permission: string): Promise<boolean>;
   
   // User methods
   getUser(id: number): Promise<User | undefined>;
@@ -1439,6 +1446,127 @@ export class MemStorage implements IStorage {
     }
     
     return this.notificationSettingsData;
+  }
+  
+  // Role permissions storage
+  private rolePermissionsMap: Map<string, RolePermission> = new Map();
+  private rolePermissionsIdCounter: number = 1;
+  
+  // Helper method to initialize default role permissions if not already done
+  private async initRolePermissions() {
+    const allPermissions = [
+      'view_dashboard', 'view_products', 'edit_products', 
+      'view_customers', 'edit_customers', 'view_orders', 'create_orders', 
+      'edit_orders', 'delete_orders', 'view_reports', 'order_picking',
+      'view_unshipped_items', 'authorize_unshipped_items', 'view_settings',
+      'edit_settings', 'view_users', 'edit_users', 'view_email_templates',
+      'edit_email_templates'
+    ];
+    
+    const roles = ['admin', 'manager', 'front_office', 'warehouse'];
+    
+    // Default permissions for each role
+    const defaultPermissions: Record<string, string[]> = {
+      'admin': allPermissions,
+      'manager': [
+        'view_dashboard', 'view_products', 'edit_products', 
+        'view_customers', 'edit_customers', 'view_orders', 'create_orders', 
+        'edit_orders', 'view_reports', 'order_picking',
+        'view_unshipped_items', 'authorize_unshipped_items'
+      ],
+      'front_office': [
+        'view_dashboard', 'view_products', 
+        'view_customers', 'edit_customers', 'view_orders', 'create_orders',
+        'view_unshipped_items', 'authorize_unshipped_items'
+      ],
+      'warehouse': [
+        'view_dashboard', 'view_products', 
+        'view_orders', 'order_picking',
+        'view_unshipped_items'
+      ]
+    };
+    
+    // Check if permissions exist for each role
+    for (const role of roles) {
+      const existingPermissions = await this.getRolePermissions(role);
+      
+      // If no permissions exist for this role, create default ones
+      if (existingPermissions.length === 0) {
+        for (const permission of allPermissions) {
+          const enabled = defaultPermissions[role].includes(permission);
+          await this.updateRolePermission(role, permission, enabled);
+        }
+      }
+    }
+  }
+  
+  async getRolePermissions(role: string): Promise<RolePermission[]> {
+    // Initialize if needed
+    const permCount = this.rolePermissionsMap.size;
+    if (permCount === 0) {
+      await this.initRolePermissions();
+    }
+    
+    return Array.from(this.rolePermissionsMap.values())
+      .filter(perm => perm.role === role);
+  }
+  
+  async getAllRolePermissions(): Promise<RolePermission[]> {
+    // Initialize if needed
+    const permCount = this.rolePermissionsMap.size;
+    if (permCount === 0) {
+      await this.initRolePermissions();
+    }
+    
+    return Array.from(this.rolePermissionsMap.values());
+  }
+  
+  async updateRolePermission(role: string, permission: string, enabled: boolean): Promise<RolePermission | undefined> {
+    // Check if permission already exists
+    const key = `${role}-${permission}`;
+    const existingPermission = this.rolePermissionsMap.get(key);
+    
+    if (existingPermission) {
+      // Update existing permission
+      const updatedPermission: RolePermission = {
+        ...existingPermission,
+        enabled,
+        updatedAt: new Date()
+      };
+      this.rolePermissionsMap.set(key, updatedPermission);
+      return updatedPermission;
+    } else {
+      // Create new permission
+      const id = this.rolePermissionsIdCounter++;
+      const newPermission: RolePermission = {
+        id,
+        role: role as any, // Type assertion needed because enums are strings
+        permission: permission as any,
+        enabled,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      this.rolePermissionsMap.set(key, newPermission);
+      return newPermission;
+    }
+  }
+  
+  async checkPermission(role: string, permission: string): Promise<boolean> {
+    if (role === 'admin') {
+      return true; // Admin always has all permissions
+    }
+    
+    // Initialize if needed
+    const permCount = this.rolePermissionsMap.size;
+    if (permCount === 0) {
+      await this.initRolePermissions();
+    }
+    
+    const key = `${role}-${permission}`;
+    const permissionRecord = this.rolePermissionsMap.get(key);
+    
+    // If permission record doesn't exist, deny access
+    return permissionRecord ? permissionRecord.enabled : false;
   }
   
   // Initialize with sample data
