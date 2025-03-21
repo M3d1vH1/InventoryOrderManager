@@ -765,6 +765,10 @@ export default function Products() {
                             src={product.imagePath}
                             alt={product.name}
                             className="object-cover w-full h-full"
+                            onError={(e) => {
+                              console.error("Error loading product image:", product.imagePath);
+                              (e.target as HTMLImageElement).src = '/placeholder-image.svg';
+                            }}
                           />
                         ) : (
                           <div className="flex items-center justify-center h-full">
