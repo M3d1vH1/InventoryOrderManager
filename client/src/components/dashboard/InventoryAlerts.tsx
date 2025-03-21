@@ -61,49 +61,95 @@ const InventoryAlerts = () => {
 
     return (
       <div className="overflow-hidden p-2">
-        <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-50">
-            <tr>
-              <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('products.details')}</th>
-              <th scope="col" className="px-3 py-2 text-center text-xs font-medium text-slate-500 uppercase tracking-wider w-24">{t('inventory.stock')}</th>
-              <th scope="col" className="px-3 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider w-10"></th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-slate-200">
-            {sortedProducts.map((product) => {
-              const textColor = product.currentStock === 0 ? 'text-red-600' : 
-                                product.currentStock < product.minStockLevel / 2 ? 'text-red-600' : 
-                                'text-amber-600';
-              const bgColor = product.currentStock === 0 ? 'bg-red-50' : 
-                               product.currentStock < product.minStockLevel / 2 ? 'bg-red-50' : 
-                               'bg-amber-50';
-              
-              return (
-                <tr key={product.id} className="hover:bg-slate-50">
-                  <td className="px-3 py-2 whitespace-nowrap text-sm">
-                    <div className="font-medium text-slate-900 truncate max-w-[200px]" title={product.name}>
-                      {product.name}
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      {product.sku}
-                    </div>
-                  </td>
-                  <td className={`px-3 py-2 whitespace-nowrap text-sm text-center ${bgColor}`}>
-                    <span className={`font-semibold ${textColor}`}>{product.currentStock}</span>
-                    <span className="text-slate-500"> / {product.minStockLevel}</span>
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm text-right">
-                    <Link href={`/products/${product.id}`}>
-                      <button className="text-primary hover:text-blue-700">
-                        <i className="fas fa-arrow-right"></i>
-                      </button>
-                    </Link>
-                  </td>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="md:pr-2">
+            <table className="w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    {t('products.details')}
+                  </th>
+                  <th scope="col" className="px-3 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider w-24">
+                    {t('inventory.stock')}
+                  </th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-slate-200">
+                {sortedProducts.slice(0, Math.ceil(sortedProducts.length / 2)).map((product) => {
+                  const textColor = product.currentStock === 0 ? 'text-red-600' : 
+                                    product.currentStock < product.minStockLevel / 2 ? 'text-red-600' : 
+                                    'text-amber-600';
+                  const bgColor = product.currentStock === 0 ? 'bg-red-50' : 
+                                   product.currentStock < product.minStockLevel / 2 ? 'bg-red-50' : 
+                                   'bg-amber-50';
+                  
+                  return (
+                    <tr key={product.id} className="hover:bg-slate-50">
+                      <td className="px-3 py-2 whitespace-nowrap text-sm">
+                        <Link href={`/products/${product.id}`}>
+                          <div className="font-medium text-slate-900 truncate max-w-[120px] hover:text-primary" title={product.name}>
+                            {product.name}
+                          </div>
+                        </Link>
+                        <div className="text-xs text-slate-500 truncate max-w-[120px]">
+                          {product.sku}
+                        </div>
+                      </td>
+                      <td className={`px-3 py-2 whitespace-nowrap text-sm text-right ${bgColor}`}>
+                        <span className={`font-semibold ${textColor}`}>{product.currentStock}</span>
+                        <span className="text-slate-500"> / {product.minStockLevel}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          
+          <div className="md:pl-2 md:border-l md:border-slate-200">
+            <table className="w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    {t('products.details')}
+                  </th>
+                  <th scope="col" className="px-3 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider w-24">
+                    {t('inventory.stock')}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-slate-200">
+                {sortedProducts.slice(Math.ceil(sortedProducts.length / 2)).map((product) => {
+                  const textColor = product.currentStock === 0 ? 'text-red-600' : 
+                                    product.currentStock < product.minStockLevel / 2 ? 'text-red-600' : 
+                                    'text-amber-600';
+                  const bgColor = product.currentStock === 0 ? 'bg-red-50' : 
+                                   product.currentStock < product.minStockLevel / 2 ? 'bg-red-50' : 
+                                   'bg-amber-50';
+                  
+                  return (
+                    <tr key={product.id} className="hover:bg-slate-50">
+                      <td className="px-3 py-2 whitespace-nowrap text-sm">
+                        <Link href={`/products/${product.id}`}>
+                          <div className="font-medium text-slate-900 truncate max-w-[120px] hover:text-primary" title={product.name}>
+                            {product.name}
+                          </div>
+                        </Link>
+                        <div className="text-xs text-slate-500 truncate max-w-[120px]">
+                          {product.sku}
+                        </div>
+                      </td>
+                      <td className={`px-3 py-2 whitespace-nowrap text-sm text-right ${bgColor}`}>
+                        <span className={`font-semibold ${textColor}`}>{product.currentStock}</span>
+                        <span className="text-slate-500"> / {product.minStockLevel}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     );
   };
