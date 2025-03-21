@@ -714,6 +714,20 @@ const Products = () => {
                             />
                           </label>
                           <FormMessage />
+                          
+                          {/* Image requirements notice */}
+                          <div className="mt-3 p-3 bg-slate-50 rounded-md border border-slate-200">
+                            <h4 className="text-xs font-medium text-slate-700 mb-1">
+                              <Info className="inline-block h-3 w-3 mr-1" /> Image Requirements
+                            </h4>
+                            <ul className="text-xs text-slate-600 space-y-1 pl-4 list-disc">
+                              <li><span className="font-semibold">Size:</span> Max: 2MB</li>
+                              <li>
+                                <span className="font-semibold">Dimensions:</span> Min: 200x200px, Max: 1200x1200px
+                              </li>
+                              <li><span className="font-semibold">Format:</span> JPG, PNG, GIF</li>
+                            </ul>
+                          </div>
                         </div>
                       </FormItem>
                     )}
