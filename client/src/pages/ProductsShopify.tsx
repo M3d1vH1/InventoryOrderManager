@@ -582,7 +582,7 @@ const Products = () => {
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             console.error("Error loading product image:", e);
-                            (e.target as HTMLImageElement).src = 'https://placehold.co/400x200?text=No+Image';
+                            (e.target as HTMLImageElement).src = '/placeholder-image.png';
                           }}
                         />
                       ) : (
@@ -766,7 +766,7 @@ const Products = () => {
                                   }
                                   onError={(e) => {
                                     console.error("Error loading edit preview image:", e);
-                                    (e.target as HTMLImageElement).src = 'https://placehold.co/400x200?text=No+Image';
+                                    (e.target as HTMLImageElement).src = '/placeholder-image.png';
                                   }}
                                   alt="Product preview" 
                                   className="w-full h-full object-cover"

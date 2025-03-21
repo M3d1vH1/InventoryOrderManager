@@ -1151,9 +1151,15 @@ export default function Products() {
                     ) : form.getValues('imagePath') && !imageFile ? (
                       <div className="relative w-full h-full">
                         <img 
-                          src={form.getValues('imagePath')} 
+                          src={form.getValues('imagePath').startsWith('http') 
+                            ? form.getValues('imagePath') 
+                            : `/${form.getValues('imagePath').replace(/^\/+/, '')}`} 
                           alt="Current" 
                           className="object-contain w-full h-full"
+                          onError={(e) => {
+                            console.error("Error loading product image in form:", e);
+                            (e.target as HTMLImageElement).src = '/placeholder-image.png';
+                          }}
                         />
                         <div className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm p-2 text-xs text-center">
                           {t('products.currentImage')}
@@ -1202,9 +1208,15 @@ export default function Products() {
               <div className="aspect-square relative rounded-md overflow-hidden bg-muted/50">
                 {viewingProduct.imagePath ? (
                   <img
-                    src={viewingProduct.imagePath}
+                    src={viewingProduct.imagePath.startsWith('http') 
+                      ? viewingProduct.imagePath 
+                      : `/${viewingProduct.imagePath.replace(/^\/+/, '')}`}
                     alt={viewingProduct.name}
                     className="object-contain w-full h-full"
+                    onError={(e) => {
+                      console.error("Error loading product image:", e);
+                      (e.target as HTMLImageElement).src = '/placeholder-image.png';
+                    }}
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full">
