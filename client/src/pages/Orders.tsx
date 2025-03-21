@@ -11,7 +11,7 @@ import {
   Eye, Edit, ClipboardCheck, 
   Truck, CheckSquare, AlertTriangle,
   Upload, FileText, FilePlus, FileInput, X,
-  Trash2, Mail
+  Trash2, Mail, Printer
 } from "lucide-react";
 import { OrderChangelog } from "@/components/orders/OrderChangelog";
 
@@ -143,6 +143,11 @@ const Orders = () => {
     unshippedItems: number;
   } | null>(null);
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
+  
+  // State for label printing
+  const [showPrintLabelDialog, setShowPrintLabelDialog] = useState(false);
+  const [orderToPrint, setOrderToPrint] = useState<Order | null>(null);
+  const [boxCount, setBoxCount] = useState<number>(1);
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ 
@@ -541,6 +546,96 @@ const Orders = () => {
   // Handler for sending email notification
   const handleSendEmail = (orderId: number) => {
     sendEmailMutation.mutate(orderId);
+  };
+  
+  // Handler for opening print label dialog
+  const handleOpenPrintLabelDialog = (order: Order) => {
+    setOrderToPrint(order);
+    setBoxCount(1);
+    setShowPrintLabelDialog(true);
+  };
+  
+  // Function to generate shipping labels for CAB EOS printer
+  const generateShippingLabels = (order: Order, boxCount: number) => {
+    // Only proceed if we have a valid box count
+    if (boxCount < 1) {
+      toast({
+        title: "Error",
+        description: "Box count must be at least 1",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Create the JScript commands for the CAB EOS1 printer
+    const createLabelJScript = (boxNumber: number, totalBoxes: number) => {
+      // Based on CAB EOS manual - JScript programming language
+      return `
+m m
+J
+H 100,0,T
+S l1;0,0,68,71,100
+T 25,25,0,3,pt9;Order: ${order.orderNumber}
+T 25,50,0,3,pt8;Customer: ${order.customerName}
+T 25,75,0,3,pt8;Date: ${new Date(order.orderDate).toLocaleDateString()}
+T 25,100,0,3,pt12;BOX ${boxNumber} OF ${totalBoxes}
+B 25,130,0,EAN13,60,0,3,3;${order.id.toString().padStart(12, '0')}
+T 25,220,0,3,pt8;Warehouse Management System
+A 1
+`;
+    };
+    
+    try {
+      // For each box, create a label
+      for (let i = 1; i <= boxCount; i++) {
+        const jscript = createLabelJScript(i, boxCount);
+        
+        // Send to the server to print
+        apiRequest({
+          url: '/api/print/shipping-label',
+          method: 'POST',
+          body: JSON.stringify({
+            labelContent: jscript,
+            orderId: order.id,
+            boxNumber: i,
+            totalBoxes: boxCount
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+        .then(() => {
+          if (i === boxCount) {
+            toast({
+              title: "Shipping labels printed",
+              description: `${boxCount} label(s) sent to printer`,
+              variant: "default"
+            });
+          }
+        })
+        .catch(error => {
+          toast({
+            title: "Error printing label",
+            description: error.message || "Failed to print shipping label",
+            variant: "destructive"
+          });
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error generating labels",
+        description: error.message || "An error occurred while generating shipping labels",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Handle print labels submission
+  const handlePrintLabels = () => {
+    if (orderToPrint) {
+      generateShippingLabels(orderToPrint, boxCount);
+      setShowPrintLabelDialog(false);
+    }
   };
 
   // Delete order mutation
@@ -996,6 +1091,18 @@ const Orders = () => {
                         >
                           <FileText className="h-4 w-4" />
                           <span>{t('orders.actions.viewDocument')}</span>
+                        </Button>
+                      )}
+                      
+                      {/* Print label button - for picked or shipped orders */}
+                      {(orderDetails.status === 'picked' || orderDetails.status === 'shipped') && (
+                        <Button
+                          onClick={() => handleOpenPrintLabelDialog(orderDetails)}
+                          variant="outline"
+                          className="flex items-center gap-2"
+                        >
+                          <Printer className="h-4 w-4" />
+                          <span>{t('orders.actions.printLabels', 'Print Labels')}</span>
                         </Button>
                       )}
                       
