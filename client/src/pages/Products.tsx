@@ -213,7 +213,7 @@ export default function Products() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
       setIsDialogOpen(false);
-      // Reset form to default values
+      // Reset form to default values only after successful creation
       form.reset({
         name: '',
         sku: '',
@@ -226,7 +226,7 @@ export default function Products() {
         imagePath: '',
         tags: [],
       });
-      // Reset image state
+      // Reset image state only after successful save
       setImagePreview(null);
       setImageFile(null);
     },
@@ -302,7 +302,8 @@ export default function Products() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
       setIsDialogOpen(false);
-      // Reset image state
+      setEditingProduct(null);
+      // Reset image state only after successful update
       setImagePreview(null);
       setImageFile(null);
     },
