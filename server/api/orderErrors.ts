@@ -44,26 +44,39 @@ export async function createOrderError(req: Request, res: Response) {
     // Basic validation schema for order error creation
     const createErrorSchema = z.object({
       orderId: z.number(),
+      orderNumber: z.string(),
       errorType: z.enum(orderErrorTypeEnum.enumValues),
       description: z.string().min(5),
       reportedById: z.number(),
-      affectedProductIds: z.array(z.number()).optional()
+      affectedItems: z.array(z.object({
+        productId: z.number(),
+        quantity: z.number(),
+        issueDescription: z.string()
+      })).optional()
     });
     
     // Validate request body
     const validatedData = createErrorSchema.parse(req.body);
     
+    // Extract product IDs from affected items
+    const affectedProductIds = validatedData.affectedItems 
+      ? validatedData.affectedItems.map(item => item.productId.toString())
+      : [];
+    
     // Create the error record
     const error = await storage.createOrderError({
-      ...validatedData,
-      reportDate: new Date(),
-      resolved: false,
-      resolvedById: null,
-      resolvedDate: null,
-      rootCause: null,
-      preventiveMeasures: null,
-      affectedProductIds: validatedData.affectedProductIds ? JSON.stringify(validatedData.affectedProductIds) : null,
-      inventoryAdjusted: false
+      orderId: validatedData.orderId,
+      orderNumber: validatedData.orderNumber,
+      errorType: validatedData.errorType,
+      description: validatedData.description,
+      reportedById: validatedData.reportedById,
+      affectedProductIds: affectedProductIds,
+      inventoryAdjusted: false,
+      correctiveAction: validatedData.affectedItems 
+        ? `Affected items: ${validatedData.affectedItems.map(item => 
+            `Product ID ${item.productId}, Qty: ${item.quantity}, Issue: ${item.issueDescription}`
+          ).join('; ')}`
+        : undefined
     });
     
     return res.status(201).json(error);
@@ -91,20 +104,40 @@ export async function updateOrderError(req: Request, res: Response) {
     const updateErrorSchema = z.object({
       errorType: z.enum(orderErrorTypeEnum.enumValues).optional(),
       description: z.string().min(5).optional(),
-      affectedProductIds: z.array(z.number()).optional()
+      affectedItems: z.array(z.object({
+        productId: z.number(),
+        quantity: z.number(),
+        issueDescription: z.string()
+      })).optional(),
+      correctiveAction: z.string().optional()
     });
     
     // Validate request body
     const validatedData = updateErrorSchema.parse(req.body);
     
-    // Prepare update data with proper formatting for affected product IDs
-    const updateData = {
-      ...validatedData
-    };
+    // Prepare update data
+    const updateData: Partial<InsertOrderError> = {};
     
-    // Format affected product IDs as a JSON string if present
-    if (updateData.affectedProductIds) {
-      updateData.affectedProductIds = JSON.stringify(updateData.affectedProductIds);
+    if (validatedData.errorType) {
+      updateData.errorType = validatedData.errorType;
+    }
+    
+    if (validatedData.description) {
+      updateData.description = validatedData.description;
+    }
+    
+    if (validatedData.correctiveAction) {
+      updateData.correctiveAction = validatedData.correctiveAction;
+    }
+    
+    // Extract product IDs from affected items if present
+    if (validatedData.affectedItems) {
+      updateData.affectedProductIds = validatedData.affectedItems.map(item => item.productId.toString());
+      
+      // Update corrective action with affected items details
+      updateData.correctiveAction = `Affected items: ${validatedData.affectedItems.map(item => 
+        `Product ID ${item.productId}, Qty: ${item.quantity}, Issue: ${item.issueDescription}`
+      ).join('; ')}`;
     }
     
     // Update the error
