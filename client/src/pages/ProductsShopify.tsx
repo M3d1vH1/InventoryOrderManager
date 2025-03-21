@@ -581,8 +581,8 @@ const Products = () => {
                           alt={product.name}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            console.error("Error loading product image:", e);
-                            (e.target as HTMLImageElement).src = '/placeholder-image.png';
+                            console.error("Error loading product image:", product.imagePath);
+                            (e.target as HTMLImageElement).src = '/placeholder-image.svg';
                           }}
                         />
                       ) : (
@@ -765,8 +765,8 @@ const Products = () => {
                                         : ''
                                   }
                                   onError={(e) => {
-                                    console.error("Error loading edit preview image:", e);
-                                    (e.target as HTMLImageElement).src = '/placeholder-image.png';
+                                    console.error("Error loading edit preview image:", editingProduct?.imagePath || "image file");
+                                    (e.target as HTMLImageElement).src = '/placeholder-image.svg';
                                   }}
                                   alt="Product preview" 
                                   className="w-full h-full object-cover"
