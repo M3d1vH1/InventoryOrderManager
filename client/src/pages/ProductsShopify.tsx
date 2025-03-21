@@ -577,7 +577,9 @@ const Products = () => {
                         <img 
                           src={product.imagePath.startsWith('http') ? 
                                product.imagePath : 
-                               `/${product.imagePath.replace(/^\/+/, '')}`}
+                               product.imagePath.startsWith('/') ? 
+                               product.imagePath : 
+                               `/${product.imagePath}`}
                           alt={product.name}
                           className="w-full h-full object-cover"
                           onError={(e) => {
@@ -761,7 +763,9 @@ const Products = () => {
                                       : editingProduct?.imagePath
                                         ? (editingProduct.imagePath.startsWith('http') 
                                           ? editingProduct.imagePath 
-                                          : `/${editingProduct.imagePath.replace(/^\/+/, '')}`)
+                                          : editingProduct.imagePath.startsWith('/') 
+                                            ? editingProduct.imagePath
+                                            : `/${editingProduct.imagePath}`)
                                         : ''
                                   }
                                   onError={(e) => {
@@ -1106,7 +1110,9 @@ const Products = () => {
                               <img 
                                 src={viewingProduct.imagePath.startsWith('http') ? 
                                      viewingProduct.imagePath : 
-                                     `/${viewingProduct.imagePath.replace(/^\/+/, '')}`}
+                                     viewingProduct.imagePath.startsWith('/') ?
+                                     viewingProduct.imagePath :
+                                     `/${viewingProduct.imagePath}`}
                                 alt={viewingProduct.name}
                                 className="object-cover w-full h-full"
                                 onError={(e) => {
