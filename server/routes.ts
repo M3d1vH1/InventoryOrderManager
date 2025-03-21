@@ -90,7 +90,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Handle file upload if present
       if (req.files && req.files.image) {
         const imageFile = req.files.image as UploadedFile;
-        const uploadDir = path.join(process.cwd(), 'public/uploads/products');
+        // Use .data directory which persists across deployments
+        const uploadDir = path.join(process.cwd(), '.data/uploads/products');
         
         // Ensure upload directory exists
         if (!fs.existsSync(uploadDir)) {
@@ -104,8 +105,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Move file to uploads directory
         await imageFile.mv(filePath);
         
-        // Set image path for storage
+        // Set image path for storage (still use /uploads path for URL)
         imagePath = `/uploads/products/${filename}`;
+        
+        // Ensure the public folder has access to the images
+        const publicDir = path.join(process.cwd(), 'public/uploads');
+        const productsDir = path.join(publicDir, 'products');
+        
+        if (!fs.existsSync(publicDir)) {
+          fs.mkdirSync(publicDir, { recursive: true });
+        }
+        
+        // Create symbolic link if it doesn't exist
+        if (!fs.existsSync(productsDir)) {
+          try {
+            fs.symlinkSync(uploadDir, productsDir, 'dir');
+          } catch (err) {
+            console.error('Failed to create symbolic link:', err);
+            // If symlink fails, try to create the directory and copy the file
+            if (!fs.existsSync(productsDir)) {
+              fs.mkdirSync(productsDir, { recursive: true });
+            }
+            fs.copyFileSync(filePath, path.join(productsDir, filename));
+          }
+        }
       }
       
       // Get body data and handle tags properly
