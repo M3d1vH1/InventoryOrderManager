@@ -1271,6 +1271,315 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Order Error methods
+  async getOrderErrors(orderId?: number): Promise<OrderError[]> {
+    try {
+      if (orderId) {
+        return await this.db
+          .select()
+          .from(orderErrors)
+          .where(eq(orderErrors.orderId, orderId))
+          .orderBy(desc(orderErrors.reportDate));
+      } else {
+        return await this.db
+          .select()
+          .from(orderErrors)
+          .orderBy(desc(orderErrors.reportDate));
+      }
+    } catch (error) {
+      console.error('Error getting order errors:', error);
+      return [];
+    }
+  }
+
+  async getOrderError(id: number): Promise<OrderError | undefined> {
+    try {
+      const result = await this.db
+        .select()
+        .from(orderErrors)
+        .where(eq(orderErrors.id, id));
+      return result[0];
+    } catch (error) {
+      console.error(`Error getting order error #${id}:`, error);
+      return undefined;
+    }
+  }
+
+  async createOrderError(error: InsertOrderError): Promise<OrderError> {
+    try {
+      // Insert the order error record
+      const [orderError] = await this.db
+        .insert(orderErrors)
+        .values(error)
+        .returning();
+      
+      // Add a changelog entry for this error report
+      await this.addOrderChangelog({
+        orderId: error.orderId,
+        userId: error.reportedById,
+        action: 'error_report',
+        notes: `Error reported: ${error.errorType} - ${error.description.substring(0, 100)}${error.description.length > 100 ? '...' : ''}`,
+        changes: {
+          errorType: error.errorType,
+          description: error.description,
+          affectedProductIds: error.affectedProductIds || []
+        }
+      });
+      
+      return orderError;
+    } catch (error) {
+      console.error('Error creating order error record:', error);
+      throw error;
+    }
+  }
+
+  async updateOrderError(id: number, error: Partial<InsertOrderError>): Promise<OrderError | undefined> {
+    try {
+      const [updatedError] = await this.db
+        .update(orderErrors)
+        .set(error)
+        .where(eq(orderErrors.id, id))
+        .returning();
+      return updatedError;
+    } catch (error) {
+      console.error(`Error updating order error #${id}:`, error);
+      return undefined;
+    }
+  }
+
+  async resolveOrderError(id: number, userId: number, resolution: { rootCause?: string, preventiveMeasures?: string }): Promise<OrderError | undefined> {
+    try {
+      // Update the error as resolved
+      const [resolvedError] = await this.db
+        .update(orderErrors)
+        .set({
+          resolved: true,
+          resolvedById: userId,
+          resolvedDate: new Date(),
+          rootCause: resolution.rootCause || null,
+          preventiveMeasures: resolution.preventiveMeasures || null
+        })
+        .where(eq(orderErrors.id, id))
+        .returning();
+      
+      if (resolvedError) {
+        // Add a changelog entry for the resolution
+        await this.addOrderChangelog({
+          orderId: resolvedError.orderId,
+          userId: userId,
+          action: 'update',
+          notes: `Error #${id} marked as resolved`,
+          changes: { 
+            resolved: true,
+            rootCause: resolution.rootCause,
+            preventiveMeasures: resolution.preventiveMeasures 
+          }
+        });
+      }
+      
+      return resolvedError;
+    } catch (error) {
+      console.error(`Error resolving order error #${id}:`, error);
+      return undefined;
+    }
+  }
+
+  async getErrorStats(period: number = 90): Promise<{
+    totalErrors: number,
+    totalShippedOrders: number,
+    errorRate: number,
+    errorsByType: { type: string, count: number }[],
+    trending: { date: string, errorRate: number }[]
+  }> {
+    try {
+      // Calculate start date for the period
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - period);
+      
+      // Get total errors for the period
+      const errorsResult = await this.db
+        .select({
+          count: sql<number>`count(*)`,
+        })
+        .from(orderErrors)
+        .where(sql`${orderErrors.reportDate} >= ${startDate.toISOString()}`);
+      
+      const totalErrors = errorsResult[0]?.count || 0;
+      
+      // Get total shipped orders for the period
+      const ordersResult = await this.db
+        .select({
+          count: sql<number>`count(*)`,
+        })
+        .from(orders)
+        .where(
+          and(
+            eq(orders.status, 'shipped'),
+            sql`${orders.orderDate} >= ${startDate.toISOString()}`
+          )
+        );
+      
+      const totalShippedOrders = ordersResult[0]?.count || 0;
+      
+      // Calculate error rate per 100 orders
+      const errorRate = totalShippedOrders > 0 
+        ? Math.round((totalErrors / totalShippedOrders) * 100 * 100) / 100 
+        : 0;
+      
+      // Get errors by type
+      const errorsByTypeResult = await this.db
+        .select({
+          type: orderErrors.errorType,
+          count: sql<number>`count(*)`,
+        })
+        .from(orderErrors)
+        .where(sql`${orderErrors.reportDate} >= ${startDate.toISOString()}`)
+        .groupBy(orderErrors.errorType)
+        .orderBy(sql`count(*)`, 'desc');
+      
+      const errorsByType = errorsByTypeResult.map(row => ({
+        type: row.type,
+        count: row.count
+      }));
+      
+      // Get trending data - calculate weekly error rates
+      const weeksInPeriod = Math.ceil(period / 7);
+      const trending: { date: string, errorRate: number }[] = [];
+      
+      for (let i = 0; i < weeksInPeriod; i++) {
+        const weekEnd = new Date();
+        weekEnd.setDate(weekEnd.getDate() - (i * 7));
+        
+        const weekStart = new Date(weekEnd);
+        weekStart.setDate(weekStart.getDate() - 7);
+        
+        // Count errors for the week
+        const weeklyErrorsResult = await this.db
+          .select({
+            count: sql<number>`count(*)`,
+          })
+          .from(orderErrors)
+          .where(
+            and(
+              sql`${orderErrors.reportDate} >= ${weekStart.toISOString()}`,
+              sql`${orderErrors.reportDate} < ${weekEnd.toISOString()}`
+            )
+          );
+        
+        // Count shipped orders for the week
+        const weeklyOrdersResult = await this.db
+          .select({
+            count: sql<number>`count(*)`,
+          })
+          .from(orders)
+          .where(
+            and(
+              eq(orders.status, 'shipped'),
+              sql`${orders.orderDate} >= ${weekStart.toISOString()}`,
+              sql`${orders.orderDate} < ${weekEnd.toISOString()}`
+            )
+          );
+        
+        const weeklyErrors = weeklyErrorsResult[0]?.count || 0;
+        const weeklyOrders = weeklyOrdersResult[0]?.count || 0;
+        
+        // Calculate weekly error rate per 100 orders
+        const weeklyErrorRate = weeklyOrders > 0 
+          ? Math.round((weeklyErrors / weeklyOrders) * 100 * 100) / 100 
+          : 0;
+        
+        trending.push({
+          date: weekStart.toISOString().split('T')[0], // Format as YYYY-MM-DD
+          errorRate: weeklyErrorRate
+        });
+      }
+      
+      // Return complete stats
+      return {
+        totalErrors,
+        totalShippedOrders,
+        errorRate,
+        errorsByType,
+        trending: trending.reverse() // Show oldest to newest
+      };
+    } catch (error) {
+      console.error('Error generating error stats:', error);
+      // Return empty data structure if error occurs
+      return {
+        totalErrors: 0,
+        totalShippedOrders: 0,
+        errorRate: 0,
+        errorsByType: [],
+        trending: []
+      };
+    }
+  }
+
+  async adjustInventoryForError(errorId: number, adjustments: { productId: number, quantity: number }[]): Promise<boolean> {
+    try {
+      // Get the error record
+      const errorRecord = await this.getOrderError(errorId);
+      if (!errorRecord) {
+        throw new Error(`Error record #${errorId} not found`);
+      }
+      
+      // Transaction to handle inventory adjustments
+      await this.db.transaction(async (tx) => {
+        // Update each product's inventory
+        for (const adjustment of adjustments) {
+          const product = await tx
+            .select()
+            .from(products)
+            .where(eq(products.id, adjustment.productId));
+          
+          if (product.length === 0) {
+            throw new Error(`Product #${adjustment.productId} not found`);
+          }
+          
+          // Calculate new stock level
+          const currentStock = product[0].currentStock;
+          const newStock = currentStock + adjustment.quantity; // Can be negative for removal
+          
+          // Update stock
+          await tx
+            .update(products)
+            .set({ 
+              currentStock: newStock,
+              lastStockUpdate: new Date()
+            })
+            .where(eq(products.id, adjustment.productId));
+        }
+        
+        // Mark error as having inventory adjusted
+        await tx
+          .update(orderErrors)
+          .set({ inventoryAdjusted: true })
+          .where(eq(orderErrors.id, errorId));
+        
+        // Add changelog entry for this adjustment
+        await tx
+          .insert(orderChangelogs)
+          .values({
+            orderId: errorRecord.orderId,
+            userId: errorRecord.reportedById, // Using the same user who reported the error
+            action: 'update',
+            notes: `Inventory adjusted for error #${errorId}`,
+            changes: { 
+              adjustments: adjustments.map(adj => ({
+                productId: adj.productId,
+                quantityChange: adj.quantity
+              }))
+            }
+          });
+      });
+      
+      return true;
+    } catch (error) {
+      console.error(`Error adjusting inventory for error #${errorId}:`, error);
+      return false;
+    }
+  }
+
   // Email Settings methods
   async getEmailSettings(): Promise<EmailSettings | undefined> {
     try {
