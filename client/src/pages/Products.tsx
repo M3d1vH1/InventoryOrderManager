@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { BarcodeScanner } from "@components/barcode/BarcodeScanner";
 import { BarcodeGenerator } from "@components/barcode/BarcodeGenerator";
+import { InventoryChangeHistory } from "@/components/inventory/InventoryChangeHistory";
 
 // Interface for a Product
 interface Product {
@@ -100,6 +101,7 @@ export default function Products() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [activeTab, setActiveTab] = useState("details");
 
   // Check URL parameters on mount
   useEffect(() => {
@@ -1374,120 +1376,133 @@ export default function Products() {
               </DialogDescription>
             </DialogHeader>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="aspect-square relative rounded-md overflow-hidden bg-muted/50">
-                {viewingProduct.imagePath ? (
-                  <img
-                    src={viewingProduct.imagePath.startsWith('http') 
-                      ? viewingProduct.imagePath 
-                      : `/${viewingProduct.imagePath.replace(/^\/+/, '')}`}
-                    alt={viewingProduct.name}
-                    className="object-contain w-full h-full"
-                    onError={(e) => {
-                      console.error("Error loading product image:", viewingProduct.imagePath);
-                      (e.target as HTMLImageElement).src = '/placeholder-image.svg';
-                    }}
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <Box className="h-16 w-16 text-muted-foreground" />
-                  </div>
-                )}
-                
-                {/* Tags overlay */}
-                {viewingProduct.tags && viewingProduct.tags.length > 0 && (
-                  <div className="absolute bottom-0 left-0 right-0 p-2 bg-background/80 backdrop-blur-sm flex flex-wrap gap-1">
-                    {viewingProduct.tags.map(tag => (
-                      <Badge key={tag} variant="outline" className="flex items-center">
-                        <Tag className="mr-1 h-3 w-3" />
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </div>
+            <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="mb-4">
+                <TabsTrigger value="details">{t('products.details')}</TabsTrigger>
+                <TabsTrigger value="inventoryChanges">{t('products.inventoryChanges')}</TabsTrigger>
+              </TabsList>
               
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">
-                    {t('products.sku')}
-                  </h4>
-                  <p>{viewingProduct.sku}</p>
-                </div>
-                
-                {viewingProduct.barcode && (
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-1">
-                      {t('products.barcode')}
-                    </h4>
-                    <div className="flex items-center gap-2">
-                      <p>{viewingProduct.barcode}</p>
-                      <BarcodeGenerator
-                        data={viewingProduct.barcode}
-                        trigger={
-                          <Button variant="outline" size="sm">
-                            <QrCode className="mr-2 h-4 w-4" />
-                            {t('products.generateBarcode')}
-                          </Button>
-                        }
+              <TabsContent value="details">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="aspect-square relative rounded-md overflow-hidden bg-muted/50">
+                    {viewingProduct.imagePath ? (
+                      <img
+                        src={viewingProduct.imagePath.startsWith('http') 
+                          ? viewingProduct.imagePath 
+                          : `/${viewingProduct.imagePath.replace(/^\/+/, '')}`}
+                        alt={viewingProduct.name}
+                        className="object-contain w-full h-full"
+                        onError={(e) => {
+                          console.error("Error loading product image:", viewingProduct.imagePath);
+                          (e.target as HTMLImageElement).src = '/placeholder-image.svg';
+                        }}
                       />
-                    </div>
-                  </div>
-                )}
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-1">
-                      {t('products.currentStock')}
-                    </h4>
-                    <Badge 
-                      variant={viewingProduct.currentStock === 0 
-                        ? "destructive" 
-                        : (viewingProduct.currentStock <= viewingProduct.minStockLevel ? "warning" : "success")}
-                      className="text-sm"
-                    >
-                      {viewingProduct.currentStock} {t('products.units')}
-                    </Badge>
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <Box className="h-16 w-16 text-muted-foreground" />
+                      </div>
+                    )}
+                    
+                    {/* Tags overlay */}
+                    {viewingProduct.tags && viewingProduct.tags.length > 0 && (
+                      <div className="absolute bottom-0 left-0 right-0 p-2 bg-background/80 backdrop-blur-sm flex flex-wrap gap-1">
+                        {viewingProduct.tags.map(tag => (
+                          <Badge key={tag} variant="outline" className="flex items-center">
+                            <Tag className="mr-1 h-3 w-3" />
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-1">
-                      {t('products.minStockLevel')}
-                    </h4>
-                    <p>{viewingProduct.minStockLevel} {t('products.units')}</p>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                        {t('products.sku')}
+                      </h4>
+                      <p>{viewingProduct.sku}</p>
+                    </div>
+                    
+                    {viewingProduct.barcode && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                          {t('products.barcode')}
+                        </h4>
+                        <div className="flex items-center gap-2">
+                          <p>{viewingProduct.barcode}</p>
+                          <BarcodeGenerator
+                            data={viewingProduct.barcode}
+                            trigger={
+                              <Button variant="outline" size="sm">
+                                <QrCode className="mr-2 h-4 w-4" />
+                                {t('products.generateBarcode')}
+                              </Button>
+                            }
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                          {t('products.currentStock')}
+                        </h4>
+                        <Badge 
+                          variant={viewingProduct.currentStock === 0 
+                            ? "destructive" 
+                            : (viewingProduct.currentStock <= viewingProduct.minStockLevel ? "warning" : "success")}
+                          className="text-sm"
+                        >
+                          {viewingProduct.currentStock} {t('products.units')}
+                        </Badge>
+                      </div>
+                      
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                          {t('products.minStockLevel')}
+                        </h4>
+                        <p>{viewingProduct.minStockLevel} {t('products.units')}</p>
+                      </div>
+                    </div>
+                    
+                    {viewingProduct.unitsPerBox && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                          {t('products.unitsPerBox')}
+                        </h4>
+                        <p>{viewingProduct.unitsPerBox} {t('products.units')}</p>
+                      </div>
+                    )}
+                    
+                    {viewingProduct.location && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                          {t('products.location')}
+                        </h4>
+                        <p>{viewingProduct.location}</p>
+                      </div>
+                    )}
+                    
+                    {viewingProduct.description && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                          {t('products.description')}
+                        </h4>
+                        <p className="text-sm">{viewingProduct.description}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
-                
-                {viewingProduct.unitsPerBox && (
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-1">
-                      {t('products.unitsPerBox')}
-                    </h4>
-                    <p>{viewingProduct.unitsPerBox} {t('products.units')}</p>
-                  </div>
-                )}
-                
-                {viewingProduct.location && (
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-1">
-                      {t('products.location')}
-                    </h4>
-                    <p>{viewingProduct.location}</p>
-                  </div>
-                )}
-                
-                {viewingProduct.description && (
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-1">
-                      {t('products.description')}
-                    </h4>
-                    <p className="text-sm">{viewingProduct.description}</p>
-                  </div>
-                )}
-              </div>
-            </div>
+              </TabsContent>
+              
+              <TabsContent value="inventoryChanges">
+                <InventoryChangeHistory productId={viewingProduct.id} />
+              </TabsContent>
+            </Tabs>
             
-            <DialogFooter className="flex-col sm:flex-row gap-2">
+            <DialogFooter className="flex-col sm:flex-row gap-2 mt-4">
               <Button 
                 variant="outline" 
                 onClick={() => setIsDetailsDialogOpen(false)}
