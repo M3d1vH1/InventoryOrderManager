@@ -1,5 +1,5 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { eq, like, desc, and, or, lte, gt, sql, inArray } from 'drizzle-orm';
+import { eq, like, desc, asc, and, or, lte, gt, sql, inArray } from 'drizzle-orm';
 import { pool, initDatabase } from './db';
 import { 
   users, type User, type InsertUser,
@@ -1211,8 +1211,10 @@ export class DatabaseStorage implements IStorage {
   // Email Settings methods
   async getEmailSettings(): Promise<EmailSettings | undefined> {
     try {
+      // Order by ID ascending to always get the lowest ID (first created record)
       const settings = await this.db.select()
         .from(emailSettings)
+        .orderBy(asc(emailSettings.id))
         .limit(1);
       
       return settings.length > 0 ? settings[0] : undefined;
