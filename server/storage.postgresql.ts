@@ -1224,6 +1224,30 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
+  async cleanupDuplicateEmailSettings(): Promise<void> {
+    try {
+      // Get all email settings
+      const allSettings = await this.db.select()
+        .from(emailSettings)
+        .orderBy(asc(emailSettings.id));
+        
+      // If more than one record exists, keep the oldest (lowest ID) and delete the rest
+      if (allSettings.length > 1) {
+        console.log(`Found ${allSettings.length} email settings records, cleaning up duplicates...`);
+        
+        const lowestId = allSettings[0].id;
+        
+        // Delete all records except the one with the lowest ID
+        const result = await this.db.delete(emailSettings)
+          .where(sql`${emailSettings.id} > ${lowestId}`);
+          
+        console.log(`Cleaned up ${allSettings.length - 1} duplicate email settings records`);
+      }
+    } catch (error) {
+      console.error("Error cleaning up duplicate email settings:", error);
+    }
+  }
+  
   // Company Settings methods
   async getCompanySettings(): Promise<CompanySettings | undefined> {
     try {
@@ -1240,8 +1264,35 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
+  async cleanupDuplicateCompanySettings(): Promise<void> {
+    try {
+      // Get all company settings
+      const allSettings = await this.db.select()
+        .from(companySettings)
+        .orderBy(asc(companySettings.id));
+        
+      // If more than one record exists, keep the oldest (lowest ID) and delete the rest
+      if (allSettings.length > 1) {
+        console.log(`Found ${allSettings.length} company settings records, cleaning up duplicates...`);
+        
+        const lowestId = allSettings[0].id;
+        
+        // Delete all records except the one with the lowest ID
+        const result = await this.db.delete(companySettings)
+          .where(sql`${companySettings.id} > ${lowestId}`);
+          
+        console.log(`Cleaned up ${allSettings.length - 1} duplicate company settings records`);
+      }
+    } catch (error) {
+      console.error("Error cleaning up duplicate company settings:", error);
+    }
+  }
+  
   async updateCompanySettings(settings: Partial<InsertCompanySettings>): Promise<CompanySettings | undefined> {
     try {
+      // First clean up any duplicate records
+      await this.cleanupDuplicateCompanySettings();
+      
       const existingSettings = await this.getCompanySettings();
       
       if (!existingSettings) {
@@ -1307,8 +1358,35 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
+  async cleanupDuplicateNotificationSettings(): Promise<void> {
+    try {
+      // Get all notification settings
+      const allSettings = await this.db.select()
+        .from(notificationSettings)
+        .orderBy(asc(notificationSettings.id));
+        
+      // If more than one record exists, keep the oldest (lowest ID) and delete the rest
+      if (allSettings.length > 1) {
+        console.log(`Found ${allSettings.length} notification settings records, cleaning up duplicates...`);
+        
+        const lowestId = allSettings[0].id;
+        
+        // Delete all records except the one with the lowest ID
+        const result = await this.db.delete(notificationSettings)
+          .where(sql`${notificationSettings.id} > ${lowestId}`);
+          
+        console.log(`Cleaned up ${allSettings.length - 1} duplicate notification settings records`);
+      }
+    } catch (error) {
+      console.error("Error cleaning up duplicate notification settings:", error);
+    }
+  }
+  
   async updateNotificationSettings(settings: Partial<InsertNotificationSettings>): Promise<NotificationSettings | undefined> {
     try {
+      // First clean up any duplicate records
+      await this.cleanupDuplicateNotificationSettings();
+      
       const existingSettings = await this.getNotificationSettings();
       
       if (!existingSettings) {
@@ -1362,6 +1440,9 @@ export class DatabaseStorage implements IStorage {
   
   async updateEmailSettings(settings: Partial<InsertEmailSettings>): Promise<EmailSettings | undefined> {
     try {
+      // First clean up any duplicate records
+      await this.cleanupDuplicateEmailSettings();
+      
       const existingSettings = await this.getEmailSettings();
       
       if (!existingSettings) {
