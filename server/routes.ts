@@ -127,6 +127,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       const product = await storage.createProduct(productData);
+      
+      // If tags array is present, update the tag associations
+      if (productData.tags && Array.isArray(productData.tags)) {
+        console.log(`Creating tag associations for new product ${product.id}:`, productData.tags);
+        try {
+          // Create tags that don't exist yet and collect their IDs
+          const tagIds = await Promise.all(productData.tags.map(async (tagName: string) => {
+            let tag = await storage.getTagByName(tagName);
+            if (!tag) {
+              // Tag doesn't exist, create it
+              tag = await storage.createTag({ name: tagName });
+            }
+            return tag.id;
+          }));
+          
+          // Add the tags to the product
+          await storage.updateProductTags(product.id, tagIds);
+          console.log(`Successfully created tags for product ${product.id}`);
+        } catch (tagError) {
+          console.error(`Error creating tags for product ${product.id}:`, tagError);
+          // Continue even if tag update fails, as the product was already created
+        }
+      }
+      
       res.status(201).json(product);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -203,6 +227,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!updatedProduct) {
         return res.status(404).json({ message: 'Product not found' });
+      }
+      
+      // If tags array is present, update the tag associations
+      if (updateData.tags && Array.isArray(updateData.tags)) {
+        console.log(`Updating tags for product ${id}:`, updateData.tags);
+        try {
+          // Create tags that don't exist yet and collect their IDs
+          const tagIds = await Promise.all(updateData.tags.map(async (tagName: string) => {
+            let tag = await storage.getTagByName(tagName);
+            if (!tag) {
+              // Tag doesn't exist, create it
+              tag = await storage.createTag({ name: tagName });
+            }
+            return tag.id;
+          }));
+          
+          // Update the product's tag associations
+          await storage.updateProductTags(id, tagIds);
+          console.log(`Successfully updated tags for product ${id}`);
+        } catch (tagError) {
+          console.error(`Error updating tags for product ${id}:`, tagError);
+          // Continue even if tag update fails, as the product was already updated
+        }
       }
       
       res.json(updatedProduct);
