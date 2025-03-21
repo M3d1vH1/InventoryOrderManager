@@ -151,7 +151,9 @@ const Sidebar = () => {
                     className={`flex items-center w-full p-2 text-left rounded ${isActive("/settings") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
                     title={t('app.settings')}
                   >
-                    <i className="fas fa-cog w-5 h-5 flex-shrink-0 text-center"></i>
+                    <span className="flex justify-center items-center w-5 h-5">
+                      <i className="fas fa-cog"></i>
+                    </span>
                     {isSidebarOpen && <span className="ml-2">{t('app.settings')}</span>}
                   </button>
                 </Link>
@@ -167,7 +169,9 @@ const Sidebar = () => {
             className={`flex items-center w-full p-2 text-left rounded hover:bg-slate-700 transition-colors ${!isSidebarOpen ? "justify-center" : ""}`}
             title={isSidebarOpen ? t('app.collapseSidebar') : t('app.expandSidebar')}
           >
-            <i className={`fas ${isSidebarOpen ? 'fa-angle-double-left' : 'fa-angle-double-right'} w-5 h-5 flex-shrink-0 text-center text-blue-400`}></i>
+            <span className="flex justify-center items-center w-5 h-5">
+              <i className={`fas ${isSidebarOpen ? 'fa-angle-double-left' : 'fa-angle-double-right'} text-blue-400`}></i>
+            </span>
             {isSidebarOpen && <span className="ml-2">{t('app.collapseSidebar')}</span>}
           </button>
         </div>
