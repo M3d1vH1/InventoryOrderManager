@@ -212,7 +212,7 @@ const PickList = ({ order }: { order: Order }) => {
     setShowBoxCountDialog(true);
   };
   
-  const handleCompleteWithBoxCount = () => {
+  const handleCompleteWithBoxCount = (skipPrinting = false) => {
     // Prepare data with actual quantities
     const itemsWithActualQuantities = orderItemsWithProducts
       .filter(item => item.picked)
@@ -237,6 +237,19 @@ const PickList = ({ order }: { order: Order }) => {
       // If user is admin or manager, auto-approve
       approvePartialFulfillment: (user?.role === 'admin' || user?.role === 'manager') && isPartialFulfillment
     });
+    
+    // Print labels if not skipped
+    if (!skipPrinting) {
+      // Automatically generate shipping labels after order status is updated
+      generateShippingLabels(order, boxCount);
+    } else {
+      // Show toast if skipping
+      toast({
+        title: "Labels skipped",
+        description: "Order marked as picked without printing labels",
+        variant: "default"
+      });
+    }
     
     // Close dialog
     setShowBoxCountDialog(false);
@@ -747,16 +760,34 @@ A 1
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowBoxCountDialog(false)}>
+          <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowBoxCountDialog(false)}
+            >
               Cancel
             </Button>
-            <Button 
-              onClick={handleCompleteWithBoxCount} 
-              disabled={boxCount < 1 || updateOrderStatusMutation.isPending}
-            >
-              {updateOrderStatusMutation.isPending ? "Processing..." : "Complete & Print Labels"}
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="secondary"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleCompleteWithBoxCount(true);
+                }} 
+                disabled={updateOrderStatusMutation.isPending}
+              >
+                {updateOrderStatusMutation.isPending ? "Processing..." : "Skip Label Printing"}
+              </Button>
+              <Button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleCompleteWithBoxCount(false);
+                }} 
+                disabled={boxCount < 1 || updateOrderStatusMutation.isPending}
+              >
+                {updateOrderStatusMutation.isPending ? "Processing..." : "Complete & Print Labels"}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
