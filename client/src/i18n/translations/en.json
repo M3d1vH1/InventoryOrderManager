@@ -310,7 +310,9 @@
     "view": "View Product",
     "update": "Update Product",
     "daysWithoutMovement": "Days Without Movement",
-    "lastUpdated": "Last Stock Update"
+    "lastUpdated": "Last Stock Update",
+    "details": "Details",
+    "inventoryChanges": "Inventory Changes"
   },
   "customers": {
     "title": "Customers",
