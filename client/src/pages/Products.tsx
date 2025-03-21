@@ -230,21 +230,40 @@ export default function Products() {
       // Add default categoryId=1 for compatibility
       const productData = { ...values, categoryId: 1 };
       
+      // If there's an image file, don't send it via JSON
+      // The server expects multipart form data for file uploads
       if (imageFile) {
         const formData = new FormData();
-        formData.append('file', imageFile);
         
-        const response = await apiRequest('/api/upload/product-image', {
-          method: 'POST',
-          body: formData,
+        // Add all product data fields to the form
+        Object.entries(productData).forEach(([key, value]) => {
+          if (key !== 'imagePath' && value !== undefined) {
+            if (Array.isArray(value)) {
+              // Handle arrays (like tags)
+              formData.append(key, JSON.stringify(value));
+            } else {
+              formData.append(key, String(value));
+            }
+          }
         });
         
-        productData.imagePath = response.path;
+        // Add the image file
+        formData.append('image', imageFile);
+        
+        return apiRequest(`/api/products/${id}`, {
+          method: 'PATCH',
+          body: formData,
+          // Don't set Content-Type header, browser will set it with boundary
+        });
       }
       
+      // If no image file, proceed with JSON
       return apiRequest(`/api/products/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(productData),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
     },
     onSuccess: () => {
@@ -254,6 +273,9 @@ export default function Products() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
       setIsDialogOpen(false);
+      // Reset image state
+      setImagePreview(null);
+      setImageFile(null);
     },
     onError: (error) => {
       console.error("Error updating product:", error);
