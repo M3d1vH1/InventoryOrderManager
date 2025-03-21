@@ -957,8 +957,18 @@ export default function Products() {
                     <FormItem>
                       <FormLabel>{t('products.sku')}</FormLabel>
                       <FormControl>
-                        <Input placeholder={t('products.skuPlaceholder')} {...field} />
+                        <Input 
+                          placeholder={t('products.skuPlaceholder')} 
+                          {...field} 
+                          disabled={editingProduct && user?.role !== 'admin'}
+                        />
                       </FormControl>
+                      {editingProduct && user?.role === 'admin' && (
+                        <FormDescription className="text-amber-500">
+                          <AlertTriangle className="h-3 w-3 inline mr-1" />
+                          {t('products.skuEditWarning', 'Warning: Changing SKU may affect orders and inventory tracking')}
+                        </FormDescription>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
