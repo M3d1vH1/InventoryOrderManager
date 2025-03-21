@@ -13,6 +13,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { getEmailSettings, updateEmailSettings, testEmailConnection, getEmailTemplate, updateEmailTemplate, getLabelTemplate, updateLabelTemplate } from "./api/emailSettings";
 import { getCompanySettings, updateCompanySettings, getNotificationSettings, updateNotificationSettings } from "./api/settings";
+import { getSlowMovingProducts, updateProductStock } from "./api/inventory";
 import { sendOrderShippedEmail } from "./services/emailService";
 
 // Define WebSocket server and connected clients
