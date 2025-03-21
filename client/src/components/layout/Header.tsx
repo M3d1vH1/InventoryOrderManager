@@ -32,6 +32,11 @@ const Header = () => {
     const currentLang = i18n.language;
     const newLang = currentLang === 'en' ? 'el' : 'en';
     i18n.changeLanguage(newLang);
+    
+    // Save language preference to localStorage
+    localStorage.setItem('i18nextLng', newLang);
+    
+    // Show notification about language change
     toast({
       title: t('settings.languageChanged'),
       description: newLang === 'en' ? 'English' : 'Ελληνικά',

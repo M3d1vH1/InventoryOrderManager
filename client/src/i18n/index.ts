@@ -15,7 +15,7 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: 'el',
+    lng: 'en',
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false
@@ -25,8 +25,11 @@ i18n
     }
   });
 
-// Force language to Greek
-i18n.changeLanguage('el');
+// Get saved language preference or use browser detection
+const savedLang = localStorage.getItem('i18nextLng');
+if (savedLang) {
+  i18n.changeLanguage(savedLang);
+}
 
 // Log debug info in development
 if (import.meta.env.DEV) {
