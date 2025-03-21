@@ -540,6 +540,39 @@ const Products = () => {
                 )}
               </div>
             </div>
+            
+            {/* View toggle */}
+            <div className="flex items-center">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="h-10 bg-white">
+                    {viewMode === "grid" && <LayoutGrid className="mr-2 h-4 w-4" />}
+                    {viewMode === "table" && <Table className="mr-2 h-4 w-4" />}
+                    {viewMode === "list" && <List className="mr-2 h-4 w-4" />}
+                    <span>
+                      {viewMode === "grid" && "Grid View"}
+                      {viewMode === "table" && "Table View"}
+                      {viewMode === "list" && "List View"}
+                    </span>
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setViewMode("grid")}>
+                    <LayoutGrid className="mr-2 h-4 w-4" />
+                    <span>Grid View</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setViewMode("table")}>
+                    <Table className="mr-2 h-4 w-4" />
+                    <span>Table View</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setViewMode("list")}>
+                    <List className="mr-2 h-4 w-4" />
+                    <span>List View</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
 
@@ -579,120 +612,329 @@ const Products = () => {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {filteredProducts && filteredProducts.map((product) => (
-                  <div 
-                    key={product.id} 
-                    className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer"
-                    onClick={() => handleViewProduct(product)}
-                  >
-                    <div className="aspect-video bg-slate-100 relative flex items-center justify-center overflow-hidden">
-                      {product.imagePath ? (
-                        <img 
-                          src={product.imagePath.startsWith('/') ? product.imagePath : `/${product.imagePath}`}
-                          alt={product.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            console.error("Error loading product image:", product.imagePath);
-                            (e.target as HTMLImageElement).src = '/placeholder-image.svg';
-                          }}
-                        />
-                      ) : (
-                        <div className="flex flex-col items-center justify-center text-slate-400">
-                          <Image size={40} />
-                          <span className="mt-2 text-sm">No image</span>
+              {/* Grid view */}
+              {viewMode === "grid" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {filteredProducts && filteredProducts.map((product) => (
+                    <div 
+                      key={product.id} 
+                      className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer"
+                      onClick={() => handleViewProduct(product)}
+                    >
+                      <div className="aspect-video bg-slate-100 relative flex items-center justify-center overflow-hidden">
+                        {product.imagePath ? (
+                          <img 
+                            src={product.imagePath.startsWith('/') ? product.imagePath : `/${product.imagePath}`}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.error("Error loading product image:", product.imagePath);
+                              (e.target as HTMLImageElement).src = '/placeholder-image.svg';
+                            }}
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center text-slate-400">
+                            <Image size={40} />
+                            <span className="mt-2 text-sm">No image</span>
+                          </div>
+                        )}
+                        
+                        <div className="absolute top-2 right-2">
+                          <button 
+                            className="p-2 bg-white rounded-full shadow-sm hover:shadow-md"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditProduct(product);
+                            }}
+                            title="Edit Product"
+                          >
+                            <Edit size={14} className="text-slate-600" />
+                          </button>
                         </div>
-                      )}
+                      </div>
                       
-                      <div className="absolute top-2 right-2">
-                        <button 
-                          className="p-2 bg-white rounded-full shadow-sm hover:shadow-md"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditProduct(product);
-                          }}
-                          title="Edit Product"
-                        >
-                          <Edit size={14} className="text-slate-600" />
-                        </button>
+                      <div className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-medium text-lg text-slate-900 truncate">{product.name}</h3>
+                          <span className={`font-medium text-sm px-2 py-1 rounded-full flex items-center ${
+                            product.currentStock === 0 
+                              ? 'bg-red-100 text-red-800' 
+                              : product.currentStock <= product.minStockLevel
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-green-100 text-green-800'
+                          }`}>
+                            {product.currentStock === 0 
+                              ? 'Out of stock' 
+                              : product.currentStock <= product.minStockLevel
+                                ? 'Low stock'
+                                : 'In stock'
+                            }
+                          </span>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2 mb-3 text-sm">
+                          <div>
+                            <p className="text-slate-500">SKU</p>
+                            <p className="text-slate-700 font-medium">{product.sku}</p>
+                          </div>
+                          <div>
+                            <p className="text-slate-500">Units/Box</p>
+                            <p className="text-slate-700 font-medium">{product.unitsPerBox || 'Not specified'}</p>
+                          </div>
+                          <div>
+                            <p className="text-slate-500">Min Stock</p>
+                            <p className="text-slate-700 font-medium">{product.minStockLevel}</p>
+                          </div>
+                          <div>
+                            <p className="text-slate-500">Current Stock</p>
+                            <p className={`font-medium ${getStockStatusClass(product.currentStock, product.minStockLevel)}`}>
+                              {product.currentStock}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center pt-3 border-t border-slate-200">
+                          <div className="flex items-center">
+                            <i className="fas fa-tags mr-1 text-slate-500"></i>
+                            {product.tags && product.tags.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {product.tags.slice(0, 2).map((tag, index) => (
+                                  <Badge key={index} variant="outline" className="text-xs">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                                {product.tags.length > 2 && (
+                                  <span className="text-xs text-slate-500">+{product.tags.length - 2} more</span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-500">No tags</span>
+                            )}
+                          </div>
+                          
+                          <button 
+                            className="text-red-500 hover:text-red-600 text-sm flex items-center"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteProduct(product.id);
+                            }}
+                            title="Delete Product"
+                          >
+                            <i className="fas fa-trash mr-1"></i> Delete
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    
-                    <div className="p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-medium text-lg text-slate-900 truncate">{product.name}</h3>
-                        <span className={`font-medium text-sm px-2 py-1 rounded-full flex items-center ${
-                          product.currentStock === 0 
-                            ? 'bg-red-100 text-red-800' 
-                            : product.currentStock <= product.minStockLevel
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-green-100 text-green-800'
-                        }`}>
-                          {product.currentStock === 0 
-                            ? 'Out of stock' 
-                            : product.currentStock <= product.minStockLevel
-                              ? 'Low stock'
-                              : 'In stock'
-                          }
-                        </span>
+                  ))}
+                </div>
+              )}
+              
+              {/* Table view */}
+              {viewMode === "table" && (
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-slate-100 text-slate-600 text-sm">
+                        <th className="text-left py-3 px-4 font-medium">Product</th>
+                        <th className="text-left py-3 px-4 font-medium">SKU</th>
+                        <th className="text-left py-3 px-4 font-medium">Stock</th>
+                        <th className="text-left py-3 px-4 font-medium">Min Stock</th>
+                        <th className="text-left py-3 px-4 font-medium">Location</th>
+                        <th className="text-right py-3 px-4 font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredProducts && filteredProducts.map((product) => (
+                        <tr 
+                          key={product.id} 
+                          className="border-b border-slate-200 hover:bg-slate-50 cursor-pointer"
+                          onClick={() => handleViewProduct(product)}
+                        >
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 flex-shrink-0 rounded-md overflow-hidden bg-slate-100">
+                                {product.imagePath ? (
+                                  <img 
+                                    src={product.imagePath.startsWith('/') ? product.imagePath : `/${product.imagePath}`}
+                                    alt={product.name}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      console.error("Error loading product image:", product.imagePath);
+                                      (e.target as HTMLImageElement).src = '/placeholder-image.svg';
+                                    }}
+                                  />
+                                ) : (
+                                  <div className="flex items-center justify-center h-full text-slate-400">
+                                    <Image size={16} />
+                                  </div>
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-medium text-slate-800">{product.name}</p>
+                                {product.tags && product.tags.length > 0 && (
+                                  <div className="flex gap-1 mt-1">
+                                    {product.tags.slice(0, 1).map((tag, index) => (
+                                      <Badge key={index} variant="outline" className="text-xs px-1 py-0">
+                                        {tag}
+                                      </Badge>
+                                    ))}
+                                    {product.tags.length > 1 && (
+                                      <span className="text-xs text-slate-500">+{product.tags.length - 1}</span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-slate-700">{product.sku}</td>
+                          <td className="py-3 px-4">
+                            <span className={`font-medium text-xs px-2 py-1 rounded-full ${
+                              product.currentStock === 0 
+                                ? 'bg-red-100 text-red-800' 
+                                : product.currentStock <= product.minStockLevel
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-green-100 text-green-800'
+                            }`}>
+                              {product.currentStock}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-slate-700">{product.minStockLevel}</td>
+                          <td className="py-3 px-4 text-slate-700">{product.location || "—"}</td>
+                          <td className="py-3 px-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button 
+                                className="p-1 hover:bg-slate-200 rounded"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditProduct(product);
+                                }}
+                                title="Edit Product"
+                              >
+                                <Edit size={16} className="text-slate-600" />
+                              </button>
+                              <button 
+                                className="p-1 hover:bg-slate-200 rounded text-red-500"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteProduct(product.id);
+                                }}
+                                title="Delete Product"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              
+              {/* List view */}
+              {viewMode === "list" && (
+                <div className="space-y-3">
+                  {filteredProducts && filteredProducts.map((product) => (
+                    <div 
+                      key={product.id} 
+                      className="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200 cursor-pointer flex flex-col md:flex-row gap-4"
+                      onClick={() => handleViewProduct(product)}
+                    >
+                      {/* Product image */}
+                      <div className="w-full md:w-20 h-20 flex-shrink-0 rounded-md overflow-hidden bg-slate-100">
+                        {product.imagePath ? (
+                          <img 
+                            src={product.imagePath.startsWith('/') ? product.imagePath : `/${product.imagePath}`}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.error("Error loading product image:", product.imagePath);
+                              (e.target as HTMLImageElement).src = '/placeholder-image.svg';
+                            }}
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-slate-400">
+                            <Image size={24} />
+                          </div>
+                        )}
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-2 mb-3 text-sm">
-                        <div>
-                          <p className="text-slate-500">SKU</p>
-                          <p className="text-slate-700 font-medium">{product.sku}</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-500">Units/Box</p>
-                          <p className="text-slate-700 font-medium">{product.unitsPerBox || 'Not specified'}</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-500">Min Stock</p>
-                          <p className="text-slate-700 font-medium">{product.minStockLevel}</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-500">Current Stock</p>
-                          <p className={`font-medium ${getStockStatusClass(product.currentStock, product.minStockLevel)}`}>
-                            {product.currentStock}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-between items-center pt-3 border-t border-slate-200">
-                        <div className="flex items-center">
-                          <i className="fas fa-tags mr-1 text-slate-500"></i>
-                          {product.tags && product.tags.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {product.tags.slice(0, 2).map((tag, index) => (
+                      {/* Product details */}
+                      <div className="flex-grow flex flex-col md:flex-row gap-4">
+                        <div className="flex-grow">
+                          <h3 className="font-medium text-lg text-slate-900">{product.name}</h3>
+                          <div className="flex items-center gap-3 mt-1">
+                            <span className="text-sm text-slate-500">SKU: <span className="font-medium text-slate-700">{product.sku}</span></span>
+                            {product.location && (
+                              <span className="text-sm text-slate-500 flex items-center">
+                                <MapPin size={12} className="mr-1" /> 
+                                {product.location}
+                              </span>
+                            )}
+                          </div>
+                          
+                          {product.tags && product.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {product.tags.map((tag, index) => (
                                 <Badge key={index} variant="outline" className="text-xs">
                                   {tag}
                                 </Badge>
                               ))}
-                              {product.tags.length > 2 && (
-                                <span className="text-xs text-slate-500">+{product.tags.length - 2} more</span>
-                              )}
                             </div>
-                          ) : (
-                            <span className="text-xs text-slate-500">No tags</span>
                           )}
                         </div>
                         
-                        <button 
-                          className="text-red-500 hover:text-red-600 text-sm flex items-center"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteProduct(product.id);
-                          }}
-                          title="Delete Product"
-                        >
-                          <i className="fas fa-trash mr-1"></i> Delete
-                        </button>
+                        <div className="flex items-center gap-4 md:justify-end">
+                          <div className="text-center">
+                            <div className="text-xs text-slate-500 mb-1">Current Stock</div>
+                            <div className={`font-medium text-sm px-2 py-1 rounded-full ${
+                              product.currentStock === 0 
+                                ? 'bg-red-100 text-red-800' 
+                                : product.currentStock <= product.minStockLevel
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-green-100 text-green-800'
+                            }`}>
+                              {product.currentStock}
+                            </div>
+                          </div>
+                          
+                          <div className="text-center">
+                            <div className="text-xs text-slate-500 mb-1">Min Level</div>
+                            <div className="font-medium text-sm bg-slate-100 px-2 py-1 rounded-full text-slate-800">
+                              {product.minStockLevel}
+                            </div>
+                          </div>
+                          
+                          <div className="flex gap-1">
+                            <button 
+                              className="p-2 hover:bg-slate-100 rounded-full"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditProduct(product);
+                              }}
+                              title="Edit Product"
+                            >
+                              <Edit size={16} className="text-slate-600" />
+                            </button>
+                            <button 
+                              className="p-2 hover:bg-slate-100 rounded-full text-red-500"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteProduct(product.id);
+                              }}
+                              title="Delete Product"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
               
+              {/* Pagination */}
               <div className="mt-6 border-t border-slate-200 pt-5 text-sm flex items-center justify-between">
                 <span className="text-slate-600">
                   Showing {filteredProducts ? filteredProducts.length : 0} of {products?.length || 0} products
