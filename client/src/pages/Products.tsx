@@ -101,6 +101,28 @@ export default function Products() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
+  // Check URL parameters on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    
+    // Check for stock filter parameter
+    const stockParam = params.get("stock");
+    if (stockParam && ["in", "low", "out"].includes(stockParam)) {
+      setStockFilter(stockParam);
+    }
+    
+    // Check for view product parameter
+    const viewParam = params.get("view");
+    if (viewParam && products.length > 0) {
+      const productId = parseInt(viewParam, 10);
+      const productToView = products.find(p => p.id === productId);
+      if (productToView) {
+        setViewingProduct(productToView);
+        setIsDetailsDialogOpen(true);
+      }
+    }
+  }, [products]);
+
   // Query: Get all products
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['/api/products'],
