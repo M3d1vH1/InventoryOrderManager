@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Upload, ArrowUpDown, Eye, Edit } from "lucide-react";
+import { Plus, Upload, ArrowUpDown, Eye, Edit, Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useState, useMemo } from "react";
+import i18n from "@/i18n";
 
 interface Product {
   id: number;
@@ -19,10 +20,22 @@ const InventoryAlerts = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
   const [sortBy, setSortBy] = useState<'name' | 'stock'>('stock');
+  const [, navigate] = useLocation();
   
   const { data: lowStockProducts, isLoading } = useQuery<Product[]>({
     queryKey: ['/api/products/low-stock'],
   });
+
+  const toggleLanguage = () => {
+    const currentLang = i18n.language;
+    const newLang = currentLang === 'en' ? 'el' : 'en';
+    i18n.changeLanguage(newLang);
+    toast({
+      title: t('settings.languageChanged'),
+      description: newLang === 'en' ? 'English' : 'Ελληνικά',
+      duration: 3000,
+    });
+  };
 
   // Sort products by severity (stock level) or name
   const sortedProducts = useMemo(() => {
@@ -127,9 +140,12 @@ const InventoryAlerts = () => {
                       <span className="text-slate-500"> / {product.minStockLevel}</span>
                     </td>
                     <td className="py-1.5 px-1 whitespace-nowrap text-center">
-                      <Link href={`/products/${product.id}`} className="text-slate-600 hover:text-primary">
+                      <button
+                        onClick={() => navigate(`/products?view=${product.id}`)}
+                        className="text-slate-600 hover:text-primary"
+                      >
                         <Eye className="h-3.5 w-3.5" />
-                      </Link>
+                      </button>
                     </td>
                   </tr>
                 );
@@ -171,9 +187,12 @@ const InventoryAlerts = () => {
                       <span className="text-slate-500"> / {product.minStockLevel}</span>
                     </td>
                     <td className="py-1.5 px-1 whitespace-nowrap text-center">
-                      <Link href={`/products/${product.id}`} className="text-slate-600 hover:text-primary">
+                      <button
+                        onClick={() => navigate(`/products?view=${product.id}`)}
+                        className="text-slate-600 hover:text-primary"
+                      >
                         <Eye className="h-3.5 w-3.5" />
-                      </Link>
+                      </button>
                     </td>
                   </tr>
                 );
@@ -195,6 +214,13 @@ const InventoryAlerts = () => {
               {lowStockProducts.length}
             </span>
           )}
+          <button 
+            onClick={toggleLanguage}
+            className="ml-3 p-1.5 bg-slate-100 hover:bg-slate-200 rounded-full"
+            title={t('settings.changeLanguage')}
+          >
+            <Globe className="h-4 w-4 text-slate-600" />
+          </button>
         </div>
         <div className="flex items-center space-x-4">
           {lowStockProducts && lowStockProducts.length > 0 && (
