@@ -150,9 +150,13 @@ const UserManagement = () => {
   // Update user mutation
   const updateUserMutation = useMutation({
     mutationFn: async ({ id, values }: { id: number; values: Partial<z.infer<typeof userFormSchema>> }) => {
+      console.log("Updating user mutation with:", JSON.stringify(values));
       return apiRequest(`/api/users/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(values),
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
     },
     onSuccess: () => {

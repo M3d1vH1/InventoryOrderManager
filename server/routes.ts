@@ -1525,7 +1525,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/users/:id', isAuthenticated, hasRole(['admin']), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      console.log("Update user request body:", req.body);
+      
+      // Parse with partial schema to allow updating only some fields
       const userData = insertUserSchema.partial().parse(req.body);
+      
+      console.log("Validated user data:", userData);
+      
+      // Check if there's anything to update
+      if (Object.keys(userData).length === 0) {
+        return res.status(400).json({ message: 'No values to update' });
+      }
       
       // If password is being updated, hash it
       if (userData.password) {
@@ -1550,6 +1561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { password, ...safeUser } = updatedUser;
       res.json(safeUser);
     } catch (error: any) {
+      console.error("Error updating user:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Validation error', errors: error.errors });
       }
