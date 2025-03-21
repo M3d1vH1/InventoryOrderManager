@@ -302,6 +302,44 @@ export class DatabaseStorage implements IStorage {
       .where(lte(products.currentStock, products.minStockLevel));
   }
   
+  async getSlowMovingProducts(dayThreshold: number = 60): Promise<Product[]> {
+    // Calculate the date threshold
+    const thresholdDate = new Date();
+    thresholdDate.setDate(thresholdDate.getDate() - dayThreshold);
+    
+    try {
+      // First, get products that have a lastStockUpdate timestamp
+      // and it's older than the threshold date
+      const productsWithOldTimestamp = await this.db
+        .select()
+        .from(products)
+        .where(
+          and(
+            // Product must have a lastStockUpdate timestamp
+            sql`${products.lastStockUpdate} IS NOT NULL`,
+            // And that timestamp must be older than our threshold
+            sql`${products.lastStockUpdate} < ${thresholdDate}`
+          )
+        );
+      
+      // Next, get products that don't have a lastStockUpdate at all
+      // These are considered legacy products that haven't been updated since
+      // the new timestamp field was added
+      const productsWithoutTimestamp = await this.db
+        .select()
+        .from(products)
+        .where(sql`${products.lastStockUpdate} IS NULL`);
+      
+      // Combine both result sets
+      return [...productsWithOldTimestamp, ...productsWithoutTimestamp];
+    } catch (error) {
+      console.error('Error getting slow moving products:', error);
+      // If there's an issue with the new field, return an empty array
+      // rather than crashing the application
+      return [];
+    }
+  }
+  
   async searchProducts(query: string, category?: string, stockStatus?: string): Promise<Product[]> {
     try {
       let conditions = [];

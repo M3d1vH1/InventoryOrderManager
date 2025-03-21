@@ -74,6 +74,7 @@ export interface IStorage {
   updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product | undefined>;
   deleteProduct(id: number): Promise<boolean>;
   getLowStockProducts(): Promise<Product[]>;
+  getSlowMovingProducts(dayThreshold?: number): Promise<Product[]>;
   searchProducts(query: string, category?: string, stockStatus?: string, tag?: string): Promise<Product[]>;
   
   // Order methods
