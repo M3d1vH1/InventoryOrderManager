@@ -216,10 +216,11 @@ const InventoryAlerts = () => {
           )}
           <button 
             onClick={toggleLanguage}
-            className="ml-3 p-1.5 bg-slate-100 hover:bg-slate-200 rounded-full"
+            className="ml-3 p-1.5 bg-blue-100 hover:bg-blue-200 rounded-full flex items-center justify-center"
             title={t('settings.changeLanguage')}
+            style={{ width: '28px', height: '28px' }}
           >
-            <Globe className="h-4 w-4 text-slate-600" />
+            <Globe className="h-4 w-4 text-blue-600" />
           </button>
         </div>
         <div className="flex items-center space-x-4">
