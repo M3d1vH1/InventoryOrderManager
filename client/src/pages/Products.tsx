@@ -247,8 +247,12 @@ export default function Products() {
 
   const updateProductMutation = useMutation({
     mutationFn: async ({ id, values }: { id: number; values: ProductFormValues }) => {
-      // Add default categoryId=1 for compatibility
-      const productData = { ...values, categoryId: 1 };
+      // Add default categoryId=1 for compatibility and ensure tags is always an array
+      const productData = { 
+        ...values, 
+        categoryId: 1,
+        tags: Array.isArray(values.tags) ? values.tags : []
+      };
       
       // If there's an image file, don't send it via JSON
       // The server expects multipart form data for file uploads
