@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { useSidebar } from "@/context/SidebarContext";
 import {
   Card,
@@ -85,14 +86,16 @@ const OrderPicking = () => {
   // Combined loading state
   const isLoading = isLoadingOrders || isLoadingSpecificOrder;
 
+  const { t } = useTranslation();
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Order Picking</h1>
+        <h1 className="text-2xl font-bold">{t('orderPickingPage.title')}</h1>
         <Link href="/orders">
           <Button variant="outline">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Orders
+            {t('orderPickingPage.backToOrders')}
           </Button>
         </Link>
       </div>
@@ -100,16 +103,16 @@ const OrderPicking = () => {
       {/* Pending Orders List - Top Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Pending Orders</CardTitle>
+          <CardTitle>{t('orderPickingPage.pendingOrders')}</CardTitle>
           <CardDescription>
-            Select an order to create a pick list
+            {t('orderPickingPage.selectOrderHelp')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center p-4">Loading orders...</div>
+            <div className="text-center p-4">{t('common.loading')}</div>
           ) : pickableOrders.length === 0 ? (
-            <div className="text-center p-4 text-slate-500">No pending orders to pick</div>
+            <div className="text-center p-4 text-slate-500">{t('orderPickingPage.noOrdersFound')}</div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {pickableOrders.map(order => (
@@ -124,14 +127,14 @@ const OrderPicking = () => {
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-medium">{order.orderNumber}</span>
                     <Badge variant="outline" className="text-xs">
-                      {order.items?.length || 0} items
+                      {t('orders.itemCount', { count: order.items?.length || 0 })}
                     </Badge>
                   </div>
                   <div className="text-sm text-slate-600">
                     {order.customerName}
                   </div>
                   <div className="text-xs text-slate-500 mt-1">
-                    Created: {new Date(order.orderDate).toLocaleDateString()}
+                    {t('orders.created')}: {new Date(order.orderDate).toLocaleDateString()}
                   </div>
                 </div>
               ))}
@@ -140,26 +143,26 @@ const OrderPicking = () => {
 
           <div className="mt-4 pt-4 border-t border-slate-200">
             <div className="flex flex-wrap gap-2 mb-2">
-              <h3 className="text-sm font-medium mr-2">Order Status:</h3>
-              <Badge>Pending</Badge>
+              <h3 className="text-sm font-medium mr-2">{t('orders.status')}:</h3>
+              <Badge>{t('orders.statusValues.pending')}</Badge>
               <Badge variant="outline" className="border-amber-500 text-amber-700 bg-amber-50">
-                Picking
+                {t('orders.statusValues.picking')}
               </Badge>
               <Badge variant="outline" className="border-emerald-500 text-emerald-700 bg-emerald-50">
-                Picked
+                {t('orders.statusValues.picked')}
               </Badge>
               <Badge variant="outline" className="border-blue-500 text-blue-700 bg-blue-50">
-                Shipped
+                {t('orders.statusValues.shipped')}
               </Badge>
               <Badge variant="outline" className="border-red-500 text-red-700 bg-red-50">
-                Cancelled
+                {t('orders.statusValues.cancelled')}
               </Badge>
             </div>
 
             {orders.length > pickableOrders.length && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
                 <div className="col-span-full sm:col-span-1">
-                  <h3 className="text-sm font-medium mb-2">Recently Picked:</h3>
+                  <h3 className="text-sm font-medium mb-2">{t('orderPickingPage.recentlyPicked')}:</h3>
                 </div>
                 <div className="col-span-full sm:col-span-2">
                   <ul className="space-y-2">
@@ -170,7 +173,7 @@ const OrderPicking = () => {
                         <li key={order.id} className="flex justify-between items-center text-sm">
                           <span>{order.orderNumber}</span>
                           <Badge variant="outline" className="border-emerald-500 text-emerald-700 bg-emerald-50">
-                            Picked
+                            {t('orders.statusValues.picked')}
                           </Badge>
                         </li>
                       ))}
@@ -191,9 +194,9 @@ const OrderPicking = () => {
             <CardContent className="pt-6 pb-6">
               <div className="text-center text-slate-500">
                 <Clipboard className="mx-auto h-12 w-12 text-slate-400" />
-                <h3 className="mt-2 text-sm font-medium text-slate-900">No order selected</h3>
+                <h3 className="mt-2 text-sm font-medium text-slate-900">{t('orderPickingPage.noOrderSelected')}</h3>
                 <p className="mt-1 text-sm text-slate-500">
-                  Select an order from the list above to create a pick list.
+                  {t('orderPickingPage.selectOrderInstructions')}
                 </p>
               </div>
             </CardContent>
