@@ -35,7 +35,7 @@ const Sidebar = () => {
   return (
     <div className="relative">
       <aside className={`${isSidebarOpen ? "w-64" : "w-16"} bg-slate-800 text-white h-screen flex-shrink-0 transition-all duration-300 md:block fixed md:relative z-40 inset-y-0 left-0 flex flex-col`}>
-        <div className="p-4 border-b border-slate-700 flex items-center justify-center">
+        <div className="p-4 border-b border-slate-700 flex items-center justify-center mb-1">
           {isSidebarOpen ? (
             <h1 className="text-xl font-semibold">{t('app.title')}</h1>
           ) : (
@@ -150,11 +150,11 @@ const Sidebar = () => {
         <div className="p-3 border-t border-slate-700 mt-auto">
           <button 
             onClick={toggleSidebar}
-            className="flex items-center w-full p-2 text-left rounded hover:bg-slate-700 transition-colors justify-center"
+            className={`flex items-center w-full p-2 text-left rounded hover:bg-slate-700 transition-colors ${!isSidebarOpen ? "justify-center" : ""}`}
             title={isSidebarOpen ? t('app.collapseSidebar') : t('app.expandSidebar')}
           >
-            <i className={`fas ${isSidebarOpen ? 'fa-chevron-left' : 'fa-chevron-right'} w-5 flex-shrink-0`}></i>
-            {isSidebarOpen && <span className="ml-2">{t('app.collapseSidebar')}</span>}
+            <i className={`fas ${isSidebarOpen ? 'fa-angle-double-left' : 'fa-angle-double-right'} w-5 flex-shrink-0 text-blue-400`}></i>
+            {isSidebarOpen && <span className="ml-2">{t('app.collapseSidebar') || "Collapse"}</span>}
           </button>
         </div>
       </aside>
