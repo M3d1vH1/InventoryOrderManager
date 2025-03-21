@@ -2017,7 +2017,7 @@ const EmailTemplateEditor = () => {
         description: "The email template has been updated successfully.",
       });
       setIsEditing(false);
-      refetchTemplate();
+      refetchEmailTemplate();
     },
     onError: (error) => {
       toast({
@@ -2092,9 +2092,9 @@ const EmailTemplateEditor = () => {
                 variant="outline" 
                 onClick={() => {
                   setIsEditing(false);
-                  if (templateData && templateData.content) {
+                  if (emailTemplateData && emailTemplateData.content) {
                     templateForm.reset({
-                      content: templateData.content,
+                      content: emailTemplateData.content,
                     });
                   }
                 }}
