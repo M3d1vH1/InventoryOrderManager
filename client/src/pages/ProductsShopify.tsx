@@ -756,61 +756,33 @@ const Products = () => {
                                     return;
                                   }
                                   
-                                  // Check file dimensions by loading it into an Image object
-                                  const img = new Image();
-                                  const objectUrl = URL.createObjectURL(file);
-                                  
-                                  img.onload = () => {
-                                    // Release object URL after dimensions are checked
-                                    URL.revokeObjectURL(objectUrl);
-                                    
-                                    // Check dimensions
-                                    const minWidth = 200;
-                                    const minHeight = 200;
-                                    const maxWidth = 1200;
-                                    const maxHeight = 1200;
-                                    
-                                    if (img.width < minWidth || img.height < minHeight) {
-                                      toast({
-                                        title: "Image too small",
-                                        description: `Image must be at least ${minWidth}x${minHeight} pixels`,
-                                        variant: "destructive",
-                                      });
-                                      return;
-                                    }
-                                    
-                                    if (img.width > maxWidth || img.height > maxHeight) {
-                                      toast({
-                                        title: "Image too large",
-                                        description: `Image must be no larger than ${maxWidth}x${maxHeight} pixels`,
-                                        variant: "destructive",
-                                      });
-                                      return;
-                                    }
-                                    
-                                    // If all checks pass, set the image file and create preview
+                                  // Skip dimension checking as it's causing errors in some environments
+                                  try {
+                                    // Simply set the image file and create preview
                                     setImageFile(file);
                                     
                                     // Create a preview
                                     const reader = new FileReader();
                                     reader.onloadend = () => {
                                       setImagePreview(reader.result as string);
+                                      field.onChange(file.name || "");
+                                    };
+                                    reader.onerror = () => {
+                                      toast({
+                                        title: "Invalid image",
+                                        description: "The selected file could not be loaded as an image",
+                                        variant: "destructive",
+                                      });
                                     };
                                     reader.readAsDataURL(file);
-                                    
-                                    field.onChange(file.name || "");
-                                  };
-                                  
-                                  img.onerror = () => {
-                                    URL.revokeObjectURL(objectUrl);
+                                  } catch (error) {
+                                    console.error("Error processing image:", error);
                                     toast({
                                       title: "Invalid image",
-                                      description: "The selected file could not be loaded as an image",
+                                      description: "The selected file could not be processed",
                                       variant: "destructive",
                                     });
-                                  };
-                                  
-                                  img.src = objectUrl;
+                                  }
                                 }
                               }}
                               className="hidden"
