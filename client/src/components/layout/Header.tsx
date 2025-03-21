@@ -76,16 +76,6 @@ const Header = () => {
         </div>
         <div className="flex items-center gap-4">
           <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleLanguage}
-            className="bg-blue-100 hover:bg-blue-200 text-blue-600"
-            title={t('settings.changeLanguage')}
-          >
-            <Globe className="h-5 w-5" />
-          </Button>
-          
-          <Button
             variant="default"
             size="sm"
             onClick={() => setShowOrderForm(true)}
