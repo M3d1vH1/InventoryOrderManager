@@ -117,11 +117,23 @@ export default function Products() {
       const productId = parseInt(viewParam, 10);
       const productToView = products.find(p => p.id === productId);
       if (productToView) {
-        setViewingProduct(productToView);
-        setIsDetailsDialogOpen(true);
+        handleViewProduct(productToView);
       }
     }
   }, [products]);
+  
+  // Additional useEffect to clear URL parameters after handling
+  useEffect(() => {
+    // If details dialog is closed and we have parameters in URL, clean them
+    if (!isDetailsDialogOpen) {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has("view")) {
+        // Remove parameters but maintain the browser history
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+      }
+    }
+  }, [isDetailsDialogOpen]);
 
   // Query: Get all products
   const { data: products = [], isLoading } = useQuery({

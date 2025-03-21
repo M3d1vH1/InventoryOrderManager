@@ -31,10 +31,9 @@ const Header = () => {
   const toggleLanguage = () => {
     const currentLang = i18n.language;
     const newLang = currentLang === 'en' ? 'el' : 'en';
-    i18n.changeLanguage(newLang);
     
-    // Save language preference to localStorage
-    localStorage.setItem('i18nextLng', newLang);
+    // Change language using i18n (this will trigger the event listener in i18n/index.ts)
+    i18n.changeLanguage(newLang);
     
     // Show notification about language change
     toast({
@@ -42,6 +41,9 @@ const Header = () => {
       description: newLang === 'en' ? 'English' : 'Ελληνικά',
       duration: 3000,
     });
+    
+    // Force reload to ensure all components update properly
+    window.location.reload();
   };
 
   const handleLogout = async () => {
