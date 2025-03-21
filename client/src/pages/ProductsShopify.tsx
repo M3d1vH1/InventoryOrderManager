@@ -606,16 +606,23 @@ const Products = () => {
                       )}
                       
                       <div className="flex justify-between items-center pt-3 border-t border-slate-200">
-                        <button 
-                          className="text-slate-600 hover:text-blue-500 text-sm flex items-center"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(`/product-barcode/${product.id}`, '_blank');
-                          }}
-                          title="View Barcode"
-                        >
-                          <i className="fas fa-barcode mr-1"></i> View Barcode
-                        </button>
+                        <div className="flex items-center">
+                          <i className="fas fa-tags mr-1 text-slate-500"></i>
+                          {product.tags && product.tags.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {product.tags.slice(0, 2).map((tag, index) => (
+                                <Badge key={index} variant="outline" className="text-xs">
+                                  {tag}
+                                </Badge>
+                              ))}
+                              {product.tags.length > 2 && (
+                                <span className="text-xs text-slate-500">+{product.tags.length - 2} more</span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-slate-500">No tags</span>
+                          )}
+                        </div>
                         
                         <button 
                           className="text-red-500 hover:text-red-600 text-sm flex items-center"
