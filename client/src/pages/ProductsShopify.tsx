@@ -580,8 +580,8 @@ const Products = () => {
                           <p className="text-slate-700 font-medium">{product.sku}</p>
                         </div>
                         <div>
-                          <p className="text-slate-500">Location</p>
-                          <p className="text-slate-700 font-medium capitalize">{product.location || 'Not specified'}</p>
+                          <p className="text-slate-500">Units/Box</p>
+                          <p className="text-slate-700 font-medium">{product.unitsPerBox || 'Not specified'}</p>
                         </div>
                         <div>
                           <p className="text-slate-500">Min Stock</p>
