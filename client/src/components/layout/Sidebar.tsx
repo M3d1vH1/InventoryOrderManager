@@ -26,11 +26,6 @@ const Sidebar = () => {
     return false;
   };
   
-  // Don't render if sidebar is closed on mobile
-  if (!isSidebarOpen) {
-    return null;
-  }
-  
   // Warehouse staff only see order picking
   const isWarehouseStaff = user?.role === 'warehouse';
   
@@ -38,9 +33,13 @@ const Sidebar = () => {
   const isAdmin = user?.role === 'admin';
 
   return (
-    <aside className={`w-64 bg-slate-800 text-white h-screen flex-shrink-0 transition-all duration-300 ${isSidebarOpen ? "md:block" : "hidden"} ${!isSidebarOpen ? "hidden" : "fixed md:relative z-40 inset-y-0 left-0"}`}>
-      <div className="p-4 border-b border-slate-700">
-        <h1 className="text-xl font-semibold">{t('app.title')}</h1>
+    <aside className={`${isSidebarOpen ? "w-64" : "w-16"} bg-slate-800 text-white h-screen flex-shrink-0 transition-all duration-300 md:block fixed md:relative z-40 inset-y-0 left-0`}>
+      <div className="p-4 border-b border-slate-700 flex items-center justify-center">
+        {isSidebarOpen ? (
+          <h1 className="text-xl font-semibold">{t('app.title')}</h1>
+        ) : (
+          <span className="text-xl font-semibold">WMS</span>
+        )}
       </div>
       <nav className="p-2">
         <ul>
@@ -49,10 +48,11 @@ const Sidebar = () => {
               <li className="mb-1">
                 <Link href="/" onClick={() => setCurrentPage("Dashboard")}>
                   <button 
-                    className={`flex items-center w-full p-2 text-left rounded ${isActive("/") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                    className={`flex items-center w-full p-2 text-left rounded ${isActive("/") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                    title={t('dashboard.title')}
                   >
                     <i className="fas fa-tachometer-alt w-5"></i>
-                    <span className="ml-2">{t('dashboard.title')}</span>
+                    {isSidebarOpen && <span className="ml-2">{t('dashboard.title')}</span>}
                   </button>
                 </Link>
               </li>

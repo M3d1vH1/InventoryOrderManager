@@ -48,7 +48,8 @@ const Header = () => {
             variant="ghost"
             size="icon"
             onClick={toggleSidebar}
-            className="md:hidden text-slate-800 rounded-md hover:bg-slate-100"
+            className="text-slate-800 rounded-md hover:bg-slate-100"
+            title="Toggle sidebar"
           >
             <Menu />
           </Button>
