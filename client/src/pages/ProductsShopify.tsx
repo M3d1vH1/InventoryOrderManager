@@ -506,9 +506,15 @@ const Products = () => {
                     <div className="aspect-video bg-slate-100 relative flex items-center justify-center overflow-hidden">
                       {product.imagePath ? (
                         <img 
-                          src={`/uploads/${product.imagePath.split('/').pop()}`}
+                          src={product.imagePath.startsWith('http') ? 
+                               product.imagePath : 
+                               `/${product.imagePath.replace(/^\/+/, '')}`}
                           alt={product.name}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            console.error("Error loading product image:", e);
+                            (e.target as HTMLImageElement).src = 'https://placehold.co/400x200?text=No+Image';
+                          }}
                         />
                       ) : (
                         <div className="flex flex-col items-center justify-center text-slate-400">
@@ -654,10 +660,16 @@ const Products = () => {
                                   src={
                                     imageFile 
                                       ? URL.createObjectURL(imageFile) 
-                                      : editingProduct?.imagePath 
-                                        ? `/uploads/${editingProduct?.imagePath.split('/').pop()}`
+                                      : editingProduct?.imagePath
+                                        ? (editingProduct.imagePath.startsWith('http') 
+                                          ? editingProduct.imagePath 
+                                          : `/${editingProduct.imagePath.replace(/^\/+/, '')}`)
                                         : ''
-                                  } 
+                                  }
+                                  onError={(e) => {
+                                    console.error("Error loading edit preview image:", e);
+                                    (e.target as HTMLImageElement).src = 'https://placehold.co/400x200?text=No+Image';
+                                  }}
                                   alt="Product preview" 
                                   className="w-full h-full object-cover"
                                 />

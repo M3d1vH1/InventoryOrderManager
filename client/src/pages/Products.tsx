@@ -1043,9 +1043,15 @@ export default function Products() {
                           <div className="rounded border border-slate-200 overflow-hidden">
                             {viewingProduct.imagePath ? (
                               <img 
-                                src={viewingProduct.imagePath} 
+                                src={viewingProduct.imagePath.startsWith('http') ? 
+                                    viewingProduct.imagePath : 
+                                    `/${viewingProduct.imagePath.replace(/^\/+/, '')}`} 
                                 alt={viewingProduct.name} 
                                 className="w-full h-48 object-contain bg-white p-4"
+                                onError={(e) => {
+                                  console.error("Error loading detail image:", e);
+                                  (e.target as HTMLImageElement).src = 'https://placehold.co/400x200?text=No+Image';
+                                }}
                               />
                             ) : (
                               <div className="w-full h-48 bg-slate-100 flex items-center justify-center">
