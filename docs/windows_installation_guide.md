@@ -74,7 +74,46 @@ This guide provides step-by-step instructions for installing and running the War
    npm run build
    npm start
    ```
-3. Access the application at http://localhost:5000
+3. Access the application locally at http://localhost:5000
+4. If you've configured network access (see section below), other devices can access it at http://YOUR_IP_ADDRESS:5000
+
+#### Running as a Windows Service (for 24/7 operation)
+
+To make the application run automatically at system startup:
+
+1. Install PM2 (Process Manager for Node.js):
+   ```
+   npm install -g pm2
+   ```
+
+2. Create a startup script file (e.g., `start-wms.bat`) with:
+   ```batch
+   @echo off
+   cd C:\warehouse-management
+   npm start
+   ```
+
+3. Install PM2-Windows-Service:
+   ```
+   npm install -g pm2-windows-service
+   ```
+
+4. Install and configure the service:
+   ```
+   pm2-service-install
+   ```
+
+5. Start the application with PM2:
+   ```
+   pm2 start start-wms.bat --name "Warehouse Management System"
+   ```
+
+6. Save the PM2 configuration:
+   ```
+   pm2 save
+   ```
+
+Now the application will run automatically when the computer starts, even without logging in.
 
 ## Windows-Specific Considerations
 
@@ -120,9 +159,74 @@ pm2 startup
 - Check Windows User Account Control (UAC) settings
 - Verify that your Windows user has full control over the application directory
 
-### Network Access Issues
-- If accessing from other computers, ensure the Windows Firewall allows connections on port 5000
-- Check your router settings if accessing from outside your local network
+## Making the Server Accessible on Your Network
+
+By default, the application only listens on `localhost` (127.0.0.1), which means it's only accessible from the same computer. To make it accessible from other devices on your network, follow these steps:
+
+### 1. Configure the Server to Listen on All Network Interfaces
+
+1. Open the `server/index.ts` file and locate the following line:
+   ```typescript
+   app.listen(PORT, () => {
+   ```
+
+2. Change it to listen on all interfaces by adding the IP address `0.0.0.0`:
+   ```typescript
+   app.listen(PORT, "0.0.0.0", () => {
+   ```
+
+3. Save the file and restart the application.
+
+### 2. Find Your Computer's IP Address
+
+1. Open Command Prompt and type:
+   ```
+   ipconfig
+   ```
+
+2. Look for the "IPv4 Address" under your active network connection (usually Ethernet or Wi-Fi).
+   Example: `192.168.1.100`
+
+### 3. Configure Windows Firewall
+
+1. Open "Windows Defender Firewall with Advanced Security" from the Start menu.
+2. Click on "Inbound Rules" in the left panel.
+3. Click "New Rule..." in the right panel.
+4. Select "Port" and click "Next".
+5. Select "TCP" and enter "5000" as the port number, then click "Next".
+6. Select "Allow the connection" and click "Next".
+7. Select all network types (Domain, Private, Public) and click "Next".
+8. Give the rule a name like "Warehouse Management System" and click "Finish".
+
+### 4. Access the Application from Other Devices
+
+1. On other devices in your network, open a web browser and enter:
+   ```
+   http://YOUR_IP_ADDRESS:5000
+   ```
+   Replace `YOUR_IP_ADDRESS` with the IP address you found in step 2.
+   Example: `http://192.168.1.100:5000`
+
+### 5. Making the Server Accessible from Outside Your Network (Optional)
+
+To access your application from the internet:
+
+1. **Static IP or Dynamic DNS**: Set up a static IP address or use a Dynamic DNS service like No-IP, DynDNS, or Duck DNS.
+
+2. **Port Forwarding**:
+   - Access your router's admin panel (typically at `192.168.1.1` or `192.168.0.1`)
+   - Find the port forwarding section
+   - Create a new rule that forwards port 5000 to your computer's local IP address
+   - Save the settings
+
+3. **Domain Name (Optional)**:
+   - Register a domain name
+   - Point it to your public IP address
+
+4. **Security Considerations**:
+   - Use HTTPS for public access
+   - Set up a reverse proxy like NGINX
+   - Consider using a VPN instead of direct internet access
 
 ## System Requirements
 
