@@ -479,3 +479,45 @@ export const insertOrderErrorSchema = createInsertSchema(orderErrors)
 
 export type InsertOrderError = z.infer<typeof insertOrderErrorSchema>;
 export type OrderError = typeof orderErrors.$inferSelect;
+
+// Inventory Change Action Enum
+export const inventoryChangeTypeEnum = pgEnum('inventory_change_type', [
+  'manual_adjustment',  // Manual adjustment of inventory by staff
+  'order_fulfillment',  // Inventory decreased due to order fulfillment
+  'order_cancellation', // Inventory increased due to order cancellation
+  'stock_replenishment', // New stock added to inventory
+  'inventory_correction', // Correction after physical inventory count
+  'return',            // Product returned to inventory
+  'error_adjustment',  // Adjustment due to error report
+  'other'              // Other unclassified changes
+]);
+
+// Inventory Changes Schema - For tracking inventory modifications
+export const inventoryChanges = pgTable("inventory_changes", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").notNull(),
+  userId: integer("user_id").notNull(),
+  changeType: inventoryChangeTypeEnum("change_type").notNull(),
+  previousQuantity: integer("previous_quantity").notNull(),
+  newQuantity: integer("new_quantity").notNull(),
+  quantityChanged: integer("quantity_changed").notNull(),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+  reference: text("reference"), // Could be an order number, error report ID, etc.
+  notes: text("notes"),
+});
+
+export const insertInventoryChangeSchema = createInsertSchema(inventoryChanges)
+  .omit({ id: true, timestamp: true })
+  .extend({
+    productId: z.number(),
+    userId: z.number(),
+    changeType: z.enum(['manual_adjustment', 'order_fulfillment', 'order_cancellation', 'stock_replenishment', 'inventory_correction', 'return', 'error_adjustment', 'other']),
+    previousQuantity: z.number(),
+    newQuantity: z.number(),
+    quantityChanged: z.number(),
+    reference: z.string().optional(),
+    notes: z.string().optional(),
+  });
+
+export type InsertInventoryChange = z.infer<typeof insertInventoryChangeSchema>;
+export type InventoryChange = typeof inventoryChanges.$inferSelect;

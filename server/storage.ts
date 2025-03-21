@@ -13,7 +13,9 @@ import {
   emailSettings, type EmailSettings, type InsertEmailSettings,
   companySettings, type CompanySettings, type InsertCompanySettings,
   notificationSettings, type NotificationSettings, type InsertNotificationSettings,
-  rolePermissions, type RolePermission, type InsertRolePermission
+  rolePermissions, type RolePermission, type InsertRolePermission,
+  orderErrors, type OrderError, type InsertOrderError,
+  inventoryChanges, type InventoryChange, type InsertInventoryChange
 } from "@shared/schema";
 import { DatabaseStorage, initStorage } from './storage.postgresql';
 import { log } from './vite';
@@ -189,6 +191,13 @@ export interface IStorage {
   authorizeUnshippedItems(ids: number[], userId: number): Promise<void>;
   markUnshippedItemsAsShipped(ids: number[], newOrderId: number): Promise<void>;
   getUnshippedItemsForAuthorization(): Promise<UnshippedItem[]>;
+  
+  // Inventory Change Tracking methods
+  getInventoryChanges(productId?: number): Promise<InventoryChange[]>;
+  getInventoryChange(id: number): Promise<InventoryChange | undefined>;
+  addInventoryChange(change: InsertInventoryChange): Promise<InventoryChange>;
+  getRecentInventoryChanges(limit: number): Promise<InventoryChange[]>;
+  getInventoryChangesByType(changeType: string): Promise<InventoryChange[]>;
 }
 
 // We're keeping the MemStorage class definition for fallback
