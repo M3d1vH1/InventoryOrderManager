@@ -13,7 +13,9 @@ import {
   tags, type Tag, type InsertTag,
   productTags, type ProductTag,
   unshippedItems, type UnshippedItem, type InsertUnshippedItem,
-  emailSettings, type EmailSettings, type InsertEmailSettings
+  emailSettings, type EmailSettings, type InsertEmailSettings,
+  companySettings, type CompanySettings, type InsertCompanySettings,
+  notificationSettings, type NotificationSettings, type InsertNotificationSettings
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { log } from './vite';
@@ -1216,6 +1218,138 @@ export class DatabaseStorage implements IStorage {
       return settings.length > 0 ? settings[0] : undefined;
     } catch (error) {
       console.error("Error getting email settings:", error);
+      return undefined;
+    }
+  }
+  
+  // Company Settings methods
+  async getCompanySettings(): Promise<CompanySettings | undefined> {
+    try {
+      const settings = await this.db.select()
+        .from(companySettings)
+        .limit(1);
+      
+      return settings.length > 0 ? settings[0] : undefined;
+    } catch (error) {
+      console.error("Error getting company settings:", error);
+      return undefined;
+    }
+  }
+  
+  async updateCompanySettings(settings: Partial<InsertCompanySettings>): Promise<CompanySettings | undefined> {
+    try {
+      const existingSettings = await this.getCompanySettings();
+      
+      if (!existingSettings) {
+        // Create new settings
+        console.log("Creating new company settings:", JSON.stringify(settings));
+        
+        const [newSettings] = await this.db.insert(companySettings)
+          .values({
+            companyName: settings.companyName || 'Warehouse Systems Inc.',
+            email: settings.email || 'info@warehousesys.com',
+            phone: settings.phone || '',
+            address: settings.address || '',
+            logoPath: settings.logoPath || '',
+            updatedAt: new Date(),
+          })
+          .returning();
+          
+        return newSettings;
+      } else {
+        // Create an update object with all fields that are not undefined
+        const updateObject: Record<string, any> = {
+          updatedAt: new Date()
+        };
+        
+        // Explicitly set each field if it's provided in settings
+        if (settings.companyName !== undefined) updateObject.companyName = settings.companyName;
+        if (settings.email !== undefined) updateObject.email = settings.email;
+        if (settings.phone !== undefined) updateObject.phone = settings.phone;
+        if (settings.address !== undefined) updateObject.address = settings.address;
+        if (settings.logoPath !== undefined) updateObject.logoPath = settings.logoPath;
+        
+        // Log the update for debugging
+        console.log("Updating company settings with:", JSON.stringify(updateObject));
+        
+        // Update existing settings with explicit where clause
+        const [updatedSettings] = await this.db.update(companySettings)
+          .set(updateObject)
+          .where(eq(companySettings.id, existingSettings.id))
+          .returning();
+        
+        console.log("Company settings updated successfully, ID:", updatedSettings.id);
+        return updatedSettings;
+      }
+    } catch (error) {
+      console.error("Error updating company settings:", error);
+      return undefined;
+    }
+  }
+  
+  // Notification Settings methods
+  async getNotificationSettings(): Promise<NotificationSettings | undefined> {
+    try {
+      const settings = await this.db.select()
+        .from(notificationSettings)
+        .limit(1);
+      
+      return settings.length > 0 ? settings[0] : undefined;
+    } catch (error) {
+      console.error("Error getting notification settings:", error);
+      return undefined;
+    }
+  }
+  
+  async updateNotificationSettings(settings: Partial<InsertNotificationSettings>): Promise<NotificationSettings | undefined> {
+    try {
+      const existingSettings = await this.getNotificationSettings();
+      
+      if (!existingSettings) {
+        // Create new settings
+        console.log("Creating new notification settings:", JSON.stringify(settings));
+        
+        const [newSettings] = await this.db.insert(notificationSettings)
+          .values({
+            lowStockAlerts: settings.lowStockAlerts ?? true,
+            orderConfirmation: settings.orderConfirmation ?? true,
+            shippingUpdates: settings.shippingUpdates ?? true,
+            dailyReports: settings.dailyReports ?? false,
+            weeklyReports: settings.weeklyReports ?? true,
+            soundEnabled: settings.soundEnabled ?? true,
+            updatedAt: new Date(),
+          })
+          .returning();
+          
+        return newSettings;
+      } else {
+        // Create an update object with all fields that are not undefined
+        const updateObject: Record<string, any> = {
+          updatedAt: new Date()
+        };
+        
+        // Explicitly set each field if it's provided in settings
+        if (settings.lowStockAlerts !== undefined) updateObject.lowStockAlerts = settings.lowStockAlerts;
+        if (settings.orderConfirmation !== undefined) updateObject.orderConfirmation = settings.orderConfirmation;
+        if (settings.shippingUpdates !== undefined) updateObject.shippingUpdates = settings.shippingUpdates;
+        if (settings.dailyReports !== undefined) updateObject.dailyReports = settings.dailyReports;
+        if (settings.weeklyReports !== undefined) updateObject.weeklyReports = settings.weeklyReports;
+        if (settings.soundEnabled !== undefined) updateObject.soundEnabled = settings.soundEnabled;
+        
+        // Log the update for debugging
+        console.log("Updating notification settings with:", JSON.stringify(updateObject));
+        
+        // Update existing settings with explicit where clause
+        const [updatedSettings] = await this.db.update(notificationSettings)
+          .set(updateObject)
+          .where(eq(notificationSettings.id, existingSettings.id))
+          .returning();
+        
+        console.log("Notification settings updated successfully, ID:", updatedSettings.id);
+        return updatedSettings;
+      }
+    } catch (error) {
+      console.error("Error updating notification settings:", error);
       return undefined;
     }
   }
