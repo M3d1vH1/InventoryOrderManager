@@ -100,6 +100,7 @@ export const products = pgTable("products", {
   unitsPerBox: integer("units_per_box"),
   imagePath: text("image_path"),
   tags: text("tags").array(),
+  lastStockUpdate: timestamp("last_stock_update"),
 });
 
 export const insertProductSchema = createInsertSchema(products)
@@ -113,6 +114,7 @@ export const insertProductSchema = createInsertSchema(products)
     location: z.string().optional(),
     unitsPerBox: z.number().optional(),
     tags: z.array(z.string()).optional().default([]),
+    lastStockUpdate: z.date().optional(),
   });
 
 export type InsertProduct = z.infer<typeof insertProductSchema>;
