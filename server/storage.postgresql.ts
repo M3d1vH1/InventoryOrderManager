@@ -277,7 +277,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async updateProduct(id: number, productUpdate: Partial<InsertProduct>): Promise<Product | undefined> {
+  async updateProduct(id: number, productUpdate: Partial<InsertProduct>, userId?: number): Promise<Product | undefined> {
     try {
       // Check if this is a stock update - if currentStock is being changed
       const stockBeingUpdated = productUpdate.currentStock !== undefined;
@@ -288,16 +288,54 @@ export class DatabaseStorage implements IStorage {
       if (stockBeingUpdated) {
         console.log(`Updating stock level for product ${id} to ${productUpdate.currentStock}, updating lastStockUpdate timestamp`);
         updateData.lastStockUpdate = new Date();
+
+        // Get the current product to track inventory change
+        const currentProduct = await this.getProduct(id);
+        if (!currentProduct) {
+          throw new Error(`Product with ID ${id} not found`);
+        }
+
+        // Perform the update operation
+        const [updatedProduct] = await this.db
+          .update(products)
+          .set(updateData)
+          .where(eq(products.id, id))
+          .returning();
+        
+        // Track the inventory change if userId is provided
+        if (userId && currentProduct.currentStock !== productUpdate.currentStock) {
+          try {
+            const quantityChanged = productUpdate.currentStock! - currentProduct.currentStock;
+            const changeType = quantityChanged > 0 ? 'stock_replenishment' : 'manual_adjustment';
+            
+            await this.addInventoryChange({
+              productId: id,
+              userId: userId,
+              changeType: changeType,
+              previousQuantity: currentProduct.currentStock,
+              newQuantity: productUpdate.currentStock!,
+              quantityChanged: quantityChanged,
+              notes: 'Stock updated via product update'
+            });
+            
+            console.log(`Inventory change recorded for product ${id}: ${currentProduct.currentStock} → ${productUpdate.currentStock}`);
+          } catch (inventoryError) {
+            console.error('Error recording inventory change:', inventoryError);
+            // Continue with the product update even if inventory tracking fails
+          }
+        }
+        
+        return updatedProduct;
+      } else {
+        // Regular update without stock change
+        const [updatedProduct] = await this.db
+          .update(products)
+          .set(updateData)
+          .where(eq(products.id, id))
+          .returning();
+        
+        return updatedProduct;
       }
-      
-      // Regular update without special handling for category
-      const [updatedProduct] = await this.db
-        .update(products)
-        .set(updateData)
-        .where(eq(products.id, id))
-        .returning();
-      
-      return updatedProduct;
     } catch (error) {
       console.error('Error updating product:', error);
       throw error;
