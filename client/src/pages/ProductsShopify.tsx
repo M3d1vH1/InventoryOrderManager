@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 import { BarcodeGenerator } from "@/components/barcode";
 import { InventoryChangeHistory } from "@/components/inventory/InventoryChangeHistory";
 import { 
@@ -114,6 +115,7 @@ const Products = () => {
   const { setCurrentPage } = useSidebar();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   // Category filter removed as part of simplification
   const [stockFilter, setStockFilter] = useState("all");
@@ -1344,7 +1346,7 @@ const Products = () => {
               </DialogHeader>
               
               <Tabs value={selectedTab} onValueChange={setSelectedTab} className="mt-4">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="info">
                     <Info className="mr-2 h-4 w-4" />
                     Information
@@ -1356,6 +1358,24 @@ const Products = () => {
                   <TabsTrigger value="inventory">
                     <Box className="mr-2 h-4 w-4" />
                     Inventory
+                  </TabsTrigger>
+                  <TabsTrigger value="inventoryChanges">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      width="16"
+                      height="16"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="mr-2 h-4 w-4"
+                    >
+                      <path d="M3 3v18h18" />
+                      <path d="m19 9-5 5-4-4-3 3" />
+                    </svg>
+                    {t('inventory.changesTab')}
                   </TabsTrigger>
                 </TabsList>
                 
@@ -1602,6 +1622,12 @@ const Products = () => {
                       </div>
                     </CardContent>
                   </Card>
+                </TabsContent>
+                
+                <TabsContent value="inventoryChanges" className="mt-4">
+                  {viewingProduct && viewingProduct.id && (
+                    <InventoryChangeHistory productId={viewingProduct.id} />
+                  )}
                 </TabsContent>
               </Tabs>
               
