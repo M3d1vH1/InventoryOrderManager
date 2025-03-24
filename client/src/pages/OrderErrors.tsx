@@ -1238,6 +1238,65 @@ export default function OrderErrors() {
           {renderErrorStats()}
         </TabsContent>
       </Tabs>
+
+      {/* Inventory adjustment prompt dialog */}
+      <Dialog open={isAdjustPromptOpen} onOpenChange={setIsAdjustPromptOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('orderErrors.inventoryAdjustmentNeeded')}</DialogTitle>
+            <DialogDescription>
+              {t('orderErrors.inventoryAdjustmentPrompt')}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="flex flex-col space-y-2">
+              <p>{t('orderErrors.adjustmentQuestion')}</p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsAdjustPromptOpen(false);
+                toast({
+                  title: t('orderErrors.createSuccess'),
+                  description: t('orderErrors.createSuccessDescription'),
+                });
+              }}
+            >
+              {t('common.no')}
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                // Get error to adjust
+                setIsAdjustPromptOpen(false);
+                
+                // Fetch the newly created error and open adjustment dialog
+                if (createdErrorId !== null) {
+                  apiRequest<OrderError>(`/api/order-errors/${createdErrorId}`)
+                    .then(error => {
+                      setSelectedError(error);
+                      setIsAdjustDialogOpen(true);
+                    })
+                    .catch(err => {
+                      toast({
+                        title: t('common.errorOccurred'),
+                        description: err.message || t('orderErrors.loadError'),
+                        variant: 'destructive'
+                      });
+                    });
+                }
+              }}
+            >
+              {t('common.yes')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
