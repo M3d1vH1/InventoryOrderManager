@@ -61,17 +61,65 @@ const Sidebar = () => {
                   </Link>
                 </li>
                 <li className="mb-1">
-                  <Link href="/orders" onClick={() => setCurrentPage("Orders")}>
+                  <div>
                     <button 
-                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/orders") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                      className={`flex items-center w-full p-2 text-left rounded ${(isActive("/orders") || isActive("/order-errors") || isActive("/unshipped-items")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
                       title={t('orders.title')}
+                      onClick={() => {
+                        if (isSidebarOpen) {
+                          const submenu = document.getElementById('orders-submenu');
+                          if (submenu) {
+                            submenu.classList.toggle('hidden');
+                          }
+                        } else {
+                          // If sidebar is collapsed, just navigate to orders
+                          window.location.href = '/orders';
+                        }
+                      }}
                     >
                       <span className="flex justify-center items-center w-5 h-5">
                         <i className="fas fa-shopping-cart"></i>
                       </span>
-                      {isSidebarOpen && <span className="ml-2">{t('orders.title')}</span>}
+                      {isSidebarOpen && (
+                        <div className="flex justify-between items-center flex-grow">
+                          <span className="ml-2">{t('orders.title')}</span>
+                          <i className="fas fa-chevron-down text-xs"></i>
+                        </div>
+                      )}
                     </button>
-                  </Link>
+                    
+                    {isSidebarOpen && (
+                      <div id="orders-submenu" className={`pl-7 mt-1 ${!isActive("/orders") && !isActive("/order-errors") && !isActive("/unshipped-items") ? 'hidden' : ''}`}>
+                        <Link href="/orders" onClick={() => setCurrentPage("Orders")}>
+                          <button 
+                            className={`flex items-center w-full p-2 text-left rounded ${isActive("/orders") && !isActive("/orders/") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
+                            title={t('orders.management')}
+                          >
+                            <i className="fas fa-list mr-2 text-xs"></i>
+                            <span>{t('orders.management')}</span>
+                          </button>
+                        </Link>
+                        <Link href="/unshipped-items" onClick={() => setCurrentPage("Unshipped Items")}>
+                          <button 
+                            className={`flex items-center w-full p-2 text-left rounded ${isActive("/unshipped-items") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
+                            title={t('unshippedItems.title')}
+                          >
+                            <i className="fas fa-truck-loading mr-2 text-xs"></i>
+                            <span>{t('unshippedItems.title')}</span>
+                          </button>
+                        </Link>
+                        <Link href="/order-errors" onClick={() => setCurrentPage("Order Errors")}>
+                          <button 
+                            className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-errors") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
+                            title={t('orderErrors.title')}
+                          >
+                            <i className="fas fa-exclamation-triangle mr-2 text-xs"></i>
+                            <span>{t('orderErrors.title')}</span>
+                          </button>
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 </li>
                 <li className="mb-1">
                   <Link href="/products" onClick={() => setCurrentPage("Products")}>
@@ -112,19 +160,7 @@ const Sidebar = () => {
                     </button>
                   </Link>
                 </li>
-                <li className="mb-1">
-                  <Link href="/order-errors" onClick={() => setCurrentPage("Order Errors")}>
-                    <button 
-                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-errors") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
-                      title={t('orderErrors.title')}
-                    >
-                      <span className="flex justify-center items-center w-5 h-5">
-                        <i className="fas fa-exclamation-triangle"></i>
-                      </span>
-                      {isSidebarOpen && <span className="ml-2">{t('orderErrors.title')}</span>}
-                    </button>
-                  </Link>
-                </li>
+
                 <li className="mb-1">
                   <Link href="/reports" onClick={() => setCurrentPage("Reports")}>
                     <button 
