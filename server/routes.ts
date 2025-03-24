@@ -840,6 +840,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const quantityData of itemQuantities) {
           const { orderItemId, productId, requestedQuantity, actualQuantity } = quantityData;
           
+          // Get the product so we can update its inventory
+          const product = await storage.getProduct(productId);
+          if (!product) {
+            console.error(`Product ID ${productId} not found when processing picked items`);
+            continue;
+          }
+          
+          // Reduce the inventory for the actual quantity being picked
+          if (actualQuantity > 0) {
+            // Calculate the new stock level
+            const newStockLevel = Math.max(0, product.currentStock - actualQuantity);
+            
+            // Update the product stock with user attribution for tracking
+            console.log(`Reducing inventory for product ${productId} from ${product.currentStock} to ${newStockLevel} (picked ${actualQuantity})`);
+            await storage.updateProduct(productId, { 
+              currentStock: newStockLevel,
+              lastStockUpdate: new Date()
+            }, userId);
+          }
+          
           // If actual quantity is less than requested, create unshipped items for the difference
           if (actualQuantity < requestedQuantity) {
             const orderItem = orderItems.find(item => item.id === orderItemId);
