@@ -959,7 +959,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.addInventoryChange({
             productId: item.productId,
             userId: userId || 1, // Default to admin if userId not provided
-            changeType: 'cancellation',
+            changeType: 'order_cancellation',
             previousQuantity: product.currentStock,
             newQuantity: newStockLevel,
             reference: `Order ${originalOrder.orderNumber} cancelled`,
