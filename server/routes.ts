@@ -962,6 +962,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             changeType: 'order_cancellation',
             previousQuantity: product.currentStock,
             newQuantity: newStockLevel,
+            quantityChanged: item.quantity, // Add the quantity changed (restored)
             reference: `Order ${originalOrder.orderNumber} cancelled`,
             notes: `Inventory restored after order cancellation`
           });
