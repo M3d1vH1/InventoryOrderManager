@@ -1007,7 +1007,7 @@ A 1
                                 </TableCell>
                                 <TableCell>
                                   <span className="font-medium">{item.quantity}</span>
-                                  {item.product?.unitsPerBox && (
+                                  {item.product?.unitsPerBox && item.product.unitsPerBox > 0 && (
                                     <span className="text-xs text-slate-500 ml-1">
                                       ({Math.ceil(item.quantity / item.product.unitsPerBox)} box{Math.ceil(item.quantity / item.product.unitsPerBox) !== 1 ? 'es' : ''})
                                     </span>
