@@ -13,14 +13,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { useTranslation } from "react-i18next";
 
-// Define the form schema
-const loginFormSchema = z.object({
-  username: z.string().min(1, { message: "Username is required" }),
-  password: z.string().min(1, { message: "Password is required" }),
-});
-
-type LoginFormValues = z.infer<typeof loginFormSchema>;
+// Define the login form schema type
+type LoginFormValues = {
+  username: string;
+  password: string;
+};
 
 // Interface for login response
 interface LoginResponse {
@@ -37,10 +36,17 @@ interface LoginResponse {
 export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [background, setBackground] = useState<string>("gradient");
   const [darkMode, setDarkMode] = useState<boolean>(false);
   const [logoColor, setLogoColor] = useState<string>("primary");
+
+  // Create validation schema with translations
+  const loginFormSchema = z.object({
+    username: z.string().min(1, { message: t("login.username") + " " + t("common.isRequired") }),
+    password: z.string().min(1, { message: t("login.password") + " " + t("common.isRequired") }),
+  });
 
   // Initialize form
   const form = useForm<LoginFormValues>({
@@ -91,8 +97,8 @@ export default function Login() {
     },
     onSuccess: (data) => {
       toast({
-        title: "Login Successful",
-        description: `Welcome, ${data.fullName}`,
+        title: t('login.loginSuccessful'),
+        description: t('login.welcomeMessage', { name: data.fullName }),
       });
       
       // Redirect based on role
@@ -104,8 +110,8 @@ export default function Login() {
     },
     onError: (error) => {
       toast({
-        title: "Login Failed",
-        description: error.message || "Invalid username or password",
+        title: t('login.loginFailed'),
+        description: error.message || t('login.invalidCredentials'),
         variant: "destructive",
       });
     },
@@ -157,9 +163,9 @@ export default function Login() {
           <div className="flex justify-center mb-4">
             <div className={`text-4xl font-bold ${getLogoColorStyle()}`}>WMS</div>
           </div>
-          <CardTitle className="text-2xl font-bold text-center">Login</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">{t('login.title')}</CardTitle>
           <CardDescription className="text-center">
-            Enter your credentials to access the warehouse management system
+            {t('login.credentials')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -170,9 +176,9 @@ export default function Login() {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel>{t('login.username')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your username" {...field} />
+                      <Input placeholder={`${t('login.username')}...`} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -184,11 +190,11 @@ export default function Login() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t('login.password')}</FormLabel>
                     <FormControl>
                       <Input 
                         type="password" 
-                        placeholder="Enter your password" 
+                        placeholder={`${t('login.password')}...`} 
                         {...field} 
                       />
                     </FormControl>
@@ -202,7 +208,7 @@ export default function Login() {
                 className="w-full"
                 disabled={isLoggingIn}
               >
-                {isLoggingIn ? "Logging in..." : "Login"}
+                {isLoggingIn ? t('login.loggingIn') : t('login.loginButton')}
               </Button>
             </form>
           </Form>
@@ -210,7 +216,7 @@ export default function Login() {
         <CardFooter className="flex flex-col gap-4">
           <div className="w-full border-t pt-4">
             <div className="flex items-center justify-between mb-2">
-              <Label htmlFor="appearance-toggle" className="text-sm font-medium">Dark Mode</Label>
+              <Label htmlFor="appearance-toggle" className="text-sm font-medium">{t('login.preferences.darkMode')}</Label>
               <Switch 
                 id="appearance-toggle" 
                 checked={darkMode} 
@@ -219,31 +225,31 @@ export default function Login() {
             </div>
 
             <div className="flex flex-col gap-2 mb-2">
-              <Label htmlFor="background-select" className="text-sm font-medium">Background Style</Label>
+              <Label htmlFor="background-select" className="text-sm font-medium">{t('login.preferences.backgroundStyle')}</Label>
               <Select value={background} onValueChange={setBackground}>
                 <SelectTrigger id="background-select">
-                  <SelectValue placeholder="Select background style" />
+                  <SelectValue placeholder={t('login.preferences.selectBackgroundStyle')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="gradient">Gradient</SelectItem>
-                  <SelectItem value="pattern">Pattern</SelectItem>
-                  <SelectItem value="solid">Solid</SelectItem>
-                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="gradient">{t('login.preferences.gradient')}</SelectItem>
+                  <SelectItem value="pattern">{t('login.preferences.pattern')}</SelectItem>
+                  <SelectItem value="solid">{t('login.preferences.solid')}</SelectItem>
+                  <SelectItem value="none">{t('login.preferences.none')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="logo-color" className="text-sm font-medium">Logo Color</Label>
+              <Label htmlFor="logo-color" className="text-sm font-medium">{t('login.preferences.logoColor')}</Label>
               <Select value={logoColor} onValueChange={setLogoColor}>
                 <SelectTrigger id="logo-color">
-                  <SelectValue placeholder="Select logo color" />
+                  <SelectValue placeholder={t('login.preferences.selectLogoColor')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="primary">Primary</SelectItem>
-                  <SelectItem value="blue">Blue</SelectItem>
-                  <SelectItem value="green">Green</SelectItem>
-                  <SelectItem value="red">Red</SelectItem>
+                  <SelectItem value="primary">{t('login.preferences.primary')}</SelectItem>
+                  <SelectItem value="blue">{t('login.preferences.blue')}</SelectItem>
+                  <SelectItem value="green">{t('login.preferences.green')}</SelectItem>
+                  <SelectItem value="red">{t('login.preferences.red')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

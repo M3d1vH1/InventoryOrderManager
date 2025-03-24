@@ -38,6 +38,7 @@
     "loading": "Loading...",
     "cancel": "Cancel",
     "save": "Save",
+    "isRequired": "is required",
     "saving": "Saving...",
     "actions": "Actions",
     "viewAll": "View All",
@@ -380,5 +381,32 @@
     "orderInfo": "Order Information",
     "deleteSuccess": "Order deleted successfully",
     "deleteError": "Failed to delete order"
+  },
+  "login": {
+    "title": "Login",
+    "username": "Username",
+    "password": "Password",
+    "loginButton": "Login",
+    "loggingIn": "Logging in...",
+    "loginSuccessful": "Login Successful",
+    "welcomeMessage": "Welcome, {{name}}",
+    "loginFailed": "Login Failed",
+    "invalidCredentials": "Invalid username or password",
+    "credentials": "Enter your credentials to access the warehouse management system",
+    "preferences": {
+      "darkMode": "Dark Mode",
+      "backgroundStyle": "Background Style",
+      "logoColor": "Logo Color",
+      "selectBackgroundStyle": "Select background style",
+      "selectLogoColor": "Select logo color",
+      "gradient": "Gradient",
+      "pattern": "Pattern",
+      "solid": "Solid",
+      "none": "None",
+      "primary": "Primary",
+      "blue": "Blue",
+      "green": "Green",
+      "red": "Red"
+    }
   }
 }
