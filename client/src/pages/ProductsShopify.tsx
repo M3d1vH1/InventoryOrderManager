@@ -809,16 +809,18 @@ const Products = () => {
                               >
                                 <Edit size={16} className="text-slate-600" />
                               </button>
-                              <button 
-                                className="p-1 hover:bg-slate-200 rounded text-red-500"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteProduct(product.id);
-                                }}
-                                title="Delete Product"
-                              >
-                                <Trash2 size={16} />
-                              </button>
+                              {user?.role === 'admin' && (
+                                <button 
+                                  className="p-1 hover:bg-slate-200 rounded text-red-500"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteProduct(product.id);
+                                  }}
+                                  title="Delete Product"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -910,16 +912,18 @@ const Products = () => {
                             >
                               <Edit size={16} className="text-slate-600" />
                             </button>
-                            <button 
-                              className="p-2 hover:bg-slate-100 rounded-full text-red-500"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteProduct(product.id);
-                              }}
-                              title="Delete Product"
-                            >
-                              <Trash2 size={16} />
-                            </button>
+                            {user?.role === 'admin' && (
+                              <button 
+                                className="p-2 hover:bg-slate-100 rounded-full text-red-500"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteProduct(product.id);
+                                }}
+                                title="Delete Product"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
