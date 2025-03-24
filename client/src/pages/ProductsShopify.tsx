@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { BarcodeGenerator } from "@/components/barcode";
+import { InventoryChangeHistory } from "@/components/inventory/InventoryChangeHistory";
 import { 
   MapPin, 
   Package, 
