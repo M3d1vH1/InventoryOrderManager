@@ -495,7 +495,7 @@ export default function OrderErrors() {
             <div>
               <span className="font-medium">{t('orderErrors.status')}:</span>{' '}
               {selectedError.resolved ? (
-                <Badge variant="success">{t('orderErrors.resolved')}</Badge>
+                <Badge className="bg-green-500 hover:bg-green-600">{t('orderErrors.resolved')}</Badge>
               ) : (
                 <Badge variant="destructive">{t('orderErrors.unresolved')}</Badge>
               )}
@@ -932,7 +932,7 @@ export default function OrderErrors() {
                           <TableCell>{formatDate(error.reportDate)}</TableCell>
                           <TableCell>
                             {error.resolved ? (
-                              <Badge variant="success">{t('orderErrors.resolved')}</Badge>
+                              <Badge className="bg-green-500 hover:bg-green-600">{t('orderErrors.resolved')}</Badge>
                             ) : (
                               <Badge variant="destructive">{t('orderErrors.unresolved')}</Badge>
                             )}

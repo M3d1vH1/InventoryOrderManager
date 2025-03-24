@@ -113,6 +113,19 @@ const Sidebar = () => {
                   </Link>
                 </li>
                 <li className="mb-1">
+                  <Link href="/order-errors" onClick={() => setCurrentPage("Order Errors")}>
+                    <button 
+                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-errors") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                      title={t('orderErrors.title')}
+                    >
+                      <span className="flex justify-center items-center w-5 h-5">
+                        <i className="fas fa-exclamation-triangle"></i>
+                      </span>
+                      {isSidebarOpen && <span className="ml-2">{t('orderErrors.title')}</span>}
+                    </button>
+                  </Link>
+                </li>
+                <li className="mb-1">
                   <Link href="/reports" onClick={() => setCurrentPage("Reports")}>
                     <button 
                       className={`flex items-center w-full p-2 text-left rounded ${isActive("/reports") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
