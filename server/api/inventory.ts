@@ -74,11 +74,17 @@ export async function updateProductStock(req: Request, res: Response) {
       return res.status(404).json({ message: 'Product not found' });
     }
     
-    // Update the stock and last stock update date
+    // Get userId from the authenticated user
+    const userId = (req.user as any)?.id;
+    if (!userId) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+    
+    // Update the stock and last stock update date with userId for inventory change tracking
     const updatedProduct = await storage.updateProduct(productId, {
       currentStock: newStock,
       lastStockUpdate: new Date()
-    });
+    }, userId);
     
     if (!updatedProduct) {
       return res.status(500).json({ message: 'Failed to update product stock' });

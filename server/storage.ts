@@ -88,7 +88,7 @@ export interface IStorage {
   getProductBySku(sku: string): Promise<Product | undefined>;
   getAllProducts(): Promise<Product[]>;
   createProduct(product: InsertProduct): Promise<Product>;
-  updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product | undefined>;
+  updateProduct(id: number, product: Partial<InsertProduct>, userId?: number): Promise<Product | undefined>;
   deleteProduct(id: number): Promise<boolean>;
   getLowStockProducts(): Promise<Product[]>;
   getSlowMovingProducts(dayThreshold?: number): Promise<Product[]>;
@@ -493,12 +493,19 @@ export class MemStorage implements IStorage {
     return product;
   }
   
-  async updateProduct(id: number, productUpdate: Partial<InsertProduct>): Promise<Product | undefined> {
+  async updateProduct(id: number, productUpdate: Partial<InsertProduct>, userId?: number): Promise<Product | undefined> {
     const existingProduct = this.products.get(id);
     if (!existingProduct) return undefined;
     
     const updatedProduct = { ...existingProduct, ...productUpdate };
     this.products.set(id, updatedProduct);
+    
+    // If we're tracking inventory changes and stock was modified
+    if (userId && productUpdate.currentStock !== undefined && productUpdate.currentStock !== existingProduct.currentStock) {
+      console.log(`[MemStorage] Inventory change for product ${id}: ${existingProduct.currentStock} → ${productUpdate.currentStock}`);
+      // Note: In MemStorage we don't actually log inventory changes, but in a real DB we would
+    }
+    
     return updatedProduct;
   }
   

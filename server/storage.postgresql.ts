@@ -714,7 +714,9 @@ export class DatabaseStorage implements IStorage {
       if (product.currentStock >= orderItem.quantity) {
         // We have enough stock, just reduce it
         const updatedStock = product.currentStock - orderItem.quantity;
-        await this.updateProduct(product.id, { currentStock: updatedStock });
+        // Use order's createdById as userId for inventory tracking
+        const userId = order.createdById;
+        await this.updateProduct(product.id, { currentStock: updatedStock }, userId);
         console.log(`Product ${product.name} stock reduced from ${product.currentStock} to ${updatedStock}`);
       } else {
         // We don't have enough stock, implement partial fulfillment
@@ -723,7 +725,9 @@ export class DatabaseStorage implements IStorage {
         
         // Reduce stock to zero (ship whatever we have)
         if (availableQuantity > 0) {
-          await this.updateProduct(product.id, { currentStock: 0 });
+          // Use order's createdById as userId for inventory tracking
+          const userId = order.createdById;
+          await this.updateProduct(product.id, { currentStock: 0 }, userId);
           console.log(`Product ${product.name} stock reduced from ${product.currentStock} to 0`);
         }
         
