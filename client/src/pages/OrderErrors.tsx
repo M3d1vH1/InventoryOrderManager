@@ -191,7 +191,9 @@ export default function OrderErrors() {
   const [isResolveDialogOpen, setIsResolveDialogOpen] = useState(false);
   const [isAdjustDialogOpen, setIsAdjustDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isAdjustPromptOpen, setIsAdjustPromptOpen] = useState(false);
   const [affectedProducts, setAffectedProducts] = useState<Product[]>([]);
+  const [createdErrorId, setCreatedErrorId] = useState<number | null>(null);
   const [filterOrderId, setFilterOrderId] = useState<string>('');
   const [filterResolved, setFilterResolved] = useState<string>('all');
   const [filterErrorType, setFilterErrorType] = useState<string>('all');
@@ -237,11 +239,21 @@ export default function OrderErrors() {
         })
       });
     },
-    onSuccess: () => {
-      toast({
-        title: t('orderErrors.createSuccess'),
-        description: t('orderErrors.createSuccessDescription'),
-      });
+    onSuccess: (response: any) => {
+      // Store the created error ID for potential inventory adjustment
+      if (response && response.id) {
+        setCreatedErrorId(response.id);
+        
+        // Show adjustment prompt
+        setIsAdjustPromptOpen(true);
+      } else {
+        // Just show success message if no ID is returned
+        toast({
+          title: t('orderErrors.createSuccess'),
+          description: t('orderErrors.createSuccessDescription'),
+        });
+      }
+      
       setIsCreateDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: ['/api/order-errors'] });
       queryClient.invalidateQueries({ queryKey: ['/api/order-errors-stats'] });
