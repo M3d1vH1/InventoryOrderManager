@@ -929,6 +929,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // If the order is being cancelled, restore inventory for any picked items
+      if (status === 'cancelled' && previousStatus === 'picked') {
+        console.log(`Order ${id} is being cancelled, restoring inventory for picked items`);
+        
+        // Get all order items
+        const orderItems = await storage.getOrderItems(id);
+        
+        // Process each item in the order and restore inventory
+        for (const item of orderItems) {
+          // Get the product
+          const product = await storage.getProduct(item.productId);
+          if (!product) {
+            console.error(`Product ID ${item.productId} not found when processing cancelled order items`);
+            continue;
+          }
+          
+          // Increase the inventory for the cancelled item quantity
+          const newStockLevel = product.currentStock + item.quantity;
+          
+          // Update the product stock with user attribution for tracking
+          console.log(`Restoring inventory for product ${item.productId} from ${product.currentStock} to ${newStockLevel} (cancelled ${item.quantity})`);
+          await storage.updateProduct(item.productId, { 
+            currentStock: newStockLevel,
+            lastStockUpdate: new Date()
+          }, userId);
+          
+          // Record inventory change
+          await storage.addInventoryChange({
+            productId: item.productId,
+            userId: userId || 1, // Default to admin if userId not provided
+            changeType: 'cancellation',
+            previousQuantity: product.currentStock,
+            newQuantity: newStockLevel,
+            reference: `Order ${originalOrder.orderNumber} cancelled`,
+            notes: `Inventory restored after order cancellation`
+          });
+        }
+      }
+      
       // Update the order status
       const updatedOrder = await storage.updateOrderStatus(id, status, undefined, userId);
       
