@@ -271,7 +271,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.patch('/api/products/:id', async (req, res) => {
+  app.patch('/api/products/:id', isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       let updateData = {
@@ -370,7 +370,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      const updatedProduct = await storage.updateProduct(id, updateData);
+      // Get userId from authenticated session
+      const userId = (req.user as any)?.id;
+      
+      // Pass userId to track inventory changes
+      const updatedProduct = await storage.updateProduct(id, updateData, userId);
       
       if (!updatedProduct) {
         return res.status(404).json({ message: 'Product not found' });
@@ -432,7 +436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Dedicated product image upload endpoint
-  app.post('/api/products/:id/image', async (req, res) => {
+  app.post('/api/products/:id/image', isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       
@@ -488,7 +492,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update product with new image path
       const imagePath = `/uploads/products/${filename}`;
-      const updatedProduct = await storage.updateProduct(id, { imagePath });
+      // Get userId from authenticated session
+      const userId = (req.user as any)?.id;
+      
+      // Pass userId to track inventory changes (although image updates don't affect inventory)
+      const updatedProduct = await storage.updateProduct(id, { imagePath }, userId);
       
       res.json(updatedProduct);
     } catch (error: any) {
