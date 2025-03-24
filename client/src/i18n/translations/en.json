@@ -241,7 +241,31 @@
     "productRestocked": "Product Restocked",
     "inventoryUpdated": "Product inventory has been updated.",
     "failedToRestock": "Failed to restock product",
-    "criticalFirst": "Critical first"
+    "criticalFirst": "Critical first",
+    "changesHistoryTitle": "Inventory Change History",
+    "changesHistoryDescription": "Track all changes to this product's inventory level",
+    "changesTableCaption": "Historical inventory changes",
+    "dateTime": "Date & Time",
+    "changeType": "Type of Change",
+    "previousQty": "Previous Qty",
+    "newQty": "New Qty",
+    "change": "Change",
+    "changedBy": "Changed By",
+    "reference": "Reference",
+    "notes": "Notes",
+    "noChangesTitle": "No Inventory Changes",
+    "noChangesDescription": "No inventory changes have been recorded for this product yet",
+    "errorLoadingChanges": "Failed to load inventory changes",
+    "changeTypes": {
+      "manualAdjustment": "Manual Adjustment",
+      "orderFulfillment": "Order Fulfillment",
+      "orderCancellation": "Order Cancellation",
+      "stockReplenishment": "Stock Replenishment",
+      "inventoryCorrection": "Inventory Correction",
+      "return": "Return",
+      "errorAdjustment": "Error Adjustment",
+      "other": "Other"
+    }
   },
   "products": {
     "title": "Products",

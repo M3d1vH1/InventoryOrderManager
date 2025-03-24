@@ -256,7 +256,31 @@
     "productRestocked": "Το προϊόν ανανεώθηκε",
     "inventoryUpdated": "Το απόθεμα του προϊόντος ενημερώθηκε.",
     "failedToRestock": "Αποτυχία ανανέωσης προϊόντος",
-    "criticalFirst": "Κρίσιμα πρώτα"
+    "criticalFirst": "Κρίσιμα πρώτα",
+    "changesHistoryTitle": "Ιστορικό Αλλαγών Αποθέματος",
+    "changesHistoryDescription": "Παρακολούθηση όλων των αλλαγών στο επίπεδο αποθέματος αυτού του προϊόντος",
+    "changesTableCaption": "Ιστορικό αλλαγών αποθέματος",
+    "dateTime": "Ημερομηνία & Ώρα",
+    "changeType": "Τύπος Αλλαγής",
+    "previousQty": "Προηγούμενη Ποσότητα",
+    "newQty": "Νέα Ποσότητα",
+    "change": "Αλλαγή",
+    "changedBy": "Άλλαξε από",
+    "reference": "Αναφορά",
+    "notes": "Σημειώσεις",
+    "noChangesTitle": "Χωρίς Αλλαγές Αποθέματος",
+    "noChangesDescription": "Δεν έχουν καταγραφεί αλλαγές αποθέματος για αυτό το προϊόν ακόμα",
+    "errorLoadingChanges": "Αποτυχία φόρτωσης αλλαγών αποθέματος",
+    "changeTypes": {
+      "manualAdjustment": "Χειροκίνητη Προσαρμογή",
+      "orderFulfillment": "Εκπλήρωση Παραγγελίας",
+      "orderCancellation": "Ακύρωση Παραγγελίας",
+      "stockReplenishment": "Αναπλήρωση Αποθέματος",
+      "inventoryCorrection": "Διόρθωση Αποθέματος",
+      "return": "Επιστροφή",
+      "errorAdjustment": "Προσαρμογή Λόγω Σφάλματος",
+      "other": "Άλλο"
+    }
   },
   "products": {
     "title": "Προϊόντα",
