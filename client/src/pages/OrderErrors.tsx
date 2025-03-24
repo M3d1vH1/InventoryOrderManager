@@ -301,8 +301,11 @@ export default function OrderErrors() {
   // Mutation for adjusting inventory
   const adjustInventoryMutation = useMutation({
     mutationFn: async (values: InventoryAdjustmentValues) => {
-      if (!selectedError) return null;
-      return apiRequest(`/api/order-errors/${selectedError.id}/adjust-inventory`, {
+      // Use either selectedError.id or createdErrorId
+      const errorId = selectedError?.id || createdErrorId;
+      if (!errorId) return null;
+      
+      return apiRequest(`/api/order-errors/${errorId}/adjust-inventory`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values)
@@ -314,6 +317,8 @@ export default function OrderErrors() {
         description: t('orderErrors.inventoryAdjustSuccessDescription'),
       });
       setIsAdjustDialogOpen(false);
+      // Reset the created error ID after successful adjustment
+      setCreatedErrorId(null);
       queryClient.invalidateQueries({ queryKey: ['/api/order-errors'] });
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
     },
@@ -390,22 +395,40 @@ export default function OrderErrors() {
 
   // Effect to reset form values when opening adjust inventory dialog
   useEffect(() => {
-    if (isAdjustDialogOpen && selectedError) {
-      // Initialize adjustment form with affected products
-      const initialAdjustments = selectedError.affectedProductIds
-        .map(id => {
-          const productId = parseInt(id);
-          return {
-            productId,
-            quantity: 0
-          };
+    if (isAdjustDialogOpen) {
+      if (selectedError) {
+        // Initialize adjustment form with affected products
+        const initialAdjustments = selectedError.affectedProductIds
+          .map(id => {
+            const productId = parseInt(id);
+            return {
+              productId,
+              quantity: 0
+            };
+          });
+        
+        adjustInventoryForm.reset({
+          adjustments: initialAdjustments
         });
-      
-      adjustInventoryForm.reset({
-        adjustments: initialAdjustments
-      });
+      } else if (createdErrorId) {
+        // If we have a newly created error but no selectedError yet,
+        // fetch the error details to get the affected products
+        apiRequest<OrderError>(`/api/order-errors/${createdErrorId}`)
+          .then(error => {
+            setSelectedError(error);
+            // The form will be initialized when selectedError is set
+          })
+          .catch(err => {
+            toast({
+              title: t('common.errorOccurred'),
+              description: err.message || t('orderErrors.loadError'),
+              variant: 'destructive'
+            });
+            setIsAdjustDialogOpen(false);
+          });
+      }
     }
-  }, [isAdjustDialogOpen, selectedError, adjustInventoryForm]);
+  }, [isAdjustDialogOpen, selectedError, createdErrorId, adjustInventoryForm, t]);
 
   // Filter errors based on selected filters
   const filteredErrors = orderErrors.filter(error => {
@@ -687,8 +710,46 @@ export default function OrderErrors() {
     );
   };
 
+  // Handle adjustment prompt responses
+  const handleAdjustPromptResponse = (adjust: boolean) => {
+    setIsAdjustPromptOpen(false);
+    
+    if (adjust) {
+      // Open the adjustment dialog if user wants to adjust inventory
+      setIsAdjustDialogOpen(true);
+    } else {
+      // Just display success message if user doesn't want to adjust inventory
+      toast({
+        title: t('orderErrors.createSuccess'),
+        description: t('orderErrors.createSuccessDescription'),
+      });
+      // Reset the created error ID since we're not using it
+      setCreatedErrorId(null);
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
+      {/* Adjustment Prompt Dialog */}
+      <AlertDialog open={isAdjustPromptOpen} onOpenChange={setIsAdjustPromptOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('orderErrors.inventoryAdjustmentNeeded')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('orderErrors.adjustmentQuestion')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => handleAdjustPromptResponse(false)}>
+              {t('common.no')}
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleAdjustPromptResponse(true)}>
+              {t('common.yes')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">{t('orderErrors.title')}</h1>
         <div className="flex gap-2">
