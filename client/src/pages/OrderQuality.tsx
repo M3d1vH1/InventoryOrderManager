@@ -1065,37 +1065,79 @@ export default function OrderQuality() {
                 </TabsList>
                 
                 <TabsContent value="order_related">
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={createForm.control}
-                      name="orderId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t('common.orderId')}</FormLabel>
-                          <FormControl>
-                            <Input type="number" {...field} onChange={e => {
-                              // Allow empty value (undefined) or convert to number
-                              const value = e.target.value === '' ? undefined : parseInt(e.target.value);
-                              field.onChange(value);
-                            }} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={createForm.control}
-                      name="orderNumber"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t('orders.orderNumber')}</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <div className="bg-blue-50 p-4 mb-4 rounded-md border border-blue-100">
+                    <h3 className="text-sm font-medium mb-2 flex items-center text-blue-800">
+                      <Link className="h-4 w-4 mr-1" />
+                      {t('orderQuality.linkOrderTitle')}
+                    </h3>
+                    <p className="text-xs text-blue-600 mb-3">{t('orderQuality.linkOrderDescription')}</p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={createForm.control}
+                        name="orderNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-blue-700">{t('orders.orderNumber')}</FormLabel>
+                            <div className="flex space-x-2">
+                              <FormControl>
+                                <Input 
+                                  placeholder="ORD-0000" 
+                                  {...field} 
+                                  className="border-blue-200 focus:border-blue-400"
+                                />
+                              </FormControl>
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="icon"
+                                className="border-blue-200 hover:bg-blue-100"
+                                onClick={() => {
+                                  // Here you would typically search for order details
+                                  // For now, just demonstrate the concept 
+                                  toast({
+                                    description: t('orderQuality.searchingOrder'),
+                                  });
+                                }}
+                              >
+                                <Search className="h-4 w-4 text-blue-500" />
+                              </Button>
+                            </div>
+                            <FormDescription className="text-xs text-blue-600">
+                              {t('orderQuality.enterOrderNumberDescription')}
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={createForm.control}
+                        name="orderId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-blue-700">{t('common.orderId')}</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                {...field} 
+                                onChange={e => {
+                                  // Allow empty value (undefined) or convert to number
+                                  const value = e.target.value === '' ? undefined : parseInt(e.target.value);
+                                  field.onChange(value);
+                                }}
+                                className="border-blue-200 focus:border-blue-400"
+                                placeholder={t('orderQuality.orderIdPlaceholder')}
+                              />
+                            </FormControl>
+                            <FormDescription className="text-xs text-blue-600">
+                              {t('orderQuality.autoFilledWhenOrderFound')}
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
                 </TabsContent>
                 
