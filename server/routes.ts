@@ -13,7 +13,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { getEmailSettings, updateEmailSettings, testEmailConnection, getEmailTemplate, updateEmailTemplate, getLabelTemplate, updateLabelTemplate } from "./api/emailSettings";
 import { getCompanySettings, updateCompanySettings, getNotificationSettings, updateNotificationSettings } from "./api/settings";
-import { getOrderErrors, getOrderError, createOrderError, updateOrderError, resolveOrderError, adjustInventoryForError, getErrorStats } from "./api/orderErrors";
+import { getOrderErrors, getOrderQuality, createOrderError, updateOrderError, resolveOrderError, adjustInventoryForError, getErrorStats } from "./api/orderErrors";
 import { getInventoryChanges, getInventoryChange, addInventoryChange, getRecentInventoryChanges, getInventoryChangesByType } from "./api/inventoryChanges";
 
 // Function to determine the appropriate storage path based on environment
@@ -2212,7 +2212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Order Error routes
   app.get('/api/order-errors', isAuthenticated, getOrderErrors);
-  app.get('/api/order-errors/:id', isAuthenticated, getOrderError);
+  app.get('/api/order-errors/:id', isAuthenticated, getOrderQuality);
   app.post('/api/order-errors', isAuthenticated, createOrderError);
   app.patch('/api/order-errors/:id', isAuthenticated, updateOrderError);
   app.post('/api/order-errors/:id/resolve', isAuthenticated, resolveOrderError);

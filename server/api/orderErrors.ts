@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { storage } from '../storage.postgresql';
 import { z } from 'zod';
-import { orderQualityTypeEnum } from '../../shared/schema';
+import { orderQualityTypeEnum, InsertOrderQuality } from '../../shared/schema';
 
 /**
  * Get all order errors, optionally filtered by order ID
@@ -20,19 +20,19 @@ export async function getOrderErrors(req: Request, res: Response) {
 /**
  * Get a specific order error by ID
  */
-export async function getOrderError(req: Request, res: Response) {
+export async function getOrderQuality(req: Request, res: Response) {
   try {
     const id = parseInt(req.params.id, 10);
-    const error = await storage.getOrderError(id);
+    const error = await storage.getOrderQuality(id);
     
     if (!error) {
-      return res.status(404).json({ message: 'Order error not found' });
+      return res.status(404).json({ message: 'Order quality record not found' });
     }
     
     return res.json(error);
   } catch (error) {
-    console.error('Error fetching order error:', error);
-    return res.status(500).json({ message: 'Failed to fetch order error' });
+    console.error('Error fetching order quality record:', error);
+    return res.status(500).json({ message: 'Failed to fetch order quality record' });
   }
 }
 
@@ -45,7 +45,7 @@ export async function createOrderError(req: Request, res: Response) {
     const createErrorSchema = z.object({
       orderId: z.number(),
       orderNumber: z.string(),
-      errorType: z.enum(orderErrorTypeEnum.enumValues),
+      errorType: z.enum(orderQualityTypeEnum.enumValues),
       description: z.string().min(5),
       reportedById: z.number(),
       affectedItems: z.array(z.object({
@@ -102,7 +102,7 @@ export async function updateOrderError(req: Request, res: Response) {
     
     // Basic validation schema for order error updates
     const updateErrorSchema = z.object({
-      errorType: z.enum(orderErrorTypeEnum.enumValues).optional(),
+      errorType: z.enum(orderQualityTypeEnum.enumValues).optional(),
       description: z.string().min(5).optional(),
       affectedItems: z.array(z.object({
         productId: z.number(),
@@ -116,7 +116,7 @@ export async function updateOrderError(req: Request, res: Response) {
     const validatedData = updateErrorSchema.parse(req.body);
     
     // Prepare update data
-    const updateData: Partial<InsertOrderError> = {};
+    const updateData: Partial<InsertOrderQuality> = {};
     
     if (validatedData.errorType) {
       updateData.errorType = validatedData.errorType;
