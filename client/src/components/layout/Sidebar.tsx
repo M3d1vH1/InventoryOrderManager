@@ -63,7 +63,7 @@ const Sidebar = () => {
                 <li className="mb-1">
                   <div>
                     <button 
-                      className={`flex items-center w-full p-2 text-left rounded ${(isActive("/orders") || isActive("/order-errors") || isActive("/unshipped-items")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                      className={`flex items-center w-full p-2 text-left rounded ${(isActive("/orders") || isActive("/order-quality") || isActive("/unshipped-items")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
                       title={t('orders.title')}
                       onClick={() => {
                         if (isSidebarOpen) {
@@ -89,7 +89,7 @@ const Sidebar = () => {
                     </button>
                     
                     {isSidebarOpen && (
-                      <div id="orders-submenu" className={`pl-7 mt-1 ${!isActive("/orders") && !isActive("/order-errors") && !isActive("/unshipped-items") ? 'hidden' : ''}`}>
+                      <div id="orders-submenu" className={`pl-7 mt-1 ${!isActive("/orders") && !isActive("/order-quality") && !isActive("/unshipped-items") ? 'hidden' : ''}`}>
                         <Link href="/orders" onClick={() => setCurrentPage("Orders")}>
                           <button 
                             className={`flex items-center w-full p-2 text-left rounded ${isActive("/orders") && !isActive("/orders/") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
@@ -108,13 +108,13 @@ const Sidebar = () => {
                             <span>{t('unshippedItems.title')}</span>
                           </button>
                         </Link>
-                        <Link href="/order-errors" onClick={() => setCurrentPage("Order Errors")}>
+                        <Link href="/order-quality" onClick={() => setCurrentPage("Order Quality")}>
                           <button 
-                            className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-errors") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
-                            title={t('orderErrors.title')}
+                            className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-quality") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
+                            title={t('orderQuality.title')}
                           >
                             <i className="fas fa-exclamation-triangle mr-2 text-xs"></i>
-                            <span>{t('orderErrors.title')}</span>
+                            <span>{t('orderQuality.title')}</span>
                           </button>
                         </Link>
                       </div>
