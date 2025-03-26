@@ -515,11 +515,46 @@
     "createError": "Αποτυχία δημιουργίας αναφοράς ζητήματος ποιότητας",
     "resolveError": "Αποτυχία επίλυσης ζητήματος ποιότητας",
     "inventoryAdjustError": "Αποτυχία προσαρμογής αποθέματος",
+    "identifierColumn": "Αναγνωριστικό",
+    "qualityLabel": "Ετικέτα Ποιότητας",
+    "qualityLabelPlaceholder": "Εισάγετε ένα μοναδικό αναγνωριστικό για αυτό το ζήτημα ποιότητας...",
+    "qualityCategory": "Κατηγορία",
+    "dueDate": "Ημερομηνία Λήξης",
+    "priority": "Προτεραιότητα",
+    "qualityStatus": "Κατάσταση",
+    "qualityNotes": "Σημειώσεις",
+    "orderInfo": "Πληροφορίες Παραγγελίας",
+    "tabs": {
+      "orderRelated": "Σχετικό με Παραγγελία",
+      "standalone": "Αυτόνομη Ποιότητα"
+    },
+    "categories": {
+      "manufacturing": "Κατασκευή",
+      "packaging": "Συσκευασία",
+      "shipping": "Αποστολή",
+      "warehouse": "Αποθήκη",
+      "supplier": "Προμηθευτής",
+      "customer": "Πελάτης",
+      "system": "Σύστημα",
+      "other": "Άλλο"
+    },
+    "priorities": {
+      "critical": "Κρίσιμο",
+      "high": "Υψηλή",
+      "medium": "Μεσαία",
+      "low": "Χαμηλή"
+    },
+    "statuses": {
+      "open": "Ανοιχτό",
+      "in_progress": "Σε Εξέλιξη",
+      "waiting": "Σε Αναμονή",
+      "closed": "Κλειστό"
+    },
     "filters": {
       "title": "Φιλτράρισμα Ζητημάτων Ποιότητας",
       "description": "Φιλτράρισμα αναφορών ζητημάτων ποιότητας ανά αριθμό παραγγελίας, κατάσταση ή τύπο",
       "orderNumber": "Αριθμός Παραγγελίας",
-      "orderNumberPlaceholder": "Φιλτράρισμα ανά αριθμό παραγγελίας..."
+      "orderNumberPlaceholder": "Φιλτράρισμα ανά αναγνωριστικό..."
     },
     "types": {
       "missing_item": "Ελλείπον Αντικείμενο",
@@ -528,9 +563,9 @@
       "wrong_quantity": "Λάθος Ποσότητα",
       "duplicate_item": "Διπλό Αντικείμενο",
       "wrong_address": "Λάθος Διεύθυνση",
-      "picking_error": "Σφάλμα Ποιότητας Συλλογής",
-      "packing_error": "Σφάλμα Ποιότητας Συσκευασίας", 
-      "system_error": "Σφάλμα Ποιότητας Συστήματος",
+      "picking_issue": "Πρόβλημα Συλλογής",
+      "packing_issue": "Πρόβλημα Συσκευασίας", 
+      "system_issue": "Πρόβλημα Συστήματος",
       "other": "Άλλο"
     },
     "stats": {
