@@ -1045,7 +1045,7 @@ export default function OrderQuality() {
       <Dialog open={isResolveDialogOpen} onOpenChange={setIsResolveDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('orderQuality.resolveError')}</DialogTitle>
+            <DialogTitle>{t('orderQuality.resolveSuccess')}</DialogTitle>
             <DialogDescription>
               {selectedQuality && t('orderQuality.resolveErrorDescription', { orderNumber: selectedQuality.orderNumber })}
             </DialogDescription>
