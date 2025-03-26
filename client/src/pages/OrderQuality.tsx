@@ -93,6 +93,10 @@ import {
   ChevronDown,
   ChevronUp,
   ClipboardList,
+  ClipboardCheck,
+  Link,
+  Search,
+  BarChart4,
   Download,
   Eye,
   FileEdit,
@@ -102,7 +106,6 @@ import {
   Trash2,
   X,
   CalendarRange,
-  BarChart4,
   Package,
   PackageCheck
 } from 'lucide-react';
@@ -725,16 +728,20 @@ export default function OrderQuality() {
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-4">
-              <TabsTrigger value="quality">
+              <TabsTrigger value="order-related">
                 <ClipboardList className="h-4 w-4 mr-1" />
-                {t('orderQuality.errors')}
+                {t('orderQuality.tabs.orderRelated')}
+              </TabsTrigger>
+              <TabsTrigger value="standalone">
+                <ClipboardCheck className="h-4 w-4 mr-1" />
+                {t('orderQuality.tabs.standalone')}
               </TabsTrigger>
               <TabsTrigger value="stats">
                 <BarChart4 className="h-4 w-4 mr-1" />
                 {t('orderQuality.statistics')}
               </TabsTrigger>
             </TabsList>
-            <TabsContent value="quality">
+            <TabsContent value="order-related">
               <div className="mb-4 bg-gray-50 p-3 rounded">
                 <div className="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-4">
                   <div className="flex items-center">

@@ -63,7 +63,7 @@ const Sidebar = () => {
                 <li className="mb-1">
                   <div>
                     <button 
-                      className={`flex items-center w-full p-2 text-left rounded ${(isActive("/orders") || isActive("/order-quality") || isActive("/unshipped-items")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                      className={`flex items-center w-full p-2 text-left rounded ${(isActive("/orders") || isActive("/unshipped-items")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
                       title={t('orders.title')}
                       onClick={() => {
                         if (isSidebarOpen) {
@@ -89,7 +89,7 @@ const Sidebar = () => {
                     </button>
                     
                     {isSidebarOpen && (
-                      <div id="orders-submenu" className={`pl-7 mt-1 ${!isActive("/orders") && !isActive("/order-quality") && !isActive("/unshipped-items") ? 'hidden' : ''}`}>
+                      <div id="orders-submenu" className={`pl-7 mt-1 ${!isActive("/orders") && !isActive("/unshipped-items") ? 'hidden' : ''}`}>
                         <Link href="/orders" onClick={() => setCurrentPage("Orders")}>
                           <button 
                             className={`flex items-center w-full p-2 text-left rounded ${isActive("/orders") && !isActive("/orders/") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
@@ -106,15 +106,6 @@ const Sidebar = () => {
                           >
                             <i className="fas fa-truck-loading mr-2 text-xs"></i>
                             <span>{t('unshippedItems.title')}</span>
-                          </button>
-                        </Link>
-                        <Link href="/order-quality" onClick={() => setCurrentPage("Order Quality")}>
-                          <button 
-                            className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-quality") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
-                            title={t('orderQuality.title')}
-                          >
-                            <i className="fas fa-exclamation-triangle mr-2 text-xs"></i>
-                            <span>{t('orderQuality.title')}</span>
                           </button>
                         </Link>
                       </div>
@@ -157,6 +148,20 @@ const Sidebar = () => {
                         <i className="fas fa-warehouse"></i>
                       </span>
                       {isSidebarOpen && <span className="ml-2">{t('app.inventory')}</span>}
+                    </button>
+                  </Link>
+                </li>
+                
+                <li className="mb-1">
+                  <Link href="/order-quality" onClick={() => setCurrentPage("Quality")}>
+                    <button 
+                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-quality") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                      title="Quality"
+                    >
+                      <span className="flex justify-center items-center w-5 h-5">
+                        <i className="fas fa-clipboard-list"></i>
+                      </span>
+                      {isSidebarOpen && <span className="ml-2">Quality</span>}
                     </button>
                   </Link>
                 </li>
