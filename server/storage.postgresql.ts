@@ -1315,7 +1315,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Order Error methods
-  async getOrderErrors(orderId?: number): Promise<OrderError[]> {
+  async getOrderErrors(orderId?: number): Promise<OrderQuality[]> {
     try {
       if (orderId) {
         return await this.db
@@ -1326,42 +1326,42 @@ export class DatabaseStorage implements IStorage {
       } else {
         return await this.db
           .select()
-          .from(orderErrors)
-          .orderBy(desc(orderErrors.reportDate));
+          .from(orderQuality)
+          .orderBy(desc(orderQuality.reportDate));
       }
     } catch (error) {
-      console.error('Error getting order errors:', error);
+      console.error('Error getting order quality records:', error);
       return [];
     }
   }
 
-  async getOrderError(id: number): Promise<OrderError | undefined> {
+  async getOrderError(id: number): Promise<OrderQuality | undefined> {
     try {
       const result = await this.db
         .select()
-        .from(orderErrors)
-        .where(eq(orderErrors.id, id));
+        .from(orderQuality)
+        .where(eq(orderQuality.id, id));
       return result[0];
     } catch (error) {
-      console.error(`Error getting order error #${id}:`, error);
+      console.error(`Error getting order quality record #${id}:`, error);
       return undefined;
     }
   }
 
-  async createOrderError(error: InsertOrderError): Promise<OrderError> {
+  async createOrderError(error: InsertOrderQuality): Promise<OrderQuality> {
     try {
-      // Insert the order error record
-      const [orderError] = await this.db
-        .insert(orderErrors)
+      // Insert the order quality record
+      const [qualityRecord] = await this.db
+        .insert(orderQuality)
         .values(error)
         .returning();
       
-      // Add a changelog entry for this error report
+      // Add a changelog entry for this quality report
       await this.addOrderChangelog({
         orderId: error.orderId,
         userId: error.reportedById,
         action: 'error_report',
-        notes: `Error reported: ${error.errorType} - ${error.description.substring(0, 100)}${error.description.length > 100 ? '...' : ''}`,
+        notes: `Quality issue reported: ${error.errorType} - ${error.description.substring(0, 100)}${error.description.length > 100 ? '...' : ''}`,
         changes: {
           errorType: error.errorType,
           description: error.description,
@@ -1369,32 +1369,32 @@ export class DatabaseStorage implements IStorage {
         }
       });
       
-      return orderError;
+      return qualityRecord;
     } catch (error) {
-      console.error('Error creating order error record:', error);
+      console.error('Error creating order quality record:', error);
       throw error;
     }
   }
 
-  async updateOrderError(id: number, error: Partial<InsertOrderError>): Promise<OrderError | undefined> {
+  async updateOrderError(id: number, error: Partial<InsertOrderQuality>): Promise<OrderQuality | undefined> {
     try {
-      const [updatedError] = await this.db
-        .update(orderErrors)
+      const [updatedRecord] = await this.db
+        .update(orderQuality)
         .set(error)
-        .where(eq(orderErrors.id, id))
+        .where(eq(orderQuality.id, id))
         .returning();
-      return updatedError;
+      return updatedRecord;
     } catch (error) {
-      console.error(`Error updating order error #${id}:`, error);
+      console.error(`Error updating order quality record #${id}:`, error);
       return undefined;
     }
   }
 
-  async resolveOrderError(id: number, userId: number, resolution: { rootCause?: string, preventiveMeasures?: string }): Promise<OrderError | undefined> {
+  async resolveOrderError(id: number, userId: number, resolution: { rootCause?: string, preventiveMeasures?: string }): Promise<OrderQuality | undefined> {
     try {
-      // Update the error as resolved
-      const [resolvedError] = await this.db
-        .update(orderErrors)
+      // Update the quality issue as resolved
+      const [resolvedRecord] = await this.db
+        .update(orderQuality)
         .set({
           resolved: true,
           resolvedById: userId,
@@ -1402,16 +1402,16 @@ export class DatabaseStorage implements IStorage {
           rootCause: resolution.rootCause || null,
           preventiveMeasures: resolution.preventiveMeasures || null
         })
-        .where(eq(orderErrors.id, id))
+        .where(eq(orderQuality.id, id))
         .returning();
       
-      if (resolvedError) {
+      if (resolvedRecord) {
         // Add a changelog entry for the resolution
         await this.addOrderChangelog({
-          orderId: resolvedError.orderId,
+          orderId: resolvedRecord.orderId,
           userId: userId,
           action: 'update',
-          notes: `Error #${id} marked as resolved`,
+          notes: `Quality issue #${id} marked as resolved`,
           changes: { 
             resolved: true,
             rootCause: resolution.rootCause,
@@ -1420,9 +1420,9 @@ export class DatabaseStorage implements IStorage {
         });
       }
       
-      return resolvedError;
+      return resolvedRecord;
     } catch (error) {
-      console.error(`Error resolving order error #${id}:`, error);
+      console.error(`Error resolving order quality record #${id}:`, error);
       return undefined;
     }
   }
