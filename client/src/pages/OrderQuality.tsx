@@ -763,7 +763,7 @@ export default function OrderQuality() {
                                     setSelectedQuality(quality);
                                     setIsViewDialogOpen(true);
                                   }}
-                                  title={t('orderQuality.viewError')}
+                                  title={t('orderQuality.details')}
                                 >
                                   <Eye className="h-4 w-4" />
                                 </Button>
