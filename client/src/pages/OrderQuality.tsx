@@ -351,11 +351,18 @@ export default function OrderQuality() {
   const createForm = useForm<QualityFormValues>({
     resolver: zodResolver(qualityFormSchema),
     defaultValues: {
-      orderId: 0,
+      orderId: undefined,
       orderNumber: '',
       qualityType: 'missing_item',
       description: '',
       affectedItems: [],
+      qualityLabel: '',
+      qualityCategory: '',
+      qualityStatus: 'open',
+      assignedToId: user?.id,
+      dueDate: '',
+      priority: 'medium',
+      qualityNotes: '',
     }
   });
 
@@ -807,7 +814,7 @@ export default function OrderQuality() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>{t('orders.orderNumber')}</TableHead>
+                          <TableHead>{t('orderQuality.identifierColumn')}</TableHead>
                           <TableHead>{t('orderQuality.qualityType')}</TableHead>
                           <TableHead>{t('orderQuality.reportDate')}</TableHead>
                           <TableHead>{t('orderQuality.status')}</TableHead>

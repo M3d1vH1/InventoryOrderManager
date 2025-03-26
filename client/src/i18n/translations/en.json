@@ -445,11 +445,46 @@
     "createError": "Failed to create quality issue report",
     "resolveError": "Failed to resolve quality issue",
     "inventoryAdjustError": "Failed to adjust inventory",
+    "identifierColumn": "Identifier",
+    "qualityLabel": "Quality Label",
+    "qualityLabelPlaceholder": "Enter a unique identifier for this quality issue...",
+    "qualityCategory": "Category",
+    "dueDate": "Due Date",
+    "priority": "Priority",
+    "qualityStatus": "Status",
+    "qualityNotes": "Notes",
+    "orderInfo": "Order Information",
+    "tabs": {
+      "orderRelated": "Order Related",
+      "standalone": "Standalone Quality"
+    },
+    "categories": {
+      "manufacturing": "Manufacturing",
+      "packaging": "Packaging",
+      "shipping": "Shipping",
+      "warehouse": "Warehouse",
+      "supplier": "Supplier",
+      "customer": "Customer",
+      "system": "System",
+      "other": "Other"
+    },
+    "priorities": {
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "statuses": {
+      "open": "Open",
+      "in_progress": "In Progress",
+      "waiting": "Waiting",
+      "closed": "Closed"
+    },
     "filters": {
       "title": "Filter Quality Issues",
       "description": "Filter quality issue reports by order number, status, or type",
       "orderNumber": "Order Number",
-      "orderNumberPlaceholder": "Filter by order number...",
+      "orderNumberPlaceholder": "Filter by identifier...",
       "status": "Status",
       "errorType": "Issue Type"
     },
@@ -460,9 +495,9 @@
       "wrong_quantity": "Wrong Quantity",
       "duplicate_item": "Duplicate Item",
       "wrong_address": "Wrong Address",
-      "picking_error": "Picking Error",
-      "packing_error": "Packing Error",
-      "system_error": "System Error",
+      "picking_issue": "Picking Issue",
+      "packing_issue": "Packing Issue",
+      "system_issue": "System Issue",
       "other": "Other"
     },
     "stats": {
