@@ -436,22 +436,22 @@
     "adjustAction": "Apply Adjustments",
     "noAdjustments": "No Adjustments Specified",
     "noAdjustmentsDescription": "Please specify at least one non-zero adjustment",
-    "createSuccess": "Error Report Created",
-    "createSuccessDescription": "The error has been reported successfully",
-    "resolveSuccess": "Error Resolved",
-    "resolveSuccessDescription": "The error has been marked as resolved",
+    "createSuccess": "Quality Issue Report Created",
+    "createSuccessDescription": "The quality issue has been reported successfully",
+    "resolveSuccess": "Quality Issue Resolved",
+    "resolveSuccessDescription": "The quality issue has been marked as resolved",
     "inventoryAdjustSuccess": "Inventory Adjusted",
     "inventoryAdjustSuccessDescription": "The inventory has been adjusted for the affected products",
-    "createError": "Failed to create error report",
-    "resolveError": "Failed to resolve error",
+    "createError": "Failed to create quality issue report",
+    "resolveError": "Failed to resolve quality issue",
     "inventoryAdjustError": "Failed to adjust inventory",
     "filters": {
-      "title": "Filter Errors",
-      "description": "Filter error reports by order number, status, or type",
+      "title": "Filter Quality Issues",
+      "description": "Filter quality issue reports by order number, status, or type",
       "orderNumber": "Order Number",
       "orderNumberPlaceholder": "Filter by order number...",
       "status": "Status",
-      "errorType": "Error Type"
+      "errorType": "Issue Type"
     },
     "types": {
       "missing_item": "Missing Item",
@@ -466,14 +466,14 @@
       "other": "Other"
     },
     "stats": {
-      "totalErrors": "Total Errors",
+      "totalErrors": "Total Quality Issues",
       "fromOrders": "From {{count}} orders",
-      "errorRate": "Error Rate",
+      "errorRate": "Quality Issue Rate",
       "per100Orders": "Per 100 shipped orders",
-      "mostCommonError": "Most Common Error",
+      "mostCommonError": "Most Common Issue",
       "errorCount": "{{count}} occurrences",
-      "errorsByType": "Errors by Type",
-      "errorRateTrend": "Error Rate Trend"
+      "errorsByType": "Issues by Type",
+      "errorRateTrend": "Quality Issue Rate Trend"
     }
   },
   "notifications": {

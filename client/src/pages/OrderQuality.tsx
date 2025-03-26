@@ -526,7 +526,7 @@ export default function OrderQuality() {
             </div>
             <div>
               <span className="font-medium">{t('orderQuality.status')}:</span> {' '}
-              <Badge variant={selectedQuality.resolved ? "success" : "destructive"}>
+              <Badge variant={selectedQuality.resolved ? "outline" : "destructive"} className={selectedQuality.resolved ? "bg-green-100 text-green-800" : ""}>
                 {selectedQuality.resolved ? t('orderQuality.resolved') : t('orderQuality.unresolved')}
               </Badge>
             </div>
@@ -737,7 +737,7 @@ export default function OrderQuality() {
                             <TableCell>{getQualityTypeDisplay(quality.qualityType)}</TableCell>
                             <TableCell>{formatDate(quality.reportDate)}</TableCell>
                             <TableCell>
-                              <Badge variant={quality.resolved ? "success" : "destructive"}>
+                              <Badge variant={quality.resolved ? "outline" : "destructive"} className={quality.resolved ? "bg-green-100 text-green-800" : ""}>
                                 {quality.resolved ? t('orderQuality.resolved') : t('orderQuality.unresolved')}
                               </Badge>
                             </TableCell>
