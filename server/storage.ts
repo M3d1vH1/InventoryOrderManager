@@ -41,7 +41,7 @@ export interface IStorage {
   
   // Order Quality methods
   getOrderErrors(orderId?: number): Promise<OrderQuality[]>;
-  getOrderError(id: number): Promise<OrderQuality | undefined>;
+  getOrderQuality(id: number): Promise<OrderQuality | undefined>;
   createOrderError(error: InsertOrderQuality): Promise<OrderQuality>;
   updateOrderError(id: number, error: Partial<InsertOrderQuality>): Promise<OrderQuality | undefined>;
   resolveOrderError(id: number, userId: number, resolution: { rootCause?: string, preventiveMeasures?: string }): Promise<OrderQuality | undefined>;

@@ -1335,7 +1335,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getOrderError(id: number): Promise<OrderQuality | undefined> {
+  async getOrderQuality(id: number): Promise<OrderQuality | undefined> {
     try {
       const result = await this.db
         .select()
@@ -1439,13 +1439,13 @@ export class DatabaseStorage implements IStorage {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - period);
       
-      // Get total errors for the period
+      // Get total quality issues for the period
       const errorsResult = await this.db
         .select({
           count: sql<number>`count(*)`,
         })
-        .from(orderErrors)
-        .where(sql`${orderErrors.reportDate} >= ${startDate.toISOString()}`);
+        .from(orderQuality)
+        .where(sql`${orderQuality.reportDate} >= ${startDate.toISOString()}`);
       
       const totalErrors = errorsResult[0]?.count || 0;
       
@@ -1472,13 +1472,14 @@ export class DatabaseStorage implements IStorage {
       // Get errors by type
       const errorsByTypeResult = await this.db
         .select({
-          type: orderErrors.errorType,
+          type: orderQuality.errorType,
           count: sql<number>`count(*)`,
         })
-        .from(orderErrors)
-        .where(sql`${orderErrors.reportDate} >= ${startDate.toISOString()}`)
-        .groupBy(orderErrors.errorType)
-        .orderBy(sql`count(*)`, 'desc');
+        .from(orderQuality)
+        .where(sql`${orderQuality.reportDate} >= ${startDate.toISOString()}`)
+        .groupBy(orderQuality.errorType)
+        .orderBy(sql<number>`count(*)`)
+        .execute();
       
       const errorsByType = errorsByTypeResult.map(row => ({
         type: row.type,
@@ -1496,16 +1497,16 @@ export class DatabaseStorage implements IStorage {
         const weekStart = new Date(weekEnd);
         weekStart.setDate(weekStart.getDate() - 7);
         
-        // Count errors for the week
+        // Count quality issues for the week
         const weeklyErrorsResult = await this.db
           .select({
             count: sql<number>`count(*)`,
           })
-          .from(orderErrors)
+          .from(orderQuality)
           .where(
             and(
-              sql`${orderErrors.reportDate} >= ${weekStart.toISOString()}`,
-              sql`${orderErrors.reportDate} < ${weekEnd.toISOString()}`
+              sql`${orderQuality.reportDate} >= ${weekStart.toISOString()}`,
+              sql`${orderQuality.reportDate} < ${weekEnd.toISOString()}`
             )
           );
         
@@ -1546,7 +1547,7 @@ export class DatabaseStorage implements IStorage {
         trending: trending.reverse() // Show oldest to newest
       };
     } catch (error) {
-      console.error('Error generating error stats:', error);
+      console.error('Error generating quality statistics:', error);
       // Return empty data structure if error occurs
       return {
         totalErrors: 0,
@@ -1560,10 +1561,10 @@ export class DatabaseStorage implements IStorage {
 
   async adjustInventoryForError(errorId: number, adjustments: { productId: number, quantity: number }[]): Promise<boolean> {
     try {
-      // Get the error record
-      const errorRecord = await this.getOrderError(errorId);
-      if (!errorRecord) {
-        throw new Error(`Error record #${errorId} not found`);
+      // Get the quality record
+      const qualityRecord = await this.getOrderQuality(errorId);
+      if (!qualityRecord) {
+        throw new Error(`Quality record #${errorId} not found`);
       }
       
       // Transaction to handle inventory adjustments
@@ -1593,20 +1594,20 @@ export class DatabaseStorage implements IStorage {
             .where(eq(products.id, adjustment.productId));
         }
         
-        // Mark error as having inventory adjusted
+        // Mark quality issue as having inventory adjusted
         await tx
-          .update(orderErrors)
+          .update(orderQuality)
           .set({ inventoryAdjusted: true })
-          .where(eq(orderErrors.id, errorId));
+          .where(eq(orderQuality.id, errorId));
         
         // Add changelog entry for this adjustment
         await tx
           .insert(orderChangelogs)
           .values({
-            orderId: errorRecord.orderId,
-            userId: errorRecord.reportedById, // Using the same user who reported the error
+            orderId: qualityRecord.orderId,
+            userId: qualityRecord.reportedById, // Using the same user who reported the issue
             action: 'update',
-            notes: `Inventory adjusted for error #${errorId}`,
+            notes: `Inventory adjusted for quality issue #${errorId}`,
             changes: { 
               adjustments: adjustments.map(adj => ({
                 productId: adj.productId,
@@ -1618,7 +1619,7 @@ export class DatabaseStorage implements IStorage {
       
       return true;
     } catch (error) {
-      console.error(`Error adjusting inventory for error #${errorId}:`, error);
+      console.error(`Error adjusting inventory for quality issue #${errorId}:`, error);
       return false;
     }
   }
