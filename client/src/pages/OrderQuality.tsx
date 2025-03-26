@@ -110,8 +110,8 @@ import {
 // Type definitions
 interface OrderQuality {
   id: number;
-  orderId: number;
-  orderNumber: string;
+  orderId?: number;
+  orderNumber?: string;
   reportDate: string;
   reportedById: number;
   qualityType: 'missing_item' | 'wrong_item' | 'damaged_item' | 'wrong_quantity' | 'duplicate_item' | 'wrong_address' | 'picking_issue' | 'packing_issue' | 'system_issue' | 'other';
@@ -124,6 +124,14 @@ interface OrderQuality {
   resolvedDate?: string;
   rootCause?: string;
   preventiveMeasures?: string;
+  // New standalone quality fields
+  qualityLabel?: string;
+  qualityCategory?: string;
+  qualityStatus?: string;
+  assignedToId?: number;
+  dueDate?: string;
+  priority?: string;
+  qualityNotes?: string;
 }
 
 interface Product {

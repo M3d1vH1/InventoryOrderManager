@@ -446,8 +446,8 @@ export const orderQualityTypeEnum = pgEnum('order_quality_type', [
 // Order Quality Schema - For tracking order issues
 export const orderQuality = pgTable("order_quality", {
   id: serial("id").primaryKey(),
-  orderId: integer("order_id").notNull(),
-  orderNumber: text("order_number").notNull(),
+  orderId: integer("order_id"), // Now optional - can exist without an order
+  orderNumber: text("order_number"), // Now optional
   reportDate: timestamp("report_date").notNull().defaultNow(),
   reportedById: integer("reported_by_id").notNull(),
   errorType: orderQualityTypeEnum("error_type").notNull(),
@@ -460,13 +460,21 @@ export const orderQuality = pgTable("order_quality", {
   resolvedDate: timestamp("resolved_date"),
   rootCause: text("root_cause"),
   preventiveMeasures: text("preventive_measures"),
+  // New standalone quality fields
+  qualityLabel: text("quality_label"), // Label to identify this quality record
+  qualityCategory: text("quality_category"), // Category for organizing quality records
+  qualityStatus: text("quality_status"), // Status field independent of resolved
+  assignedToId: integer("assigned_to_id"), // Person assigned to handle this quality issue
+  dueDate: timestamp("due_date"), // When this issue should be addressed by
+  priority: text("priority"), // Priority level (high, medium, low)
+  qualityNotes: text("quality_notes"), // Additional notes specific to quality management
 });
 
 export const insertOrderQualitySchema = createInsertSchema(orderQuality)
   .omit({ id: true, reportDate: true, resolved: true, resolvedById: true, resolvedDate: true })
   .extend({
-    orderId: z.number(),
-    orderNumber: z.string(),
+    orderId: z.number().optional(), // Now optional
+    orderNumber: z.string().optional(), // Now optional
     reportedById: z.number(),
     errorType: z.enum(['missing_item', 'wrong_item', 'damaged_item', 'wrong_quantity', 'duplicate_item', 'wrong_address', 'picking_issue', 'packing_issue', 'system_issue', 'other']),
     description: z.string().min(1),
@@ -475,6 +483,14 @@ export const insertOrderQualitySchema = createInsertSchema(orderQuality)
     inventoryAdjusted: z.boolean().default(false),
     rootCause: z.string().optional(),
     preventiveMeasures: z.string().optional(),
+    // Extend with new fields
+    qualityLabel: z.string().optional(),
+    qualityCategory: z.string().optional(),
+    qualityStatus: z.string().optional(),
+    assignedToId: z.number().optional(),
+    dueDate: z.string().optional(), // Use string for date in form submission
+    priority: z.string().optional(),
+    qualityNotes: z.string().optional(),
   });
 
 export type InsertOrderQuality = z.infer<typeof insertOrderQualitySchema>;
