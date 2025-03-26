@@ -450,7 +450,7 @@ export const orderQuality = pgTable("order_quality", {
   orderNumber: text("order_number").notNull(),
   reportDate: timestamp("report_date").notNull().defaultNow(),
   reportedById: integer("reported_by_id").notNull(),
-  errorType: orderErrorTypeEnum("error_type").notNull(),
+  errorType: orderQualityTypeEnum("error_type").notNull(),
   description: text("description").notNull(),
   affectedProductIds: text("affected_product_ids").array(),
   correctiveAction: text("corrective_action"),
@@ -462,13 +462,13 @@ export const orderQuality = pgTable("order_quality", {
   preventiveMeasures: text("preventive_measures"),
 });
 
-export const insertOrderErrorSchema = createInsertSchema(orderErrors)
+export const insertOrderQualitySchema = createInsertSchema(orderQuality)
   .omit({ id: true, reportDate: true, resolved: true, resolvedById: true, resolvedDate: true })
   .extend({
     orderId: z.number(),
     orderNumber: z.string(),
     reportedById: z.number(),
-    errorType: z.enum(['missing_item', 'wrong_item', 'damaged_item', 'wrong_quantity', 'duplicate_item', 'wrong_address', 'picking_error', 'packing_error', 'system_error', 'other']),
+    errorType: z.enum(['missing_item', 'wrong_item', 'damaged_item', 'wrong_quantity', 'duplicate_item', 'wrong_address', 'picking_issue', 'packing_issue', 'system_issue', 'other']),
     description: z.string().min(1),
     affectedProductIds: z.array(z.string()).optional().default([]),
     correctiveAction: z.string().optional(),
@@ -477,8 +477,8 @@ export const insertOrderErrorSchema = createInsertSchema(orderErrors)
     preventiveMeasures: z.string().optional(),
   });
 
-export type InsertOrderError = z.infer<typeof insertOrderErrorSchema>;
-export type OrderError = typeof orderErrors.$inferSelect;
+export type InsertOrderQuality = z.infer<typeof insertOrderQualitySchema>;
+export type OrderQuality = typeof orderQuality.$inferSelect;
 
 // Inventory Change Action Enum
 export const inventoryChangeTypeEnum = pgEnum('inventory_change_type', [

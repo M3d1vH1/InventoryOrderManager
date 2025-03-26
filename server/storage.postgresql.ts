@@ -17,7 +17,7 @@ import {
   companySettings, type CompanySettings, type InsertCompanySettings,
   notificationSettings, type NotificationSettings, type InsertNotificationSettings,
   rolePermissions, type RolePermission, type InsertRolePermission,
-  orderErrors, type OrderError, type InsertOrderError,
+  orderQuality, type OrderQuality, type InsertOrderQuality,
   inventoryChanges, type InventoryChange, type InsertInventoryChange
 } from "@shared/schema";
 import { IStorage } from "./storage";
@@ -1320,9 +1320,9 @@ export class DatabaseStorage implements IStorage {
       if (orderId) {
         return await this.db
           .select()
-          .from(orderErrors)
-          .where(eq(orderErrors.orderId, orderId))
-          .orderBy(desc(orderErrors.reportDate));
+          .from(orderQuality)
+          .where(eq(orderQuality.orderId, orderId))
+          .orderBy(desc(orderQuality.reportDate));
       } else {
         return await this.db
           .select()

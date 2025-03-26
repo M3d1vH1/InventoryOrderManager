@@ -14,7 +14,7 @@ import {
   companySettings, type CompanySettings, type InsertCompanySettings,
   notificationSettings, type NotificationSettings, type InsertNotificationSettings,
   rolePermissions, type RolePermission, type InsertRolePermission,
-  orderErrors, type OrderError, type InsertOrderError,
+  orderQuality, type OrderQuality, type InsertOrderQuality,
   inventoryChanges, type InventoryChange, type InsertInventoryChange
 } from "@shared/schema";
 import { DatabaseStorage, initStorage } from './storage.postgresql';
@@ -39,12 +39,12 @@ export interface IStorage {
   updateRolePermission(role: string, permission: string, enabled: boolean): Promise<RolePermission | undefined>;
   checkPermission(role: string, permission: string): Promise<boolean>;
   
-  // Order Error methods
-  getOrderErrors(orderId?: number): Promise<OrderError[]>;
-  getOrderError(id: number): Promise<OrderError | undefined>;
-  createOrderError(error: InsertOrderError): Promise<OrderError>;
-  updateOrderError(id: number, error: Partial<InsertOrderError>): Promise<OrderError | undefined>;
-  resolveOrderError(id: number, userId: number, resolution: { rootCause?: string, preventiveMeasures?: string }): Promise<OrderError | undefined>;
+  // Order Quality methods
+  getOrderErrors(orderId?: number): Promise<OrderQuality[]>;
+  getOrderError(id: number): Promise<OrderQuality | undefined>;
+  createOrderError(error: InsertOrderQuality): Promise<OrderQuality>;
+  updateOrderError(id: number, error: Partial<InsertOrderQuality>): Promise<OrderQuality | undefined>;
+  resolveOrderError(id: number, userId: number, resolution: { rootCause?: string, preventiveMeasures?: string }): Promise<OrderQuality | undefined>;
   getErrorStats(period?: number): Promise<{
     totalErrors: number,
     totalShippedOrders: number,
