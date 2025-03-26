@@ -528,9 +528,9 @@
       "wrong_quantity": "Λάθος Ποσότητα",
       "duplicate_item": "Διπλό Αντικείμενο",
       "wrong_address": "Λάθος Διεύθυνση",
-      "picking_error": "Σφάλμα Συλλογής",
-      "packing_error": "Σφάλμα Συσκευασίας",
-      "system_error": "Σφάλμα Συστήματος",
+      "picking_error": "Σφάλμα Ποιότητας Συλλογής",
+      "packing_error": "Σφάλμα Ποιότητας Συσκευασίας", 
+      "system_error": "Σφάλμα Ποιότητας Συστήματος",
       "other": "Άλλο"
     },
     "stats": {
