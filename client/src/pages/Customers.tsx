@@ -80,7 +80,7 @@ const customerFormSchema = z.object({
   state: z.string().optional(),
   postalCode: z.string().optional(),
   country: z.string().optional(),
-  email: z.string().email({ message: "Invalid email address" }).optional().or(z.literal("")),
+  email: z.union([z.string().email({ message: "Invalid email address" }), z.string().length(0), z.null()]).optional(),
   phone: z.string().optional(),
   contactPerson: z.string().optional(),
   shippingCompany: z.string().optional(),
