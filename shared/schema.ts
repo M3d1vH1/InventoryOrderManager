@@ -429,22 +429,22 @@ export const insertRolePermissionSchema = createInsertSchema(rolePermissions)
 export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
 export type RolePermission = typeof rolePermissions.$inferSelect;
 
-// Order Error Types Enum
-export const orderErrorTypeEnum = pgEnum('order_error_type', [
+// Order Quality Types Enum
+export const orderQualityTypeEnum = pgEnum('order_quality_type', [
   'missing_item',        // Item was recorded as shipped but missing from package
   'wrong_item',          // Wrong item was picked and shipped
   'damaged_item',        // Item was damaged during picking/shipping
   'wrong_quantity',      // Incorrect quantity shipped
   'duplicate_item',      // Duplicate item was shipped
   'wrong_address',       // Package shipped to incorrect address
-  'picking_error',       // Error in picking process
-  'packing_error',       // Error in packing process
-  'system_error',        // Error caused by system failure/bug
-  'other'                // Other unclassified errors
+  'picking_issue',       // Quality issue in picking process
+  'packing_issue',       // Quality issue in packing process
+  'system_issue',        // Issue caused by system failure/bug
+  'other'                // Other unclassified issues
 ]);
 
-// Order Errors Schema - For tracking order issues
-export const orderErrors = pgTable("order_errors", {
+// Order Quality Schema - For tracking order issues
+export const orderQuality = pgTable("order_quality", {
   id: serial("id").primaryKey(),
   orderId: integer("order_id").notNull(),
   orderNumber: text("order_number").notNull(),

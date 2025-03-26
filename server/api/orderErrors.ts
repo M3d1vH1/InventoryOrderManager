@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { storage } from '../storage.postgresql';
 import { z } from 'zod';
-import { orderErrorTypeEnum } from '../../shared/schema';
+import { orderQualityTypeEnum } from '../../shared/schema';
 
 /**
  * Get all order errors, optionally filtered by order ID

@@ -108,13 +108,13 @@ import {
 } from 'lucide-react';
 
 // Type definitions
-interface OrderError {
+interface OrderQuality {
   id: number;
   orderId: number;
   orderNumber: string;
   reportDate: string;
   reportedById: number;
-  errorType: 'missing_item' | 'wrong_item' | 'damaged_item' | 'wrong_quantity' | 'duplicate_item' | 'wrong_address' | 'picking_error' | 'packing_error' | 'system_error' | 'other';
+  qualityType: 'missing_item' | 'wrong_item' | 'damaged_item' | 'wrong_quantity' | 'duplicate_item' | 'wrong_address' | 'picking_issue' | 'packing_issue' | 'system_issue' | 'other';
   description: string;
   affectedProductIds: string[];
   correctiveAction?: string;
@@ -134,19 +134,19 @@ interface Product {
   minStockLevel: number;
 }
 
-interface ErrorStats {
-  totalErrors: number;
+interface QualityStats {
+  totalQualityIssues: number;
   totalShippedOrders: number;
-  errorRate: number;
-  errorsByType: { type: string; count: number }[];
-  trending: { date: string; errorRate: number }[];
+  qualityRate: number;
+  qualityIssuesByType: { type: string; count: number }[];
+  trending: { date: string; qualityRate: number }[];
 }
 
-// Form schema for creating/updating errors
-const errorFormSchema = z.object({
+// Form schema for creating/updating quality issues
+const qualityFormSchema = z.object({
   orderId: z.number(),
   orderNumber: z.string(),
-  errorType: z.enum(['missing_item', 'wrong_item', 'damaged_item', 'wrong_quantity', 'duplicate_item', 'wrong_address', 'picking_error', 'packing_error', 'system_error', 'other']),
+  qualityType: z.enum(['missing_item', 'wrong_item', 'damaged_item', 'wrong_quantity', 'duplicate_item', 'wrong_address', 'picking_issue', 'packing_issue', 'system_issue', 'other']),
   description: z.string().min(5, { message: "Description must be at least 5 characters" }),
   affectedItems: z.array(
     z.object({
@@ -157,8 +157,8 @@ const errorFormSchema = z.object({
   ).optional(),
 });
 
-// Form schema for resolving errors
-const resolveErrorSchema = z.object({
+// Form schema for resolving quality issues
+const resolveQualitySchema = z.object({
   rootCause: z.string().min(5, { message: "Root cause must be at least 5 characters" }),
   preventiveMeasures: z.string().min(5, { message: "Preventive measures must be at least 5 characters" }),
 });
@@ -173,49 +173,49 @@ const inventoryAdjustmentSchema = z.object({
   )
 });
 
-type ErrorFormValues = z.infer<typeof errorFormSchema>;
-type ResolveFormValues = z.infer<typeof resolveErrorSchema>;
+type QualityFormValues = z.infer<typeof qualityFormSchema>;
+type ResolveFormValues = z.infer<typeof resolveQualitySchema>;
 type InventoryAdjustmentValues = z.infer<typeof inventoryAdjustmentSchema>;
 
-export default function OrderErrors() {
+export default function OrderQuality() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
-  
+
   // State variables
-  const [activeTab, setActiveTab] = useState('errors');
-  const [selectedError, setSelectedError] = useState<OrderError | null>(null);
+  const [activeTab, setActiveTab] = useState('quality');
+  const [selectedQuality, setSelectedQuality] = useState<OrderQuality | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isResolveDialogOpen, setIsResolveDialogOpen] = useState(false);
   const [isAdjustDialogOpen, setIsAdjustDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isAdjustPromptOpen, setIsAdjustPromptOpen] = useState(false);
   const [affectedProducts, setAffectedProducts] = useState<Product[]>([]);
-  const [createdErrorId, setCreatedErrorId] = useState<number | null>(null);
+  const [createdQualityId, setCreatedQualityId] = useState<number | null>(null);
   const [filterOrderId, setFilterOrderId] = useState<string>('');
   const [filterResolved, setFilterResolved] = useState<string>('all');
-  const [filterErrorType, setFilterErrorType] = useState<string>('all');
-  
-  // Query for fetching errors
+  const [filterQualityType, setFilterQualityType] = useState<string>('all');
+
+  // Query for fetching quality issues
   const {
-    data: orderErrors = [],
-    isLoading: isLoadingErrors,
-    refetch: refetchErrors
+    data: orderQualityIssues = [],
+    isLoading: isLoadingQuality,
+    refetch: refetchQuality
   } = useQuery({
-    queryKey: ['/api/order-errors'],
-    queryFn: () => apiRequest<OrderError[]>('/api/order-errors')
+    queryKey: ['/api/order-quality'],
+    queryFn: () => apiRequest<OrderQuality[]>('/api/order-quality')
   });
 
-  // Query for fetching error statistics
+  // Query for fetching quality statistics
   const {
-    data: errorStats,
+    data: qualityStats,
     isLoading: isLoadingStats,
     refetch: refetchStats
   } = useQuery({
-    queryKey: ['/api/order-errors-stats'],
-    queryFn: () => apiRequest<ErrorStats>('/api/order-errors-stats')
+    queryKey: ['/api/order-quality-stats'],
+    queryFn: () => apiRequest<QualityStats>('/api/order-quality-stats')
   });
 
   // Query for fetching products (used for dropdowns)
@@ -227,10 +227,10 @@ export default function OrderErrors() {
     queryFn: () => apiRequest<Product[]>('/api/products')
   });
 
-  // Mutation for creating a new error
-  const createErrorMutation = useMutation({
-    mutationFn: async (values: ErrorFormValues) => {
-      return apiRequest('/api/order-errors', {
+  // Mutation for creating a new quality issue
+  const createQualityMutation = useMutation({
+    mutationFn: async (values: QualityFormValues) => {
+      return apiRequest('/api/order-quality', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -240,38 +240,38 @@ export default function OrderErrors() {
       });
     },
     onSuccess: (response: any) => {
-      // Store the created error ID for potential inventory adjustment
+      // Store the created quality issue ID for potential inventory adjustment
       if (response && response.id) {
-        setCreatedErrorId(response.id);
-        
+        setCreatedQualityId(response.id);
+
         // Show adjustment prompt
         setIsAdjustPromptOpen(true);
       } else {
         // Just show success message if no ID is returned
         toast({
-          title: t('orderErrors.createSuccess'),
-          description: t('orderErrors.createSuccessDescription'),
+          title: t('orderQuality.createSuccess'),
+          description: t('orderQuality.createSuccessDescription'),
         });
       }
-      
+
       setIsCreateDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['/api/order-errors'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/order-errors-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/order-quality'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/order-quality-stats'] });
     },
     onError: (error: any) => {
       toast({
         title: t('common.errorOccurred'),
-        description: error.message || t('orderErrors.createError'),
+        description: error.message || t('orderQuality.createError'),
         variant: 'destructive'
       });
     }
   });
 
-  // Mutation for resolving an error
-  const resolveErrorMutation = useMutation({
+  // Mutation for resolving a quality issue
+  const resolveQualityMutation = useMutation({
     mutationFn: async (values: ResolveFormValues) => {
-      if (!selectedError) return null;
-      return apiRequest(`/api/order-errors/${selectedError.id}/resolve`, {
+      if (!selectedQuality) return null;
+      return apiRequest(`/api/order-quality/${selectedQuality.id}/resolve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -282,17 +282,17 @@ export default function OrderErrors() {
     },
     onSuccess: () => {
       toast({
-        title: t('orderErrors.resolveSuccess'),
-        description: t('orderErrors.resolveSuccessDescription'),
+        title: t('orderQuality.resolveSuccess'),
+        description: t('orderQuality.resolveSuccessDescription'),
       });
       setIsResolveDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['/api/order-errors'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/order-errors-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/order-quality'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/order-quality-stats'] });
     },
     onError: (error: any) => {
       toast({
         title: t('common.errorOccurred'),
-        description: error.message || t('orderErrors.resolveError'),
+        description: error.message || t('orderQuality.resolveError'),
         variant: 'destructive'
       });
     }
@@ -301,11 +301,11 @@ export default function OrderErrors() {
   // Mutation for adjusting inventory
   const adjustInventoryMutation = useMutation({
     mutationFn: async (values: InventoryAdjustmentValues) => {
-      // Use either selectedError.id or createdErrorId
-      const errorId = selectedError?.id || createdErrorId;
-      if (!errorId) return null;
-      
-      return apiRequest(`/api/order-errors/${errorId}/adjust-inventory`, {
+      // Use either selectedQuality.id or createdQualityId
+      const qualityId = selectedQuality?.id || createdQualityId;
+      if (!qualityId) return null;
+
+      return apiRequest(`/api/order-quality/${qualityId}/adjust-inventory`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values)
@@ -313,38 +313,38 @@ export default function OrderErrors() {
     },
     onSuccess: () => {
       toast({
-        title: t('orderErrors.inventoryAdjustSuccess'),
-        description: t('orderErrors.inventoryAdjustSuccessDescription'),
+        title: t('orderQuality.inventoryAdjustSuccess'),
+        description: t('orderQuality.inventoryAdjustSuccessDescription'),
       });
       setIsAdjustDialogOpen(false);
-      // Reset the created error ID after successful adjustment
-      setCreatedErrorId(null);
-      queryClient.invalidateQueries({ queryKey: ['/api/order-errors'] });
+      // Reset the created quality issue ID after successful adjustment
+      setCreatedQualityId(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/order-quality'] });
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
     },
     onError: (error: any) => {
       toast({
         title: t('common.errorOccurred'),
-        description: error.message || t('orderErrors.inventoryAdjustError'),
+        description: error.message || t('orderQuality.inventoryAdjustError'),
         variant: 'destructive'
       });
     }
   });
 
   // Forms
-  const createForm = useForm<ErrorFormValues>({
-    resolver: zodResolver(errorFormSchema),
+  const createForm = useForm<QualityFormValues>({
+    resolver: zodResolver(qualityFormSchema),
     defaultValues: {
       orderId: 0,
       orderNumber: '',
-      errorType: 'missing_item',
+      qualityType: 'missing_item',
       description: '',
       affectedItems: [],
     }
   });
 
   const resolveForm = useForm<ResolveFormValues>({
-    resolver: zodResolver(resolveErrorSchema),
+    resolver: zodResolver(resolveQualitySchema),
     defaultValues: {
       rootCause: '',
       preventiveMeasures: '',
@@ -360,15 +360,15 @@ export default function OrderErrors() {
 
   // Effect to initialize affected products when viewing details
   useEffect(() => {
-    if (selectedError && products.length > 0) {
-      const productData = selectedError.affectedProductIds
+    if (selectedQuality && products.length > 0) {
+      const productData = selectedQuality.affectedProductIds
         .map(id => products.find(p => p.id === parseInt(id)))
         .filter((p): p is Product => !!p);
       setAffectedProducts(productData);
     } else {
       setAffectedProducts([]);
     }
-  }, [selectedError, products]);
+  }, [selectedQuality, products]);
 
   // Effect to reset form values when opening create dialog
   useEffect(() => {
@@ -376,7 +376,7 @@ export default function OrderErrors() {
       createForm.reset({
         orderId: 0,
         orderNumber: '',
-        errorType: 'missing_item',
+        qualityType: 'missing_item',
         description: '',
         affectedItems: [],
       });
@@ -385,20 +385,20 @@ export default function OrderErrors() {
 
   // Effect to reset form values when opening resolve dialog
   useEffect(() => {
-    if (isResolveDialogOpen && selectedError) {
+    if (isResolveDialogOpen && selectedQuality) {
       resolveForm.reset({
-        rootCause: selectedError.rootCause || '',
-        preventiveMeasures: selectedError.preventiveMeasures || '',
+        rootCause: selectedQuality.rootCause || '',
+        preventiveMeasures: selectedQuality.preventiveMeasures || '',
       });
     }
-  }, [isResolveDialogOpen, selectedError, resolveForm]);
+  }, [isResolveDialogOpen, selectedQuality, resolveForm]);
 
   // Effect to reset form values when opening adjust inventory dialog
   useEffect(() => {
     if (isAdjustDialogOpen) {
-      if (selectedError) {
+      if (selectedQuality) {
         // Initialize adjustment form with affected products
-        const initialAdjustments = selectedError.affectedProductIds
+        const initialAdjustments = selectedQuality.affectedProductIds
           .map(id => {
             const productId = parseInt(id);
             return {
@@ -406,56 +406,56 @@ export default function OrderErrors() {
               quantity: 0
             };
           });
-        
+
         adjustInventoryForm.reset({
           adjustments: initialAdjustments
         });
-      } else if (createdErrorId) {
-        // If we have a newly created error but no selectedError yet,
-        // fetch the error details to get the affected products
-        apiRequest<OrderError>(`/api/order-errors/${createdErrorId}`)
-          .then(error => {
-            setSelectedError(error);
-            // The form will be initialized when selectedError is set
+      } else if (createdQualityId) {
+        // If we have a newly created quality issue but no selectedQuality yet,
+        // fetch the quality issue details to get the affected products
+        apiRequest<OrderQuality>(`/api/order-quality/${createdQualityId}`)
+          .then(quality => {
+            setSelectedQuality(quality);
+            // The form will be initialized when selectedQuality is set
           })
           .catch(err => {
             toast({
               title: t('common.errorOccurred'),
-              description: err.message || t('orderErrors.loadError'),
+              description: err.message || t('orderQuality.loadError'),
               variant: 'destructive'
             });
             setIsAdjustDialogOpen(false);
           });
       }
     }
-  }, [isAdjustDialogOpen, selectedError, createdErrorId, adjustInventoryForm, t]);
+  }, [isAdjustDialogOpen, selectedQuality, createdQualityId, adjustInventoryForm, t]);
 
-  // Filter errors based on selected filters
-  const filteredErrors = orderErrors.filter(error => {
+  // Filter quality issues based on selected filters
+  const filteredQualityIssues = orderQualityIssues.filter(quality => {
     let match = true;
-    
+
     if (filterOrderId) {
-      match = match && error.orderNumber.toLowerCase().includes(filterOrderId.toLowerCase());
+      match = match && quality.orderNumber.toLowerCase().includes(filterOrderId.toLowerCase());
     }
 
     if (filterResolved !== 'all') {
-      match = match && (filterResolved === 'resolved' ? error.resolved : !error.resolved);
+      match = match && (filterResolved === 'resolved' ? quality.resolved : !quality.resolved);
     }
 
-    if (filterErrorType !== 'all') {
-      match = match && error.errorType === filterErrorType;
+    if (filterQualityType !== 'all') {
+      match = match && quality.qualityType === filterQualityType;
     }
-    
+
     return match;
   });
 
   // Handle form submissions
-  const onCreateSubmit = (values: ErrorFormValues) => {
-    createErrorMutation.mutate(values);
+  const onCreateSubmit = (values: QualityFormValues) => {
+    createQualityMutation.mutate(values);
   };
 
   const onResolveSubmit = (values: ResolveFormValues) => {
-    resolveErrorMutation.mutate(values);
+    resolveQualityMutation.mutate(values);
   };
 
   const onAdjustInventorySubmit = (values: InventoryAdjustmentValues) => {
@@ -463,8 +463,8 @@ export default function OrderErrors() {
     const filteredAdjustments = values.adjustments.filter(adj => adj.quantity !== 0);
     if (filteredAdjustments.length === 0) {
       toast({
-        title: t('orderErrors.noAdjustments'),
-        description: t('orderErrors.noAdjustmentsDescription'),
+        title: t('orderQuality.noAdjustments'),
+        description: t('orderQuality.noAdjustmentsDescription'),
         variant: 'destructive'
       });
       return;
@@ -487,65 +487,65 @@ export default function OrderErrors() {
     }).format(date);
   };
 
-  // Helper to get error type display name
-  const getErrorTypeDisplay = (errorType: string) => {
-    return t(`orderErrors.types.${errorType}`);
+  // Helper to get quality type display name
+  const getQualityTypeDisplay = (qualityType: string) => {
+    return t(`orderQuality.types.${qualityType}`);
   };
 
-  // Helper to export error data
+  // Helper to export quality issue data
   const handleExport = (format: 'csv' | 'excel' | 'pdf') => {
-    const dataForExport = filteredErrors.map(error => ({
-      'Order Number': error.orderNumber,
-      'Error Type': getErrorTypeDisplay(error.errorType),
-      'Reported Date': formatDate(error.reportDate),
-      'Description': error.description,
-      'Status': error.resolved ? t('orderErrors.resolved') : t('orderErrors.unresolved'),
-      'Inventory Adjusted': error.inventoryAdjusted ? t('common.yes') : t('common.no'),
+    const dataForExport = filteredQualityIssues.map(quality => ({
+      'Order Number': quality.orderNumber,
+      'Quality Type': getQualityTypeDisplay(quality.qualityType),
+      'Reported Date': formatDate(quality.reportDate),
+      'Description': quality.description,
+      'Status': quality.resolved ? t('orderQuality.resolved') : t('orderQuality.unresolved'),
+      'Inventory Adjusted': quality.inventoryAdjusted ? t('common.yes') : t('common.no'),
     }));
 
-    exportData(dataForExport, format, 'order-errors-report');
+    exportData(dataForExport, format, 'order-quality-report');
   };
 
-  // Render view for error details
-  const renderErrorDetails = () => {
-    if (!selectedError) return null;
+  // Render view for quality issue details
+  const renderQualityDetails = () => {
+    if (!selectedQuality) return null;
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <h3 className="text-lg font-semibold mb-2">{t('orderErrors.details')}</h3>
+          <h3 className="text-lg font-semibold mb-2">{t('orderQuality.details')}</h3>
           <div className="space-y-2">
             <div>
-              <span className="font-medium">{t('orders.orderNumber')}:</span> {selectedError.orderNumber}
+              <span className="font-medium">{t('orders.orderNumber')}:</span> {selectedQuality.orderNumber}
             </div>
             <div>
-              <span className="font-medium">{t('orderErrors.errorType')}:</span> {getErrorTypeDisplay(selectedError.errorType)}
+              <span className="font-medium">{t('orderQuality.qualityType')}:</span> {getQualityTypeDisplay(selectedQuality.qualityType)}
             </div>
             <div>
-              <span className="font-medium">{t('orderErrors.reportDate')}:</span> {formatDate(selectedError.reportDate)}
+              <span className="font-medium">{t('orderQuality.reportDate')}:</span> {formatDate(selectedQuality.reportDate)}
             </div>
             <div>
-              <span className="font-medium">{t('orderErrors.description')}:</span> {selectedError.description}
+              <span className="font-medium">{t('orderQuality.description')}:</span> {selectedQuality.description}
             </div>
             <div>
-              <span className="font-medium">{t('orderErrors.status')}:</span>{' '}
-              {selectedError.resolved ? (
-                <Badge className="bg-green-500 hover:bg-green-600">{t('orderErrors.resolved')}</Badge>
+              <span className="font-medium">{t('orderQuality.status')}:</span>{' '}
+              {selectedQuality.resolved ? (
+                <Badge className="bg-green-500 hover:bg-green-600">{t('orderQuality.resolved')}</Badge>
               ) : (
-                <Badge variant="destructive">{t('orderErrors.unresolved')}</Badge>
+                <Badge variant="destructive">{t('orderQuality.unresolved')}</Badge>
               )}
             </div>
             <div>
-              <span className="font-medium">{t('orderErrors.inventoryAdjusted')}:</span>{' '}
-              {selectedError.inventoryAdjusted ? t('common.yes') : t('common.no')}
+              <span className="font-medium">{t('orderQuality.inventoryAdjusted')}:</span>{' '}
+              {selectedQuality.inventoryAdjusted ? t('common.yes') : t('common.no')}
             </div>
           </div>
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold mb-2">{t('orderErrors.affectedProducts')}</h3>
+          <h3 className="text-lg font-semibold mb-2">{t('orderQuality.affectedProducts')}</h3>
           {affectedProducts.length === 0 ? (
-            <p>{t('orderErrors.noAffectedProducts')}</p>
+            <p>{t('orderQuality.noAffectedProducts')}</p>
           ) : (
             <div className="space-y-2">
               {affectedProducts.map(product => (
@@ -559,21 +559,21 @@ export default function OrderErrors() {
           )}
         </div>
 
-        {selectedError.resolved && (
+        {selectedQuality.resolved && (
           <div className="col-span-1 md:col-span-2">
-            <h3 className="text-lg font-semibold mb-2">{t('orderErrors.resolution')}</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('orderQuality.resolution')}</h3>
             <div className="space-y-2">
               <div>
-                <span className="font-medium">{t('orderErrors.resolvedDate')}:</span>{' '}
-                {selectedError.resolvedDate ? formatDate(selectedError.resolvedDate) : t('common.notApplicable')}
+                <span className="font-medium">{t('orderQuality.resolvedDate')}:</span>{' '}
+                {selectedQuality.resolvedDate ? formatDate(selectedQuality.resolvedDate) : t('common.notApplicable')}
               </div>
               <div>
-                <span className="font-medium">{t('orderErrors.rootCause')}:</span>{' '}
-                {selectedError.rootCause || t('common.notProvided')}
+                <span className="font-medium">{t('orderQuality.rootCause')}:</span>{' '}
+                {selectedQuality.rootCause || t('common.notProvided')}
               </div>
               <div>
-                <span className="font-medium">{t('orderErrors.preventiveMeasures')}:</span>{' '}
-                {selectedError.preventiveMeasures || t('common.notProvided')}
+                <span className="font-medium">{t('orderQuality.preventiveMeasures')}:</span>{' '}
+                {selectedQuality.preventiveMeasures || t('common.notProvided')}
               </div>
             </div>
           </div>
@@ -583,8 +583,8 @@ export default function OrderErrors() {
   };
 
   // Render statistics view
-  const renderErrorStats = () => {
-    if (isLoadingStats || !errorStats) {
+  const renderQualityStats = () => {
+    if (isLoadingStats || !qualityStats) {
       return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="col-span-3">
@@ -599,42 +599,42 @@ export default function OrderErrors() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle>{t('orderErrors.stats.totalErrors')}</CardTitle>
+            <CardTitle>{t('orderQuality.stats.totalQualityIssues')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{errorStats.totalErrors}</div>
+            <div className="text-3xl font-bold">{qualityStats.totalQualityIssues}</div>
             <p className="text-sm text-muted-foreground">
-              {t('orderErrors.stats.fromOrders', { count: errorStats.totalShippedOrders })}
+              {t('orderQuality.stats.fromOrders', { count: qualityStats.totalShippedOrders })}
             </p>
           </CardContent>
         </Card>
 
         <Card className="col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle>{t('orderErrors.stats.errorRate')}</CardTitle>
+            <CardTitle>{t('orderQuality.stats.qualityRate')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
-              {errorStats.errorRate.toFixed(2)}%
+              {qualityStats.qualityRate.toFixed(2)}%
             </div>
             <p className="text-sm text-muted-foreground">
-              {t('orderErrors.stats.per100Orders')}
+              {t('orderQuality.stats.per100Orders')}
             </p>
           </CardContent>
         </Card>
 
         <Card className="col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle>{t('orderErrors.stats.mostCommonError')}</CardTitle>
+            <CardTitle>{t('orderQuality.stats.mostCommonQualityIssue')}</CardTitle>
           </CardHeader>
           <CardContent>
-            {errorStats.errorsByType.length > 0 ? (
+            {qualityStats.qualityIssuesByType.length > 0 ? (
               <>
                 <div className="text-xl font-bold">
-                  {getErrorTypeDisplay(errorStats.errorsByType[0].type)}
+                  {getQualityTypeDisplay(qualityStats.qualityIssuesByType[0].type)}
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {t('orderErrors.stats.errorCount', { count: errorStats.errorsByType[0].count })}
+                  {t('orderQuality.stats.qualityIssueCount', { count: qualityStats.qualityIssuesByType[0].count })}
                 </p>
               </>
             ) : (
@@ -645,20 +645,20 @@ export default function OrderErrors() {
 
         <Card className="col-span-3">
           <CardHeader>
-            <CardTitle>{t('orderErrors.stats.errorsByType')}</CardTitle>
+            <CardTitle>{t('orderQuality.stats.qualityIssuesByType')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              {errorStats.errorsByType.length > 0 ? (
+              {qualityStats.qualityIssuesByType.length > 0 ? (
                 <div className="grid grid-cols-1 gap-2">
-                  {errorStats.errorsByType.map(item => (
+                  {qualityStats.qualityIssuesByType.map(item => (
                     <div key={item.type} className="flex items-center justify-between">
-                      <div className="flex-1">{getErrorTypeDisplay(item.type)}</div>
+                      <div className="flex-1">{getQualityTypeDisplay(item.type)}</div>
                       <div className="w-48 bg-muted rounded-full h-4 overflow-hidden">
-                        <div 
-                          className="bg-primary h-full" 
-                          style={{ 
-                            width: `${(item.count / errorStats.errorsByType[0].count) * 100}%` 
+                        <div
+                          className="bg-primary h-full"
+                          style={{
+                            width: `${(item.count / qualityStats.qualityIssuesByType[0].count) * 100}%`
                           }}
                         />
                       </div>
@@ -677,24 +677,24 @@ export default function OrderErrors() {
 
         <Card className="col-span-3">
           <CardHeader>
-            <CardTitle>{t('orderErrors.stats.errorRateTrend')}</CardTitle>
+            <CardTitle>{t('orderQuality.stats.qualityRateTrend')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              {errorStats.trending.length > 0 ? (
+              {qualityStats.trending.length > 0 ? (
                 <div className="grid grid-cols-1 gap-2">
-                  {errorStats.trending.map(item => (
+                  {qualityStats.trending.map(item => (
                     <div key={item.date} className="flex items-center justify-between">
                       <div className="w-32">{new Date(item.date).toLocaleDateString()}</div>
                       <div className="flex-1 bg-muted rounded-full h-4 overflow-hidden">
-                        <div 
-                          className="bg-primary h-full" 
-                          style={{ 
-                            width: `${Math.min(item.errorRate * 5, 100)}%` 
+                        <div
+                          className="bg-primary h-full"
+                          style={{
+                            width: `${Math.min(item.qualityRate * 5, 100)}%`
                           }}
                         />
                       </div>
-                      <div className="w-24 text-right">{item.errorRate.toFixed(2)}%</div>
+                      <div className="w-24 text-right">{item.qualityRate.toFixed(2)}%</div>
                     </div>
                   ))}
                 </div>
@@ -713,18 +713,18 @@ export default function OrderErrors() {
   // Handle adjustment prompt responses
   const handleAdjustPromptResponse = (adjust: boolean) => {
     setIsAdjustPromptOpen(false);
-    
+
     if (adjust) {
       // Open the adjustment dialog if user wants to adjust inventory
       setIsAdjustDialogOpen(true);
     } else {
       // Just display success message if user doesn't want to adjust inventory
       toast({
-        title: t('orderErrors.createSuccess'),
-        description: t('orderErrors.createSuccessDescription'),
+        title: t('orderQuality.createSuccess'),
+        description: t('orderQuality.createSuccessDescription'),
       });
-      // Reset the created error ID since we're not using it
-      setCreatedErrorId(null);
+      // Reset the created quality issue ID since we're not using it
+      setCreatedQualityId(null);
     }
   };
 
@@ -734,9 +734,9 @@ export default function OrderErrors() {
       <AlertDialog open={isAdjustPromptOpen} onOpenChange={setIsAdjustPromptOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('orderErrors.inventoryAdjustmentNeeded')}</AlertDialogTitle>
+            <AlertDialogTitle>{t('orderQuality.inventoryAdjustmentNeeded')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('orderErrors.adjustmentQuestion')}
+              {t('orderQuality.adjustmentQuestion')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -751,18 +751,18 @@ export default function OrderErrors() {
       </AlertDialog>
 
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">{t('orderErrors.title')}</h1>
+        <h1 className="text-3xl font-bold">{t('orderQuality.title')}</h1>
         <div className="flex gap-2">
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button>
-                <Plus className="h-4 w-4 mr-2" /> {t('orderErrors.createNew')}
+                <Plus className="h-4 w-4 mr-2" /> {t('orderQuality.createNew')}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-3xl">
               <DialogHeader>
-                <DialogTitle>{t('orderErrors.createNew')}</DialogTitle>
-                <DialogDescription>{t('orderErrors.createDescription')}</DialogDescription>
+                <DialogTitle>{t('orderQuality.createNew')}</DialogTitle>
+                <DialogDescription>{t('orderQuality.createDescription')}</DialogDescription>
               </DialogHeader>
 
               <Form {...createForm}>
@@ -799,30 +799,30 @@ export default function OrderErrors() {
 
                   <FormField
                     control={createForm.control}
-                    name="errorType"
+                    name="qualityType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t('orderErrors.errorType')}</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
+                        <FormLabel>{t('orderQuality.qualityType')}</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
                           defaultValue={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder={t('orderErrors.selectErrorType')} />
+                              <SelectValue placeholder={t('orderQuality.selectQualityType')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="missing_item">{t('orderErrors.types.missing_item')}</SelectItem>
-                            <SelectItem value="wrong_item">{t('orderErrors.types.wrong_item')}</SelectItem>
-                            <SelectItem value="damaged_item">{t('orderErrors.types.damaged_item')}</SelectItem>
-                            <SelectItem value="wrong_quantity">{t('orderErrors.types.wrong_quantity')}</SelectItem>
-                            <SelectItem value="duplicate_item">{t('orderErrors.types.duplicate_item')}</SelectItem>
-                            <SelectItem value="wrong_address">{t('orderErrors.types.wrong_address')}</SelectItem>
-                            <SelectItem value="picking_error">{t('orderErrors.types.picking_error')}</SelectItem>
-                            <SelectItem value="packing_error">{t('orderErrors.types.packing_error')}</SelectItem>
-                            <SelectItem value="system_error">{t('orderErrors.types.system_error')}</SelectItem>
-                            <SelectItem value="other">{t('orderErrors.types.other')}</SelectItem>
+                            <SelectItem value="missing_item">{t('orderQuality.types.missing_item')}</SelectItem>
+                            <SelectItem value="wrong_item">{t('orderQuality.types.wrong_item')}</SelectItem>
+                            <SelectItem value="damaged_item">{t('orderQuality.types.damaged_item')}</SelectItem>
+                            <SelectItem value="wrong_quantity">{t('orderQuality.types.wrong_quantity')}</SelectItem>
+                            <SelectItem value="duplicate_item">{t('orderQuality.types.duplicate_item')}</SelectItem>
+                            <SelectItem value="wrong_address">{t('orderQuality.types.wrong_address')}</SelectItem>
+                            <SelectItem value="picking_issue">{t('orderQuality.types.picking_issue')}</SelectItem>
+                            <SelectItem value="packing_issue">{t('orderQuality.types.packing_issue')}</SelectItem>
+                            <SelectItem value="system_issue">{t('orderQuality.types.system_issue')}</SelectItem>
+                            <SelectItem value="other">{t('orderQuality.types.other')}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -835,12 +835,12 @@ export default function OrderErrors() {
                     name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t('orderErrors.description')}</FormLabel>
+                        <FormLabel>{t('orderQuality.description')}</FormLabel>
                         <FormControl>
-                          <Textarea 
-                            {...field} 
+                          <Textarea
+                            {...field}
                             rows={3}
-                            placeholder={t('orderErrors.descriptionPlaceholder')}
+                            placeholder={t('orderQuality.descriptionPlaceholder')}
                           />
                         </FormControl>
                         <FormMessage />
@@ -849,27 +849,27 @@ export default function OrderErrors() {
                   />
 
                   <div className="border rounded-md p-4">
-                    <h3 className="font-medium mb-2">{t('orderErrors.affectedProducts')}</h3>
-                    <p className="text-sm text-muted-foreground mb-4">{t('orderErrors.affectedProductsDescription')}</p>
-                    
+                    <h3 className="font-medium mb-2">{t('orderQuality.affectedProducts')}</h3>
+                    <p className="text-sm text-muted-foreground mb-4">{t('orderQuality.affectedProductsDescription')}</p>
+
                     {/* Implementation for adding affected products would go here */}
                     {/* This would typically involve dynamic form fields with react-hook-form */}
                     {/* For simplicity, this part is omitted in this initial implementation */}
                   </div>
 
                   <DialogFooter>
-                    <Button 
-                      type="button" 
-                      variant="secondary" 
+                    <Button
+                      type="button"
+                      variant="secondary"
                       onClick={() => setIsCreateDialogOpen(false)}
                     >
                       {t('common.cancel')}
                     </Button>
-                    <Button 
+                    <Button
                       type="submit"
-                      disabled={createErrorMutation.isPending}
+                      disabled={createQualityMutation.isPending}
                     >
-                      {createErrorMutation.isPending ? (
+                      {createQualityMutation.isPending ? (
                         <><RefreshCw className="h-4 w-4 mr-2 animate-spin" /> {t('common.saving')}</>
                       ) : (
                         t('common.save')
@@ -894,64 +894,64 @@ export default function OrderErrors() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="errors">
+          <TabsTrigger value="quality">
             <AlertCircle className="h-4 w-4 mr-2" />
-            {t('orderErrors.errors')}
+            {t('orderQuality.qualityIssues')}
           </TabsTrigger>
           <TabsTrigger value="stats">
             <BarChart4 className="h-4 w-4 mr-2" />
-            {t('orderErrors.statistics')}
+            {t('orderQuality.statistics')}
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="errors" className="space-y-4">
+        <TabsContent value="quality" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>{t('orderErrors.filters.title')}</CardTitle>
-              <CardDescription>{t('orderErrors.filters.description')}</CardDescription>
+              <CardTitle>{t('orderQuality.filters.title')}</CardTitle>
+              <CardDescription>{t('orderQuality.filters.description')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="orderIdFilter">{t('orderErrors.filters.orderNumber')}</Label>
+                  <Label htmlFor="orderIdFilter">{t('orderQuality.filters.orderNumber')}</Label>
                   <Input
                     id="orderIdFilter"
                     value={filterOrderId}
                     onChange={(e) => setFilterOrderId(e.target.value)}
-                    placeholder={t('orderErrors.filters.orderNumberPlaceholder')}
+                    placeholder={t('orderQuality.filters.orderNumberPlaceholder')}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="statusFilter">{t('orderErrors.filters.status')}</Label>
+                  <Label htmlFor="statusFilter">{t('orderQuality.filters.status')}</Label>
                   <Select value={filterResolved} onValueChange={setFilterResolved}>
                     <SelectTrigger id="statusFilter">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t('common.all')}</SelectItem>
-                      <SelectItem value="resolved">{t('orderErrors.resolved')}</SelectItem>
-                      <SelectItem value="unresolved">{t('orderErrors.unresolved')}</SelectItem>
+                      <SelectItem value="resolved">{t('orderQuality.resolved')}</SelectItem>
+                      <SelectItem value="unresolved">{t('orderQuality.unresolved')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="typeFilter">{t('orderErrors.filters.errorType')}</Label>
-                  <Select value={filterErrorType} onValueChange={setFilterErrorType}>
+                  <Label htmlFor="typeFilter">{t('orderQuality.filters.qualityType')}</Label>
+                  <Select value={filterQualityType} onValueChange={setFilterQualityType}>
                     <SelectTrigger id="typeFilter">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t('common.all')}</SelectItem>
-                      <SelectItem value="missing_item">{t('orderErrors.types.missing_item')}</SelectItem>
-                      <SelectItem value="wrong_item">{t('orderErrors.types.wrong_item')}</SelectItem>
-                      <SelectItem value="damaged_item">{t('orderErrors.types.damaged_item')}</SelectItem>
-                      <SelectItem value="wrong_quantity">{t('orderErrors.types.wrong_quantity')}</SelectItem>
-                      <SelectItem value="duplicate_item">{t('orderErrors.types.duplicate_item')}</SelectItem>
-                      <SelectItem value="wrong_address">{t('orderErrors.types.wrong_address')}</SelectItem>
-                      <SelectItem value="picking_error">{t('orderErrors.types.picking_error')}</SelectItem>
-                      <SelectItem value="packing_error">{t('orderErrors.types.packing_error')}</SelectItem>
-                      <SelectItem value="system_error">{t('orderErrors.types.system_error')}</SelectItem>
-                      <SelectItem value="other">{t('orderErrors.types.other')}</SelectItem>
+                      <SelectItem value="missing_item">{t('orderQuality.types.missing_item')}</SelectItem>
+                      <SelectItem value="wrong_item">{t('orderQuality.types.wrong_item')}</SelectItem>
+                      <SelectItem value="damaged_item">{t('orderQuality.types.damaged_item')}</SelectItem>
+                      <SelectItem value="wrong_quantity">{t('orderQuality.types.wrong_quantity')}</SelectItem>
+                      <SelectItem value="duplicate_item">{t('orderQuality.types.duplicate_item')}</SelectItem>
+                      <SelectItem value="wrong_address">{t('orderQuality.types.wrong_address')}</SelectItem>
+                      <SelectItem value="picking_issue">{t('orderQuality.types.picking_issue')}</SelectItem>
+                      <SelectItem value="packing_issue">{t('orderQuality.types.packing_issue')}</SelectItem>
+                      <SelectItem value="system_issue">{t('orderQuality.types.system_issue')}</SelectItem>
+                      <SelectItem value="other">{t('orderQuality.types.other')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -961,28 +961,28 @@ export default function OrderErrors() {
 
           <Card>
             <CardHeader>
-              <CardTitle>{t('orderErrors.list')}</CardTitle>
+              <CardTitle>{t('orderQuality.list')}</CardTitle>
               <CardDescription>
-                {isLoadingErrors ? (
+                {isLoadingQuality ? (
                   t('common.loading')
                 ) : (
-                  t('orderErrors.count', { count: filteredErrors.length })
+                  t('orderQuality.count', { count: filteredQualityIssues.length })
                 )}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoadingErrors ? (
+              {isLoadingQuality ? (
                 <div className="space-y-2">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Skeleton key={i} className="h-12 w-full" />
                   ))}
                 </div>
-              ) : filteredErrors.length === 0 ? (
+              ) : filteredQualityIssues.length === 0 ? (
                 <div className="text-center py-6">
                   <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
-                  <h3 className="font-medium">{t('orderErrors.noErrors')}</h3>
+                  <h3 className="font-medium">{t('orderQuality.noQualityIssues')}</h3>
                   <p className="text-muted-foreground">
-                    {t('orderErrors.noErrorsDescription')}
+                    {t('orderQuality.noQualityIssuesDescription')}
                   </p>
                 </div>
               ) : (
@@ -991,23 +991,23 @@ export default function OrderErrors() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>{t('orders.orderNumber')}</TableHead>
-                        <TableHead>{t('orderErrors.errorType')}</TableHead>
-                        <TableHead>{t('orderErrors.reportDate')}</TableHead>
-                        <TableHead>{t('orderErrors.status')}</TableHead>
+                        <TableHead>{t('orderQuality.qualityType')}</TableHead>
+                        <TableHead>{t('orderQuality.reportDate')}</TableHead>
+                        <TableHead>{t('orderQuality.status')}</TableHead>
                         <TableHead className="text-right">{t('common.actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredErrors.map((error) => (
-                        <TableRow key={error.id}>
-                          <TableCell className="font-medium">{error.orderNumber}</TableCell>
-                          <TableCell>{getErrorTypeDisplay(error.errorType)}</TableCell>
-                          <TableCell>{formatDate(error.reportDate)}</TableCell>
+                      {filteredQualityIssues.map((quality) => (
+                        <TableRow key={quality.id}>
+                          <TableCell className="font-medium">{quality.orderNumber}</TableCell>
+                          <TableCell>{getQualityTypeDisplay(quality.qualityType)}</TableCell>
+                          <TableCell>{formatDate(quality.reportDate)}</TableCell>
                           <TableCell>
-                            {error.resolved ? (
-                              <Badge className="bg-green-500 hover:bg-green-600">{t('orderErrors.resolved')}</Badge>
+                            {quality.resolved ? (
+                              <Badge className="bg-green-500 hover:bg-green-600">{t('orderQuality.resolved')}</Badge>
                             ) : (
-                              <Badge variant="destructive">{t('orderErrors.unresolved')}</Badge>
+                              <Badge variant="destructive">{t('orderQuality.unresolved')}</Badge>
                             )}
                           </TableCell>
                           <TableCell>
@@ -1015,11 +1015,11 @@ export default function OrderErrors() {
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <Button 
-                                      variant="ghost" 
+                                    <Button
+                                      variant="ghost"
                                       size="sm"
                                       onClick={() => {
-                                        setSelectedError(error);
+                                        setSelectedQuality(quality);
                                         setIsViewDialogOpen(true);
                                       }}
                                     >
@@ -1032,15 +1032,15 @@ export default function OrderErrors() {
                                 </Tooltip>
                               </TooltipProvider>
 
-                              {!error.resolved && (
+                              {!quality.resolved && (
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <Button 
-                                        variant="ghost" 
+                                      <Button
+                                        variant="ghost"
                                         size="sm"
                                         onClick={() => {
-                                          setSelectedError(error);
+                                          setSelectedQuality(quality);
                                           setIsResolveDialogOpen(true);
                                         }}
                                       >
@@ -1048,21 +1048,21 @@ export default function OrderErrors() {
                                       </Button>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      <p>{t('orderErrors.resolve')}</p>
+                                      <p>{t('orderQuality.resolve')}</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
                               )}
 
-                              {!error.inventoryAdjusted && user?.role === 'admin' && (
+                              {!quality.inventoryAdjusted && user?.role === 'admin' && (
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <Button 
-                                        variant="ghost" 
+                                      <Button
+                                        variant="ghost"
                                         size="sm"
                                         onClick={() => {
-                                          setSelectedError(error);
+                                          setSelectedQuality(quality);
                                           setIsAdjustDialogOpen(true);
                                         }}
                                       >
@@ -1070,7 +1070,7 @@ export default function OrderErrors() {
                                       </Button>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      <p>{t('orderErrors.adjustInventory')}</p>
+                                      <p>{t('orderQuality.adjustInventory')}</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
@@ -1086,26 +1086,26 @@ export default function OrderErrors() {
             </CardContent>
           </Card>
 
-          {/* View Error Dialog */}
+          {/* View Quality Issue Dialog */}
           <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
             <DialogContent className="max-w-3xl">
               <DialogHeader>
-                <DialogTitle>{t('orderErrors.viewError')}</DialogTitle>
+                <DialogTitle>{t('orderQuality.viewQualityIssue')}</DialogTitle>
                 <DialogDescription>
-                  {selectedError && (
+                  {selectedQuality && (
                     <span>
-                      {t('orderErrors.errorForOrder', { orderNumber: selectedError.orderNumber })}
+                      {t('orderQuality.qualityIssueForOrder', { orderNumber: selectedQuality.orderNumber })}
                     </span>
                   )}
                 </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-4">
-                {renderErrorDetails()}
+                {renderQualityDetails()}
               </div>
 
               <DialogFooter>
-                <Button 
+                <Button
                   onClick={() => setIsViewDialogOpen(false)}
                 >
                   {t('common.close')}
@@ -1114,15 +1114,15 @@ export default function OrderErrors() {
             </DialogContent>
           </Dialog>
 
-          {/* Resolve Error Dialog */}
+          {/* Resolve Quality Issue Dialog */}
           <Dialog open={isResolveDialogOpen} onOpenChange={setIsResolveDialogOpen}>
             <DialogContent className="max-w-3xl">
               <DialogHeader>
-                <DialogTitle>{t('orderErrors.resolveError')}</DialogTitle>
+                <DialogTitle>{t('orderQuality.resolveQualityIssue')}</DialogTitle>
                 <DialogDescription>
-                  {selectedError && (
+                  {selectedQuality && (
                     <span>
-                      {t('orderErrors.resolveErrorDescription', { orderNumber: selectedError.orderNumber })}
+                      {t('orderQuality.resolveQualityIssueDescription', { orderNumber: selectedQuality.orderNumber })}
                     </span>
                   )}
                 </DialogDescription>
@@ -1135,12 +1135,12 @@ export default function OrderErrors() {
                     name="rootCause"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t('orderErrors.rootCause')}</FormLabel>
+                        <FormLabel>{t('orderQuality.rootCause')}</FormLabel>
                         <FormControl>
-                          <Textarea 
-                            {...field} 
+                          <Textarea
+                            {...field}
                             rows={3}
-                            placeholder={t('orderErrors.rootCausePlaceholder')}
+                            placeholder={t('orderQuality.rootCausePlaceholder')}
                           />
                         </FormControl>
                         <FormMessage />
@@ -1153,12 +1153,12 @@ export default function OrderErrors() {
                     name="preventiveMeasures"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t('orderErrors.preventiveMeasures')}</FormLabel>
+                        <FormLabel>{t('orderQuality.preventiveMeasures')}</FormLabel>
                         <FormControl>
-                          <Textarea 
-                            {...field} 
+                          <Textarea
+                            {...field}
                             rows={3}
-                            placeholder={t('orderErrors.preventiveMeasuresPlaceholder')}
+                            placeholder={t('orderQuality.preventiveMeasuresPlaceholder')}
                           />
                         </FormControl>
                         <FormMessage />
@@ -1167,21 +1167,21 @@ export default function OrderErrors() {
                   />
 
                   <DialogFooter>
-                    <Button 
-                      type="button" 
-                      variant="secondary" 
+                    <Button
+                      type="button"
+                      variant="secondary"
                       onClick={() => setIsResolveDialogOpen(false)}
                     >
                       {t('common.cancel')}
                     </Button>
-                    <Button 
+                    <Button
                       type="submit"
-                      disabled={resolveErrorMutation.isPending}
+                      disabled={resolveQualityMutation.isPending}
                     >
-                      {resolveErrorMutation.isPending ? (
+                      {resolveQualityMutation.isPending ? (
                         <><RefreshCw className="h-4 w-4 mr-2 animate-spin" /> {t('common.saving')}</>
                       ) : (
-                        t('orderErrors.resolveAction')
+                        t('orderQuality.resolveAction')
                       )}
                     </Button>
                   </DialogFooter>
@@ -1194,11 +1194,11 @@ export default function OrderErrors() {
           <Dialog open={isAdjustDialogOpen} onOpenChange={setIsAdjustDialogOpen}>
             <DialogContent className="max-w-3xl">
               <DialogHeader>
-                <DialogTitle>{t('orderErrors.adjustInventory')}</DialogTitle>
+                <DialogTitle>{t('orderQuality.adjustInventory')}</DialogTitle>
                 <DialogDescription>
-                  {selectedError && (
+                  {selectedQuality && (
                     <span>
-                      {t('orderErrors.adjustInventoryDescription', { orderNumber: selectedError.orderNumber })}
+                      {t('orderQuality.adjustInventoryDescription', { orderNumber: selectedQuality.orderNumber })}
                     </span>
                   )}
                 </DialogDescription>
@@ -1207,14 +1207,14 @@ export default function OrderErrors() {
               <Form {...adjustInventoryForm}>
                 <form onSubmit={adjustInventoryForm.handleSubmit(onAdjustInventorySubmit)} className="space-y-6">
                   <div className="space-y-2">
-                    <Label>{t('orderErrors.adjustments')}</Label>
+                    <Label>{t('orderQuality.adjustments')}</Label>
                     <p className="text-sm text-muted-foreground">
-                      {t('orderErrors.adjustmentsDescription')}
+                      {t('orderQuality.adjustmentsDescription')}
                     </p>
 
                     {adjustInventoryForm.watch('adjustments').length === 0 ? (
                       <div className="border rounded-md p-4 text-center">
-                        <p className="text-muted-foreground">{t('orderErrors.noProductsToAdjust')}</p>
+                        <p className="text-muted-foreground">{t('orderQuality.noProductsToAdjust')}</p>
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -1235,7 +1235,7 @@ export default function OrderErrors() {
                                 <div className="flex items-end">
                                   <div className="w-full">
                                     <Label htmlFor={`quantity-${index}`}>
-                                      {t('orderErrors.adjustmentQuantity')}
+                                      {t('orderQuality.adjustmentQuantity')}
                                     </Label>
                                     <Input
                                       id={`quantity-${index}`}
@@ -1249,15 +1249,15 @@ export default function OrderErrors() {
                                     />
                                     <p className="text-xs text-muted-foreground mt-1">
                                       {adjustment.quantity > 0 ? (
-                                        t('orderErrors.willIncrease', { 
-                                          newStock: product.currentStock + adjustment.quantity 
+                                        t('orderQuality.willIncrease', {
+                                          newStock: product.currentStock + adjustment.quantity
                                         })
                                       ) : adjustment.quantity < 0 ? (
-                                        t('orderErrors.willDecrease', { 
-                                          newStock: product.currentStock + adjustment.quantity 
+                                        t('orderQuality.willDecrease', {
+                                          newStock: product.currentStock + adjustment.quantity
                                         })
                                       ) : (
-                                        t('orderErrors.noChange')
+                                        t('orderQuality.noChange')
                                       )}
                                     </p>
                                   </div>
@@ -1271,21 +1271,21 @@ export default function OrderErrors() {
                   </div>
 
                   <DialogFooter>
-                    <Button 
-                      type="button" 
-                      variant="secondary" 
+                    <Button
+                      type="button"
+                      variant="secondary"
                       onClick={() => setIsAdjustDialogOpen(false)}
                     >
                       {t('common.cancel')}
                     </Button>
-                    <Button 
+                    <Button
                       type="submit"
                       disabled={adjustInventoryMutation.isPending}
                     >
                       {adjustInventoryMutation.isPending ? (
                         <><RefreshCw className="h-4 w-4 mr-2 animate-spin" /> {t('common.saving')}</>
                       ) : (
-                        t('orderErrors.adjustAction')
+                        t('orderQuality.adjustAction')
                       )}
                     </Button>
                   </DialogFooter>
@@ -1296,7 +1296,7 @@ export default function OrderErrors() {
         </TabsContent>
 
         <TabsContent value="stats">
-          {renderErrorStats()}
+          {renderQualityStats()}
         </TabsContent>
       </Tabs>
 
@@ -1304,18 +1304,18 @@ export default function OrderErrors() {
       <Dialog open={isAdjustPromptOpen} onOpenChange={setIsAdjustPromptOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('orderErrors.inventoryAdjustmentNeeded')}</DialogTitle>
+            <DialogTitle>{t('orderQuality.inventoryAdjustmentNeeded')}</DialogTitle>
             <DialogDescription>
-              {t('orderErrors.inventoryAdjustmentPrompt')}
+              {t('orderQuality.inventoryAdjustmentPrompt')}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="flex flex-col space-y-2">
-              <p>{t('orderErrors.adjustmentQuestion')}</p>
+              <p>{t('orderQuality.adjustmentQuestion')}</p>
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button
               type="button"
@@ -1323,8 +1323,8 @@ export default function OrderErrors() {
               onClick={() => {
                 setIsAdjustPromptOpen(false);
                 toast({
-                  title: t('orderErrors.createSuccess'),
-                  description: t('orderErrors.createSuccessDescription'),
+                  title: t('orderQuality.createSuccess'),
+                  description: t('orderQuality.createSuccessDescription'),
                 });
               }}
             >
@@ -1333,20 +1333,20 @@ export default function OrderErrors() {
             <Button
               type="button"
               onClick={() => {
-                // Get error to adjust
+                // Get quality issue to adjust
                 setIsAdjustPromptOpen(false);
-                
-                // Fetch the newly created error and open adjustment dialog
-                if (createdErrorId !== null) {
-                  apiRequest<OrderError>(`/api/order-errors/${createdErrorId}`)
-                    .then(error => {
-                      setSelectedError(error);
+
+                // Fetch the newly created quality issue and open adjustment dialog
+                if (createdQualityId !== null) {
+                  apiRequest<OrderQuality>(`/api/order-quality/${createdQualityId}`)
+                    .then(quality => {
+                      setSelectedQuality(quality);
                       setIsAdjustDialogOpen(true);
                     })
                     .catch(err => {
                       toast({
                         title: t('common.errorOccurred'),
-                        description: err.message || t('orderErrors.loadError'),
+                        description: err.message || t('orderQuality.loadError'),
                         variant: 'destructive'
                       });
                     });
