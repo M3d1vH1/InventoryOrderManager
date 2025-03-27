@@ -426,6 +426,12 @@
     "inventoryAdjustmentNeeded": "Inventory Adjustment Needed?",
     "inventoryAdjustmentPrompt": "Would you like to adjust inventory based on this quality issue?",
     "adjustmentQuestion": "The quality issue has been created successfully. Do you want to adjust inventory levels for the affected products now?",
+    "inventoryImpactExplanation": "This quality issue may affect your inventory levels",
+    "inventoryAdjustmentExamples": {
+      "missing": "Missing items may require reducing inventory to match actual stock",
+      "wrong": "Wrong items shipped may require adjusting multiple products",
+      "damaged": "Damaged items might need to be removed from available inventory"
+    },
     "adjustments": "Inventory Adjustments",
     "adjustmentsDescription": "Use positive values to increase inventory or negative values to decrease",
     "noProductsToAdjust": "No products available for adjustment",

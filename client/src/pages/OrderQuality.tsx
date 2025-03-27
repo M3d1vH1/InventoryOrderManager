@@ -89,6 +89,7 @@ import { exportData } from '@/lib/utils';
 // Icons
 import {
   AlertCircle,
+  AlertTriangle,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -248,6 +249,19 @@ export default function OrderQuality() {
     queryFn: () => apiRequest<Product[]>('/api/products')
   });
 
+  // Function to check if a quality type requires inventory adjustment
+  const isInventoryRelatedIssue = (qualityType: string): boolean => {
+    // These issue types typically affect inventory levels
+    const inventoryRelatedTypes = [
+      'missing_item', 
+      'wrong_item', 
+      'damaged_item', 
+      'wrong_quantity', 
+      'duplicate_item'
+    ];
+    return inventoryRelatedTypes.includes(qualityType);
+  };
+
   // Mutation for creating a new quality issue
   const createQualityMutation = useMutation({
     mutationFn: async (values: QualityFormValues) => {
@@ -264,9 +278,21 @@ export default function OrderQuality() {
       // Store the created quality issue ID for potential inventory adjustment
       if (response && response.id) {
         setCreatedQualityId(response.id);
-
-        // Show adjustment prompt
-        setIsAdjustPromptOpen(true);
+        
+        // Get the quality issue type from the response
+        const qualityType = response.qualityType || "";
+        
+        // Only show adjustment prompt for inventory-related issues
+        if (isInventoryRelatedIssue(qualityType)) {
+          setIsAdjustPromptOpen(true);
+        } else {
+          // Show success message without adjustment prompt for non-inventory issues
+          toast({
+            title: t('orderQuality.createSuccess'),
+            description: t('orderQuality.createSuccessDescription'),
+          });
+          setCreatedQualityId(null);
+        }
       } else {
         // Just show success message if no ID is returned
         toast({
@@ -1582,8 +1608,19 @@ export default function OrderQuality() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('orderQuality.inventoryAdjustmentNeeded')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('orderQuality.adjustmentQuestion')}
+            <AlertDialogDescription className="space-y-2 pt-2">
+              <p>{t('orderQuality.adjustmentQuestion')}</p>
+              <div className="bg-amber-50 p-3 rounded-md border border-amber-200 mt-2">
+                <p className="text-amber-800 font-medium text-sm flex items-center">
+                  <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
+                  {t('orderQuality.inventoryImpactExplanation')}
+                </p>
+                <ul className="mt-2 text-sm text-amber-700 list-disc pl-5 space-y-1">
+                  <li>{t('orderQuality.inventoryAdjustmentExamples.missing')}</li>
+                  <li>{t('orderQuality.inventoryAdjustmentExamples.wrong')}</li>
+                  <li>{t('orderQuality.inventoryAdjustmentExamples.damaged')}</li>
+                </ul>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
