@@ -59,6 +59,8 @@ const callLogFormSchema = z.object({
     companyName: z.string().optional(),
     phone: z.string().optional(),
     email: z.string().email('Invalid email').optional().or(z.literal('')),
+    address: z.string().optional(),
+    city: z.string().optional(),
     // Simplified prospective customer fields - source field removed
   }).optional(),
   callDate: z.date({
@@ -162,12 +164,15 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
       if (data.customerType === 'prospective') {
         if (isNewProspect && data.newProspectiveCustomer) {
           // Create new prospective customer first
+          const prospectiveData = {
+            ...data.newProspectiveCustomer,
+            status: 'new',
+          };
+          console.log('Creating new prospective customer:', prospectiveData);
+          
           const prospectiveResponse = await apiRequest('/api/prospective-customers', {
             method: 'POST',
-            body: JSON.stringify({
-              ...data.newProspectiveCustomer,
-              status: 'new',
-            }),
+            body: JSON.stringify(prospectiveData),
             headers: {
               'Content-Type': 'application/json'
             }
@@ -452,6 +457,34 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                               <FormLabel>{t('callLogs.form.email')}</FormLabel>
                               <FormControl>
                                 <Input type="email" placeholder={t('callLogs.form.enterEmail')} {...field} value={field.value || ''} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="newProspectiveCustomer.address"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t('callLogs.form.address')}</FormLabel>
+                              <FormControl>
+                                <Input placeholder={t('callLogs.form.enterAddress')} {...field} value={field.value || ''} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="newProspectiveCustomer.city"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t('callLogs.form.city')}</FormLabel>
+                              <FormControl>
+                                <Input placeholder={t('callLogs.form.enterCity')} {...field} value={field.value || ''} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
