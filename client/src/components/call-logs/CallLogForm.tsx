@@ -173,9 +173,15 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
       if (data.customerType === 'prospective') {
         if (isNewProspect && data.newProspectiveCustomer) {
           // Create new prospective customer first
-          const prospectiveResponse = await apiRequest('/api/prospective-customers', 'POST', {
-            ...data.newProspectiveCustomer,
-            status: 'new',
+          const prospectiveResponse = await apiRequest('/api/prospective-customers', {
+            method: 'POST',
+            body: JSON.stringify({
+              ...data.newProspectiveCustomer,
+              status: 'new',
+            }),
+            headers: {
+              'Content-Type': 'application/json'
+            }
           });
           
           if (prospectiveResponse.id) {
@@ -195,7 +201,13 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
       delete callLogData.newProspectiveCustomer;
       
       // Create the call log
-      return apiRequest('/api/call-logs', 'POST', callLogData);
+      return apiRequest('/api/call-logs', {
+        method: 'POST',
+        body: JSON.stringify(callLogData),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/call-logs'] });
@@ -216,7 +228,13 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
 
   const updateMutation = useMutation({
     mutationFn: (data: CallLogFormValues) => {
-      return apiRequest(`/api/call-logs/${initialData.id}`, 'PATCH', data);
+      return apiRequest(`/api/call-logs/${initialData.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/call-logs'] });
@@ -631,7 +649,7 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">{t('callLogs.form.outcomes.none')}</SelectItem>
+                      <SelectItem value="none">{t('callLogs.form.outcomes.none')}</SelectItem>
                       <SelectItem value="interested">{t('callLogs.form.outcomes.interested')}</SelectItem>
                       <SelectItem value="not_interested">{t('callLogs.form.outcomes.not_interested')}</SelectItem>
                       <SelectItem value="call_back">{t('callLogs.form.outcomes.call_back')}</SelectItem>
@@ -685,7 +703,7 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">{t('callLogs.form.noAssignee')}</SelectItem>
+                        <SelectItem value="no_assignee">{t('callLogs.form.noAssignee')}</SelectItem>
                         {users?.map((user: any) => (
                           <SelectItem key={user.id} value={user.id.toString()}>
                             {user.fullName || user.username}
