@@ -2392,10 +2392,41 @@ export class DatabaseStorage implements IStorage {
   
   async updateCallLog(id: number, callLog: Partial<InsertCallLog>): Promise<CallLog | undefined> {
     try {
+      // Process any date fields to ensure they're valid Date objects
+      const processedData: any = { ...callLog };
+      
+      // Handle callDate conversion
+      if (processedData.callDate !== undefined) {
+        try {
+          processedData.callDate = typeof processedData.callDate === 'string' 
+            ? new Date(processedData.callDate) 
+            : processedData.callDate;
+        } catch (e) {
+          console.error("Error converting callDate:", e);
+          delete processedData.callDate; // Remove the field if conversion fails
+        }
+      }
+      
+      // Handle followupDate conversion
+      if (processedData.followupDate !== undefined) {
+        try {
+          if (processedData.followupDate === null) {
+            // Keep null value
+          } else {
+            processedData.followupDate = typeof processedData.followupDate === 'string' 
+              ? new Date(processedData.followupDate) 
+              : processedData.followupDate;
+          }
+        } catch (e) {
+          console.error("Error converting followupDate:", e);
+          processedData.followupDate = null; // Set to null if conversion fails
+        }
+      }
+      
       const [updatedCallLog] = await this.db
         .update(callLogs)
         .set({
-          ...callLog,
+          ...processedData,
           updatedAt: new Date()
         })
         .where(eq(callLogs.id, id))
@@ -2479,10 +2510,29 @@ export class DatabaseStorage implements IStorage {
   
   async updateCallOutcome(id: number, outcome: Partial<InsertCallOutcome>): Promise<CallOutcome | undefined> {
     try {
+      // Process any date fields to ensure they're valid Date objects
+      const processedData: any = { ...outcome };
+      
+      // Handle dueDate conversion if present
+      if (processedData.dueDate !== undefined) {
+        try {
+          if (processedData.dueDate === null) {
+            // Keep null value
+          } else {
+            processedData.dueDate = typeof processedData.dueDate === 'string' 
+              ? new Date(processedData.dueDate) 
+              : processedData.dueDate;
+          }
+        } catch (e) {
+          console.error("Error converting dueDate:", e);
+          processedData.dueDate = null; // Set to null if conversion fails
+        }
+      }
+      
       const [updatedOutcome] = await this.db
         .update(callOutcomes)
         .set({
-          ...outcome,
+          ...processedData,
           updatedAt: new Date()
         })
         .where(eq(callOutcomes.id, id))
@@ -2601,11 +2651,43 @@ export class DatabaseStorage implements IStorage {
   async createProspectiveCustomer(customer: InsertProspectiveCustomer): Promise<ProspectiveCustomer> {
     try {
       const now = new Date();
+      // Process any date fields to ensure they're valid Date objects
+      const processedData: any = { ...customer };
+      
+      // Handle lastContactDate conversion if present
+      if (processedData.lastContactDate !== undefined && processedData.lastContactDate !== null) {
+        try {
+          processedData.lastContactDate = typeof processedData.lastContactDate === 'string' 
+            ? new Date(processedData.lastContactDate) 
+            : processedData.lastContactDate;
+        } catch (e) {
+          console.error("Error converting lastContactDate:", e);
+          processedData.lastContactDate = now; // Use current date as fallback
+        }
+      } else {
+        processedData.lastContactDate = now; // Default to current date
+      }
+      
+      // Handle nextContactDate conversion if present
+      if (processedData.nextContactDate !== undefined) {
+        try {
+          if (processedData.nextContactDate === null) {
+            // Keep null value
+          } else {
+            processedData.nextContactDate = typeof processedData.nextContactDate === 'string' 
+              ? new Date(processedData.nextContactDate) 
+              : processedData.nextContactDate;
+          }
+        } catch (e) {
+          console.error("Error converting nextContactDate:", e);
+          processedData.nextContactDate = null; // Set to null if conversion fails
+        }
+      }
+      
       const insertData = {
-        ...customer,
+        ...processedData,
         createdAt: now,
-        updatedAt: now,
-        lastContactDate: customer.lastContactDate || now
+        updatedAt: now
       };
       
       const result = await this.db
@@ -2622,8 +2704,43 @@ export class DatabaseStorage implements IStorage {
 
   async updateProspectiveCustomer(id: number, customer: Partial<InsertProspectiveCustomer>): Promise<ProspectiveCustomer | undefined> {
     try {
+      // Process any date fields to ensure they're valid Date objects
+      const processedData: any = { ...customer };
+      
+      // Handle lastContactDate conversion if present
+      if (processedData.lastContactDate !== undefined) {
+        try {
+          if (processedData.lastContactDate === null) {
+            // Keep null value
+          } else {
+            processedData.lastContactDate = typeof processedData.lastContactDate === 'string' 
+              ? new Date(processedData.lastContactDate) 
+              : processedData.lastContactDate;
+          }
+        } catch (e) {
+          console.error("Error converting lastContactDate:", e);
+          delete processedData.lastContactDate; // Remove if conversion fails
+        }
+      }
+      
+      // Handle nextContactDate conversion if present
+      if (processedData.nextContactDate !== undefined) {
+        try {
+          if (processedData.nextContactDate === null) {
+            // Keep null value
+          } else {
+            processedData.nextContactDate = typeof processedData.nextContactDate === 'string' 
+              ? new Date(processedData.nextContactDate) 
+              : processedData.nextContactDate;
+          }
+        } catch (e) {
+          console.error("Error converting nextContactDate:", e);
+          processedData.nextContactDate = null; // Set to null if conversion fails
+        }
+      }
+      
       const updateData = {
-        ...customer,
+        ...processedData,
         updatedAt: new Date()
       };
       
@@ -2644,9 +2761,10 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await this.db
         .delete(prospectiveCustomers)
-        .where(eq(prospectiveCustomers.id, id));
+        .where(eq(prospectiveCustomers.id, id))
+        .returning();
       
-      return result.rowCount > 0;
+      return result.length > 0;
     } catch (error) {
       console.error('Error deleting prospective customer:', error);
       return false;
