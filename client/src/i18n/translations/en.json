@@ -20,7 +20,8 @@
     "expandSidebar": "Expand sidebar",
     "collapseSidebar": "Collapse sidebar",
     "days": "days",
-    "callLogs": "Call Logs"
+    "callLogs": "Call Logs",
+    "sales": "Sales"
   },
   "dashboard": {
     "title": "Dashboard",
