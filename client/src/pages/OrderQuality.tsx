@@ -250,7 +250,9 @@ export default function OrderQuality() {
   });
 
   // Function to check if a quality type requires inventory adjustment
-  const isInventoryRelatedIssue = (qualityType: string): boolean => {
+  const isInventoryRelatedIssue = (qualityType: string | null | undefined): boolean => {
+    if (!qualityType) return false;
+    
     // These issue types typically affect inventory levels
     const inventoryRelatedTypes = [
       'missing_item', 
@@ -390,7 +392,7 @@ export default function OrderQuality() {
       qualityLabel: '',
       qualityCategory: '',
       qualityStatus: 'open',
-      assignedToId: user?.id,
+      assignedToId: user?.id || undefined,
       dueDate: '',
       priority: 'medium',
       qualityNotes: '',
@@ -436,7 +438,7 @@ export default function OrderQuality() {
         qualityLabel: '',
         qualityCategory: '',
         qualityStatus: 'open',
-        assignedToId: user?.id,
+        assignedToId: user?.id || undefined,
         dueDate: '',
         priority: 'medium',
         qualityNotes: '',
@@ -556,7 +558,8 @@ export default function OrderQuality() {
   };
 
   // Helper to get quality type display name
-  const getQualityTypeDisplay = (qualityType: string) => {
+  const getQualityTypeDisplay = (qualityType: string | null | undefined) => {
+    if (!qualityType) return t('common.unknown');
     return t(`orderQuality.types.${qualityType}`);
   };
 
