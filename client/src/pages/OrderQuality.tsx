@@ -1228,7 +1228,7 @@ export default function OrderQuality() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t('orderQuality.qualityCategory')}</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value || ''}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder={t('orderQuality.selectCategory')} />
@@ -1258,7 +1258,7 @@ export default function OrderQuality() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t('orderQuality.priority')}</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value || 'medium'}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder={t('orderQuality.selectPriority')} />
@@ -1281,7 +1281,7 @@ export default function OrderQuality() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t('orderQuality.qualityStatus')}</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value || 'open'}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder={t('orderQuality.selectStatus')} />
@@ -1360,7 +1360,7 @@ export default function OrderQuality() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('orderQuality.qualityType')}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value || 'missing_item'}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={t('orderQuality.selectQualityType')} />
