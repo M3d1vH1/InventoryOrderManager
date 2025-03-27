@@ -234,8 +234,8 @@ const PickList = ({ order }: { order: Order }) => {
     // Send the data to update the order status and create any unshipped items
     updateOrderStatusMutation.mutate({ 
       status: 'picked',
-      // If user is admin or manager, auto-approve
-      approvePartialFulfillment: (user?.role === 'admin' || user?.role === 'manager') && isPartialFulfillment
+      // Always require explicit approval, even for admins and managers
+      approvePartialFulfillment: false
     });
     
     // Print labels if not skipped
