@@ -22,9 +22,9 @@ const QuickStats = () => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="bg-white rounded-lg shadow p-4 flex items-center animate-pulse">
-            <div className="rounded-full bg-slate-200 p-3 mr-4 h-12 w-12"></div>
-            <div className="w-full">
+          <div key={i} className="bg-white rounded-lg shadow p-4 flex items-center animate-pulse h-full">
+            <div className="rounded-full bg-slate-200 p-3 mr-4 h-12 w-12 flex-shrink-0"></div>
+            <div className="w-full min-w-0">
               <div className="h-4 bg-slate-200 rounded w-1/2 mb-2"></div>
               <div className="h-6 bg-slate-200 rounded w-1/4"></div>
             </div>
@@ -92,12 +92,12 @@ const QuickStats = () => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
       {statCards.map((card, index) => (
         <Link key={index} href={card.path + (card.filter || "")}>
-          <div className="bg-white rounded-lg shadow p-4 flex items-center hover:bg-slate-50 transition-colors cursor-pointer group">
-            <div className={`rounded-full ${card.bgColor} p-3 mr-4 group-hover:scale-110 transition-transform flex items-center justify-center`}>
+          <div className="bg-white rounded-lg shadow p-4 flex items-center hover:bg-slate-50 transition-colors cursor-pointer group h-full">
+            <div className={`rounded-full ${card.bgColor} p-3 mr-4 group-hover:scale-110 transition-transform flex items-center justify-center h-12 w-12 flex-shrink-0`}>
               <span className={card.textColor}>{card.icon}</span>
             </div>
-            <div>
-              <h3 className="text-sm text-slate-500 font-medium">{card.title}</h3>
+            <div className="min-w-0">
+              <h3 className="text-sm text-slate-500 font-medium truncate">{card.title}</h3>
               <p className="text-2xl font-semibold">{card.value}</p>
             </div>
           </div>
