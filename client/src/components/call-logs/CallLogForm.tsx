@@ -59,27 +59,18 @@ const callLogFormSchema = z.object({
     companyName: z.string().optional(),
     phone: z.string().optional(),
     email: z.string().email('Invalid email').optional().or(z.literal('')),
-    address: z.string().optional(),
-    city: z.string().optional(),
-    state: z.string().optional(),
-    postalCode: z.string().optional(),
-    country: z.string().optional(),
-    source: z.string().optional(),
-    notes: z.string().optional(),
+    // Simplified prospective customer fields - source field removed
   }).optional(),
   callDate: z.date({
     required_error: 'Please select a date and time',
-  }),
+  }).default(new Date()),
   duration: z.number().min(1, 'Duration must be at least 1 minute').default(15),
   subject: z.string().min(1, 'Subject is required'),
   notes: z.string().optional(),
-  outcome: z.string().optional(),
-  priority: z.string({
-    required_error: 'Please select a priority',
-  }),
+  priority: z.string().default('medium'),
   needsFollowup: z.boolean().default(false),
   followupDate: z.date().optional(),
-  assignedToId: z.number().optional(),
+  // outcome and assignedToId fields removed
 });
 
 type CallLogFormValues = z.infer<typeof callLogFormSchema>;
@@ -130,11 +121,9 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
     duration: initialData?.duration || 15,
     subject: initialData?.subject || '',
     notes: initialData?.notes || '',
-    outcome: initialData?.outcome || '',
     priority: initialData?.priority || 'medium',
     needsFollowup: initialData?.needsFollowup || false,
     followupDate: initialData?.followupDate ? new Date(initialData.followupDate) : undefined,
-    assignedToId: initialData?.assignedToId,
   };
 
   const form = useForm<CallLogFormValues>({
@@ -468,19 +457,7 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                             </FormItem>
                           )}
                         />
-                        <FormField
-                          control={form.control}
-                          name="newProspectiveCustomer.source"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t('callLogs.form.source')}</FormLabel>
-                              <FormControl>
-                                <Input placeholder={t('callLogs.form.enterSource')} {...field} value={field.value || ''} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+
                       </div>
                     </CardContent>
                   </Card>
@@ -635,36 +612,7 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
               )}
             />
 
-            {/* Outcome */}
-            <FormField
-              control={form.control}
-              name="outcome"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('callLogs.form.outcome')}</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ''}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('callLogs.form.selectOutcome')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="none">{t('callLogs.form.outcomes.none')}</SelectItem>
-                      <SelectItem value="interested">{t('callLogs.form.outcomes.interested')}</SelectItem>
-                      <SelectItem value="not_interested">{t('callLogs.form.outcomes.not_interested')}</SelectItem>
-                      <SelectItem value="call_back">{t('callLogs.form.outcomes.call_back')}</SelectItem>
-                      <SelectItem value="meeting_scheduled">{t('callLogs.form.outcomes.meeting_scheduled')}</SelectItem>
-                      <SelectItem value="quote_requested">{t('callLogs.form.outcomes.quote_requested')}</SelectItem>
-                      <SelectItem value="sale_completed">{t('callLogs.form.outcomes.sale_completed')}</SelectItem>
-                      <SelectItem value="support_provided">{t('callLogs.form.outcomes.support_provided')}</SelectItem>
-                      <SelectItem value="issue_resolved">{t('callLogs.form.outcomes.issue_resolved')}</SelectItem>
-                      <SelectItem value="issue_escalated">{t('callLogs.form.outcomes.issue_escalated')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Needs Followup */}
@@ -686,35 +634,7 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                 )}
               />
 
-              {/* Assigned To */}
-              <FormField
-                control={form.control}
-                name="assignedToId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('callLogs.form.assignTo')}</FormLabel>
-                    <Select 
-                      onValueChange={(value) => field.onChange(value ? Number(value) : undefined)} 
-                      value={field.value?.toString() || ''}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('callLogs.form.selectAssignee')} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="no_assignee">{t('callLogs.form.noAssignee')}</SelectItem>
-                        {users?.map((user: any) => (
-                          <SelectItem key={user.id} value={user.id.toString()}>
-                            {user.fullName || user.username}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+
             </div>
 
             {/* Followup Date (conditional) */}
