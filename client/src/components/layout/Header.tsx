@@ -3,7 +3,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/context/NotificationContext";
 import { apiRequest } from "@/lib/queryClient";
-import { Menu, Bell, PlusCircle, Globe } from "lucide-react";
+import { Menu, Bell, PlusCircle, Globe, PhoneCall } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import OrderForm from "@/components/orders/OrderForm";
+import CallLogForm from "@/components/call-logs/CallLogForm";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 
@@ -26,6 +27,7 @@ const Header = () => {
   const { toast } = useToast();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [showOrderForm, setShowOrderForm] = useState(false);
+  const [showCallLogForm, setShowCallLogForm] = useState(false);
   const { t } = useTranslation();
 
   const toggleLanguage = () => {
@@ -83,6 +85,16 @@ const Header = () => {
           >
             <PlusCircle className="h-4 w-4" />
             <span>{t('orders.createNew')}</span>
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowCallLogForm(true)}
+            className="flex items-center gap-1"
+          >
+            <PhoneCall className="h-4 w-4" />
+            <span>{t('callLogs.addNewCall')}</span>
           </Button>
           
           <DropdownMenu>
@@ -189,6 +201,12 @@ const Header = () => {
           </div>
         </div>
       )}
+
+      <CallLogForm
+        open={showCallLogForm}
+        onOpenChange={setShowCallLogForm}
+        mode="create"
+      />
     </>
   );
 };

@@ -642,6 +642,7 @@
     "pageTitle": "Customer Call Logs",
     "pageDescription": "Track and manage customer calls, appointments, and follow-ups",
     "addNewCall": "Add New Call",
+    "quickCreate": "Quickly log a new customer call",
     "viewCall": "View Call Details",
     "editCall": "Edit Call Log",
     "deleteCall": "Delete Call",
