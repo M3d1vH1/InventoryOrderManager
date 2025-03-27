@@ -1216,7 +1216,7 @@ export default function OrderQuality() {
                         <FormItem>
                           <FormLabel>{t('orderQuality.qualityLabel')}</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder={t('orderQuality.qualityLabelPlaceholder')} />
+                            <Input value={field.value || ''} onChange={field.onChange} placeholder={t('orderQuality.qualityLabelPlaceholder')} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -1346,7 +1346,8 @@ export default function OrderQuality() {
                           <FormLabel>{t('orderQuality.qualityNotes')}</FormLabel>
                           <FormControl>
                             <Textarea 
-                              {...field} 
+                              value={field.value || ''}
+                              onChange={field.onChange}
                               placeholder={t('orderQuality.qualityNotesPlaceholder')}
                               rows={3}
                             />
@@ -1395,7 +1396,8 @@ export default function OrderQuality() {
                     <FormLabel>{t('orderQuality.description')}</FormLabel>
                     <FormControl>
                       <Textarea 
-                        {...field} 
+                        value={field.value || ''}
+                        onChange={field.onChange}
                         placeholder={t('orderQuality.descriptionPlaceholder')}
                         rows={4}
                       />
@@ -1443,7 +1445,8 @@ export default function OrderQuality() {
                     <FormLabel>{t('orderQuality.rootCause')}</FormLabel>
                     <FormControl>
                       <Textarea 
-                        {...field} 
+                        value={field.value || ''}
+                        onChange={field.onChange}
                         placeholder={t('orderQuality.rootCausePlaceholder')}
                         rows={3}
                       />
@@ -1460,7 +1463,8 @@ export default function OrderQuality() {
                     <FormLabel>{t('orderQuality.preventiveMeasures')}</FormLabel>
                     <FormControl>
                       <Textarea 
-                        {...field} 
+                        value={field.value || ''}
+                        onChange={field.onChange}
                         placeholder={t('orderQuality.preventiveMeasuresPlaceholder')}
                         rows={3}
                       />
