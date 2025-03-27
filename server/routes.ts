@@ -15,6 +15,7 @@ import { getEmailSettings, updateEmailSettings, testEmailConnection, getEmailTem
 import { getCompanySettings, updateCompanySettings, getNotificationSettings, updateNotificationSettings } from "./api/settings";
 import { getOrderErrors, getOrderQuality, createOrderError, updateOrderError, resolveOrderError, adjustInventoryForError, getErrorStats } from "./api/orderErrors";
 import { getInventoryChanges, getInventoryChange, addInventoryChange, getRecentInventoryChanges, getInventoryChangesByType } from "./api/inventoryChanges";
+import callLogsRouter from "./api/callLogs";
 
 // Function to determine the appropriate storage path based on environment
 function getStoragePath(): string {
@@ -2267,6 +2268,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/inventory-changes', isAuthenticated, hasRole(['admin', 'warehouse']), addInventoryChange);
   app.get('/api/inventory-changes/recent', isAuthenticated, getRecentInventoryChanges);
   app.get('/api/inventory-changes/by-type/:type', isAuthenticated, getInventoryChangesByType);
+  
+  // Call Logs routes
+  app.use('/api/call-logs', isAuthenticated, callLogsRouter);
   
   return httpServer;
 }

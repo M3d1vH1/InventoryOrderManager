@@ -1,12 +1,10 @@
 import express from 'express';
 import { storage } from '../storage';
 import { insertCallLogSchema, insertCallOutcomeSchema } from '@shared/schema';
-import { authenticateSession, requirePermission } from '../auth';
+import { hasRole } from '../auth';
+import { User } from '@shared/schema';
 
 const router = express.Router();
-
-// Middleware for authentication
-router.use(authenticateSession);
 
 // Get all call logs (with optional date filtering)
 router.get('/', async (req, res) => {
@@ -105,8 +103,8 @@ router.post('/', async (req, res) => {
     const validatedData = insertCallLogSchema.parse(req.body);
     
     // Set the user ID from session if not provided
-    if (!validatedData.userId && req.session.user) {
-      validatedData.userId = req.session.user.id;
+    if (!validatedData.userId && req.user) {
+      validatedData.userId = (req.user as User).id;
     }
     
     const newLog = await storage.createCallLog(validatedData);
@@ -132,8 +130,9 @@ router.patch('/:id', async (req, res) => {
     }
     
     // Only allow updates if user is admin or the creator of the log
-    const userId = req.session?.user?.id;
-    const userRole = req.session?.user?.role;
+    const user = req.user as User;
+    const userId = user?.id;
+    const userRole = user?.role;
     if (userRole !== 'admin' && existingLog.userId !== userId) {
       return res.status(403).json({ error: 'Permission denied' });
     }
@@ -147,7 +146,7 @@ router.patch('/:id', async (req, res) => {
 });
 
 // Delete a call log
-router.delete('/:id', requirePermission('manage_call_logs'), async (req, res) => {
+router.delete('/:id', hasRole(['admin']), async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) {
@@ -240,7 +239,8 @@ router.post('/outcomes/:id/complete', async (req, res) => {
       return res.status(400).json({ error: 'Invalid outcome ID' });
     }
     
-    const userId = req.session?.user?.id;
+    const user = req.user as User;
+    const userId = user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Authentication required' });
     }
@@ -260,7 +260,7 @@ router.post('/outcomes/:id/complete', async (req, res) => {
 });
 
 // Delete a call outcome
-router.delete('/outcomes/:id', requirePermission('manage_call_logs'), async (req, res) => {
+router.delete('/outcomes/:id', hasRole(['admin']), async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) {
