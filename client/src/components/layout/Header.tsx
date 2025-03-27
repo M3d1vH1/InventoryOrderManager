@@ -18,7 +18,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import OrderForm from "@/components/orders/OrderForm";
 import CallLogForm from "@/components/call-logs/CallLogForm";
-import QuickCallForm from "@/components/call-logs/QuickCallForm";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 
@@ -29,7 +28,6 @@ const Header = () => {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [showCallLogForm, setShowCallLogForm] = useState(false);
-  const [showQuickCallForm, setShowQuickCallForm] = useState(false);
   const { t } = useTranslation();
 
   const toggleLanguage = () => {
@@ -99,15 +97,7 @@ const Header = () => {
             <span>{t('callLogs.addNewCall')}</span>
           </Button>
           
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setShowQuickCallForm(true)}
-            className="rounded-full w-8 h-8 p-0 bg-amber-100 text-amber-600 hover:bg-amber-200"
-            title={t('callLogs.quickForm.buttonTitle')}
-          >
-            <PhoneCall className="h-3.5 w-3.5" />
-          </Button>
+
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -218,11 +208,6 @@ const Header = () => {
         open={showCallLogForm}
         onOpenChange={setShowCallLogForm}
         mode="create"
-      />
-      
-      <QuickCallForm
-        open={showQuickCallForm}
-        onOpenChange={setShowQuickCallForm}
       />
     </>
   );
