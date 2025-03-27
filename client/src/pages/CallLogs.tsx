@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useSidebar } from '@/context/SidebarContext';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -58,12 +58,22 @@ const CallLogs: React.FC = () => {
 
   const { data: callLogs, isLoading, isError } = useQuery<CallLog[]>({
     queryKey: ['/api/call-logs'],
-    onError: () => {
-      toast({
-        title: t('common.error'),
-        description: t('common.errorLoadingData'),
-        variant: 'destructive',
-      });
+    // Use onError inside options
+    queryFn: async ({ signal }) => {
+      try {
+        const response = await fetch('/api/call-logs', { signal });
+        if (!response.ok) {
+          throw new Error('Failed to fetch call logs');
+        }
+        return response.json();
+      } catch (error) {
+        toast({
+          title: t('common.error'),
+          description: t('common.errorLoadingData'),
+          variant: 'destructive',
+        });
+        throw error;
+      }
     }
   });
 
@@ -71,14 +81,37 @@ const CallLogs: React.FC = () => {
     if (!callLogs) return [];
     
     if (activeTab === 'scheduled') {
-      return callLogs.filter(call => 
-        call.callType === 'scheduled' && 
-        new Date(call.callDate) > new Date()
-      );
+      // Filter all scheduled calls that are in the future
+      return callLogs.filter(call => {
+        try {
+          const callDate = new Date(call.callDate);
+          const now = new Date();
+          return call.callType === 'scheduled' && callDate > now;
+        } catch(e) {
+          console.error('Error parsing date:', e);
+          return false;
+        }
+      });
     }
     
     if (activeTab === 'followup') {
-      return callLogs.filter(call => call.needsFollowup);
+      // Filter all calls that need followup or have pending action items
+      return callLogs.filter(call => {
+        if (call.needsFollowup) return true;
+        
+        // Also include calls that have a future followup date
+        if (call.followupDate) {
+          try {
+            const followupDate = new Date(call.followupDate);
+            const now = new Date();
+            return followupDate > now;
+          } catch(e) {
+            console.error('Error parsing followup date:', e);
+          }
+        }
+        
+        return false;
+      });
     }
     
     return callLogs;
@@ -282,13 +315,13 @@ const CallLogs: React.FC = () => {
                         )}
                       </div>
                     </CardContent>
-                    <div className="flex items-center justify-between p-4 pt-0">
-                      <Button variant="ghost" size="sm" onClick={() => handleViewCallClick(call)}>
-                        <i className="fas fa-eye mr-2"></i>
+                    <div className="flex items-center justify-between gap-2 p-4 pt-0">
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => handleViewCallClick(call)}>
+                        <i className="fas fa-eye mr-1"></i>
                         {t('callLogs.viewCall')}
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleEditCallClick(call)}>
-                        <i className="fas fa-edit mr-2"></i>
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEditCallClick(call)}>
+                        <i className="fas fa-edit mr-1"></i>
                         {t('callLogs.editCall')}
                       </Button>
                     </div>
