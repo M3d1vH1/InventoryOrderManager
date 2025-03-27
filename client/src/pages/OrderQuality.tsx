@@ -1104,20 +1104,21 @@ export default function OrderQuality() {
                                 onClick={async () => {
                                   setOrderSearchResults([]);
                                   
-                                  if (!field.value) {
-                                    toast({
-                                      description: t('orderQuality.emptyOrderNumber'),
-                                      variant: "destructive"
-                                    });
-                                    return;
-                                  }
+                                  // Even if field is empty, just show all orders to select from
+                                  const searchQuery = field.value || "";
                                   
                                   toast({
                                     description: t('orderQuality.searchingOrder'),
                                   });
                                   
                                   try {
-                                    const orders = await apiRequest(`/api/orders/search?query=${field.value}`);
+                                    // Get all orders if query is empty, otherwise search
+                                    let endpoint = searchQuery 
+                                      ? `/api/orders/search?query=${encodeURIComponent(searchQuery)}`
+                                      : `/api/orders/recent?limit=20`;
+                                      
+                                    const orders = await apiRequest(endpoint);
+                                    
                                     if (orders && orders.length > 0) {
                                       setOrderSearchResults(orders);
                                       setIsOrderSearchDialogOpen(true);
@@ -1128,6 +1129,7 @@ export default function OrderQuality() {
                                       });
                                     }
                                   } catch (error) {
+                                    console.error("Error searching orders:", error);
                                     toast({
                                       description: t('orderQuality.orderSearchError'),
                                       variant: "destructive"

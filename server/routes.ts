@@ -541,6 +541,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Search orders by query string
+  app.get('/api/orders/search', async (req, res) => {
+    try {
+      const query = req.query.query as string;
+      
+      if (!query) {
+        return res.status(400).json({ message: 'Search query is required' });
+      }
+      
+      // For now, just get all orders and filter them
+      const allOrders = await storage.getAllOrders();
+      
+      // Filter orders by order number
+      const filteredOrders = allOrders.filter(order => 
+        order.orderNumber.toLowerCase().includes(query.toLowerCase())
+      );
+      
+      res.json(filteredOrders);
+    } catch (error: any) {
+      console.error("Error searching orders:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
   app.get('/api/orders/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
