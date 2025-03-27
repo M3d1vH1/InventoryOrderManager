@@ -627,19 +627,44 @@ export const quickCallLogSchema = z.object({
   prospectiveCustomerId: z.number().optional().nullable(),
   subject: z.string().min(1, { message: "Subject is required" }),
   callType: z.string(), // Matches frontend form values: 'inbound', 'outbound', 'missed', 'scheduled'
-  callDate: z.union([
-    z.string().transform(val => new Date(val)),
+  callDate: z.preprocess(
+    (val) => {
+      if (typeof val === 'string') {
+        // Try to safely convert string to Date
+        try {
+          return new Date(val);
+        } catch (e) {
+          // If conversion fails, return the current date
+          console.error("Date conversion error:", e);
+          return new Date();
+        }
+      }
+      return val; // Already a Date object or something else
+    },
     z.date()
-  ]),
+  ),
   duration: z.number().min(1),
   notes: z.string().optional(),
   priority: z.string(), // Matches frontend form values: 'low', 'medium', 'high', 'urgent'
   needsFollowup: z.boolean().default(false),
-  followupDate: z.union([
-    z.string().transform(val => new Date(val)),
-    z.date(),
-    z.null()
-  ]).optional().nullable(),
+  followupDate: z.preprocess(
+    (val) => {
+      // Allow null/undefined
+      if (val === null || val === undefined) return null;
+      
+      // Try to safely convert string to Date
+      if (typeof val === 'string') {
+        try {
+          return new Date(val);
+        } catch (e) {
+          console.error("Followup date conversion error:", e);
+          return null;
+        }
+      }
+      return val; // Already a Date object or something else
+    },
+    z.date().nullable().optional()
+  ),
 });
 
 export type InsertCallLog = z.infer<typeof insertCallLogSchema>;

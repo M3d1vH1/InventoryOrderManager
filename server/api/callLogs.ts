@@ -108,6 +108,8 @@ router.post('/', async (req, res) => {
       console.log('Quick call data validated:', quickData);
       
       // Transform to the format required by the database
+      console.log('Quick data before transform:', JSON.stringify(quickData));
+      
       const callData: any = {
         // Map the proper callType values
         callType: quickData.callType === 'inbound' ? 'incoming' :
@@ -123,10 +125,19 @@ router.post('/', async (req, res) => {
         contactName: quickData.subject, // Use subject as contact name for quick calls
         notes: quickData.notes || '',
         isFollowup: quickData.needsFollowup,
-        callDate: new Date(quickData.callDate), // Ensure it's a Date object
         duration: quickData.duration,
         tags: []
       };
+      
+      // Safely convert dates
+      try {
+        callData.callDate = typeof quickData.callDate === 'string' 
+          ? new Date(quickData.callDate) 
+          : quickData.callDate;
+      } catch (e) {
+        console.error('Error converting callDate:', e);
+        callData.callDate = new Date(); // Fallback to current date
+      }
       
       // Set the user ID from session
       if (req.user) {
@@ -135,7 +146,14 @@ router.post('/', async (req, res) => {
       
       // Add followup date if needed
       if (quickData.needsFollowup && quickData.followupDate) {
-        callData.followupDate = new Date(quickData.followupDate); // Ensure it's a Date object
+        try {
+          callData.followupDate = typeof quickData.followupDate === 'string' 
+            ? new Date(quickData.followupDate) 
+            : quickData.followupDate;
+        } catch (e) {
+          console.error('Error converting followupDate:', e);
+          callData.followupDate = null; // Skip followup date if conversion fails
+        }
       }
       
       console.log('Transformed call data:', callData);

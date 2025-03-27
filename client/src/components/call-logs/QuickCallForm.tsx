@@ -133,7 +133,14 @@ const QuickCallForm = ({ open, onOpenChange }: QuickCallFormProps) => {
       data.customerId = null;
     }
     
-    createMutation.mutate(data);
+    // Convert Date objects to ISO strings for easier JSON serialization and to match backend expectations
+    const formattedData = {
+      ...data,
+      callDate: data.callDate ? data.callDate.toISOString() : new Date().toISOString(),
+      followupDate: data.followupDate ? data.followupDate.toISOString() : null
+    };
+    
+    createMutation.mutate(formattedData as any);
   };
 
   // Reset form when closing dialog
