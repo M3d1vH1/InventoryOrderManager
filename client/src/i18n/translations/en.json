@@ -480,6 +480,14 @@
       "waiting": "Waiting",
       "closed": "Closed"
     },
+    "orderIdPlaceholder": "Order ID (auto-filled)",
+    "autoFilledWhenOrderFound": "This field is automatically filled when an order is found",
+    "emptyOrderNumber": "Please enter an order number to search",
+    "searchingOrder": "Searching for order...",
+    "orderFound": "Order found and linked successfully",
+    "orderNotFound": "No order found with this number",
+    "orderSearchError": "Error searching for order",
+    "enterOrderNumberDescription": "Enter an order number to link to this quality issue",
     "filters": {
       "title": "Filter Quality Issues",
       "description": "Filter quality issue reports by order number, status, or type",

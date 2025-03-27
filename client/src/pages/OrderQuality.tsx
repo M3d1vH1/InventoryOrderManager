@@ -783,9 +783,9 @@ export default function OrderQuality() {
                         <SelectItem value="wrong_quantity">{t('orderQuality.types.wrong_quantity')}</SelectItem>
                         <SelectItem value="duplicate_item">{t('orderQuality.types.duplicate_item')}</SelectItem>
                         <SelectItem value="wrong_address">{t('orderQuality.types.wrong_address')}</SelectItem>
-                        <SelectItem value="picking_issue">{t('orderQuality.types.picking_error')}</SelectItem>
-                        <SelectItem value="packing_issue">{t('orderQuality.types.packing_error')}</SelectItem>
-                        <SelectItem value="system_issue">{t('orderQuality.types.system_error')}</SelectItem>
+                        <SelectItem value="picking_issue">{t('orderQuality.types.picking_issue')}</SelectItem>
+                        <SelectItem value="packing_issue">{t('orderQuality.types.packing_issue')}</SelectItem>
+                        <SelectItem value="system_issue">{t('orderQuality.types.system_issue')}</SelectItem>
                         <SelectItem value="other">{t('orderQuality.types.other')}</SelectItem>
                       </SelectContent>
                     </Select>
@@ -1099,12 +1099,39 @@ export default function OrderQuality() {
                                 variant="outline" 
                                 size="icon"
                                 className="border-blue-200 hover:bg-blue-100"
-                                onClick={() => {
-                                  // Here you would typically search for order details
-                                  // For now, just demonstrate the concept 
+                                onClick={async () => {
+                                  if (!field.value) {
+                                    toast({
+                                      description: t('orderQuality.emptyOrderNumber'),
+                                      variant: "destructive"
+                                    });
+                                    return;
+                                  }
+                                  
                                   toast({
                                     description: t('orderQuality.searchingOrder'),
                                   });
+                                  
+                                  try {
+                                    const order = await apiRequest(`/api/orders/by-number/${field.value}`);
+                                    if (order) {
+                                      // Set the orderId in the form
+                                      createForm.setValue("orderId", order.id);
+                                      toast({
+                                        description: t('orderQuality.orderFound'),
+                                      });
+                                    } else {
+                                      toast({
+                                        description: t('orderQuality.orderNotFound'),
+                                        variant: "destructive"
+                                      });
+                                    }
+                                  } catch (error) {
+                                    toast({
+                                      description: t('orderQuality.orderSearchError'),
+                                      variant: "destructive"
+                                    });
+                                  }
                                 }}
                               >
                                 <Search className="h-4 w-4 text-blue-500" />
@@ -1311,9 +1338,9 @@ export default function OrderQuality() {
                         <SelectItem value="wrong_quantity">{t('orderQuality.types.wrong_quantity')}</SelectItem>
                         <SelectItem value="duplicate_item">{t('orderQuality.types.duplicate_item')}</SelectItem>
                         <SelectItem value="wrong_address">{t('orderQuality.types.wrong_address')}</SelectItem>
-                        <SelectItem value="picking_issue">{t('orderQuality.types.picking_error')}</SelectItem>
-                        <SelectItem value="packing_issue">{t('orderQuality.types.packing_error')}</SelectItem>
-                        <SelectItem value="system_issue">{t('orderQuality.types.system_error')}</SelectItem>
+                        <SelectItem value="picking_issue">{t('orderQuality.types.picking_issue')}</SelectItem>
+                        <SelectItem value="packing_issue">{t('orderQuality.types.packing_issue')}</SelectItem>
+                        <SelectItem value="system_issue">{t('orderQuality.types.system_issue')}</SelectItem>
                         <SelectItem value="other">{t('orderQuality.types.other')}</SelectItem>
                       </SelectContent>
                     </Select>
