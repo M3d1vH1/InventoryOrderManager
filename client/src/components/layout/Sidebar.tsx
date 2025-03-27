@@ -23,6 +23,11 @@ const Sidebar = () => {
          location === "/order-picking" || 
          location === "/order-quality" || 
          location === "/unshipped-items")) return true;
+         
+    // Special case for sales - make parent active when children are active
+    if (path === "/sales" && 
+        (location === "/call-logs" || 
+         location === "/calendar")) return true;
     
     // Default behavior
     if (path !== "/" && location.startsWith(path)) return true;
@@ -189,31 +194,56 @@ const Sidebar = () => {
                 </li>
                 
                 <li className="mb-1">
-                  <Link href="/call-logs" onClick={() => setCurrentPage("Call Logs")}>
+                  <div>
                     <button 
-                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/call-logs") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
-                      title={t('app.callLogs') || "Call Logs"}
+                      className={`flex items-center w-full p-2 text-left rounded ${(isActive("/call-logs") || isActive("/calendar")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                      title={t('app.sales') || "Sales"}
+                      onClick={() => {
+                        if (isSidebarOpen) {
+                          const submenu = document.getElementById('sales-submenu');
+                          if (submenu) {
+                            submenu.classList.toggle('hidden');
+                          }
+                        } else {
+                          // If sidebar is collapsed, just navigate to call logs
+                          window.location.href = '/call-logs';
+                        }
+                      }}
                     >
                       <span className="flex justify-center items-center w-5 h-5">
-                        <i className="fas fa-phone-alt"></i>
+                        <i className="fas fa-chart-line"></i>
                       </span>
-                      {isSidebarOpen && <span className="ml-2">{t('app.callLogs') || "Call Logs"}</span>}
+                      {isSidebarOpen && (
+                        <div className="flex justify-between items-center flex-grow">
+                          <span className="ml-2">{t('app.sales') || "Sales"}</span>
+                          <i className="fas fa-chevron-down text-xs"></i>
+                        </div>
+                      )}
                     </button>
-                  </Link>
-                </li>
-                
-                <li className="mb-1">
-                  <Link href="/calendar" onClick={() => setCurrentPage("Calendar")}>
-                    <button 
-                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/calendar") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
-                      title={t('app.calendar') || "Calendar"}
-                    >
-                      <span className="flex justify-center items-center w-5 h-5">
-                        <i className="fas fa-calendar-alt"></i>
-                      </span>
-                      {isSidebarOpen && <span className="ml-2">{t('app.calendar') || "Calendar"}</span>}
-                    </button>
-                  </Link>
+                    
+                    {isSidebarOpen && (
+                      <div id="sales-submenu" className={`pl-7 mt-1 ${!isActive("/call-logs") && !isActive("/calendar") ? 'hidden' : ''}`}>
+                        <Link href="/call-logs" onClick={() => setCurrentPage("Call Logs")}>
+                          <button 
+                            className={`flex items-center w-full p-2 text-left rounded ${isActive("/call-logs") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
+                            title={t('app.callLogs') || "Call Logs"}
+                          >
+                            <i className="fas fa-phone-alt mr-2 text-xs"></i>
+                            <span>{t('app.callLogs') || "Call Logs"}</span>
+                          </button>
+                        </Link>
+                        <Link href="/calendar" onClick={() => setCurrentPage("Calendar")}>
+                          <button 
+                            className={`flex items-center w-full p-2 text-left rounded ${isActive("/calendar") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
+                            title={t('app.calendar') || "Calendar"}
+                          >
+                            <i className="fas fa-calendar-alt mr-2 text-xs"></i>
+                            <span>{t('app.calendar') || "Calendar"}</span>
+                          </button>
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 </li>
               </>
             )}
