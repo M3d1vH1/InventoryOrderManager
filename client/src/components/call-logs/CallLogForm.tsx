@@ -47,14 +47,22 @@ import { Switch } from '@/components/ui/switch';
 
 // Define the form schema
 const callLogFormSchema = z.object({
-  callType: z.string({
+  callType: z.enum(['incoming', 'outgoing', 'missed'], {
     required_error: 'Please select a call type',
   }),
+  callPurpose: z.enum(['sales', 'support', 'followup', 'complaint', 'inquiry', 'other'], {
+    required_error: 'Please select a call purpose',
+  }).default('other'),
+  callStatus: z.enum(['scheduled', 'completed', 'no_answer', 'needs_followup', 'cancelled'], {
+    required_error: 'Please select a call status',
+  }).default('completed'),
   customerType: z.enum(['existing', 'prospective'], {
     required_error: 'Please select customer type',
   }),
   customerId: z.number().optional(),
   prospectiveCustomerId: z.number().optional(),
+  contactName: z.string().min(1, 'Contact name is required'),
+  companyName: z.string().optional(),
   newProspectiveCustomer: z.object({
     name: z.string().min(1, 'Name is required').optional(),
     companyName: z.string().optional(),
@@ -67,13 +75,16 @@ const callLogFormSchema = z.object({
   callDate: z.date({
     required_error: 'Please select a date and time',
   }).default(new Date()),
+  callTime: z.string().optional(),
   duration: z.number().min(1, 'Duration must be at least 1 minute').default(15),
-  subject: z.string().min(1, 'Subject is required'),
   notes: z.string().optional(),
-  priority: z.string().default('medium'),
-  needsFollowup: z.boolean().default(false),
+  priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
+  isFollowup: z.boolean().default(false),
   followupDate: z.date().optional(),
-  // outcome and assignedToId fields removed
+  followupTime: z.string().optional(),
+  followupAssignedTo: z.number().optional(),
+  previousCallId: z.number().optional(),
+  tags: z.array(z.string()).optional().default([]),
 });
 
 type CallLogFormValues = z.infer<typeof callLogFormSchema>;
@@ -115,18 +126,26 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
   });
 
   const defaultValues: Partial<CallLogFormValues> = {
-    callType: initialData?.callType || 'inbound',
+    callType: initialData?.callType || 'incoming',
+    callPurpose: initialData?.callPurpose || 'other',
+    callStatus: initialData?.callStatus || 'completed',
     customerType: 'existing',
     customerId: initialData?.customerId,
+    contactName: initialData?.contactName || '',
+    companyName: initialData?.companyName || '',
     prospectiveCustomerId: undefined,
     newProspectiveCustomer: undefined,
     callDate: initialData?.callDate ? new Date(initialData.callDate) : new Date(),
+    callTime: initialData?.callTime || '',
     duration: initialData?.duration || 15,
-    subject: initialData?.subject || '',
     notes: initialData?.notes || '',
-    priority: initialData?.priority || 'medium',
-    needsFollowup: initialData?.needsFollowup || false,
+    priority: initialData?.priority || 'normal',
+    isFollowup: initialData?.isFollowup || false,
     followupDate: initialData?.followupDate ? new Date(initialData.followupDate) : undefined,
+    followupTime: initialData?.followupTime || '',
+    followupAssignedTo: initialData?.followupAssignedTo,
+    previousCallId: initialData?.previousCallId,
+    tags: initialData?.tags || [],
   };
 
   const form = useForm<CallLogFormValues>({
@@ -153,8 +172,8 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
     }
   }, [open, form]);
 
-  // Watch for changes to needsFollowup
-  const needsFollowup = form.watch('needsFollowup');
+  // Watch for changes to isFollowup and customerType
+  const isFollowup = form.watch('isFollowup');
   const customerType = form.watch('customerType');
 
   const createMutation = useMutation({
@@ -339,10 +358,9 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="inbound">{t('callLogs.form.callTypes.inbound')}</SelectItem>
-                        <SelectItem value="outbound">{t('callLogs.form.callTypes.outbound')}</SelectItem>
+                        <SelectItem value="incoming">{t('callLogs.form.callTypes.inbound')}</SelectItem>
+                        <SelectItem value="outgoing">{t('callLogs.form.callTypes.outbound')}</SelectItem>
                         <SelectItem value="missed">{t('callLogs.form.callTypes.missed')}</SelectItem>
-                        <SelectItem value="scheduled">{t('callLogs.form.callTypes.scheduled')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -524,21 +542,93 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Subject */}
+              {/* Contact Name */}
               <FormField
                 control={form.control}
-                name="subject"
+                name="contactName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('callLogs.form.subject')}<span className="text-red-500">*</span></FormLabel>
+                    <FormLabel>{t('callLogs.form.contactName')}<span className="text-red-500">*</span></FormLabel>
                     <FormControl>
-                      <Input placeholder={t('callLogs.form.enterSubject')} {...field} />
+                      <Input placeholder={t('callLogs.form.enterContactName')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
+              {/* Company Name (optional) */}
+              <FormField
+                control={form.control}
+                name="companyName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('callLogs.form.companyName')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t('callLogs.form.enterCompanyName')} {...field} value={field.value || ''} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Call Purpose */}
+              <FormField
+                control={form.control}
+                name="callPurpose"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('callLogs.form.callPurpose')}</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('callLogs.form.selectCallPurpose')} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="sales">{t('callLogs.form.callPurposes.sales')}</SelectItem>
+                        <SelectItem value="support">{t('callLogs.form.callPurposes.support')}</SelectItem>
+                        <SelectItem value="followup">{t('callLogs.form.callPurposes.followup')}</SelectItem>
+                        <SelectItem value="complaint">{t('callLogs.form.callPurposes.complaint')}</SelectItem>
+                        <SelectItem value="inquiry">{t('callLogs.form.callPurposes.inquiry')}</SelectItem>
+                        <SelectItem value="other">{t('callLogs.form.callPurposes.other')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Call Status */}
+              <FormField
+                control={form.control}
+                name="callStatus"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('callLogs.form.callStatus')}</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('callLogs.form.selectCallStatus')} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="scheduled">{t('callLogs.form.callStatuses.scheduled')}</SelectItem>
+                        <SelectItem value="completed">{t('callLogs.form.callStatuses.completed')}</SelectItem>
+                        <SelectItem value="no_answer">{t('callLogs.form.callStatuses.no_answer')}</SelectItem>
+                        <SelectItem value="needs_followup">{t('callLogs.form.callStatuses.needs_followup')}</SelectItem>
+                        <SelectItem value="cancelled">{t('callLogs.form.callStatuses.cancelled')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Priority */}
               <FormField
                 control={form.control}
@@ -554,7 +644,7 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="low">{t('callLogs.form.priorities.low')}</SelectItem>
-                        <SelectItem value="medium">{t('callLogs.form.priorities.medium')}</SelectItem>
+                        <SelectItem value="normal">{t('callLogs.form.priorities.normal')}</SelectItem>
                         <SelectItem value="high">{t('callLogs.form.priorities.high')}</SelectItem>
                         <SelectItem value="urgent">{t('callLogs.form.priorities.urgent')}</SelectItem>
                       </SelectContent>
@@ -673,14 +763,14 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
 
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Needs Followup */}
+              {/* Is Followup */}
               <FormField
                 control={form.control}
-                name="needsFollowup"
+                name="isFollowup"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                     <div className="space-y-0.5">
-                      <FormLabel>{t('callLogs.form.needsFollowup')}</FormLabel>
+                      <FormLabel>{t('callLogs.form.isFollowup')}</FormLabel>
                     </div>
                     <FormControl>
                       <Switch
@@ -696,7 +786,7 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
             </div>
 
             {/* Followup Date (conditional) */}
-            {needsFollowup && (
+            {isFollowup && (
               <FormField
                 control={form.control}
                 name="followupDate"
