@@ -12,7 +12,7 @@ function transformCallLog(callLog: CallLog) {
     ...callLog,
     // Map database field names to frontend field names
     customerName: callLog.contactName,
-    subject: callLog.contactName,
+    subject: callLog.subject || callLog.contactName, // Use actual subject field, fallback to contactName
     needsFollowup: callLog.callStatus === 'needs_followup',
     outcome: callLog.callPurpose,
     assignedToId: callLog.followupAssignedTo,
