@@ -118,7 +118,7 @@ interface OrderQuality {
   orderNumber?: string;
   reportDate: string;
   reportedById: number;
-  qualityType: 'missing_item' | 'wrong_item' | 'damaged_item' | 'wrong_quantity' | 'duplicate_item' | 'wrong_address' | 'picking_issue' | 'packing_issue' | 'system_issue' | 'other';
+  errorType: 'missing_item' | 'wrong_item' | 'damaged_item' | 'wrong_quantity' | 'duplicate_item' | 'wrong_address' | 'picking_issue' | 'packing_issue' | 'system_issue' | 'other';
   description: string;
   affectedProductIds: string[];
   correctiveAction?: string;
@@ -158,7 +158,7 @@ interface QualityStats {
 const qualityFormSchema = z.object({
   orderId: z.number().optional(),
   orderNumber: z.string().optional(),
-  qualityType: z.enum(['missing_item', 'wrong_item', 'damaged_item', 'wrong_quantity', 'duplicate_item', 'wrong_address', 'picking_issue', 'packing_issue', 'system_issue', 'other']),
+  errorType: z.enum(['missing_item', 'wrong_item', 'damaged_item', 'wrong_quantity', 'duplicate_item', 'wrong_address', 'picking_issue', 'packing_issue', 'system_issue', 'other']),
   description: z.string().min(5, { message: "Description must be at least 5 characters" }),
   affectedItems: z.array(
     z.object({
@@ -280,10 +280,10 @@ export default function OrderQuality() {
         setCreatedQualityId(response.id);
         
         // Get the quality issue type from the response
-        const qualityType = response.qualityType || "";
+        const errorType = response.errorType || "";
         
         // Only show adjustment prompt for inventory-related issues
-        if (isInventoryRelatedIssue(qualityType)) {
+        if (isInventoryRelatedIssue(errorType)) {
           setIsAdjustPromptOpen(true);
         } else {
           // Show success message without adjustment prompt for non-inventory issues
@@ -384,7 +384,7 @@ export default function OrderQuality() {
     defaultValues: {
       orderId: undefined,
       orderNumber: '',
-      qualityType: 'missing_item',
+      errorType: 'missing_item',
       description: '',
       affectedItems: [],
       qualityLabel: '',
@@ -430,7 +430,7 @@ export default function OrderQuality() {
       createForm.reset({
         orderId: undefined,
         orderNumber: '',
-        qualityType: 'missing_item',
+        errorType: 'missing_item',
         description: '',
         affectedItems: [],
         qualityLabel: '',
@@ -511,7 +511,7 @@ export default function OrderQuality() {
     }
 
     if (filterQualityType !== 'all') {
-      match = match && quality.qualityType === filterQualityType;
+      match = match && quality.errorType === filterQualityType;
     }
 
     return match;
@@ -564,7 +564,7 @@ export default function OrderQuality() {
   const handleExport = (format: 'csv' | 'excel' | 'pdf') => {
     const dataForExport = filteredQualityIssues.map(quality => ({
       'Order Number': quality.orderNumber,
-      'Quality Type': getQualityTypeDisplay(quality.qualityType),
+      'Quality Type': getQualityTypeDisplay(quality.errorType),
       'Reported Date': formatDate(quality.reportDate),
       'Description': quality.description,
       'Status': quality.resolved ? t('orderQuality.resolved') : t('orderQuality.unresolved'),
@@ -613,7 +613,7 @@ export default function OrderQuality() {
               </div>
             )}
             <div>
-              <span className="font-medium">{t('orderQuality.qualityType')}:</span> {getQualityTypeDisplay(selectedQuality.qualityType)}
+              <span className="font-medium">{t('orderQuality.qualityType')}:</span> {getQualityTypeDisplay(selectedQuality.errorType)}
             </div>
             <div>
               <span className="font-medium">{t('orderQuality.reportDate')}:</span> {formatDate(selectedQuality.reportDate)}
@@ -869,7 +869,7 @@ export default function OrderQuality() {
                                 <span className="text-gray-400">-</span>
                               )}
                             </TableCell>
-                            <TableCell>{getQualityTypeDisplay(quality.qualityType)}</TableCell>
+                            <TableCell>{getQualityTypeDisplay(quality.errorType)}</TableCell>
                             <TableCell>{formatDate(quality.reportDate)}</TableCell>
                             <TableCell>
                               {quality.qualityStatus ? (
@@ -1232,9 +1232,12 @@ export default function OrderQuality() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="product">{t('orderQuality.categories.product')}</SelectItem>
-                              <SelectItem value="process">{t('orderQuality.categories.process')}</SelectItem>
+                              <SelectItem value="manufacturing">{t('orderQuality.categories.manufacturing')}</SelectItem>
+                              <SelectItem value="packaging">{t('orderQuality.categories.packaging')}</SelectItem>
+                              <SelectItem value="shipping">{t('orderQuality.categories.shipping')}</SelectItem>
                               <SelectItem value="warehouse">{t('orderQuality.categories.warehouse')}</SelectItem>
+                              <SelectItem value="supplier">{t('orderQuality.categories.supplier')}</SelectItem>
+                              <SelectItem value="customer">{t('orderQuality.categories.customer')}</SelectItem>
                               <SelectItem value="system">{t('orderQuality.categories.system')}</SelectItem>
                               <SelectItem value="other">{t('orderQuality.categories.other')}</SelectItem>
                             </SelectContent>
@@ -1350,7 +1353,7 @@ export default function OrderQuality() {
               </Tabs>
               <FormField
                 control={createForm.control}
-                name="qualityType"
+                name="errorType"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('orderQuality.qualityType')}</FormLabel>
