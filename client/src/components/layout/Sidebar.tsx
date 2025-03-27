@@ -27,7 +27,8 @@ const Sidebar = () => {
     // Special case for sales - make parent active when children are active
     if (path === "/sales" && 
         (location === "/call-logs" || 
-         location === "/calendar")) return true;
+         location === "/calendar" ||
+         location === "/customers")) return true;
     
     // Default behavior
     if (path !== "/" && location.startsWith(path)) return true;
@@ -59,10 +60,10 @@ const Sidebar = () => {
                 <li className="mb-1">
                   <Link href="/" onClick={() => setCurrentPage("Dashboard")}>
                     <button 
-                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
                       title={t('dashboard.title')}
                     >
-                      <span className="flex justify-center items-center w-5 h-5">
+                      <span className="flex items-center w-5 h-5">
                         <i className="fas fa-tachometer-alt"></i>
                       </span>
                       {isSidebarOpen && <span className="ml-2">{t('dashboard.title')}</span>}
@@ -72,7 +73,7 @@ const Sidebar = () => {
                 <li className="mb-1">
                   <div>
                     <button 
-                      className={`flex items-center w-full p-2 text-left rounded ${(isActive("/orders") || isActive("/unshipped-items") || isActive("/order-picking") || isActive("/order-quality")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                      className={`flex items-center w-full p-2 text-left rounded ${(isActive("/orders") || isActive("/unshipped-items") || isActive("/order-picking") || isActive("/order-quality")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
                       title={t('orders.title')}
                       onClick={() => {
                         if (isSidebarOpen) {
@@ -142,36 +143,24 @@ const Sidebar = () => {
                 <li className="mb-1">
                   <Link href="/products" onClick={() => setCurrentPage("Products")}>
                     <button 
-                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/products") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/products") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
                       title={t('products.title')}
                     >
-                      <span className="flex justify-center items-center w-5 h-5">
+                      <span className="flex items-center w-5 h-5">
                         <i className="fas fa-box"></i>
                       </span>
                       {isSidebarOpen && <span className="ml-2">{t('products.title')}</span>}
                     </button>
                   </Link>
                 </li>
-                <li className="mb-1">
-                  <Link href="/customers" onClick={() => setCurrentPage("Customers")}>
-                    <button 
-                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/customers") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
-                      title={t('app.customers')}
-                    >
-                      <span className="flex justify-center items-center w-5 h-5">
-                        <i className="fas fa-users"></i>
-                      </span>
-                      {isSidebarOpen && <span className="ml-2">{t('app.customers')}</span>}
-                    </button>
-                  </Link>
-                </li>
+
                 <li className="mb-1">
                   <Link href="/inventory" onClick={() => setCurrentPage("Inventory")}>
                     <button 
-                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/inventory") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/inventory") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
                       title={t('app.inventory')}
                     >
-                      <span className="flex justify-center items-center w-5 h-5">
+                      <span className="flex items-center w-5 h-5">
                         <i className="fas fa-warehouse"></i>
                       </span>
                       {isSidebarOpen && <span className="ml-2">{t('app.inventory')}</span>}
@@ -182,7 +171,7 @@ const Sidebar = () => {
                 <li className="mb-1">
                   <Link href="/reports" onClick={() => setCurrentPage("Reports")}>
                     <button 
-                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/reports") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/reports") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
                       title={t('app.reports')}
                     >
                       <span className="flex justify-center items-center w-5 h-5">
@@ -196,7 +185,7 @@ const Sidebar = () => {
                 <li className="mb-1">
                   <div>
                     <button 
-                      className={`flex items-center w-full p-2 text-left rounded ${(isActive("/call-logs") || isActive("/calendar")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                      className={`flex items-center w-full p-2 text-left rounded ${(isActive("/call-logs") || isActive("/calendar") || isActive("/customers")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
                       title={t('app.sales') || "Sales"}
                       onClick={() => {
                         if (isSidebarOpen) {
@@ -205,8 +194,8 @@ const Sidebar = () => {
                             submenu.classList.toggle('hidden');
                           }
                         } else {
-                          // If sidebar is collapsed, just navigate to call logs
-                          window.location.href = '/call-logs';
+                          // If sidebar is collapsed, just navigate to customers
+                          window.location.href = '/customers';
                         }
                       }}
                     >
@@ -222,7 +211,16 @@ const Sidebar = () => {
                     </button>
                     
                     {isSidebarOpen && (
-                      <div id="sales-submenu" className={`pl-7 mt-1 ${!isActive("/call-logs") && !isActive("/calendar") ? 'hidden' : ''}`}>
+                      <div id="sales-submenu" className={`pl-7 mt-1 ${!isActive("/call-logs") && !isActive("/calendar") && !isActive("/customers") ? 'hidden' : ''}`}>
+                        <Link href="/customers" onClick={() => setCurrentPage("Customers")}>
+                          <button 
+                            className={`flex items-center w-full p-2 text-left rounded ${isActive("/customers") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
+                            title={t('app.customers')}
+                          >
+                            <i className="fas fa-users mr-2 text-xs"></i>
+                            <span>{t('app.customers')}</span>
+                          </button>
+                        </Link>
                         <Link href="/call-logs" onClick={() => setCurrentPage("Call Logs")}>
                           <button 
                             className={`flex items-center w-full p-2 text-left rounded ${isActive("/call-logs") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
