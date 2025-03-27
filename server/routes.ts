@@ -544,7 +544,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Search orders by query string
   app.get('/api/orders/search', async (req, res) => {
     try {
-      const query = req.query.query as string;
+      // Support both 'query' and 'q' parameter names
+      const query = (req.query.query || req.query.q) as string;
       
       if (!query) {
         return res.status(400).json({ message: 'Search query is required' });

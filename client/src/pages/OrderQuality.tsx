@@ -1028,67 +1028,59 @@ export default function OrderQuality() {
                 </TabsList>
 
                 <TabsContent value="order_related" className="space-y-4">
-                  <div className="flex items-end gap-2">
-                    <div className="flex-1">
-                      <FormField
-                        control={createForm.control}
-                        name="orderNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-blue-700">{t('orders.orderNumber')}</FormLabel>
-                            <div className="flex items-center space-x-2">
-                              <FormControl>
-                                <Input 
-                                  placeholder={t('orderQuality.orderNumberPlaceholder')} 
-                                  {...field} 
-                                  value={field.value || ''}
-                                />
-                              </FormControl>
-                              <Button 
-                                type="button" 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => setIsOrderSearchDialogOpen(true)}
-                              >
-                                <Search className="h-4 w-4 mr-1" />
-                                {t('common.search')}
-                              </Button>
-                            </div>
-                            <FormDescription className="text-xs text-blue-600">
-                              {t('orderQuality.orderNumberHint')}
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    <FormField
-                      control={createForm.control}
-                      name="orderId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-blue-700">{t('common.orderId')}</FormLabel>
-                          <FormControl>
+                  <div>
+                  <FormField
+                    control={createForm.control}
+                    name="orderNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-blue-700">{t('orders.orderNumber')}</FormLabel>
+                        <div className="flex items-center gap-2">
+                          <FormControl className="flex-1">
                             <Input 
-                              type="number" 
-                              readOnly 
-                              value={field.value?.toString() || ''} 
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                field.onChange(val ? parseInt(val) : undefined);
-                              }}
-                              className="w-24 bg-gray-50" 
+                              placeholder={t('orderQuality.orderNumberPlaceholder')} 
+                              {...field} 
+                              value={field.value || ''}
                             />
                           </FormControl>
-                          <FormDescription className="text-xs text-blue-600">
-                            {t('orderQuality.orderIdHint')}
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                          <Button 
+                            type="button" 
+                            variant="secondary"
+                            onClick={() => setIsOrderSearchDialogOpen(true)}
+                            className="whitespace-nowrap"
+                          >
+                            <Search className="h-4 w-4 mr-1.5" />
+                            {t('common.search')}
+                          </Button>
+                        </div>
+                        <FormDescription className="text-xs text-blue-600">
+                          {t('orderQuality.orderNumberHint')}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Hidden orderId field */}
+                  <FormField
+                    control={createForm.control}
+                    name="orderId"
+                    render={({ field }) => (
+                      <FormItem className="hidden">
+                        <FormControl>
+                          <Input 
+                            type="hidden" 
+                            value={field.value?.toString() || ''} 
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              field.onChange(val ? parseInt(val) : undefined);
+                            }}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 </TabsContent>
 
                 <TabsContent value="standalone" className="space-y-4">
@@ -1598,7 +1590,7 @@ export default function OrderQuality() {
 
       {/* Order search dialog */}
       <Dialog open={isOrderSearchDialogOpen} onOpenChange={setIsOrderSearchDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>{t('orderQuality.selectOrder')}</DialogTitle>
             <DialogDescription>
@@ -1606,77 +1598,80 @@ export default function OrderQuality() {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="flex space-x-2 mb-4">
-            <Input 
-              placeholder={t('orderQuality.searchOrderPlaceholder')}
-              onChange={(e) => handleOrderSearch(e.target.value)}
-            />
-            <Button type="button" variant="secondary">
-              <Search className="h-4 w-4 mr-1" />
-              {t('common.search')}
-            </Button>
+          <div className="flex gap-2 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+              <Input 
+                placeholder={t('orderQuality.searchOrderPlaceholder')}
+                onChange={(e) => handleOrderSearch(e.target.value)}
+                className="pl-9"
+                autoFocus
+              />
+            </div>
           </div>
           
-          <div className="overflow-auto max-h-[400px]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('orders.orderNumber')}</TableHead>
-                  <TableHead>{t('orders.customerName')}</TableHead>
-                  <TableHead>{t('orders.orderDate')}</TableHead>
-                  <TableHead>{t('orders.status')}</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {orderSearchResults.map(order => (
-                  <TableRow key={order.id}>
-                    <TableCell>{order.orderNumber}</TableCell>
-                    <TableCell>{order.customerName}</TableCell>
-                    <TableCell>{formatDate(order.orderDate)}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={
-                          order.status === 'shipped' ? 'bg-green-100 text-green-800' :
-                          order.status === 'pending' ? 'bg-blue-100 text-blue-800' :
-                          order.status === 'processing' ? 'bg-amber-100 text-amber-800' :
-                          order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                          'bg-gray-100 text-gray-800'
-                        }
-                      >
-                        {t(`orders.status.${order.status}`)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          // Set the order information in the form
-                          createForm.setValue("orderId", order.id);
-                          createForm.setValue("orderNumber", order.orderNumber);
-                          setIsOrderSearchDialogOpen(false);
-                          toast({
-                            description: t('orderQuality.orderSelected', { orderNumber: order.orderNumber }),
-                          });
-                        }}
-                      >
-                        {t('common.select')}
-                      </Button>
-                    </TableCell>
+          <div className="overflow-auto max-h-[400px] border rounded-md">
+            {orderSearchResults.length > 0 ? (
+              <Table>
+                <TableHeader className="bg-gray-50">
+                  <TableRow>
+                    <TableHead>{t('orders.orderNumber')}</TableHead>
+                    <TableHead>{t('orders.customerName')}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t('orders.orderDate')}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t('orders.status')}</TableHead>
+                    <TableHead className="text-right"></TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            {orderSearchResults.length === 0 && (
-              <div className="text-center py-4 text-gray-500">
-                {t('common.noResults')}
+                </TableHeader>
+                <TableBody>
+                  {orderSearchResults.map(order => (
+                    <TableRow key={order.id} className="group hover:bg-gray-50">
+                      <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                      <TableCell>{order.customerName}</TableCell>
+                      <TableCell className="hidden md:table-cell">{formatDate(order.orderDate)}</TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <Badge
+                          variant="outline"
+                          className={
+                            order.status === 'shipped' ? 'bg-green-100 text-green-800' :
+                            order.status === 'pending' ? 'bg-blue-100 text-blue-800' :
+                            order.status === 'processing' ? 'bg-amber-100 text-amber-800' :
+                            order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }
+                        >
+                          {t(`orders.status.${order.status}`)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            // Set the order information in the form
+                            createForm.setValue("orderId", order.id);
+                            createForm.setValue("orderNumber", order.orderNumber);
+                            setIsOrderSearchDialogOpen(false);
+                            toast({
+                              description: t('orderQuality.orderSelected', { orderNumber: order.orderNumber }),
+                            });
+                          }}
+                        >
+                          {t('common.select')}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center py-12 px-4">
+                <Search className="mx-auto h-8 w-8 text-gray-400 mb-3" />
+                <p className="text-gray-500 mb-1">{t('common.noResults')}</p>
+                <p className="text-sm text-gray-400">{t('orderQuality.searchOrderTip')}</p>
               </div>
             )}
           </div>
           
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setIsOrderSearchDialogOpen(false)}>
               {t('common.cancel')}
             </Button>
