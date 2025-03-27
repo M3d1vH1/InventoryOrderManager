@@ -620,7 +620,7 @@ export default function OrderQuality() {
                   {selectedQuality.qualityCategory && (
                     <>
                       <div className="font-medium">{t('orderQuality.qualityCategory')}:</div>
-                      <div>{selectedQuality.qualityCategory}</div>
+                      <div>{t(`orderQuality.categories.${selectedQuality.qualityCategory}`, selectedQuality.qualityCategory)}</div>
                     </>
                   )}
                   

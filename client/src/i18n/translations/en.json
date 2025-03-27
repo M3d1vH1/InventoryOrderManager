@@ -585,6 +585,13 @@
       "system_issue": "System Issue",
       "other": "Other"
     },
+    "categories": {
+      "production": "Production",
+      "warehouse": "Warehouse",
+      "shipping": "Shipping",
+      "supplier": "Supplier",
+      "other": "Other"
+    },
     "stats": {
       "totalErrors": "Total Quality Issues",
       "fromOrders": "From {{count}} orders",

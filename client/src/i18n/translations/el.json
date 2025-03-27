@@ -654,6 +654,13 @@
       "system_issue": "Πρόβλημα Συστήματος",
       "other": "Άλλο"
     },
+    "categories": {
+      "production": "Παραγωγή",
+      "warehouse": "Αποθήκη",
+      "shipping": "Αποστολή",
+      "supplier": "Προμηθευτής",
+      "other": "Άλλο"
+    },
     "stats": {
       "totalErrors": "Συνολικά Ζητήματα Ποιότητας",
       "fromOrders": "Από {{count}} παραγγελίες που αποστάλθηκαν",
