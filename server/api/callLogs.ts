@@ -1,10 +1,28 @@
 import express from 'express';
 import { storage } from '../storage';
-import { insertCallLogSchema, insertCallOutcomeSchema, quickCallLogSchema } from '@shared/schema';
+import { insertCallLogSchema, insertCallOutcomeSchema, quickCallLogSchema, CallLog } from '@shared/schema';
 import { hasRole } from '../auth';
 import { User } from '@shared/schema';
 
 const router = express.Router();
+
+// Transform DB call logs to match frontend expectations
+function transformCallLog(callLog: CallLog) {
+  return {
+    ...callLog,
+    // Map database field names to frontend field names
+    customerName: callLog.contactName,
+    subject: callLog.contactName,
+    needsFollowup: callLog.callStatus === 'needs_followup',
+    outcome: callLog.callPurpose,
+    assignedToId: callLog.followupAssignedTo,
+    assignedToName: null, // This would require a separate lookup to get the user's name
+    // Map enum values to match frontend expectations
+    callType: callLog.callType === 'incoming' ? 'inbound' : 
+              callLog.callType === 'outgoing' ? 'outbound' : 
+              callLog.callType
+  };
+}
 
 // Get all call logs (with optional date filtering)
 router.get('/', async (req, res) => {
@@ -14,7 +32,9 @@ router.get('/', async (req, res) => {
       dateFrom as string | undefined, 
       dateTo as string | undefined
     );
-    res.json(logs);
+    // Transform database field names to match frontend expectations
+    const transformedLogs = logs.map(transformCallLog);
+    res.json(transformedLogs);
   } catch (error) {
     console.error('Error fetching call logs:', error);
     res.status(500).json({ error: 'Failed to fetch call logs' });
@@ -26,7 +46,8 @@ router.get('/scheduled', async (req, res) => {
   try {
     const userId = req.query.userId ? parseInt(req.query.userId as string, 10) : undefined;
     const logs = await storage.getScheduledCalls(userId);
-    res.json(logs);
+    const transformedLogs = logs.map(transformCallLog);
+    res.json(transformedLogs);
   } catch (error) {
     console.error('Error fetching scheduled calls:', error);
     res.status(500).json({ error: 'Failed to fetch scheduled calls' });
@@ -37,7 +58,8 @@ router.get('/scheduled', async (req, res) => {
 router.get('/followup', async (req, res) => {
   try {
     const logs = await storage.getCallLogsRequiringFollowup();
-    res.json(logs);
+    const transformedLogs = logs.map(transformCallLog);
+    res.json(transformedLogs);
   } catch (error) {
     console.error('Error fetching calls requiring follow-up:', error);
     res.status(500).json({ error: 'Failed to fetch calls requiring follow-up' });
@@ -53,7 +75,8 @@ router.get('/search', async (req, res) => {
     }
     
     const logs = await storage.searchCallLogs(query);
-    res.json(logs);
+    const transformedLogs = logs.map(transformCallLog);
+    res.json(transformedLogs);
   } catch (error) {
     console.error('Error searching call logs:', error);
     res.status(500).json({ error: 'Failed to search call logs' });
@@ -69,7 +92,8 @@ router.get('/customer/:customerId', async (req, res) => {
     }
     
     const logs = await storage.getCallLogsByCustomer(customerId);
-    res.json(logs);
+    const transformedLogs = logs.map(transformCallLog);
+    res.json(transformedLogs);
   } catch (error) {
     console.error('Error fetching call logs for customer:', error);
     res.status(500).json({ error: 'Failed to fetch call logs for customer' });
@@ -89,7 +113,8 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Call log not found' });
     }
     
-    res.json(log);
+    const transformedLog = transformCallLog(log);
+    res.json(transformedLog);
   } catch (error) {
     console.error('Error fetching call log:', error);
     res.status(500).json({ error: 'Failed to fetch call log' });
@@ -158,7 +183,8 @@ router.post('/', async (req, res) => {
       
       console.log('Transformed call data:', callData);
       const newLog = await storage.createCallLog(callData);
-      res.status(201).json(newLog);
+      const transformedLog = transformCallLog(newLog);
+      res.status(201).json(transformedLog);
     } else {
       // Standard call log creation
       const validatedData = insertCallLogSchema.parse(req.body);
@@ -169,7 +195,8 @@ router.post('/', async (req, res) => {
       }
       
       const newLog = await storage.createCallLog(validatedData);
-      res.status(201).json(newLog);
+      const transformedLog = transformCallLog(newLog);
+      res.status(201).json(transformedLog);
     }
   } catch (error) {
     console.error('Error creating call log:', error);
@@ -200,7 +227,8 @@ router.patch('/:id', async (req, res) => {
     }
     
     const updatedLog = await storage.updateCallLog(id, req.body);
-    res.json(updatedLog);
+    const transformedLog = transformCallLog(updatedLog);
+    res.json(transformedLog);
   } catch (error) {
     console.error('Error updating call log:', error);
     res.status(400).json({ error: 'Invalid update data', details: error });

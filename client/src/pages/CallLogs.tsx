@@ -315,12 +315,12 @@ const CallLogs: React.FC = () => {
                         )}
                       </div>
                     </CardContent>
-                    <div className="flex items-center justify-between gap-2 p-4 pt-0">
-                      <Button variant="outline" size="sm" className="flex-1" onClick={() => handleViewCallClick(call)}>
+                    <div className="flex items-center justify-between gap-2 p-4 pt-0 flex-col sm:flex-row">
+                      <Button variant="outline" size="sm" className="flex-1 w-full mb-2 sm:mb-0" onClick={() => handleViewCallClick(call)}>
                         <i className="fas fa-eye mr-1"></i>
                         {t('callLogs.viewCall')}
                       </Button>
-                      <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEditCallClick(call)}>
+                      <Button variant="outline" size="sm" className="flex-1 w-full" onClick={() => handleEditCallClick(call)}>
                         <i className="fas fa-edit mr-1"></i>
                         {t('callLogs.editCall')}
                       </Button>
