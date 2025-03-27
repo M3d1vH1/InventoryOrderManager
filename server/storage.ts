@@ -250,6 +250,7 @@ export class MemStorage implements IStorage {
   private notificationSettingsData: NotificationSettings | undefined;
   private callLogs: Map<number, CallLog>;
   private callOutcomes: Map<number, CallOutcome>;
+  private prospectiveCustomers: Map<number, ProspectiveCustomer>;
   
   private userIdCounter: number;
   private categoryIdCounter: number;
@@ -263,6 +264,7 @@ export class MemStorage implements IStorage {
   private unshippedItemIdCounter: number;
   private callLogIdCounter: number;
   private callOutcomeIdCounter: number;
+  private prospectiveCustomerIdCounter: number;
   
   constructor() {
     this.users = new Map();
@@ -278,6 +280,7 @@ export class MemStorage implements IStorage {
     this.unshippedItems = new Map();
     this.callLogs = new Map();
     this.callOutcomes = new Map();
+    this.prospectiveCustomers = new Map();
     
     this.userIdCounter = 1;
     this.categoryIdCounter = 1;
@@ -291,6 +294,7 @@ export class MemStorage implements IStorage {
     this.unshippedItemIdCounter = 1;
     this.callLogIdCounter = 1;
     this.callOutcomeIdCounter = 1;
+    this.prospectiveCustomerIdCounter = 1;
     
     // Initialize with sample data (async)
     // We're calling this in a non-blocking way since constructor can't be async
@@ -1832,6 +1836,111 @@ export class MemStorage implements IStorage {
   
   async deleteCallOutcome(id: number): Promise<boolean> {
     return this.callOutcomes.delete(id);
+  }
+
+  // Prospective Customer methods
+  async getProspectiveCustomer(id: number): Promise<ProspectiveCustomer | undefined> {
+    return this.prospectiveCustomers.get(id);
+  }
+
+  async getAllProspectiveCustomers(): Promise<ProspectiveCustomer[]> {
+    return Array.from(this.prospectiveCustomers.values());
+  }
+
+  async getProspectiveCustomersByStatus(status: string): Promise<ProspectiveCustomer[]> {
+    return Array.from(this.prospectiveCustomers.values())
+      .filter(customer => customer.status === status);
+  }
+
+  async searchProspectiveCustomers(query: string): Promise<ProspectiveCustomer[]> {
+    const lowerQuery = query.toLowerCase();
+    return Array.from(this.prospectiveCustomers.values())
+      .filter(customer => 
+        customer.name.toLowerCase().includes(lowerQuery) ||
+        (customer.companyName && customer.companyName.toLowerCase().includes(lowerQuery)) ||
+        (customer.email && customer.email.toLowerCase().includes(lowerQuery)) ||
+        (customer.phone && customer.phone.toLowerCase().includes(lowerQuery))
+      );
+  }
+
+  async createProspectiveCustomer(customer: InsertProspectiveCustomer): Promise<ProspectiveCustomer> {
+    const id = this.prospectiveCustomerIdCounter++;
+    const now = new Date();
+    
+    const newCustomer: ProspectiveCustomer = {
+      ...customer,
+      id,
+      createdAt: now,
+      updatedAt: now,
+      lastContactDate: customer.lastContactDate || now,
+      nextContactDate: customer.nextContactDate || null,
+      email: customer.email || null,
+      phone: customer.phone || null,
+      address: customer.address || null,
+      city: customer.city || null,
+      state: customer.state || null,
+      postalCode: customer.postalCode || null,
+      country: customer.country || null,
+      notes: customer.notes || null
+    };
+    
+    this.prospectiveCustomers.set(id, newCustomer);
+    return newCustomer;
+  }
+
+  async updateProspectiveCustomer(id: number, customer: Partial<InsertProspectiveCustomer>): Promise<ProspectiveCustomer | undefined> {
+    const existingCustomer = this.prospectiveCustomers.get(id);
+    if (!existingCustomer) return undefined;
+    
+    const updatedCustomer = { 
+      ...existingCustomer, 
+      ...customer,
+      updatedAt: new Date()
+    };
+    
+    this.prospectiveCustomers.set(id, updatedCustomer);
+    return updatedCustomer;
+  }
+
+  async deleteProspectiveCustomer(id: number): Promise<boolean> {
+    return this.prospectiveCustomers.delete(id);
+  }
+
+  async convertToCustomer(id: number): Promise<Customer | undefined> {
+    const prospectiveCustomer = this.prospectiveCustomers.get(id);
+    if (!prospectiveCustomer) return undefined;
+    
+    // Create a new customer from the prospective customer data
+    const customerId = this.customerIdCounter++;
+    const now = new Date();
+    
+    const newCustomer: Customer = {
+      id: customerId,
+      name: prospectiveCustomer.name,
+      email: prospectiveCustomer.email,
+      phone: prospectiveCustomer.phone,
+      address: prospectiveCustomer.address,
+      city: prospectiveCustomer.city,
+      state: prospectiveCustomer.state,
+      postalCode: prospectiveCustomer.postalCode,
+      country: prospectiveCustomer.country,
+      notes: prospectiveCustomer.notes,
+      vatNumber: null,
+      paymentTerms: null,
+      shippingMethod: null,
+      shippingInstructions: null,
+      shippingCompany: null,
+      createdAt: now,
+      updatedAt: now
+    };
+    
+    // Add the new customer to the customers Map
+    this.customers.set(customerId, newCustomer);
+    
+    // Remove the prospective customer
+    this.prospectiveCustomers.delete(id);
+    
+    return newCustomer;
   }
   
   // Initialize with sample data

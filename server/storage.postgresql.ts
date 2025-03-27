@@ -20,7 +20,8 @@ import {
   orderQuality, type OrderQuality, type InsertOrderQuality,
   inventoryChanges, type InventoryChange, type InsertInventoryChange,
   callLogs, type CallLog, type InsertCallLog,
-  callOutcomes, type CallOutcome, type InsertCallOutcome
+  callOutcomes, type CallOutcome, type InsertCallOutcome,
+  prospectiveCustomers, type ProspectiveCustomer, type InsertProspectiveCustomer
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { log } from './vite';
@@ -2496,6 +2497,173 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
+
+  // Prospective Customer methods
+  async getProspectiveCustomer(id: number): Promise<ProspectiveCustomer | undefined> {
+    try {
+      const result = await this.db
+        .select()
+        .from(prospectiveCustomers)
+        .where(eq(prospectiveCustomers.id, id))
+        .limit(1);
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching prospective customer:', error);
+      return undefined;
+    }
+  }
+
+  async getAllProspectiveCustomers(): Promise<ProspectiveCustomer[]> {
+    try {
+      return await this.db
+        .select()
+        .from(prospectiveCustomers)
+        .orderBy(prospectiveCustomers.name);
+    } catch (error) {
+      console.error('Error fetching all prospective customers:', error);
+      return [];
+    }
+  }
+
+  async getProspectiveCustomersByStatus(status: string): Promise<ProspectiveCustomer[]> {
+    try {
+      return await this.db
+        .select()
+        .from(prospectiveCustomers)
+        .where(eq(prospectiveCustomers.status, status))
+        .orderBy(prospectiveCustomers.name);
+    } catch (error) {
+      console.error('Error fetching prospective customers by status:', error);
+      return [];
+    }
+  }
+
+  async searchProspectiveCustomers(query: string): Promise<ProspectiveCustomer[]> {
+    try {
+      const lowerQuery = `%${query.toLowerCase()}%`;
+      return await this.db
+        .select()
+        .from(prospectiveCustomers)
+        .where(
+          or(
+            sql`${prospectiveCustomers.name} ILIKE ${lowerQuery}`,
+            sql`${prospectiveCustomers.companyName} ILIKE ${lowerQuery}`,
+            sql`${prospectiveCustomers.email} ILIKE ${lowerQuery}`,
+            sql`${prospectiveCustomers.phone} ILIKE ${lowerQuery}`
+          )
+        )
+        .orderBy(prospectiveCustomers.name);
+    } catch (error) {
+      console.error('Error searching prospective customers:', error);
+      return [];
+    }
+  }
+
+  async createProspectiveCustomer(customer: InsertProspectiveCustomer): Promise<ProspectiveCustomer> {
+    try {
+      const now = new Date();
+      const insertData = {
+        ...customer,
+        createdAt: now,
+        updatedAt: now,
+        lastContactDate: customer.lastContactDate || now
+      };
+      
+      const result = await this.db
+        .insert(prospectiveCustomers)
+        .values(insertData)
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error creating prospective customer:', error);
+      throw error;
+    }
+  }
+
+  async updateProspectiveCustomer(id: number, customer: Partial<InsertProspectiveCustomer>): Promise<ProspectiveCustomer | undefined> {
+    try {
+      const updateData = {
+        ...customer,
+        updatedAt: new Date()
+      };
+      
+      const result = await this.db
+        .update(prospectiveCustomers)
+        .set(updateData)
+        .where(eq(prospectiveCustomers.id, id))
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error updating prospective customer:', error);
+      return undefined;
+    }
+  }
+
+  async deleteProspectiveCustomer(id: number): Promise<boolean> {
+    try {
+      const result = await this.db
+        .delete(prospectiveCustomers)
+        .where(eq(prospectiveCustomers.id, id));
+      
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting prospective customer:', error);
+      return false;
+    }
+  }
+
+  async convertToCustomer(id: number): Promise<Customer | undefined> {
+    try {
+      // 1. Get the prospective customer
+      const prospectiveCustomer = await this.getProspectiveCustomer(id);
+      if (!prospectiveCustomer) return undefined;
+      
+      // 2. Begin a transaction
+      return await this.db.transaction(async (tx) => {
+        // 3. Create a new customer from the prospective customer data
+        const now = new Date();
+        const insertCustomerData = {
+          name: prospectiveCustomer.name,
+          email: prospectiveCustomer.email,
+          phone: prospectiveCustomer.phone,
+          address: prospectiveCustomer.address, 
+          city: prospectiveCustomer.city,
+          state: prospectiveCustomer.state,
+          postalCode: prospectiveCustomer.postalCode,
+          country: prospectiveCustomer.country,
+          notes: prospectiveCustomer.notes || null,
+          vatNumber: null,
+          paymentTerms: null,
+          shippingMethod: null,
+          shippingInstructions: null,
+          preferredShippingCompany: null,
+          customShippingCompany: null,
+          contactPerson: null,
+          createdAt: now,
+          updatedAt: now
+        };
+        
+        const customerResult = await tx
+          .insert(customers)
+          .values(insertCustomerData)
+          .returning();
+        
+        // 4. Delete the prospective customer
+        await tx
+          .delete(prospectiveCustomers)
+          .where(eq(prospectiveCustomers.id, id));
+        
+        return customerResult[0];
+      });
+    } catch (error) {
+      console.error('Error converting prospective customer to customer:', error);
+      return undefined;
+    }
+  }
+
+
 }
 
 // This will be initialized when the server starts
