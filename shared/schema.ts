@@ -430,7 +430,7 @@ export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
 export type RolePermission = typeof rolePermissions.$inferSelect;
 
 // Order Quality Types Enum
-export const orderQualityTypeEnum = pgEnum('order_quality_type', [
+export const orderQualityTypeEnum = pgEnum('order_error_type', [
   'missing_item',        // Item was recorded as shipped but missing from package
   'wrong_item',          // Wrong item was picked and shipped
   'damaged_item',        // Item was damaged during picking/shipping
@@ -444,7 +444,7 @@ export const orderQualityTypeEnum = pgEnum('order_quality_type', [
 ]);
 
 // Order Quality Schema - For tracking order issues
-export const orderQuality = pgTable("order_quality", {
+export const orderQuality = pgTable("order_errors", {
   id: serial("id").primaryKey(),
   orderId: integer("order_id"), // Now optional - can exist without an order
   orderNumber: text("order_number"), // Now optional

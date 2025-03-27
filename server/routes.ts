@@ -2238,7 +2238,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Order Error routes
+  // Order Error routes (supporting both old and new endpoint patterns)
+  // Old endpoints
   app.get('/api/order-errors', isAuthenticated, getOrderErrors);
   app.get('/api/order-errors/:id', isAuthenticated, getOrderQuality);
   app.post('/api/order-errors', isAuthenticated, createOrderError);
@@ -2246,6 +2247,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/order-errors/:id/resolve', isAuthenticated, resolveOrderError);
   app.post('/api/order-errors/:id/adjust-inventory', isAuthenticated, hasRole(['admin']), adjustInventoryForError);
   app.get('/api/order-errors-stats', isAuthenticated, getErrorStats);
+  
+  // New endpoints (order-quality)
+  app.get('/api/order-quality', isAuthenticated, getOrderErrors);
+  app.get('/api/order-quality/:id', isAuthenticated, getOrderQuality);
+  app.post('/api/order-quality', isAuthenticated, createOrderError);
+  app.patch('/api/order-quality/:id', isAuthenticated, updateOrderError);
+  app.post('/api/order-quality/:id/resolve', isAuthenticated, resolveOrderError);
+  app.post('/api/order-quality/:id/adjust-inventory', isAuthenticated, hasRole(['admin']), adjustInventoryForError);
+  app.get('/api/order-quality-stats', isAuthenticated, getErrorStats);
   
   // Inventory Change Tracking routes
   app.get('/api/inventory-changes', isAuthenticated, getInventoryChanges);
