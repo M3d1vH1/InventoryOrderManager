@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { UserPlus, Info } from 'lucide-react';
 
 import {
   Dialog,
@@ -406,10 +407,24 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
 
                 {/* New Prospective Customer Form (conditional) */}
                 {isNewProspect && (
-                  <Card>
-                    <CardContent className="p-4 space-y-4">
-                      <h3 className="text-lg font-medium">{t('callLogs.form.newProspectDetails')}</h3>
+                  <Card className="border-primary/20">
+                    <CardContent className="p-4 space-y-4 mt-4">
+                      <div className="flex items-center gap-2 border-b pb-2 mb-2">
+                        <UserPlus className="h-5 w-5 text-primary" />
+                        <h3 className="text-lg font-medium">{t('callLogs.form.newProspectDetails')}</h3>
+                      </div>
+                      
+                      <div className="bg-muted/30 p-3 rounded-md flex items-center gap-2 mb-2">
+                        <Info className="h-4 w-4 text-primary" />
+                        <p className="text-sm">{t('callLogs.form.prospectiveCustomerInfo')}</p>
+                      </div>
+                      
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Basic Information Section */}
+                        <div className="col-span-1 md:col-span-2 border-b pb-2">
+                          <h4 className="text-sm font-medium text-muted-foreground mb-2">{t('callLogs.form.basicInformation')}</h4>
+                        </div>
+                        
                         <FormField
                           control={form.control}
                           name="newProspectiveCustomer.name"
@@ -436,6 +451,12 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                             </FormItem>
                           )}
                         />
+                        
+                        {/* Contact Information Section */}
+                        <div className="col-span-1 md:col-span-2 border-b pb-2 mt-2">
+                          <h4 className="text-sm font-medium text-muted-foreground mb-2">{t('callLogs.form.contactInformation')}</h4>
+                        </div>
+                        
                         <FormField
                           control={form.control}
                           name="newProspectiveCustomer.phone"
@@ -463,11 +484,16 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                           )}
                         />
                         
+                        {/* Address Information Section */}
+                        <div className="col-span-1 md:col-span-2 border-b pb-2 mt-2">
+                          <h4 className="text-sm font-medium text-muted-foreground mb-2">{t('callLogs.form.addressInformation')}</h4>
+                        </div>
+                        
                         <FormField
                           control={form.control}
                           name="newProspectiveCustomer.address"
                           render={({ field }) => (
-                            <FormItem>
+                            <FormItem className="col-span-1 md:col-span-2">
                               <FormLabel>{t('callLogs.form.address')}</FormLabel>
                               <FormControl>
                                 <Input placeholder={t('callLogs.form.enterAddress')} {...field} value={field.value || ''} />
@@ -490,7 +516,6 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                             </FormItem>
                           )}
                         />
-
                       </div>
                     </CardContent>
                   </Card>
