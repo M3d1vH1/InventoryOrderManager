@@ -793,7 +793,7 @@ export default function OrderQuality() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{qualityStats.totalQualityIssues}</div>
+              <div className="text-2xl font-bold">{qualityStats?.totalQualityIssues || 0}</div>
             </CardContent>
           </Card>
           
@@ -804,7 +804,7 @@ export default function OrderQuality() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{qualityStats.totalShippedOrders}</div>
+              <div className="text-2xl font-bold">{qualityStats?.totalShippedOrders || 0}</div>
             </CardContent>
           </Card>
           
@@ -816,7 +816,7 @@ export default function OrderQuality() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {qualityStats.qualityRate.toFixed(2)}%
+                {qualityStats?.qualityRate ? qualityStats.qualityRate.toFixed(2) : '0.00'}%
               </div>
             </CardContent>
           </Card>
@@ -828,7 +828,7 @@ export default function OrderQuality() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {qualityStats.qualityIssuesByType.length > 0 ? (
+              {qualityStats?.qualityIssuesByType && qualityStats.qualityIssuesByType.length > 0 ? (
                 <div className="text-lg font-bold">
                   {t(`orderQuality.types.${qualityStats.qualityIssuesByType[0].type}`)}
                 </div>
