@@ -486,22 +486,6 @@ const OrderForm = ({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-8 text-orange-600 border-orange-200 hover:bg-orange-100"
-                  onClick={() => {
-                    // Scroll to unshipped products section
-                    const unshippedSection = document.getElementById('unshipped-products-section');
-                    if (unshippedSection) {
-                      unshippedSection.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  }}
-                >
-                  <ShoppingCart className="h-3 w-3 mr-1" />
-                  View Items
-                </Button>
                 {unshippedItemsWarning.hasAuthorizedUnshippedItems && (
                   <Badge className="bg-green-50 text-green-700 hover:bg-green-100 border-green-200 px-2 py-0.5 text-xs">
                     Authorized
@@ -622,19 +606,19 @@ const OrderForm = ({
                 </Button>
               </div>
               
-              {/* Unshipped products reminder section */}
+              {/* Unshipped products reminder section - now more prominent */}
               {unshippedProducts.length > 0 && (
-                <div id="unshipped-products-section" className="mb-4 border border-amber-200 rounded-lg p-3 bg-amber-50">
-                  <div className="flex justify-between items-center mb-2">
+                <div id="unshipped-products-section" className="mb-4 border-2 border-amber-300 rounded-lg p-4 bg-amber-50 shadow-md">
+                  <div className="flex justify-between items-center mb-3">
                     <div className="flex items-center text-amber-800">
-                      <AlertTriangle className="h-4 w-4 mr-2 text-amber-500 flex-shrink-0" /> 
-                      <span className="text-sm font-medium">{t('orders.form.unshippedProductsTitle')} ({unshippedProducts.length})</span>
+                      <AlertTriangle className="h-5 w-5 mr-2 text-amber-600 flex-shrink-0" /> 
+                      <span className="text-base font-semibold">{t('orders.form.unshippedProductsTitle')} ({unshippedProducts.length})</span>
                     </div>
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="default"
                       size="sm"
-                      className="h-7 text-amber-600 border-amber-200 hover:bg-amber-100 text-xs"
+                      className="h-9 bg-amber-600 hover:bg-amber-700 text-white font-medium"
                       onClick={() => {
                         // Add all unshipped products at once
                         let newOrderItems = [...orderItems];
@@ -671,7 +655,7 @@ const OrderForm = ({
                         }
                       }}
                     >
-                      <PackageOpen className="h-3 w-3 mr-1" /> Add All Items
+                      <PackageOpen className="h-4 w-4 mr-2" /> Add All Unshipped Items
                     </Button>
                   </div>
                   
