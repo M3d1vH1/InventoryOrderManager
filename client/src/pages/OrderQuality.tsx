@@ -1228,7 +1228,7 @@ export default function OrderQuality() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t('orderQuality.qualityCategory')}</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <Select onValueChange={field.onChange} value={field.value || 'warehouse'}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder={t('orderQuality.selectCategory')} />
@@ -1308,11 +1308,15 @@ export default function OrderQuality() {
                         <FormItem>
                           <FormLabel>{t('orderQuality.assignedTo')}</FormLabel>
                           <FormControl>
-                            <Input type="number" {...field} onChange={e => {
-                              // Allow empty value (undefined) or convert to number
-                              const value = e.target.value === '' ? undefined : parseInt(e.target.value);
-                              field.onChange(value);
-                            }} />
+                            <Input 
+                              type="number" 
+                              value={field.value || ''} 
+                              onChange={e => {
+                                // Allow empty value (undefined) or convert to number
+                                const value = e.target.value === '' ? undefined : parseInt(e.target.value);
+                                field.onChange(value);
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -1325,7 +1329,7 @@ export default function OrderQuality() {
                         <FormItem>
                           <FormLabel>{t('orderQuality.dueDate')}</FormLabel>
                           <FormControl>
-                            <Input type="date" {...field} />
+                            <Input type="date" value={field.value || ''} onChange={field.onChange} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -1512,7 +1516,7 @@ export default function OrderQuality() {
                         <label className="text-sm w-40">{t('orderQuality.adjustmentQuantity')}:</label>
                         <Input
                           type="number"
-                          value={adjustment.quantity}
+                          value={adjustment.quantity || 0}
                           onChange={(e) => {
                             const value = parseInt(e.target.value);
                             const newAdjustments = [...adjustInventoryForm.getValues('adjustments')];
