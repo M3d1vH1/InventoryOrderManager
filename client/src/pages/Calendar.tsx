@@ -26,9 +26,10 @@ type CalendarEvent = {
   title: string;
   start: Date;
   end: Date;
-  type: 'created' | 'shipped';
-  orderNumber: string;
+  type: 'created' | 'shipped' | 'call';
+  orderNumber?: string;
   customerName: string;
+  callDetails?: string;
 };
 
 // Order type definition
@@ -40,6 +41,22 @@ type Order = {
   orderDate: string;
   shippedDate?: string;
   notes: string | null;
+};
+
+// Call log type definition
+type CallLog = {
+  id: number;
+  customerName: string;
+  phoneNumber: string;
+  callType: string;
+  callDate: string;
+  scheduledDate: string | null;
+  summary: string;
+  status: string;
+  userId: number;
+  callDirection: 'inbound' | 'outbound';
+  followUpRequired: boolean;
+  followUpDate: string | null;
 };
 
 const CalendarPage: React.FC = () => {
@@ -57,21 +74,26 @@ const CalendarPage: React.FC = () => {
   }, [setCurrentPage, t, i18n.language]);
 
   // Fetch orders
-  const { data: orders, isLoading, isError } = useQuery<Order[]>({
+  const { data: orders, isLoading: ordersLoading, isError: ordersError } = useQuery<Order[]>({
     queryKey: ['/api/orders'],
     retry: 1,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Transform orders to calendar events
-  const events: CalendarEvent[] = useMemo(() => {
-    if (!orders) return [];
+  // Fetch call logs
+  const { data: callLogs, isLoading: callsLoading, isError: callsError } = useQuery<CallLog[]>({
+    queryKey: ['/api/call-logs'],
+    retry: 1,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
+  // Transform orders and call logs to calendar events
+  const events: CalendarEvent[] = useMemo(() => {
     const calendarEvents: CalendarEvent[] = [];
     
     // Add order creation events
-    // Using a safer approach with type casting
-    (orders as Order[]).forEach((order: Order) => {
+    if (orders && Array.isArray(orders)) {
+      orders.forEach((order: Order) => {
       const orderDate = new Date(order.orderDate);
       
       // Order created event
@@ -99,9 +121,43 @@ const CalendarPage: React.FC = () => {
         });
       }
     });
+    }
+
+    // Add call log events
+    if (callLogs && Array.isArray(callLogs)) {
+      (callLogs as CallLog[]).forEach((call: CallLog) => {
+        // Only add scheduled calls
+        if (call.scheduledDate) {
+          const scheduledDate = new Date(call.scheduledDate);
+          calendarEvents.push({
+            id: `call-${call.id}`,
+            title: `${t('calendar.scheduledCall')}: ${call.customerName}`,
+            start: scheduledDate,
+            end: scheduledDate,
+            type: 'call',
+            customerName: call.customerName,
+            callDetails: call.summary
+          });
+        }
+
+        // Add follow-up events
+        if (call.followUpRequired && call.followUpDate) {
+          const followUpDate = new Date(call.followUpDate);
+          calendarEvents.push({
+            id: `followup-${call.id}`,
+            title: `${t('calendar.followUpCall')}: ${call.customerName}`,
+            start: followUpDate,
+            end: followUpDate,
+            type: 'call',
+            customerName: call.customerName,
+            callDetails: call.summary
+          });
+        }
+      });
+    }
     
     return calendarEvents;
-  }, [orders, t]);
+  }, [orders, callLogs, t]);
 
   // Filter events based on the selected tab
   const filteredEvents = useMemo(() => {
@@ -109,14 +165,29 @@ const CalendarPage: React.FC = () => {
       return events.filter(event => event.type === 'created');
     } else if (view === 'shipped') {
       return events.filter(event => event.type === 'shipped');
+    } else if (view === 'calls') {
+      return events.filter(event => event.type === 'call');
     }
     return events;
   }, [events, view]);
 
   // Custom event styling
   const eventStyleGetter = (event: CalendarEvent) => {
+    let backgroundColor;
+    
+    // Determine color based on event type
+    if (event.type === 'created') {
+      backgroundColor = '#4F46E5'; // Blue for order created
+    } else if (event.type === 'shipped') {
+      backgroundColor = '#10B981'; // Green for shipped
+    } else if (event.type === 'call') {
+      backgroundColor = '#F59E0B'; // Amber for calls
+    } else {
+      backgroundColor = '#6B7280'; // Gray default
+    }
+    
     let style = {
-      backgroundColor: event.type === 'created' ? '#4F46E5' : '#10B981',
+      backgroundColor,
       borderRadius: '4px',
       opacity: 0.8,
       color: 'white',
@@ -130,7 +201,7 @@ const CalendarPage: React.FC = () => {
   };
 
   // Loading state
-  if (isLoading) {
+  if (ordersLoading || callsLoading) {
     return (
       <div className="space-y-4">
         <PageHeader 
@@ -152,7 +223,7 @@ const CalendarPage: React.FC = () => {
   }
 
   // Error state
-  if (isError) {
+  if (ordersError || callsError) {
     return (
       <div className="space-y-4">
         <PageHeader 
@@ -179,10 +250,11 @@ const CalendarPage: React.FC = () => {
       />
 
       <Tabs value={view} onValueChange={setView} className="w-full">
-        <TabsList className="grid w-full md:w-auto grid-cols-3 mb-4">
+        <TabsList className="grid w-full md:w-auto grid-cols-4 mb-4">
           <TabsTrigger value="month">{t('calendar.allEvents')}</TabsTrigger>
           <TabsTrigger value="created">{t('calendar.ordersCreated')}</TabsTrigger>
           <TabsTrigger value="shipped">{t('calendar.ordersShipped')}</TabsTrigger>
+          <TabsTrigger value="calls">{t('calendar.customerCalls')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value={view} className="space-y-4">
@@ -191,6 +263,7 @@ const CalendarPage: React.FC = () => {
               <div className="mb-4 flex flex-wrap gap-2">
                 <Badge className="bg-[#4F46E5]">{t('calendar.orderCreated')}</Badge>
                 <Badge className="bg-[#10B981]">{t('calendar.orderShipped')}</Badge>
+                <Badge className="bg-[#F59E0B]">{t('calendar.customerCalls')}</Badge>
               </div>
 
               <div className="h-[600px]">
@@ -215,7 +288,12 @@ const CalendarPage: React.FC = () => {
                     event: t('calendar.controls.event'),
                     noEventsInRange: t('calendar.controls.noEventsInRange'),
                   }}
-                  tooltipAccessor={(event: any) => `${event.customerName} - ${event.orderNumber}`}
+                  tooltipAccessor={(event: any) => {
+                    if (event.type === 'call') {
+                      return `${event.customerName} - ${event.callDetails || t('calendar.noCallDetails')}`;
+                    }
+                    return `${event.customerName} - ${event.orderNumber || ''}`;
+                  }}
                 />
               </div>
             </CardContent>
