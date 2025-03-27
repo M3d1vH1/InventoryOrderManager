@@ -624,6 +624,51 @@ export const insertCallLogSchema = createInsertSchema(callLogs)
 export type InsertCallLog = z.infer<typeof insertCallLogSchema>;
 export type CallLog = typeof callLogs.$inferSelect;
 
+// Prospective Customers Schema
+export const prospectiveCustomers = pgTable("prospective_customers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  companyName: text("company_name"),
+  email: text("email"),
+  phone: text("phone"),
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  postalCode: text("postal_code"),
+  country: text("country"),
+  source: text("source"), // How they found out about the company
+  notes: text("notes"),
+  status: text("status").notNull().default('new'), // new, contacted, qualified, converted, rejected
+  assignedToId: integer("assigned_to_id"),
+  lastContactDate: timestamp("last_contact_date").defaultNow(),
+  nextContactDate: timestamp("next_contact_date"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull(),
+});
+
+export const insertProspectiveCustomerSchema = createInsertSchema(prospectiveCustomers)
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    name: z.string().min(1, { message: "Name is required" }),
+    companyName: z.string().optional(),
+    email: z.union([z.string().email({ message: "Invalid email address" }), z.string().length(0), z.null()]).optional(),
+    phone: z.string().optional(),
+    address: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    postalCode: z.string().optional(),
+    country: z.string().optional(),
+    source: z.string().optional(),
+    notes: z.string().optional(),
+    status: z.string().default('new'),
+    assignedToId: z.number().optional(),
+    lastContactDate: z.string().optional().transform(val => val ? new Date(val) : new Date()),
+    nextContactDate: z.string().optional().transform(val => val ? new Date(val) : null),
+  });
+
+export type InsertProspectiveCustomer = z.infer<typeof insertProspectiveCustomerSchema>;
+export type ProspectiveCustomer = typeof prospectiveCustomers.$inferSelect;
+
 // Call Outcomes Schema - For tracking action items from calls
 export const callOutcomes = pgTable("call_outcomes", {
   id: serial("id").primaryKey(),

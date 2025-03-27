@@ -17,7 +17,8 @@ import {
   orderQuality, type OrderQuality, type InsertOrderQuality,
   inventoryChanges, type InventoryChange, type InsertInventoryChange,
   callLogs, type CallLog, type InsertCallLog,
-  callOutcomes, type CallOutcome, type InsertCallOutcome
+  callOutcomes, type CallOutcome, type InsertCallOutcome,
+  prospectiveCustomers, type ProspectiveCustomer, type InsertProspectiveCustomer
 } from "@shared/schema";
 import { DatabaseStorage, initStorage } from './storage.postgresql';
 import { log } from './vite';
@@ -219,6 +220,16 @@ export interface IStorage {
   updateCallOutcome(id: number, outcome: Partial<InsertCallOutcome>): Promise<CallOutcome | undefined>;
   completeCallOutcome(id: number, userId: number, notes?: string): Promise<CallOutcome | undefined>;
   deleteCallOutcome(id: number): Promise<boolean>;
+  
+  // Prospective Customer methods
+  getProspectiveCustomer(id: number): Promise<ProspectiveCustomer | undefined>;
+  getAllProspectiveCustomers(): Promise<ProspectiveCustomer[]>;
+  getProspectiveCustomersByStatus(status: string): Promise<ProspectiveCustomer[]>;
+  searchProspectiveCustomers(query: string): Promise<ProspectiveCustomer[]>;
+  createProspectiveCustomer(customer: InsertProspectiveCustomer): Promise<ProspectiveCustomer>;
+  updateProspectiveCustomer(id: number, customer: Partial<InsertProspectiveCustomer>): Promise<ProspectiveCustomer | undefined>;
+  deleteProspectiveCustomer(id: number): Promise<boolean>;
+  convertToCustomer(id: number): Promise<Customer | undefined>;
 }
 
 // We're keeping the MemStorage class definition for fallback
