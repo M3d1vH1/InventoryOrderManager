@@ -18,7 +18,11 @@ const Sidebar = () => {
     if (path === "/orders/unshipped-items" && location === "/unshipped-items") return true;
     
     // Special case for orders - make parent active when children are active
-    if (path === "/orders" && location.startsWith("/orders/")) return true;
+    if (path === "/orders" && 
+        (location.startsWith("/orders/") || 
+         location === "/order-picking" || 
+         location === "/order-quality" || 
+         location === "/unshipped-items")) return true;
     
     // Default behavior
     if (path !== "/" && location.startsWith(path)) return true;
@@ -26,7 +30,7 @@ const Sidebar = () => {
     return false;
   };
   
-  // Warehouse staff only see order picking
+  // Warehouse staff only see the orders menu (with order picking inside)
   const isWarehouseStaff = user?.role === 'warehouse';
   
   // Admin can see everything, front office can't see user management
@@ -63,7 +67,7 @@ const Sidebar = () => {
                 <li className="mb-1">
                   <div>
                     <button 
-                      className={`flex items-center w-full p-2 text-left rounded ${(isActive("/orders") || isActive("/unshipped-items")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                      className={`flex items-center w-full p-2 text-left rounded ${(isActive("/orders") || isActive("/unshipped-items") || isActive("/order-picking") || isActive("/order-quality")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
                       title={t('orders.title')}
                       onClick={() => {
                         if (isSidebarOpen) {
@@ -89,7 +93,7 @@ const Sidebar = () => {
                     </button>
                     
                     {isSidebarOpen && (
-                      <div id="orders-submenu" className={`pl-7 mt-1 ${!isActive("/orders") && !isActive("/unshipped-items") ? 'hidden' : ''}`}>
+                      <div id="orders-submenu" className={`pl-7 mt-1 ${!isActive("/orders") && !isActive("/unshipped-items") && !isActive("/order-picking") && !isActive("/order-quality") ? 'hidden' : ''}`}>
                         <Link href="/orders" onClick={() => setCurrentPage("Orders")}>
                           <button 
                             className={`flex items-center w-full p-2 text-left rounded ${isActive("/orders") && !isActive("/orders/") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
@@ -106,6 +110,24 @@ const Sidebar = () => {
                           >
                             <i className="fas fa-truck-loading mr-2 text-xs"></i>
                             <span>{t('unshippedItems.title')}</span>
+                          </button>
+                        </Link>
+                        <Link href="/order-picking" onClick={() => setCurrentPage("Order Picking")}>
+                          <button 
+                            className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-picking") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
+                            title={t('app.orderPicking')}
+                          >
+                            <i className="fas fa-clipboard-check mr-2 text-xs"></i>
+                            <span>{t('app.orderPicking')}</span>
+                          </button>
+                        </Link>
+                        <Link href="/order-quality" onClick={() => setCurrentPage(t('orderQuality.title'))}>
+                          <button 
+                            className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-quality") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
+                            title={t('orderQuality.title')}
+                          >
+                            <i className="fas fa-clipboard-list mr-2 text-xs"></i>
+                            <span>{t('orderQuality.title')}</span>
                           </button>
                         </Link>
                       </div>
@@ -153,20 +175,6 @@ const Sidebar = () => {
                 </li>
                 
                 <li className="mb-1">
-                  <Link href="/order-quality" onClick={() => setCurrentPage(t('orderQuality.title'))}>
-                    <button 
-                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-quality") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
-                      title={t('orderQuality.title')}
-                    >
-                      <span className="flex justify-center items-center w-5 h-5">
-                        <i className="fas fa-clipboard-list"></i>
-                      </span>
-                      {isSidebarOpen && <span className="ml-2">{t('orderQuality.title')}</span>}
-                    </button>
-                  </Link>
-                </li>
-
-                <li className="mb-1">
                   <Link href="/reports" onClick={() => setCurrentPage("Reports")}>
                     <button 
                       className={`flex items-center w-full p-2 text-left rounded ${isActive("/reports") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
@@ -210,20 +218,52 @@ const Sidebar = () => {
               </>
             )}
             
-            {/* Order picking - visible to all users */}
-            <li className="mb-1">
-              <Link href="/order-picking" onClick={() => setCurrentPage("Order Picking")}>
-                <button 
-                  className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-picking") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
-                  title={t('app.orderPicking')}
-                >
-                  <span className="flex justify-center items-center w-5 h-5">
-                    <i className="fas fa-clipboard-check"></i>
-                  </span>
-                  {isSidebarOpen && <span className="ml-2">{t('app.orderPicking')}</span>}
-                </button>
-              </Link>
-            </li>
+            {/* Orders menu for warehouse staff */}
+            {isWarehouseStaff && (
+              <li className="mb-1">
+                <div>
+                  <button 
+                    className={`flex items-center w-full p-2 text-left rounded ${(isActive("/orders") || isActive("/order-picking")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                    title={t('orders.title')}
+                    onClick={() => {
+                      if (isSidebarOpen) {
+                        const submenu = document.getElementById('orders-staff-submenu');
+                        if (submenu) {
+                          submenu.classList.toggle('hidden');
+                        }
+                      } else {
+                        // If sidebar is collapsed, just navigate to order picking
+                        window.location.href = '/order-picking';
+                      }
+                    }}
+                  >
+                    <span className="flex justify-center items-center w-5 h-5">
+                      <i className="fas fa-shopping-cart"></i>
+                    </span>
+                    {isSidebarOpen && (
+                      <div className="flex justify-between items-center flex-grow">
+                        <span className="ml-2">{t('orders.title')}</span>
+                        <i className="fas fa-chevron-down text-xs"></i>
+                      </div>
+                    )}
+                  </button>
+                  
+                  {isSidebarOpen && (
+                    <div id="orders-staff-submenu" className={`pl-7 mt-1 ${!isActive("/order-picking") ? 'hidden' : ''}`}>
+                      <Link href="/order-picking" onClick={() => setCurrentPage("Order Picking")}>
+                        <button 
+                          className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-picking") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
+                          title={t('app.orderPicking')}
+                        >
+                          <i className="fas fa-clipboard-check mr-2 text-xs"></i>
+                          <span>{t('app.orderPicking')}</span>
+                        </button>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </li>
+            )}
             
             {/* Settings - visible only to admin users */}
             {isAdmin && (
