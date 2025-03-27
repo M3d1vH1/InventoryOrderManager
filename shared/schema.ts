@@ -30,7 +30,7 @@ export const insertUserSchema = createInsertSchema(users)
     password: z.string().min(6, { message: "Password must be at least 6 characters" }),
     fullName: z.string().min(2, { message: "Full name is required" }),
     role: z.enum(['admin', 'front_office', 'warehouse']).default('front_office'),
-    email: z.string().email({ message: "Invalid email address" }).optional(),
+    email: z.union([z.string().email({ message: "Invalid email address" }), z.string().length(0), z.null()]).optional(),
     active: z.boolean().default(true),
   });
 
@@ -240,7 +240,7 @@ export const insertCustomerSchema = createInsertSchema(customers)
     state: z.string().optional(),
     postalCode: z.string().optional(),
     country: z.string().optional(),
-    email: z.string().email({ message: "Invalid email address" }).optional(),
+    email: z.union([z.string().email({ message: "Invalid email address" }), z.string().length(0), z.null()]).optional(),
     phone: z.string().optional(),
     contactPerson: z.string().optional(),
     shippingCompany: z.string().optional(),

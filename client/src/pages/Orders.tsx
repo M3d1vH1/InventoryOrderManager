@@ -674,11 +674,23 @@ A 1
       });
     },
     onSuccess: (data) => {
-      toast({
-        title: "Email Sent",
-        description: data.message || "Shipping notification email has been sent to the customer.",
-        duration: 5000,
-      });
+      // Check if email was actually sent or skipped
+      if (data.success === false) {
+        // This happens when customer has no email address
+        toast({
+          title: "Email Notification Skipped",
+          description: data.message || "Customer does not have an email address.",
+          // Using default variant as "warning" is not available
+          duration: 5000,
+        });
+      } else {
+        // Email was successfully sent
+        toast({
+          title: "Email Sent",
+          description: data.message || "Shipping notification email has been sent to the customer.",
+          duration: 5000,
+        });
+      }
     },
     onError: (error: any) => {
       toast({

@@ -2203,8 +2203,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Customer information not found. Make sure customer exists in database.' });
       }
       
+      // Check if the customer has an email address, if not, return a gentle message
       if (!customer.email) {
-        return res.status(400).json({ message: 'Customer email address not available' });
+        return res.status(200).json({ 
+          success: false, 
+          message: 'Customer does not have an email address. Email notification skipped.' 
+        });
       }
       
       // Send the email
