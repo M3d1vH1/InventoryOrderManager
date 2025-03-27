@@ -264,6 +264,40 @@ export default function OrderQuality() {
     return inventoryRelatedTypes.includes(qualityType);
   };
 
+  // Initialize forms with default values
+  const createForm = useForm<QualityFormValues>({
+    resolver: zodResolver(qualityFormSchema),
+    defaultValues: {
+      orderId: undefined,
+      orderNumber: '',
+      errorType: 'missing_item',
+      description: '',
+      affectedItems: [],
+      qualityLabel: '',
+      qualityCategory: '',
+      qualityStatus: 'open',
+      assignedToId: user?.id || undefined,
+      dueDate: '',
+      priority: 'medium',
+      qualityNotes: '',
+    }
+  });
+
+  const resolveForm = useForm<ResolveFormValues>({
+    resolver: zodResolver(resolveQualitySchema),
+    defaultValues: {
+      rootCause: '',
+      preventiveMeasures: '',
+    }
+  });
+
+  const adjustInventoryForm = useForm<InventoryAdjustmentValues>({
+    resolver: zodResolver(inventoryAdjustmentSchema),
+    defaultValues: {
+      adjustments: []
+    }
+  });
+
   // Mutation for creating a new quality issue
   const createQualityMutation = useMutation({
     mutationFn: async (values: QualityFormValues) => {
@@ -380,40 +414,6 @@ export default function OrderQuality() {
     }
   });
 
-  // Forms
-  const createForm = useForm<QualityFormValues>({
-    resolver: zodResolver(qualityFormSchema),
-    defaultValues: {
-      orderId: undefined,
-      orderNumber: '',
-      errorType: 'missing_item',
-      description: '',
-      affectedItems: [],
-      qualityLabel: '',
-      qualityCategory: '',
-      qualityStatus: 'open',
-      assignedToId: user?.id || undefined,
-      dueDate: '',
-      priority: 'medium',
-      qualityNotes: '',
-    }
-  });
-
-  const resolveForm = useForm<ResolveFormValues>({
-    resolver: zodResolver(resolveQualitySchema),
-    defaultValues: {
-      rootCause: '',
-      preventiveMeasures: '',
-    }
-  });
-
-  const adjustInventoryForm = useForm<InventoryAdjustmentValues>({
-    resolver: zodResolver(inventoryAdjustmentSchema),
-    defaultValues: {
-      adjustments: []
-    }
-  });
-
   // Effect to initialize affected products when viewing details
   useEffect(() => {
     if (selectedQuality && products.length > 0) {
@@ -456,7 +456,7 @@ export default function OrderQuality() {
     }
   }, [isResolveDialogOpen, selectedQuality, resolveForm]);
 
-  // Effect to reset form values when opening adjust inventory dialog
+  // Effect to prepare adjustment form when opening adjust inventory dialog
   useEffect(() => {
     if (isAdjustDialogOpen) {
       // Always reset to a safe default first
@@ -512,12 +512,12 @@ export default function OrderQuality() {
       } else if (quality.qualityLabel) {
         match = match && quality.qualityLabel.toLowerCase().includes(filterOrderId.toLowerCase());
       } else {
-        match = false; // No matching fields to search
+        match = false;
       }
     }
 
     if (filterResolved !== 'all') {
-      match = match && (filterResolved === 'resolved' ? quality.resolved : !quality.resolved);
+      match = match && (quality.resolved === (filterResolved === 'resolved'));
     }
 
     if (filterQualityType !== 'all') {
@@ -527,36 +527,26 @@ export default function OrderQuality() {
     return match;
   });
 
-  // Handle form submissions
-  const onCreateSubmit = (values: QualityFormValues) => {
-    createQualityMutation.mutate(values);
-  };
-
-  const onResolveSubmit = (values: ResolveFormValues) => {
-    resolveQualityMutation.mutate(values);
-  };
-
-  const onAdjustInventorySubmit = (values: InventoryAdjustmentValues) => {
-    // Filter out zero quantity adjustments
-    const filteredAdjustments = values.adjustments.filter(adj => adj.quantity !== 0);
-    if (filteredAdjustments.length === 0) {
-      toast({
-        title: t('orderQuality.noAdjustments'),
-        description: t('orderQuality.noAdjustmentsDescription'),
-        variant: 'destructive'
-      });
+  // Search for orders to link to a quality issue
+  const handleOrderSearch = async (query: string) => {
+    if (!query || query.length < 2) {
+      setOrderSearchResults([]);
       return;
     }
 
-    adjustInventoryMutation.mutate({
-      adjustments: filteredAdjustments
-    });
+    try {
+      const results = await apiRequest<any[]>(`/api/orders/search?q=${query}`);
+      setOrderSearchResults(results || []);
+    } catch (error) {
+      console.error('Error searching orders:', error);
+      setOrderSearchResults([]);
+    }
   };
 
-  // Helper to format dates
+  // Format date for display
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat(navigator.language, {
+    return new Intl.DateTimeFormat(undefined, {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -565,543 +555,470 @@ export default function OrderQuality() {
     }).format(date);
   };
 
-  // Helper to get quality type display name
-  const getQualityTypeDisplay = (qualityType: string | null | undefined) => {
-    if (!qualityType) return t('common.unknown');
-    return t(`orderQuality.types.${qualityType}`);
+  // Handler for creating a new quality issue
+  const onCreateSubmit = (values: QualityFormValues) => {
+    // Extract affected product IDs from the form values
+    const productIds = values.affectedItems?.map(item => item.productId.toString()) || [];
+    
+    // Create the quality issue
+    createQualityMutation.mutate({
+      ...values,
+      affectedItems: values.affectedItems || [],
+      // We pass the affected product IDs as a separate field
+      // as the backend expects them as strings
+      affectedProductIds: productIds
+    } as any);
   };
 
-  // Helper to export quality issue data
-  const handleExport = (format: 'csv' | 'excel' | 'pdf') => {
-    const dataForExport = filteredQualityIssues.map(quality => ({
-      'Order Number': quality.orderNumber,
-      'Quality Type': getQualityTypeDisplay(quality.errorType),
-      'Reported Date': formatDate(quality.reportDate),
-      'Description': quality.description,
-      'Status': quality.resolved ? t('orderQuality.resolved') : t('orderQuality.unresolved'),
-      'Inventory Adjusted': quality.inventoryAdjusted ? t('common.yes') : t('common.no'),
-    }));
-
-    exportData(dataForExport, format, 'order-quality-report');
+  // Handler for resolving a quality issue
+  const onResolveSubmit = (values: ResolveFormValues) => {
+    resolveQualityMutation.mutate(values);
   };
 
-  // Render view for quality issue details
+  // Handler for adjusting inventory
+  const onAdjustInventorySubmit = (values: InventoryAdjustmentValues) => {
+    adjustInventoryMutation.mutate(values);
+  };
+
+  // Render details of a quality issue
   const renderQualityDetails = () => {
     if (!selectedQuality) return null;
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <h3 className="text-lg font-semibold mb-2">{t('orderQuality.details')}</h3>
-          
-          {/* Order-related information (if available) */}
-          {selectedQuality.orderNumber && (
-            <div className="mb-4">
-              <h4 className="text-md font-medium mb-1">{t('orderQuality.orderInfo')}</h4>
-              <div className="space-y-2">
-                <div>
-                  <span className="font-medium">{t('orders.orderNumber')}:</span> {selectedQuality.orderNumber}
+      <div className="space-y-4 p-2">
+        <Tabs defaultValue="general" className="w-full">
+          <TabsList className="grid grid-cols-2">
+            <TabsTrigger value="general">{t('orderQuality.tabs.generalInfo')}</TabsTrigger>
+            <TabsTrigger value="products">{t('orderQuality.tabs.affectedProducts')}</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="general" className="space-y-4 mt-4">
+            {/* Order related information */}
+            {selectedQuality.orderNumber && (
+              <div className="border rounded p-4 bg-blue-50">
+                <h3 className="font-medium text-blue-800 mb-2">{t('orderQuality.orderInfo')}</h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="font-medium">{t('orders.orderNumber')}:</div>
+                  <div>{selectedQuality.orderNumber}</div>
                 </div>
-                {selectedQuality.orderId && (
-                  <div>
-                    <span className="font-medium">{t('common.orderId')}:</span> {selectedQuality.orderId}
+              </div>
+            )}
+
+            {/* For standalone quality issues without an order */}
+            {!selectedQuality.orderNumber && selectedQuality.qualityLabel && (
+              <div className="border rounded p-4 bg-purple-50">
+                <h3 className="font-medium text-purple-800 mb-2">{t('orderQuality.qualityInfo')}</h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="font-medium">{t('orderQuality.qualityLabel')}:</div>
+                  <div>{selectedQuality.qualityLabel}</div>
+                  
+                  {selectedQuality.qualityCategory && (
+                    <>
+                      <div className="font-medium">{t('orderQuality.qualityCategory')}:</div>
+                      <div>{selectedQuality.qualityCategory}</div>
+                    </>
+                  )}
+                  
+                  {selectedQuality.priority && (
+                    <>
+                      <div className="font-medium">{t('orderQuality.priority')}:</div>
+                      <div>
+                        <Badge variant="outline" className={
+                          selectedQuality.priority === 'high' ? 'bg-red-100 text-red-800' :
+                          selectedQuality.priority === 'medium' ? 'bg-amber-100 text-amber-800' :
+                          'bg-green-100 text-green-800'
+                        }>
+                          {t(`orderQuality.priorities.${selectedQuality.priority}`)}
+                        </Badge>
+                      </div>
+                    </>
+                  )}
+                  
+                  {selectedQuality.qualityStatus && (
+                    <>
+                      <div className="font-medium">{t('orderQuality.qualityStatus')}:</div>
+                      <div>
+                        <Badge variant="outline" className={
+                          selectedQuality.qualityStatus === 'open' ? 'bg-blue-100 text-blue-800' :
+                          selectedQuality.qualityStatus === 'in_progress' ? 'bg-amber-100 text-amber-800' :
+                          selectedQuality.qualityStatus === 'waiting' ? 'bg-purple-100 text-purple-800' :
+                          selectedQuality.qualityStatus === 'closed' ? 'bg-green-100 text-green-800' :
+                          'bg-gray-100 text-gray-800'
+                        }>
+                          {t(`orderQuality.statuses.${selectedQuality.qualityStatus}`)}
+                        </Badge>
+                      </div>
+                    </>
+                  )}
+                  
+                  {selectedQuality.dueDate && (
+                    <>
+                      <div className="font-medium">{t('orderQuality.dueDate')}:</div>
+                      <div>{formatDate(selectedQuality.dueDate)}</div>
+                    </>
+                  )}
+                </div>
+                
+                {selectedQuality.qualityNotes && (
+                  <div className="mt-3">
+                    <div className="font-medium text-sm">{t('orderQuality.qualityNotes')}:</div>
+                    <div className="text-sm mt-1 p-2 bg-white rounded border">
+                      {selectedQuality.qualityNotes}
+                    </div>
                   </div>
                 )}
               </div>
-            </div>
-          )}
-          
-          {/* Standalone quality fields */}
-          <div className="space-y-2">
-            {selectedQuality.qualityLabel && (
-              <div>
-                <span className="font-medium">{t('orderQuality.qualityLabel')}:</span> {selectedQuality.qualityLabel}
-              </div>
             )}
-            {selectedQuality.qualityCategory && (
-              <div>
-                <span className="font-medium">{t('orderQuality.qualityCategory')}:</span> {t(`orderQuality.categories.${selectedQuality.qualityCategory}`)}
-              </div>
-            )}
-            <div>
-              <span className="font-medium">{t('orderQuality.qualityType')}:</span> {getQualityTypeDisplay(selectedQuality.errorType)}
-            </div>
-            <div>
-              <span className="font-medium">{t('orderQuality.reportDate')}:</span> {formatDate(selectedQuality.reportDate)}
-            </div>
-            {selectedQuality.dueDate && (
-              <div>
-                <span className="font-medium">{t('orderQuality.dueDate')}:</span> {formatDate(selectedQuality.dueDate)}
-              </div>
-            )}
-            {selectedQuality.priority && (
-              <div>
-                <span className="font-medium">{t('orderQuality.priority')}:</span> 
-                <Badge 
-                  variant="outline" 
-                  className={
-                    selectedQuality.priority === 'critical' ? 'bg-red-100 text-red-800' :
-                    selectedQuality.priority === 'high' ? 'bg-amber-100 text-amber-800' :
-                    selectedQuality.priority === 'medium' ? 'bg-blue-100 text-blue-800' :
-                    'bg-green-100 text-green-800'
-                  }
-                >
-                  {t(`orderQuality.priorities.${selectedQuality.priority}`)}
-                </Badge>
-              </div>
-            )}
-            <div>
-              <span className="font-medium">{t('orderQuality.status')}:</span> {' '}
-              <Badge variant={selectedQuality.resolved ? "outline" : "destructive"} className={selectedQuality.resolved ? "bg-green-100 text-green-800" : ""}>
-                {selectedQuality.resolved ? t('orderQuality.resolved') : t('orderQuality.unresolved')}
-              </Badge>
-            </div>
-            {selectedQuality.qualityStatus && (
-              <div>
-                <span className="font-medium">{t('orderQuality.qualityStatus')}:</span> 
-                <Badge variant="outline" className="ml-1">
-                  {t(`orderQuality.statuses.${selectedQuality.qualityStatus}`)}
-                </Badge>
-              </div>
-            )}
-            <div>
-              <span className="font-medium">{t('orderQuality.inventoryAdjusted')}:</span> {' '}
-              {selectedQuality.inventoryAdjusted ? t('common.yes') : t('common.no')}
-            </div>
-          </div>
 
-          <div className="mt-4">
-            <h4 className="text-md font-medium mb-1">{t('orderQuality.description')}</h4>
-            <p className="text-sm bg-slate-50 p-2 rounded border">{selectedQuality.description}</p>
-          </div>
-
-          {selectedQuality.correctiveAction && (
-            <div className="mt-4">
-              <h4 className="text-md font-medium mb-1">{t('common.correctiveAction')}</h4>
-              <p className="text-sm bg-slate-50 p-2 rounded border">{selectedQuality.correctiveAction}</p>
+            {/* Issue details */}
+            <div className="border rounded p-4">
+              <h3 className="font-medium mb-2">{t('orderQuality.issueDetails')}</h3>
+              
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="font-medium">{t('orderQuality.reportDate')}:</div>
+                <div>{formatDate(selectedQuality.reportDate)}</div>
+                
+                <div className="font-medium">{t('orderQuality.qualityType')}:</div>
+                <div>
+                  <Badge variant="outline" className="bg-amber-100 text-amber-800">
+                    {t(`orderQuality.types.${selectedQuality.errorType}`)}
+                  </Badge>
+                </div>
+                
+                <div className="font-medium">{t('orderQuality.status')}:</div>
+                <div>
+                  <Badge variant="outline" className={selectedQuality.resolved ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}>
+                    {selectedQuality.resolved ? t('orderQuality.resolved') : t('orderQuality.unresolved')}
+                  </Badge>
+                </div>
+                
+                <div className="font-medium">{t('orderQuality.inventoryAdjusted')}:</div>
+                <div>
+                  <Badge variant="outline" className={selectedQuality.inventoryAdjusted ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                    {selectedQuality.inventoryAdjusted ? t('common.yes') : t('common.no')}
+                  </Badge>
+                </div>
+              </div>
+              
+              <div className="mt-3">
+                <div className="font-medium text-sm">{t('orderQuality.description')}:</div>
+                <div className="text-sm mt-1 p-2 bg-gray-50 rounded">
+                  {selectedQuality.description}
+                </div>
+              </div>
             </div>
-          )}
 
-          {selectedQuality.resolved && (
-            <div className="mt-4">
-              <h4 className="text-md font-medium mb-1">{t('orderQuality.resolution')}</h4>
-              <div className="space-y-2">
-                {selectedQuality.resolvedDate && (
-                  <div>
-                    <span className="font-medium">{t('orderQuality.resolvedDate')}:</span> {formatDate(selectedQuality.resolvedDate)}
-                  </div>
-                )}
+            {/* Resolution details, if resolved */}
+            {selectedQuality.resolved && (
+              <div className="border rounded p-4 bg-green-50">
+                <h3 className="font-medium text-green-800 mb-2">{t('orderQuality.resolutionDetails')}</h3>
+                
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="font-medium">{t('orderQuality.resolvedDate')}:</div>
+                  <div>{selectedQuality.resolvedDate ? formatDate(selectedQuality.resolvedDate) : '-'}</div>
+                </div>
+                
                 {selectedQuality.rootCause && (
-                  <div>
-                    <span className="font-medium">{t('orderQuality.rootCause')}:</span>
-                    <p className="text-sm bg-slate-50 p-2 rounded border mt-1">{selectedQuality.rootCause}</p>
+                  <div className="mt-3">
+                    <div className="font-medium text-sm">{t('orderQuality.rootCause')}:</div>
+                    <div className="text-sm mt-1 p-2 bg-white rounded">
+                      {selectedQuality.rootCause}
+                    </div>
                   </div>
                 )}
+                
                 {selectedQuality.preventiveMeasures && (
-                  <div>
-                    <span className="font-medium">{t('orderQuality.preventiveMeasures')}:</span>
-                    <p className="text-sm bg-slate-50 p-2 rounded border mt-1">{selectedQuality.preventiveMeasures}</p>
+                  <div className="mt-3">
+                    <div className="font-medium text-sm">{t('orderQuality.preventiveMeasures')}:</div>
+                    <div className="text-sm mt-1 p-2 bg-white rounded">
+                      {selectedQuality.preventiveMeasures}
+                    </div>
                   </div>
                 )}
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </TabsContent>
 
+          <TabsContent value="products" className="mt-4">
+            {affectedProducts.length > 0 ? (
+              <div className="space-y-3">
+                {affectedProducts.map(product => (
+                  <div key={product.id} className="border rounded p-3">
+                    <div className="font-medium">{product.name}</div>
+                    <div className="text-sm text-gray-600">
+                      SKU: {product.sku} | {t('products.currentStock')}: {product.currentStock}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-10 text-gray-500">
+                {t('orderQuality.noAffectedProducts')}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+    );
+  };
+
+  return (
+    <div className="container mx-auto p-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <div>
-          <h3 className="text-lg font-semibold mb-2">{t('orderQuality.affectedProducts')}</h3>
-          {affectedProducts.length > 0 ? (
-            <div className="space-y-2">
-              {affectedProducts.map(product => (
-                <div key={product.id} className="bg-slate-100 p-2 rounded">
-                  <div className="font-medium">{product.name}</div>
-                  <div className="text-sm">SKU: {product.sku}</div>
-                  <div className="text-sm">
-                    {t('products.stockLevel')}: {product.currentStock} / {t('products.minLevel')}: {product.minStockLevel}
+          <h1 className="text-2xl font-bold">{t('orderQuality.title')}</h1>
+          <p className="text-gray-500">{t('orderQuality.description')}</p>
+        </div>
+        
+        <div className="mt-4 md:mt-0 flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => refetchQuality()}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            {t('common.refresh')}
+          </Button>
+          
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            {t('orderQuality.createNew')}
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats cards */}
+      {!isLoadingStats && qualityStats && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500">
+                {t('orderQuality.stats.totalIssues')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{qualityStats.totalQualityIssues}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500">
+                {t('orderQuality.stats.totalShipped')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{qualityStats.totalShippedOrders}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500">
+                {t('orderQuality.stats.qualityRate')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {qualityStats.qualityRate.toFixed(2)}%
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500">
+                {t('orderQuality.stats.mostCommonIssue')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {qualityStats.qualityIssuesByType.length > 0 ? (
+                <div className="text-lg font-bold">
+                  {t(`orderQuality.types.${qualityStats.qualityIssuesByType[0].type}`)}
+                </div>
+              ) : (
+                <div className="text-lg">-</div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Filters */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
+            <ListFilter className="h-5 w-5 mr-2" />
+            {t('common.filters')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="filter-id">{t('orderQuality.filterById')}</Label>
+              <Input
+                id="filter-id"
+                placeholder={t('orderQuality.filterByIdPlaceholder')}
+                value={filterOrderId}
+                onChange={(e) => setFilterOrderId(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="filter-resolved">{t('orderQuality.filterByStatus')}</Label>
+              <Select value={filterResolved} onValueChange={setFilterResolved}>
+                <SelectTrigger id="filter-resolved" className="mt-1">
+                  <SelectValue placeholder={t('orderQuality.filterByStatusPlaceholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('common.all')}</SelectItem>
+                  <SelectItem value="unresolved">{t('orderQuality.unresolved')}</SelectItem>
+                  <SelectItem value="resolved">{t('orderQuality.resolved')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="filter-type">{t('orderQuality.filterByType')}</Label>
+              <Select value={filterQualityType} onValueChange={setFilterQualityType}>
+                <SelectTrigger id="filter-type" className="mt-1">
+                  <SelectValue placeholder={t('orderQuality.filterByTypePlaceholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('common.all')}</SelectItem>
+                  <SelectItem value="missing_item">{t('orderQuality.types.missing_item')}</SelectItem>
+                  <SelectItem value="wrong_item">{t('orderQuality.types.wrong_item')}</SelectItem>
+                  <SelectItem value="damaged_item">{t('orderQuality.types.damaged_item')}</SelectItem>
+                  <SelectItem value="wrong_quantity">{t('orderQuality.types.wrong_quantity')}</SelectItem>
+                  <SelectItem value="duplicate_item">{t('orderQuality.types.duplicate_item')}</SelectItem>
+                  <SelectItem value="wrong_address">{t('orderQuality.types.wrong_address')}</SelectItem>
+                  <SelectItem value="picking_issue">{t('orderQuality.types.picking_issue')}</SelectItem>
+                  <SelectItem value="packing_issue">{t('orderQuality.types.packing_issue')}</SelectItem>
+                  <SelectItem value="system_issue">{t('orderQuality.types.system_issue')}</SelectItem>
+                  <SelectItem value="other">{t('orderQuality.types.other')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quality issues table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('orderQuality.qualityIssuesList')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoadingQuality ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="flex items-center space-x-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-[250px]" />
+                    <Skeleton className="h-4 w-[200px]" />
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-sm text-gray-500">{t('orderQuality.noAffectedProducts')}</div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  // Main render
-  return (
-    <div className="container mx-auto px-4 py-6">
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-            <div>
-              <CardTitle>{t('orderQuality.title')}</CardTitle>
-              <CardDescription className="mt-1">
-                {t('orderQuality.createDescription')}
-              </CardDescription>
-            </div>
-            <div className="flex space-x-2 mt-4 md:mt-0">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => {
-                  refetchQuality();
-                  refetchStats();
-                }}
-              >
-                <RefreshCw className="h-4 w-4 mr-1" />
-                {t('common.refresh')}
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={() => setIsCreateDialogOpen(true)}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                {t('orderQuality.createNew')}
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-4">
-              <TabsTrigger value="order-related">
-                <ClipboardList className="h-4 w-4 mr-1" />
-                {t('orderQuality.tabs.orderRelated')}
-              </TabsTrigger>
-              <TabsTrigger value="standalone">
-                <ClipboardCheck className="h-4 w-4 mr-1" />
-                {t('orderQuality.tabs.standalone')}
-              </TabsTrigger>
-              <TabsTrigger value="stats">
-                <BarChart4 className="h-4 w-4 mr-1" />
-                {t('orderQuality.statistics')}
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="order-related">
-              <div className="mb-4 bg-gray-50 p-3 rounded">
-                <div className="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-4">
-                  <div className="flex items-center">
-                    <ListFilter className="h-4 w-4 mr-1 text-gray-500" />
-                    <span className="text-sm font-medium">{t('orderQuality.filters.title')}</span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Input
-                      className="w-44"
-                      placeholder={t('orderQuality.filters.orderNumberPlaceholder')}
-                      value={filterOrderId}
-                      onChange={(e) => setFilterOrderId(e.target.value)}
-                    />
-                    <Select 
-                      value={filterResolved} 
-                      onValueChange={setFilterResolved}
-                    >
-                      <SelectTrigger className="w-36">
-                        <SelectValue placeholder={t('orderQuality.status')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">{t('common.all')}</SelectItem>
-                        <SelectItem value="unresolved">{t('orderQuality.unresolved')}</SelectItem>
-                        <SelectItem value="resolved">{t('orderQuality.resolved')}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Select 
-                      value={filterQualityType} 
-                      onValueChange={setFilterQualityType}
-                    >
-                      <SelectTrigger className="w-44">
-                        <SelectValue placeholder={t('orderQuality.qualityType')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">{t('common.all')}</SelectItem>
-                        <SelectItem value="missing_item">{t('orderQuality.types.missing_item')}</SelectItem>
-                        <SelectItem value="wrong_item">{t('orderQuality.types.wrong_item')}</SelectItem>
-                        <SelectItem value="damaged_item">{t('orderQuality.types.damaged_item')}</SelectItem>
-                        <SelectItem value="wrong_quantity">{t('orderQuality.types.wrong_quantity')}</SelectItem>
-                        <SelectItem value="duplicate_item">{t('orderQuality.types.duplicate_item')}</SelectItem>
-                        <SelectItem value="wrong_address">{t('orderQuality.types.wrong_address')}</SelectItem>
-                        <SelectItem value="picking_issue">{t('orderQuality.types.picking_issue')}</SelectItem>
-                        <SelectItem value="packing_issue">{t('orderQuality.types.packing_issue')}</SelectItem>
-                        <SelectItem value="system_issue">{t('orderQuality.types.system_issue')}</SelectItem>
-                        <SelectItem value="other">{t('orderQuality.types.other')}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex ml-auto">
-                    <div className="dropdown">
-                      <Button variant="outline" size="sm" className="ml-auto">
-                        <Download className="h-4 w-4 mr-1" />
-                        {t('common.export')}
-                      </Button>
-                      <div className="dropdown-menu">
-                        <Button variant="ghost" size="sm" onClick={() => handleExport('csv')}>CSV</Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleExport('excel')}>Excel</Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleExport('pdf')}>PDF</Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {isLoadingQuality ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                </div>
-              ) : filteredQualityIssues.length > 0 ? (
-                <>
-                  <div className="text-sm text-gray-500 mb-2">
-                    {t('orderQuality.count', { count: filteredQualityIssues.length })}
-                  </div>
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>{t('orderQuality.identifierColumn')}</TableHead>
-                          <TableHead>{t('orderQuality.qualityType')}</TableHead>
-                          <TableHead>{t('orderQuality.reportDate')}</TableHead>
-                          <TableHead>{t('orderQuality.status')}</TableHead>
-                          <TableHead>{t('orderQuality.inventoryAdjusted')}</TableHead>
-                          <TableHead className="text-right">{t('common.actions')}</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredQualityIssues.map(quality => (
-                          <TableRow key={quality.id}>
-                            <TableCell>
-                              {quality.orderNumber ? (
-                                <span>{quality.orderNumber}</span>
-                              ) : quality.qualityLabel ? (
-                                <span className="italic text-gray-600">{quality.qualityLabel}</span>
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
-                            </TableCell>
-                            <TableCell>{getQualityTypeDisplay(quality.errorType)}</TableCell>
-                            <TableCell>{formatDate(quality.reportDate)}</TableCell>
-                            <TableCell>
-                              {quality.qualityStatus ? (
-                                <Badge variant="outline" className={
-                                  quality.qualityStatus === 'closed' ? "bg-green-100 text-green-800" :
-                                  quality.qualityStatus === 'in_progress' ? "bg-blue-100 text-blue-800" :
-                                  quality.qualityStatus === 'waiting' ? "bg-amber-100 text-amber-800" :
-                                  "bg-gray-100 text-gray-800"
-                                }>
-                                  {t(`orderQuality.statuses.${quality.qualityStatus}`)}
-                                </Badge>
-                              ) : (
-                                <Badge variant={quality.resolved ? "outline" : "destructive"} className={quality.resolved ? "bg-green-100 text-green-800" : ""}>
-                                  {quality.resolved ? t('orderQuality.resolved') : t('orderQuality.unresolved')}
-                                </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {quality.inventoryAdjusted ? (
-                                <Badge variant="outline" className="bg-green-50">
-                                  <CheckCircle2 className="h-3 w-3 mr-1 text-green-500" />
-                                  {t('common.yes')}
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="bg-yellow-50">
-                                  <AlertCircle className="h-3 w-3 mr-1 text-yellow-500" />
-                                  {t('common.no')}
-                                </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end space-x-1">
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon"
-                                  onClick={() => {
-                                    setSelectedQuality(quality);
-                                    setIsViewDialogOpen(true);
-                                  }}
-                                  title={t('orderQuality.details')}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                {!quality.resolved && (
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon"
-                                    onClick={() => {
-                                      setSelectedQuality(quality);
-                                      setIsResolveDialogOpen(true);
-                                    }}
-                                    title={t('orderQuality.resolveError')}
-                                  >
-                                    <CheckCircle2 className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                {!quality.inventoryAdjusted && (
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon"
-                                    onClick={() => {
-                                      setSelectedQuality(quality);
-                                      setIsAdjustDialogOpen(true);
-                                    }}
-                                    title={t('orderQuality.adjustInventory')}
-                                  >
-                                    <Package className="h-4 w-4" />
-                                  </Button>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-                    <ClipboardList className="h-8 w-8 text-gray-400" />
-                  </div>
-                  <h3 className="text-lg font-medium">{t('orderQuality.noErrors')}</h3>
-                  <p className="text-sm text-gray-500 mt-2">
-                    {t('orderQuality.noErrorsDescription')}
-                  </p>
-                </div>
-              )}
-            </TabsContent>
-            <TabsContent value="stats">
-              {isLoadingStats ? (
-                <div className="space-y-4">
-                  <Skeleton className="h-40 w-full" />
-                  <Skeleton className="h-60 w-full" />
-                </div>
-              ) : qualityStats ? (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card>
-                      <CardContent className="pt-6">
-                        <div className="text-center">
-                          <div className="text-3xl font-bold">{qualityStats.totalQualityIssues}</div>
-                          <div className="text-sm text-gray-500 mt-1">{t('orderQuality.stats.totalErrors')}</div>
-                          <div className="text-xs text-gray-400 mt-1">
-                            {t('orderQuality.stats.fromOrders', { count: qualityStats.totalShippedOrders })}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="pt-6">
-                        <div className="text-center">
-                          <div className="text-3xl font-bold">{qualityStats.qualityRate.toFixed(2)}%</div>
-                          <div className="text-sm text-gray-500 mt-1">{t('orderQuality.stats.errorRate')}</div>
-                          <div className="text-xs text-gray-400 mt-1">
-                            {t('orderQuality.stats.per100Orders')}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="pt-6">
-                        <div className="text-center">
-                          {qualityStats.qualityIssuesByType.length > 0 ? (
-                            <>
-                              <div className="text-xl font-bold">
-                                {getQualityTypeDisplay(qualityStats.qualityIssuesByType[0].type)}
-                              </div>
-                              <div className="text-sm text-gray-500 mt-1">{t('orderQuality.stats.mostCommonError')}</div>
-                              <div className="text-xs text-gray-400 mt-1">
-                                {t('orderQuality.stats.errorCount', { count: qualityStats.qualityIssuesByType[0].count })}
-                              </div>
-                            </>
+            <>
+              {filteredQualityIssues.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[180px]">{t('orderQuality.qualityId')}</TableHead>
+                      <TableHead className="w-[150px]">{t('orderQuality.reportDate')}</TableHead>
+                      <TableHead>{t('orderQuality.qualityType')}</TableHead>
+                      <TableHead className="w-[100px]">{t('orderQuality.status')}</TableHead>
+                      <TableHead className="text-right">{t('common.actions')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredQualityIssues.map(quality => (
+                      <TableRow key={quality.id}>
+                        <TableCell className="font-medium">
+                          {quality.orderNumber ? (
+                            quality.orderNumber
                           ) : (
-                            <div className="text-gray-500">{t('common.noData')}</div>
+                            quality.qualityLabel || `#${quality.id}`
                           )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">{t('orderQuality.stats.errorsByType')}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {qualityStats.qualityIssuesByType.length > 0 ? (
-                          <div className="space-y-2">
-                            {qualityStats.qualityIssuesByType.map(item => (
-                              <div key={item.type} className="flex items-center">
-                                <div className="w-1/2 text-sm">{getQualityTypeDisplay(item.type)}</div>
-                                <div className="w-1/2">
-                                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                    <div
-                                      className="bg-blue-600 h-2.5 rounded-full"
-                                      style={{ width: `${(item.count / qualityStats.totalQualityIssues) * 100}%` }}
-                                    ></div>
-                                  </div>
-                                  <div className="text-xs text-right mt-1">{item.count}</div>
-                                </div>
-                              </div>
-                            ))}
+                        </TableCell>
+                        <TableCell>
+                          {formatDate(quality.reportDate)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="bg-amber-100 text-amber-800">
+                            {t(`orderQuality.types.${quality.errorType}`)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={quality.resolved ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}>
+                            {quality.resolved ? t('orderQuality.resolved') : t('orderQuality.unresolved')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setSelectedQuality(quality);
+                                setIsViewDialogOpen(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            
+                            {!quality.resolved && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setSelectedQuality(quality);
+                                  setIsResolveDialogOpen(true);
+                                }}
+                              >
+                                <CheckCircle2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                            
+                            {!quality.inventoryAdjusted && isInventoryRelatedIssue(quality.errorType) && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setSelectedQuality(quality);
+                                  setIsAdjustDialogOpen(true);
+                                }}
+                              >
+                                <Package className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
-                        ) : (
-                          <div className="text-center py-4 text-gray-500">{t('common.noData')}</div>
-                        )}
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">{t('orderQuality.stats.errorRateTrend')}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {qualityStats.trending.length > 0 ? (
-                          <div className="h-60">
-                            {/* Chart would go here - using a placeholder for now */}
-                            <div className="flex h-full items-end">
-                              {qualityStats.trending.map((point, index) => (
-                                <div key={index} className="flex-1 flex flex-col items-center">
-                                  <div
-                                    className="w-4/5 bg-blue-500 rounded-t"
-                                    style={{
-                                      height: `${Math.max(5, (point.qualityRate / 10) * 100)}%`,
-                                      minHeight: '10px'
-                                    }}
-                                  ></div>
-                                  <div className="text-xs mt-1 rotate-45 origin-left text-gray-500">
-                                    {new Date(point.date).toLocaleDateString(navigator.language, { month: 'short', day: 'numeric' })}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-center py-4 text-gray-500">{t('common.noData')}</div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               ) : (
-                <div className="text-center py-8 text-gray-500">
-                  {t('common.failedToLoadData')}
+                <div className="text-center py-10">
+                  <ClipboardList className="h-12 w-12 mx-auto text-gray-400" />
+                  <p className="mt-2 text-gray-500">{t('orderQuality.noQualityIssues')}</p>
                 </div>
               )}
-            </TabsContent>
-          </Tabs>
+            </>
+          )}
         </CardContent>
       </Card>
 
       {/* Create quality issue dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{t('orderQuality.createNew')}</DialogTitle>
             <DialogDescription>
               {t('orderQuality.createDescription')}
             </DialogDescription>
           </DialogHeader>
+          
           <Form {...createForm}>
             <form onSubmit={createForm.handleSubmit(onCreateSubmit)} className="space-y-4">
               <Tabs defaultValue="order_related" className="mb-4">
@@ -1109,119 +1026,73 @@ export default function OrderQuality() {
                   <TabsTrigger value="order_related">{t('orderQuality.tabs.orderRelated')}</TabsTrigger>
                   <TabsTrigger value="standalone">{t('orderQuality.tabs.standalone')}</TabsTrigger>
                 </TabsList>
-                
-                <TabsContent value="order_related">
-                  <div className="bg-blue-50 p-4 mb-4 rounded-md border border-blue-100">
-                    <h3 className="text-sm font-medium mb-2 flex items-center text-blue-800">
-                      <Link className="h-4 w-4 mr-1" />
-                      {t('orderQuality.linkOrderTitle')}
-                    </h3>
-                    <p className="text-xs text-blue-600 mb-3">{t('orderQuality.linkOrderDescription')}</p>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                <TabsContent value="order_related" className="space-y-4">
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
                       <FormField
                         control={createForm.control}
                         name="orderNumber"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-blue-700">{t('orders.orderNumber')}</FormLabel>
-                            <div className="flex space-x-2">
+                            <div className="flex items-center space-x-2">
                               <FormControl>
                                 <Input 
-                                  placeholder="ORD-0000"
+                                  placeholder={t('orderQuality.orderNumberPlaceholder')} 
+                                  {...field} 
                                   value={field.value || ''}
-                                  onChange={field.onChange}
-                                  onBlur={field.onBlur}
-                                  name={field.name}
-                                  className="border-blue-200 focus:border-blue-400"
                                 />
                               </FormControl>
                               <Button 
                                 type="button" 
                                 variant="outline" 
-                                size="icon"
-                                className="border-blue-200 hover:bg-blue-100"
-                                onClick={async () => {
-                                  setOrderSearchResults([]);
-                                  
-                                  // Even if field is empty, just show all orders to select from
-                                  const searchQuery = field.value || "";
-                                  
-                                  toast({
-                                    description: t('orderQuality.searchingOrder'),
-                                  });
-                                  
-                                  try {
-                                    // Get all orders if query is empty, otherwise search
-                                    let endpoint = searchQuery 
-                                      ? `/api/orders/search?query=${encodeURIComponent(searchQuery)}`
-                                      : `/api/orders/recent?limit=20`;
-                                      
-                                    const orders = await apiRequest(endpoint);
-                                    
-                                    if (orders && orders.length > 0) {
-                                      setOrderSearchResults(orders);
-                                      setIsOrderSearchDialogOpen(true);
-                                    } else {
-                                      toast({
-                                        description: t('orderQuality.orderNotFound'),
-                                        variant: "destructive"
-                                      });
-                                    }
-                                  } catch (error) {
-                                    console.error("Error searching orders:", error);
-                                    toast({
-                                      description: t('orderQuality.orderSearchError'),
-                                      variant: "destructive"
-                                    });
-                                  }
-                                }}
+                                size="sm"
+                                onClick={() => setIsOrderSearchDialogOpen(true)}
                               >
-                                <Search className="h-4 w-4 text-blue-500" />
+                                <Search className="h-4 w-4 mr-1" />
+                                {t('common.search')}
                               </Button>
                             </div>
                             <FormDescription className="text-xs text-blue-600">
-                              {t('orderQuality.enterOrderNumberDescription')}
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={createForm.control}
-                        name="orderId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-blue-700">{t('common.orderId')}</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                value={field.value || ''}
-                                name={field.name}
-                                onBlur={field.onBlur}
-                                onChange={e => {
-                                  // Allow empty value (undefined) or convert to number
-                                  const value = e.target.value === '' ? undefined : parseInt(e.target.value);
-                                  field.onChange(value);
-                                }}
-                                className="border-blue-200 focus:border-blue-400"
-                                placeholder={t('orderQuality.orderIdPlaceholder')}
-                              />
-                            </FormControl>
-                            <FormDescription className="text-xs text-blue-600">
-                              {t('orderQuality.autoFilledWhenOrderFound')}
+                              {t('orderQuality.orderNumberHint')}
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
+                    
+                    <FormField
+                      control={createForm.control}
+                      name="orderId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-blue-700">{t('common.orderId')}</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              readOnly 
+                              value={field.value?.toString() || ''} 
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                field.onChange(val ? parseInt(val) : undefined);
+                              }}
+                              className="w-24 bg-gray-50" 
+                            />
+                          </FormControl>
+                          <FormDescription className="text-xs text-blue-600">
+                            {t('orderQuality.orderIdHint')}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </TabsContent>
-                
-                <TabsContent value="standalone">
-                  <div className="grid grid-cols-2 gap-4">
+
+                <TabsContent value="standalone" className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={createForm.control}
                       name="qualityLabel"
@@ -1229,91 +1100,108 @@ export default function OrderQuality() {
                         <FormItem>
                           <FormLabel>{t('orderQuality.qualityLabel')}</FormLabel>
                           <FormControl>
-                            <Input value={field.value || ''} onChange={field.onChange} placeholder={t('orderQuality.qualityLabelPlaceholder')} />
+                            <Input 
+                              placeholder={t('orderQuality.qualityLabelPlaceholder')} 
+                              {...field} 
+                              value={field.value || ''}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    
                     <FormField
                       control={createForm.control}
                       name="qualityCategory"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t('orderQuality.qualityCategory')}</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || 'warehouse'}>
+                          <div>
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder={t('orderQuality.selectCategory')} />
-                              </SelectTrigger>
+                              <Select
+                                value={field.value}
+                                onValueChange={field.onChange}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder={t('orderQuality.qualityCategoryPlaceholder')} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="production">{t('orderQuality.categories.production')}</SelectItem>
+                                  <SelectItem value="warehouse">{t('orderQuality.categories.warehouse')}</SelectItem>
+                                  <SelectItem value="shipping">{t('orderQuality.categories.shipping')}</SelectItem>
+                                  <SelectItem value="supplier">{t('orderQuality.categories.supplier')}</SelectItem>
+                                  <SelectItem value="other">{t('orderQuality.categories.other')}</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </FormControl>
-                            <SelectContent>
-                              <SelectItem value="manufacturing">{t('orderQuality.categories.manufacturing')}</SelectItem>
-                              <SelectItem value="packaging">{t('orderQuality.categories.packaging')}</SelectItem>
-                              <SelectItem value="shipping">{t('orderQuality.categories.shipping')}</SelectItem>
-                              <SelectItem value="warehouse">{t('orderQuality.categories.warehouse')}</SelectItem>
-                              <SelectItem value="supplier">{t('orderQuality.categories.supplier')}</SelectItem>
-                              <SelectItem value="customer">{t('orderQuality.categories.customer')}</SelectItem>
-                              <SelectItem value="system">{t('orderQuality.categories.system')}</SelectItem>
-                              <SelectItem value="other">{t('orderQuality.categories.other')}</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={createForm.control}
                       name="priority"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t('orderQuality.priority')}</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || 'medium'}>
+                          <div>
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder={t('orderQuality.selectPriority')} />
-                              </SelectTrigger>
+                              <Select
+                                value={field.value}
+                                onValueChange={field.onChange}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder={t('orderQuality.priorityPlaceholder')} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="low">{t('orderQuality.priorities.low')}</SelectItem>
+                                  <SelectItem value="medium">{t('orderQuality.priorities.medium')}</SelectItem>
+                                  <SelectItem value="high">{t('orderQuality.priorities.high')}</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </FormControl>
-                            <SelectContent>
-                              <SelectItem value="low">{t('orderQuality.priorities.low')}</SelectItem>
-                              <SelectItem value="medium">{t('orderQuality.priorities.medium')}</SelectItem>
-                              <SelectItem value="high">{t('orderQuality.priorities.high')}</SelectItem>
-                              <SelectItem value="critical">{t('orderQuality.priorities.critical')}</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    
                     <FormField
                       control={createForm.control}
                       name="qualityStatus"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t('orderQuality.qualityStatus')}</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || 'open'}>
+                          <div>
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder={t('orderQuality.selectStatus')} />
-                              </SelectTrigger>
+                              <Select
+                                value={field.value}
+                                onValueChange={field.onChange}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder={t('orderQuality.qualityStatusPlaceholder')} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="open">{t('orderQuality.statuses.open')}</SelectItem>
+                                  <SelectItem value="in_progress">{t('orderQuality.statuses.in_progress')}</SelectItem>
+                                  <SelectItem value="waiting">{t('orderQuality.statuses.waiting')}</SelectItem>
+                                  <SelectItem value="closed">{t('orderQuality.statuses.closed')}</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </FormControl>
-                            <SelectContent>
-                              <SelectItem value="open">{t('orderQuality.statuses.open')}</SelectItem>
-                              <SelectItem value="in_progress">{t('orderQuality.statuses.in_progress')}</SelectItem>
-                              <SelectItem value="waiting">{t('orderQuality.statuses.waiting')}</SelectItem>
-                              <SelectItem value="closed">{t('orderQuality.statuses.closed')}</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={createForm.control}
                       name="assignedToId"
@@ -1323,11 +1211,10 @@ export default function OrderQuality() {
                           <FormControl>
                             <Input 
                               type="number" 
-                              value={field.value || ''} 
-                              onChange={e => {
-                                // Allow empty value (undefined) or convert to number
-                                const value = e.target.value === '' ? undefined : parseInt(e.target.value);
-                                field.onChange(value);
+                              value={field.value?.toString() || ''} 
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                field.onChange(val ? parseInt(val) : undefined);
                               }}
                             />
                           </FormControl>
@@ -1335,6 +1222,7 @@ export default function OrderQuality() {
                         </FormItem>
                       )}
                     />
+                    
                     <FormField
                       control={createForm.control}
                       name="dueDate"
@@ -1342,7 +1230,7 @@ export default function OrderQuality() {
                         <FormItem>
                           <FormLabel>{t('orderQuality.dueDate')}</FormLabel>
                           <FormControl>
-                            <Input type="date" value={field.value || ''} onChange={field.onChange} />
+                            <Input type="date" {...field} value={field.value || ''} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -1350,57 +1238,63 @@ export default function OrderQuality() {
                     />
                   </div>
                   
-                  <div className="mt-4">
-                    <FormField
-                      control={createForm.control}
-                      name="qualityNotes"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t('orderQuality.qualityNotes')}</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              value={field.value || ''}
-                              onChange={field.onChange}
-                              placeholder={t('orderQuality.qualityNotesPlaceholder')}
-                              rows={3}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  <FormField
+                    control={createForm.control}
+                    name="qualityNotes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('orderQuality.qualityNotes')}</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder={t('orderQuality.qualityNotesPlaceholder')} 
+                            className="resize-none" 
+                            rows={3} 
+                            {...field}
+                            value={field.value || ''} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </TabsContent>
               </Tabs>
+              
               <FormField
                 control={createForm.control}
                 name="errorType"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('orderQuality.qualityType')}</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || 'missing_item'}>
+                    <div>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('orderQuality.selectQualityType')} />
-                        </SelectTrigger>
+                        <Select 
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('orderQuality.selectQualityType')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="missing_item">{t('orderQuality.types.missing_item')}</SelectItem>
+                            <SelectItem value="wrong_item">{t('orderQuality.types.wrong_item')}</SelectItem>
+                            <SelectItem value="damaged_item">{t('orderQuality.types.damaged_item')}</SelectItem>
+                            <SelectItem value="wrong_quantity">{t('orderQuality.types.wrong_quantity')}</SelectItem>
+                            <SelectItem value="duplicate_item">{t('orderQuality.types.duplicate_item')}</SelectItem>
+                            <SelectItem value="wrong_address">{t('orderQuality.types.wrong_address')}</SelectItem>
+                            <SelectItem value="picking_issue">{t('orderQuality.types.picking_issue')}</SelectItem>
+                            <SelectItem value="packing_issue">{t('orderQuality.types.packing_issue')}</SelectItem>
+                            <SelectItem value="system_issue">{t('orderQuality.types.system_issue')}</SelectItem>
+                            <SelectItem value="other">{t('orderQuality.types.other')}</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="missing_item">{t('orderQuality.types.missing_item')}</SelectItem>
-                        <SelectItem value="wrong_item">{t('orderQuality.types.wrong_item')}</SelectItem>
-                        <SelectItem value="damaged_item">{t('orderQuality.types.damaged_item')}</SelectItem>
-                        <SelectItem value="wrong_quantity">{t('orderQuality.types.wrong_quantity')}</SelectItem>
-                        <SelectItem value="duplicate_item">{t('orderQuality.types.duplicate_item')}</SelectItem>
-                        <SelectItem value="wrong_address">{t('orderQuality.types.wrong_address')}</SelectItem>
-                        <SelectItem value="picking_issue">{t('orderQuality.types.picking_issue')}</SelectItem>
-                        <SelectItem value="packing_issue">{t('orderQuality.types.packing_issue')}</SelectItem>
-                        <SelectItem value="system_issue">{t('orderQuality.types.system_issue')}</SelectItem>
-                        <SelectItem value="other">{t('orderQuality.types.other')}</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              
               <FormField
                 control={createForm.control}
                 name="description"
@@ -1409,16 +1303,18 @@ export default function OrderQuality() {
                     <FormLabel>{t('orderQuality.description')}</FormLabel>
                     <FormControl>
                       <Textarea 
+                        placeholder={t('orderQuality.descriptionPlaceholder')} 
+                        className="resize-none" 
+                        rows={4} 
+                        {...field} 
                         value={field.value || ''}
-                        onChange={field.onChange}
-                        placeholder={t('orderQuality.descriptionPlaceholder')}
-                        rows={4}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              
               <DialogFooter>
                 <Button
                   type="button"
@@ -1443,11 +1339,14 @@ export default function OrderQuality() {
       <Dialog open={isResolveDialogOpen} onOpenChange={setIsResolveDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('orderQuality.resolveSuccess')}</DialogTitle>
+            <DialogTitle>{t('orderQuality.resolveIssue')}</DialogTitle>
             <DialogDescription>
-              {selectedQuality && t('orderQuality.resolveErrorDescription', { orderNumber: selectedQuality.orderNumber })}
+              {selectedQuality && t('orderQuality.resolveDescription', { 
+                orderNumber: selectedQuality.orderNumber || selectedQuality.qualityLabel || `#${selectedQuality.id}` 
+              })}
             </DialogDescription>
           </DialogHeader>
+          
           <Form {...resolveForm}>
             <form onSubmit={resolveForm.handleSubmit(onResolveSubmit)} className="space-y-4">
               <FormField
@@ -1458,16 +1357,18 @@ export default function OrderQuality() {
                     <FormLabel>{t('orderQuality.rootCause')}</FormLabel>
                     <FormControl>
                       <Textarea 
+                        placeholder={t('orderQuality.rootCausePlaceholder')} 
+                        className="resize-none" 
+                        rows={3} 
+                        {...field} 
                         value={field.value || ''}
-                        onChange={field.onChange}
-                        placeholder={t('orderQuality.rootCausePlaceholder')}
-                        rows={3}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              
               <FormField
                 control={resolveForm.control}
                 name="preventiveMeasures"
@@ -1476,16 +1377,18 @@ export default function OrderQuality() {
                     <FormLabel>{t('orderQuality.preventiveMeasures')}</FormLabel>
                     <FormControl>
                       <Textarea 
+                        placeholder={t('orderQuality.preventiveMeasuresPlaceholder')} 
+                        className="resize-none" 
+                        rows={3} 
+                        {...field} 
                         value={field.value || ''}
-                        onChange={field.onChange}
-                        placeholder={t('orderQuality.preventiveMeasuresPlaceholder')}
-                        rows={3}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              
               <DialogFooter>
                 <Button
                   type="button"
@@ -1512,81 +1415,90 @@ export default function OrderQuality() {
           <DialogHeader>
             <DialogTitle>{t('orderQuality.adjustInventory')}</DialogTitle>
             <DialogDescription>
-              {selectedQuality && t('orderQuality.adjustInventoryDescription', { orderNumber: selectedQuality.orderNumber })}
+              {selectedQuality && t('orderQuality.adjustInventoryDescription', { 
+                orderNumber: selectedQuality.orderNumber || selectedQuality.qualityLabel || `#${selectedQuality.id}` 
+              })}
             </DialogDescription>
           </DialogHeader>
-          <Form {...adjustInventoryForm}>
-            <form onSubmit={adjustInventoryForm.handleSubmit(onAdjustInventorySubmit)} className="space-y-4">
-              <div className="text-sm">{t('orderQuality.adjustmentsDescription')}</div>
-              {affectedProducts.length > 0 ? (
-                (adjustInventoryForm.getValues('adjustments') || []).map((adjustment, index) => {
-                  const product = products.find(p => p.id === adjustment.productId);
-                  if (!product) return null;
-
-                  return (
-                    <div key={index} className="border rounded p-3 space-y-2">
-                      <div className="font-medium">{product.name}</div>
-                      <div className="text-sm">
-                        SKU: {product.sku} | {t('products.currentStock')}: {product.currentStock}
+          
+          <div className="text-sm">{t('orderQuality.adjustmentsDescription')}</div>
+          
+          {affectedProducts.length > 0 ? (
+            <Form {...adjustInventoryForm}>
+              <form onSubmit={adjustInventoryForm.handleSubmit(onAdjustInventorySubmit)} className="space-y-4">
+                <div className="space-y-4">
+                  {adjustInventoryForm.getValues('adjustments')?.map((adjustment, index) => {
+                    const product = products.find(p => p.id === adjustment.productId);
+                    if (!product) return null;
+                    
+                    return (
+                      <div key={index} className="border rounded p-3 space-y-2">
+                        <div className="font-medium">{product.name}</div>
+                        <div className="text-sm">
+                          SKU: {product.sku} | {t('products.currentStock')}: {product.currentStock}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <label className="text-sm w-40">{t('orderQuality.adjustmentQuantity')}:</label>
+                          <Input
+                            type="number"
+                            value={adjustment.quantity || 0}
+                            onChange={(e) => {
+                              let value = 0;
+                              try {
+                                value = parseInt(e.target.value) || 0;
+                              } catch (err) {
+                                value = 0;
+                              }
+                              const newAdjustments = [...adjustInventoryForm.getValues('adjustments')];
+                              newAdjustments[index].quantity = value;
+                              adjustInventoryForm.setValue('adjustments', newAdjustments);
+                            }}
+                            className="w-24"
+                          />
+                          {adjustment.quantity !== 0 && (
+                            <span className="text-sm">
+                              {adjustment.quantity > 0 ? (
+                                <span className="text-green-600">
+                                  {t('orderQuality.willIncrease', { newStock: product.currentStock + adjustment.quantity })}
+                                </span>
+                              ) : (
+                                <span className="text-red-600">
+                                  {t('orderQuality.willDecrease', { newStock: product.currentStock + adjustment.quantity })}
+                                </span>
+                              )}
+                            </span>
+                          )}
+                          {adjustment.quantity === 0 && (
+                            <span className="text-sm text-gray-500">{t('orderQuality.noChange')}</span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <label className="text-sm w-40">{t('orderQuality.adjustmentQuantity')}:</label>
-                        <Input
-                          type="number"
-                          value={adjustment.quantity || 0}
-                          onChange={(e) => {
-                            let value = 0;
-                            try {
-                              value = parseInt(e.target.value) || 0;
-                            } catch (err) {
-                              value = 0;
-                            }
-                            const newAdjustments = [...adjustInventoryForm.getValues('adjustments')];
-                            newAdjustments[index].quantity = value;
-                            adjustInventoryForm.setValue('adjustments', newAdjustments);
-                          }}
-                          className="w-24"
-                        />
-                        {adjustment.quantity !== 0 && (
-                          <span className="text-sm">
-                            {adjustment.quantity > 0 ? (
-                              <span className="text-green-600">
-                                {t('orderQuality.willIncrease', { newStock: product.currentStock + adjustment.quantity })}
-                              </span>
-                            ) : (
-                              <span className="text-red-600">
-                                {t('orderQuality.willDecrease', { newStock: product.currentStock + adjustment.quantity })}
-                              </span>
-                            )}
-                          </span>
-                        )}
-                        {adjustment.quantity === 0 && (
-                          <span className="text-sm text-gray-500">{t('orderQuality.noChange')}</span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="text-center p-4 text-gray-500">{t('orderQuality.noProductsToAdjust')}</div>
-              )}
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsAdjustDialogOpen(false)}
-                >
-                  {t('common.cancel')}
-                </Button>
-                <Button 
-                  type="submit"
-                  disabled={adjustInventoryMutation.isPending || affectedProducts.length === 0}
-                >
-                  {adjustInventoryMutation.isPending ? t('common.saving') : t('orderQuality.adjustAction')}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+                    );
+                  })}
+                </div>
+                
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsAdjustDialogOpen(false)}
+                  >
+                    {t('common.cancel')}
+                  </Button>
+                  <Button 
+                    type="submit"
+                    disabled={adjustInventoryMutation.isPending || affectedProducts.length === 0}
+                  >
+                    {adjustInventoryMutation.isPending ? t('common.saving') : t('orderQuality.adjustAction')}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          ) : (
+            <div className="text-center p-4 text-gray-500">
+              {t('orderQuality.noProductsToAdjust')}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -1597,7 +1509,13 @@ export default function OrderQuality() {
             <DialogTitle>{t('orderQuality.details')}</DialogTitle>
             {selectedQuality && (
               <DialogDescription>
-                {t('orderQuality.errorForOrder', { orderNumber: selectedQuality.orderNumber })}
+                {selectedQuality.orderNumber 
+                  ? t('orderQuality.errorForOrder', { orderNumber: selectedQuality.orderNumber })
+                  : (selectedQuality.qualityLabel 
+                      ? t('orderQuality.qualityIssueDetails', { label: selectedQuality.qualityLabel })
+                      : t('orderQuality.qualityIssueById', { id: selectedQuality.id })
+                    )
+                }
               </DialogDescription>
             )}
           </DialogHeader>
@@ -1619,7 +1537,7 @@ export default function OrderQuality() {
                 {t('orderQuality.resolveAction')}
               </Button>
             )}
-            {selectedQuality && !selectedQuality.inventoryAdjusted && (
+            {selectedQuality && !selectedQuality.inventoryAdjusted && isInventoryRelatedIssue(selectedQuality.errorType) && (
               <Button
                 variant="secondary"
                 onClick={() => {
@@ -1687,7 +1605,19 @@ export default function OrderQuality() {
               {t('orderQuality.selectOrderDescription')}
             </DialogDescription>
           </DialogHeader>
-          <div className="overflow-auto max-h-[400px] mt-4">
+          
+          <div className="flex space-x-2 mb-4">
+            <Input 
+              placeholder={t('orderQuality.searchOrderPlaceholder')}
+              onChange={(e) => handleOrderSearch(e.target.value)}
+            />
+            <Button type="button" variant="secondary">
+              <Search className="h-4 w-4 mr-1" />
+              {t('common.search')}
+            </Button>
+          </div>
+          
+          <div className="overflow-auto max-h-[400px]">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -1745,6 +1675,7 @@ export default function OrderQuality() {
               </div>
             )}
           </div>
+          
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsOrderSearchDialogOpen(false)}>
               {t('common.cancel')}
