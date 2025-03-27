@@ -8,11 +8,14 @@ const router = express.Router();
 
 // Transform DB call logs to match frontend expectations
 function transformCallLog(callLog: CallLog) {
-  return {
-    ...callLog,
+  // Create a new object without the ...callLog spread to avoid TypeScript errors
+  const transformed: any = {
+    id: callLog.id,
+    customerId: callLog.customerId,
     // Map database field names to frontend field names
     customerName: callLog.contactName,
-    subject: callLog.subject || callLog.contactName, // Use actual subject field, fallback to contactName
+    // Use callPurpose as subject since there's no subject field in the schema
+    subject: callLog.callPurpose || callLog.contactName,
     needsFollowup: callLog.callStatus === 'needs_followup',
     outcome: callLog.callPurpose,
     assignedToId: callLog.followupAssignedTo,
@@ -20,8 +23,20 @@ function transformCallLog(callLog: CallLog) {
     // Map enum values to match frontend expectations
     callType: callLog.callType === 'incoming' ? 'inbound' : 
               callLog.callType === 'outgoing' ? 'outbound' : 
-              callLog.callType
+              callLog.callType,
+    // Map database priority values to frontend priority values
+    priority: callLog.priority === 'normal' ? 'medium' : 
+              callLog.priority,
+    // Add other fields needed by the frontend
+    callDate: callLog.callDate,
+    duration: callLog.duration,
+    notes: callLog.notes,
+    followupDate: callLog.followupDate,
+    createdAt: callLog.createdAt,
+    updatedAt: callLog.updatedAt
   };
+  
+  return transformed;
 }
 
 // Get all call logs (with optional date filtering)
