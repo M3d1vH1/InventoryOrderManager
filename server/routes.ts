@@ -17,6 +17,7 @@ import { getOrderErrors, getOrderQuality, createOrderError, updateOrderError, re
 import { getInventoryChanges, getInventoryChange, addInventoryChange, getRecentInventoryChanges, getInventoryChangesByType } from "./api/inventoryChanges";
 import callLogsRouter from "./api/callLogs";
 import prospectiveCustomersRouter from "./api/prospectiveCustomers";
+import { createSlackService } from "./services/notifications/slackService";
 
 // Function to determine the appropriate storage path based on environment
 function getStoragePath(): string {
@@ -100,6 +101,9 @@ function broadcastMessage(message: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Initialize Slack notification service
+  const slackService = createSlackService(storage);
+  
   // API routes
   const apiRouter = app.route('/api');
   
@@ -603,6 +607,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...validatedOrder,
         orderDate: validatedOrder.orderDate || new Date(),
       });
+      
+      // Send Slack notification about new order
+      try {
+        await slackService.notifyNewOrder(order);
+      } catch (slackError) {
+        console.error('Error sending Slack notification for new order:', slackError);
+        // Don't fail the request if Slack notification fails
+      }
       
       // Add order items if provided
       if (items && Array.isArray(items)) {

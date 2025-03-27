@@ -380,6 +380,14 @@ export const notificationSettings = pgTable("notification_settings", {
   dailyReports: boolean("daily_reports").notNull().default(false),
   weeklyReports: boolean("weekly_reports").notNull().default(true),
   soundEnabled: boolean("sound_enabled").notNull().default(true),
+  
+  // Slack notification settings
+  slackEnabled: boolean("slack_enabled").notNull().default(false),
+  slackWebhookUrl: text("slack_webhook_url"),
+  slackNotifyNewOrders: boolean("slack_notify_new_orders").notNull().default(true),
+  slackNotifyCallLogs: boolean("slack_notify_call_logs").notNull().default(true),
+  slackNotifyLowStock: boolean("slack_notify_low_stock").notNull().default(false),
+  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull(),
 });

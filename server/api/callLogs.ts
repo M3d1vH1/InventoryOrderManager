@@ -3,11 +3,21 @@ import { storage } from '../storage';
 import { insertCallLogSchema, insertCallOutcomeSchema, quickCallLogSchema, CallLog } from '@shared/schema';
 import { hasRole } from '../auth';
 import { User } from '@shared/schema';
+import { createSlackService } from '../services/notifications/slackService';
 
 const router = express.Router();
 
+// Initialize Slack service
+const slackService = createSlackService(storage);
+
 // Transform DB call logs to match frontend expectations
-function transformCallLog(callLog: CallLog) {
+function transformCallLog(callLog: CallLog | undefined): any {
+  // Handle undefined call log
+  if (!callLog) {
+    console.error('Attempted to transform undefined call log');
+    return null;
+  }
+  
   // Create a new object without the ...callLog spread to avoid TypeScript errors
   const transformed: any = {
     id: callLog.id,
@@ -198,6 +208,15 @@ router.post('/', async (req, res) => {
       
       console.log('Transformed call data:', callData);
       const newLog = await storage.createCallLog(callData);
+      
+      // Send Slack notification for new call log
+      try {
+        await slackService.notifyNewCallLog(newLog);
+      } catch (slackError) {
+        console.error('Error sending Slack notification for quick call log:', slackError);
+        // Don't fail the request if Slack notification fails
+      }
+      
       const transformedLog = transformCallLog(newLog);
       res.status(201).json(transformedLog);
     } else {
@@ -210,6 +229,15 @@ router.post('/', async (req, res) => {
       }
       
       const newLog = await storage.createCallLog(validatedData);
+      
+      // Send Slack notification for new call log (standard form)
+      try {
+        await slackService.notifyNewCallLog(newLog);
+      } catch (slackError) {
+        console.error('Error sending Slack notification for standard call log:', slackError);
+        // Don't fail the request if Slack notification fails
+      }
+      
       const transformedLog = transformCallLog(newLog);
       res.status(201).json(transformedLog);
     }
@@ -242,6 +270,9 @@ router.patch('/:id', async (req, res) => {
     }
     
     const updatedLog = await storage.updateCallLog(id, req.body);
+    if (!updatedLog) {
+      return res.status(404).json({ error: 'Call log not found or update failed' });
+    }
     const transformedLog = transformCallLog(updatedLog);
     res.json(transformedLog);
   } catch (error) {

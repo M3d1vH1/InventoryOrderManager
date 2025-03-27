@@ -72,7 +72,14 @@ export async function updateNotificationSettings(req: Request, res: Response) {
       shippingUpdates: z.boolean().optional(),
       dailyReports: z.boolean().optional(),
       weeklyReports: z.boolean().optional(),
-      soundEnabled: z.boolean().optional()
+      soundEnabled: z.boolean().optional(),
+      
+      // Slack notification settings
+      slackEnabled: z.boolean().optional(),
+      slackWebhookUrl: z.string().optional().nullable(),
+      slackNotifyNewOrders: z.boolean().optional(),
+      slackNotifyCallLogs: z.boolean().optional(),
+      slackNotifyLowStock: z.boolean().optional()
     });
 
     const validatedData = schema.parse(req.body);
