@@ -28,7 +28,9 @@
       "pendingOrders": "Pending Orders",
       "itemsToPick": "Items to Pick",
       "shippedOrders": "Shipped Orders",
-      "lowStock": "Low Stock Items"
+      "lowStock": "Low Stock Items",
+      "callsYesterday": "Yesterday's Calls",
+      "errorsPerFiftyOrders": "Errors per 50 Orders"
     },
     "recentOrders": "Recent Orders",
     "lowStockItems": "Low Stock Items",

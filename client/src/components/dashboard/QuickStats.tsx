@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ShoppingCart, Package, CheckCircle, AlertTriangle } from "lucide-react";
+import { ShoppingCart, Package, CheckCircle, AlertTriangle, Phone, AlertOctagon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 interface Stats {
@@ -8,6 +8,8 @@ interface Stats {
   itemsToPick: number;
   shippedToday: number;
   lowStockItems: number;
+  callsYesterday: number;
+  errorsPerFiftyOrders: number;
 }
 
 const QuickStats = () => {
@@ -18,8 +20,8 @@ const QuickStats = () => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {[...Array(4)].map((_, i) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+        {[...Array(6)].map((_, i) => (
           <div key={i} className="bg-white rounded-lg shadow p-4 flex items-center animate-pulse">
             <div className="rounded-full bg-slate-200 p-3 mr-4 h-12 w-12"></div>
             <div className="w-full">
@@ -67,11 +69,27 @@ const QuickStats = () => {
       textColor: "text-red-500",
       path: "/products",
       filter: "?stock=low"
+    },
+    {
+      title: t('dashboard.stats.callsYesterday') || "Yesterday's Calls",
+      value: stats?.callsYesterday || 0,
+      icon: <Phone className="h-6 w-6" />,
+      bgColor: "bg-purple-100",
+      textColor: "text-purple-500",
+      path: "/call-logs"
+    },
+    {
+      title: t('dashboard.stats.errorsPerFiftyOrders') || "Errors per 50 Orders",
+      value: (stats?.errorsPerFiftyOrders || 0).toFixed(1),
+      icon: <AlertOctagon className="h-6 w-6" />,
+      bgColor: "bg-orange-100",
+      textColor: "text-orange-500",
+      path: "/order-errors"
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
       {statCards.map((card, index) => (
         <Link key={index} href={card.path + (card.filter || "")}>
           <div className="bg-white rounded-lg shadow p-4 flex items-center hover:bg-slate-50 transition-colors cursor-pointer group">

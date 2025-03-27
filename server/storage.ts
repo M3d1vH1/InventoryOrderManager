@@ -137,6 +137,8 @@ export interface IStorage {
     itemsToPick: number;
     shippedToday: number;
     lowStockItems: number;
+    callsYesterday: number;
+    errorsPerFiftyOrders: number;
   }>;
 
   // Advanced Analytics Methods
@@ -1042,12 +1044,17 @@ export class MemStorage implements IStorage {
     itemsToPick: number;
     shippedToday: number;
     lowStockItems: number;
+    callsYesterday: number;
+    errorsPerFiftyOrders: number;
   }> {
     const allOrders = Array.from(this.orders.values());
     const pendingOrders = allOrders.filter(order => order.status === 'pending').length;
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
     
     const shippedToday = allOrders.filter(
       order => 
@@ -1069,11 +1076,32 @@ export class MemStorage implements IStorage {
     
     const lowStockItems = (await this.getLowStockProducts()).length;
     
+    // Get calls from yesterday
+    const allCallLogs = Array.from(this.callLogs.values());
+    const callsYesterday = allCallLogs.filter(
+      call => {
+        const callDate = new Date(call.callDate);
+        return callDate >= yesterday && callDate < today;
+      }
+    ).length;
+    
+    // Calculate errors per 50 orders
+    const orderQualityIssues = Array.from(this.orderItems.values())
+      .filter(item => item.hasQualityIssues)
+      .length;
+    
+    const totalOrders = allOrders.length;
+    const errorsPerFiftyOrders = totalOrders > 0 
+      ? (orderQualityIssues / totalOrders) * 50 
+      : 0;
+    
     return {
       pendingOrders,
       itemsToPick,
       shippedToday,
-      lowStockItems
+      lowStockItems,
+      callsYesterday,
+      errorsPerFiftyOrders
     };
   }
 

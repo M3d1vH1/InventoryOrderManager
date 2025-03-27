@@ -34,7 +34,9 @@
       "pendingOrders": "Εκκρεμείς Παραγγελίες",
       "itemsToPick": "Προϊόντα για Συλλογή",
       "shippedOrders": "Απεσταλμένες Παραγγελίες",
-      "lowStock": "Προϊόντα με Χαμηλό Απόθεμα"
+      "lowStock": "Προϊόντα με Χαμηλό Απόθεμα",
+      "callsYesterday": "Κλήσεις Χθες",
+      "errorsPerFiftyOrders": "Σφάλματα ανά 50 Παραγγελίες"
     },
     "recentOrders": "Πρόσφατες Παραγγελίες",
     "lowStockItems": "Προϊόντα με Χαμηλό Απόθεμα",

@@ -1,5 +1,5 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { eq, like, desc, asc, and, or, lte, gt, sql, inArray } from 'drizzle-orm';
+import { eq, like, desc, asc, and, or, lte, gt, sql, inArray, count, gte, lt } from 'drizzle-orm';
 import { pool, initDatabase } from './db';
 import { 
   users, type User, type InsertUser,
@@ -844,6 +844,8 @@ export class DatabaseStorage implements IStorage {
     itemsToPick: number;
     shippedToday: number;
     lowStockItems: number;
+    callsYesterday: number;
+    errorsPerFiftyOrders: number;
   }> {
     // Count pending orders
     const pendingOrdersResult = await this.db
@@ -856,6 +858,10 @@ export class DatabaseStorage implements IStorage {
     // Get today's start date
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    
+    // Get yesterday's start date
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
     
     // Count shipped today orders
     const shippedTodayResult = await this.db
@@ -888,11 +894,44 @@ export class DatabaseStorage implements IStorage {
     const lowStockItemsResult = await this.getLowStockProducts();
     const lowStockItems = lowStockItemsResult.length;
     
+    // Count calls from yesterday
+    const callsYesterdayResult = await this.db
+      .select()
+      .from(callLogs)
+      .where(
+        and(
+          gte(callLogs.callDate, yesterday),
+          lt(callLogs.callDate, today)
+        )
+      );
+    
+    const callsYesterday = callsYesterdayResult.length;
+    
+    // Calculate errors per 50 orders ratio
+    const allOrdersCount = await this.db
+      .select({ count: count() })
+      .from(orders);
+    
+    const totalOrders = allOrdersCount[0]?.count || 0;
+    
+    const orderErrorsCount = await this.db
+      .select({ count: count() })
+      .from(orderQuality);
+    
+    const totalErrors = orderErrorsCount[0]?.count || 0;
+    
+    // Calculate errors per 50 orders
+    const errorsPerFiftyOrders = totalOrders > 0 
+      ? (totalErrors / totalOrders) * 50 
+      : 0;
+    
     return {
       pendingOrders,
       itemsToPick,
       shippedToday,
-      lowStockItems
+      lowStockItems,
+      callsYesterday,
+      errorsPerFiftyOrders
     };
   }
 
