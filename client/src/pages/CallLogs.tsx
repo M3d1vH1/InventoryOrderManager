@@ -322,7 +322,7 @@ const CallLogs: React.FC = () => {
                             variant="outline" 
                             className={getPriorityColor(call.priority)}
                           >
-                            {t(`callLogs.priorities.${call.priority}`)}
+                            {t(`callLogs.form.priorities.${call.priority}`)}
                           </Badge>
                         </td>
                         <td className="py-3 px-4">
