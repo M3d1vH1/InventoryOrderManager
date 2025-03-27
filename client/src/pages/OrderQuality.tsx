@@ -459,20 +459,28 @@ export default function OrderQuality() {
   // Effect to reset form values when opening adjust inventory dialog
   useEffect(() => {
     if (isAdjustDialogOpen) {
+      // Always reset to a safe default first
+      adjustInventoryForm.reset({
+        adjustments: []
+      });
+      
       if (selectedQuality) {
-        // Initialize adjustment form with affected products
-        const initialAdjustments = selectedQuality.affectedProductIds
-          .map(id => {
-            const productId = parseInt(id);
-            return {
-              productId,
-              quantity: 0
-            };
-          });
+        // Initialize adjustment form with affected products in the next tick
+        // to avoid React controlled/uncontrolled component warnings
+        setTimeout(() => {
+          const initialAdjustments = selectedQuality.affectedProductIds
+            .map(id => {
+              const productId = parseInt(id);
+              return {
+                productId,
+                quantity: 0
+              };
+            });
 
-        adjustInventoryForm.reset({
-          adjustments: initialAdjustments
-        });
+          adjustInventoryForm.reset({
+            adjustments: initialAdjustments
+          });
+        }, 0);
       } else if (createdQualityId) {
         // If we have a newly created quality issue but no selectedQuality yet,
         // fetch the quality issue details to get the affected products
@@ -1511,7 +1519,7 @@ export default function OrderQuality() {
             <form onSubmit={adjustInventoryForm.handleSubmit(onAdjustInventorySubmit)} className="space-y-4">
               <div className="text-sm">{t('orderQuality.adjustmentsDescription')}</div>
               {affectedProducts.length > 0 ? (
-                adjustInventoryForm.watch('adjustments')?.map((adjustment, index) => {
+                (adjustInventoryForm.getValues('adjustments') || []).map((adjustment, index) => {
                   const product = products.find(p => p.id === adjustment.productId);
                   if (!product) return null;
 
@@ -1527,7 +1535,12 @@ export default function OrderQuality() {
                           type="number"
                           value={adjustment.quantity || 0}
                           onChange={(e) => {
-                            const value = parseInt(e.target.value);
+                            let value = 0;
+                            try {
+                              value = parseInt(e.target.value) || 0;
+                            } catch (err) {
+                              value = 0;
+                            }
                             const newAdjustments = [...adjustInventoryForm.getValues('adjustments')];
                             newAdjustments[index].quantity = value;
                             adjustInventoryForm.setValue('adjustments', newAdjustments);
