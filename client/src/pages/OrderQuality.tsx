@@ -1120,8 +1120,11 @@ export default function OrderQuality() {
                             <div className="flex space-x-2">
                               <FormControl>
                                 <Input 
-                                  placeholder="ORD-0000" 
-                                  {...field} 
+                                  placeholder="ORD-0000"
+                                  value={field.value || ''}
+                                  onChange={field.onChange}
+                                  onBlur={field.onBlur}
+                                  name={field.name}
                                   className="border-blue-200 focus:border-blue-400"
                                 />
                               </FormControl>
@@ -1186,7 +1189,9 @@ export default function OrderQuality() {
                             <FormControl>
                               <Input 
                                 type="number" 
-                                {...field} 
+                                value={field.value || ''}
+                                name={field.name}
+                                onBlur={field.onBlur}
                                 onChange={e => {
                                   // Allow empty value (undefined) or convert to number
                                   const value = e.target.value === '' ? undefined : parseInt(e.target.value);
