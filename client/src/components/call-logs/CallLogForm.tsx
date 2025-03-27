@@ -61,7 +61,7 @@ const callLogFormSchema = z.object({
   }),
   customerId: z.number().optional(),
   prospectiveCustomerId: z.number().optional(),
-  contactName: z.string().min(1, 'Contact name is required'),
+  subject: z.string().min(1, 'Subject is required'),
   companyName: z.string().optional(),
   newProspectiveCustomer: z.object({
     name: z.string().min(1, 'Name is required').optional(),
@@ -79,7 +79,7 @@ const callLogFormSchema = z.object({
   duration: z.number().min(1, 'Duration must be at least 1 minute').default(15),
   notes: z.string().optional(),
   priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
-  isFollowup: z.boolean().default(false),
+  needsFollowup: z.boolean().default(false),
   followupDate: z.date().optional(),
   followupTime: z.string().optional(),
   followupAssignedTo: z.number().optional(),
@@ -131,7 +131,7 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
     callStatus: initialData?.callStatus || 'completed',
     customerType: 'existing',
     customerId: initialData?.customerId,
-    contactName: initialData?.contactName || '',
+    subject: initialData?.subject || '',
     companyName: initialData?.companyName || '',
     prospectiveCustomerId: undefined,
     newProspectiveCustomer: undefined,
@@ -140,7 +140,7 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
     duration: initialData?.duration || 15,
     notes: initialData?.notes || '',
     priority: initialData?.priority || 'normal',
-    isFollowup: initialData?.isFollowup || false,
+    needsFollowup: initialData?.needsFollowup || false,
     followupDate: initialData?.followupDate ? new Date(initialData.followupDate) : undefined,
     followupTime: initialData?.followupTime || '',
     followupAssignedTo: initialData?.followupAssignedTo,
@@ -172,8 +172,8 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
     }
   }, [open, form]);
 
-  // Watch for changes to isFollowup and customerType
-  const isFollowup = form.watch('isFollowup');
+  // Watch for changes to needsFollowup and customerType
+  const needsFollowup = form.watch('needsFollowup');
   const customerType = form.watch('customerType');
 
   const createMutation = useMutation({
@@ -542,15 +542,15 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Contact Name */}
+              {/* Subject */}
               <FormField
                 control={form.control}
-                name="contactName"
+                name="subject"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('callLogs.form.contactName')}<span className="text-red-500">*</span></FormLabel>
+                    <FormLabel>{t('callLogs.form.subject')}<span className="text-red-500">*</span></FormLabel>
                     <FormControl>
-                      <Input placeholder={t('callLogs.form.enterContactName')} {...field} />
+                      <Input placeholder={t('callLogs.form.enterSubject')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -763,14 +763,14 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
 
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Is Followup */}
+              {/* Needs Followup */}
               <FormField
                 control={form.control}
-                name="isFollowup"
+                name="needsFollowup"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                     <div className="space-y-0.5">
-                      <FormLabel>{t('callLogs.form.isFollowup')}</FormLabel>
+                      <FormLabel>{t('callLogs.form.needsFollowup')}</FormLabel>
                     </div>
                     <FormControl>
                       <Switch
@@ -786,7 +786,7 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
             </div>
 
             {/* Followup Date (conditional) */}
-            {isFollowup && (
+            {needsFollowup && (
               <FormField
                 control={form.control}
                 name="followupDate"
