@@ -211,7 +211,7 @@ export default function OrderQuality() {
   const [isResolveDialogOpen, setIsResolveDialogOpen] = useState(false);
   const [isAdjustDialogOpen, setIsAdjustDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [isAdjustPromptOpen, setIsAdjustPromptOpen] = useState(false);
+  // Removed isAdjustPromptOpen state as we're using toast notification instead
   const [affectedProducts, setAffectedProducts] = useState<Product[]>([]);
   const [createdQualityId, setCreatedQualityId] = useState<number | null>(null);
   const [filterOrderId, setFilterOrderId] = useState<string>('');
@@ -311,23 +311,28 @@ export default function OrderQuality() {
       });
     },
     onSuccess: (response: any) => {
-      // Store the created quality issue ID for potential inventory adjustment
       if (response && response.id) {
         setCreatedQualityId(response.id);
         
         // Get the quality issue type from the response
         const errorType = response.errorType || "";
         
-        // Only show adjustment prompt for inventory-related issues
+        // Show a regular success message
+        toast({
+          title: t('orderQuality.createSuccess'),
+          description: t('orderQuality.createSuccessDescription'),
+        });
+        
+        // For inventory-related issues, show a separate informational toast about manual adjustment
         if (isInventoryRelatedIssue(errorType)) {
-          setIsAdjustPromptOpen(true);
-        } else {
-          // Show success message without adjustment prompt for non-inventory issues
-          toast({
-            title: t('orderQuality.createSuccess'),
-            description: t('orderQuality.createSuccessDescription'),
-          });
-          setCreatedQualityId(null);
+          setTimeout(() => {
+            toast({
+              title: t('orderQuality.inventoryAdjustmentInfo'),
+              description: t('orderQuality.manualAdjustmentPrompt'),
+              variant: "default",
+              duration: 8000,
+            });
+          }, 1000); // Slight delay to make sure it appears after the first toast
         }
       } else {
         // Just show success message if no ID is returned
@@ -1545,48 +1550,7 @@ export default function OrderQuality() {
         </DialogContent>
       </Dialog>
 
-      {/* Inventory adjustment prompt */}
-      <AlertDialog open={isAdjustPromptOpen} onOpenChange={setIsAdjustPromptOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('orderQuality.inventoryAdjustmentNeeded')}</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2 pt-2">
-              <p>{t('orderQuality.adjustmentQuestion')}</p>
-              <div className="bg-amber-50 p-3 rounded-md border border-amber-200 mt-2">
-                <p className="text-amber-800 font-medium text-sm flex items-center">
-                  <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
-                  {t('orderQuality.inventoryImpactExplanation')}
-                </p>
-                <ul className="mt-2 text-sm text-amber-700 list-disc pl-5 space-y-1">
-                  <li>{t('orderQuality.inventoryAdjustmentExamples.missing')}</li>
-                  <li>{t('orderQuality.inventoryAdjustmentExamples.wrong')}</li>
-                  <li>{t('orderQuality.inventoryAdjustmentExamples.damaged')}</li>
-                </ul>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setIsAdjustPromptOpen(false);
-              setCreatedQualityId(null);
-              // Just show success message without adjustment
-              toast({
-                title: t('orderQuality.createSuccess'),
-                description: t('orderQuality.createSuccessDescription'),
-              });
-              queryClient.invalidateQueries({ queryKey: ['/api/order-quality'] });
-            }}>
-              {t('common.no')}
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={() => {
-              setIsAdjustPromptOpen(false);
-              setIsAdjustDialogOpen(true);
-            }}>
-              {t('common.yes')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Removed inventory adjustment prompt - now using toast notification instead */}
 
       {/* Order search dialog */}
       <Dialog 
