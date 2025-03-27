@@ -16,6 +16,8 @@ import Customers from "@/pages/Customers";
 import Categories from "@/pages/Categories";
 import UnshippedItems from "@/pages/UnshippedItems";
 import OrderQuality from "@/pages/OrderQuality";
+import CallLogs from "@/pages/CallLogs";
+import Calendar from "@/pages/Calendar";
 import Login from "@/pages/Login";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
@@ -75,6 +77,8 @@ function AuthenticatedRouter() {
       <Route path="/order-picking" component={OrderPicking} />
       <Route path="/order-picking/:id" component={OrderPicking} />
       <Route path="/product-barcode/:id" component={ProductBarcode} />
+      <Route path="/call-logs" component={CallLogs} />
+      <Route path="/calendar" component={Calendar} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>

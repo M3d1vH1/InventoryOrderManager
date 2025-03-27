@@ -193,6 +193,20 @@ const Sidebar = () => {
                     </button>
                   </Link>
                 </li>
+                
+                <li className="mb-1">
+                  <Link href="/calendar" onClick={() => setCurrentPage("Calendar")}>
+                    <button 
+                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/calendar") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
+                      title={t('app.calendar') || "Calendar"}
+                    >
+                      <span className="flex justify-center items-center w-5 h-5">
+                        <i className="fas fa-calendar-alt"></i>
+                      </span>
+                      {isSidebarOpen && <span className="ml-2">{t('app.calendar') || "Calendar"}</span>}
+                    </button>
+                  </Link>
+                </li>
               </>
             )}
             

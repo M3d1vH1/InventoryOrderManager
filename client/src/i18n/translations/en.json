@@ -551,6 +551,29 @@
     "deleteSuccess": "Order deleted successfully",
     "deleteError": "Failed to delete order"
   },
+  "calendar": {
+    "title": "Calendar",
+    "pageTitle": "Order Calendar",
+    "pageDescription": "View orders and shipments on a calendar view",
+    "allEvents": "All Events",
+    "ordersCreated": "Orders Created",
+    "ordersShipped": "Orders Shipped",
+    "orderCreated": "Order Created",
+    "orderShipped": "Order Shipped",
+    "controls": {
+      "next": "Next",
+      "previous": "Previous",
+      "today": "Today",
+      "month": "Month",
+      "week": "Week",
+      "day": "Day",
+      "agenda": "Agenda",
+      "date": "Date",
+      "time": "Time",
+      "event": "Event",
+      "noEventsInRange": "No events in this range"
+    }
+  },
   "callLogs": {
     "title": "Call Logs",
     "pageTitle": "Customer Call Logs",
