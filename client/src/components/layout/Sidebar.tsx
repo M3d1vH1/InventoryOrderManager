@@ -153,15 +153,15 @@ const Sidebar = () => {
                 </li>
                 
                 <li className="mb-1">
-                  <Link href="/order-quality" onClick={() => setCurrentPage("Quality")}>
+                  <Link href="/order-quality" onClick={() => setCurrentPage(t('orderQuality.title'))}>
                     <button 
                       className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-quality") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors ${!isSidebarOpen && "justify-center"}`}
-                      title="Quality"
+                      title={t('orderQuality.title')}
                     >
                       <span className="flex justify-center items-center w-5 h-5">
                         <i className="fas fa-clipboard-list"></i>
                       </span>
-                      {isSidebarOpen && <span className="ml-2">Quality</span>}
+                      {isSidebarOpen && <span className="ml-2">{t('orderQuality.title')}</span>}
                     </button>
                   </Link>
                 </li>

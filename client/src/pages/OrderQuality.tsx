@@ -204,7 +204,7 @@ export default function OrderQuality() {
   const queryClient = useQueryClient();
 
   // State variables
-  const [activeTab, setActiveTab] = useState('quality');
+  const [activeTab, setActiveTab] = useState('order-related');
   const [selectedQuality, setSelectedQuality] = useState<OrderQuality | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isResolveDialogOpen, setIsResolveDialogOpen] = useState(false);
