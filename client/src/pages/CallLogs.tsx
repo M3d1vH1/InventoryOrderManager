@@ -172,20 +172,38 @@ const CallLogs: React.FC = () => {
           title={t('callLogs.pageTitle')}
           description={t('callLogs.pageDescription')}
         />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className="overflow-hidden">
-              <CardHeader className="p-4">
-                <Skeleton className="h-5 w-1/2" />
-                <Skeleton className="h-4 w-3/4" />
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <Skeleton className="h-4 w-full mb-2" />
-                <Skeleton className="h-4 w-full mb-2" />
-                <Skeleton className="h-4 w-2/3" />
-              </CardContent>
-            </Card>
-          ))}
+        <div className="rounded-md border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/50 text-left">
+                <th className="py-3 px-4 font-medium">{t('callLogs.columns.date')}</th>
+                <th className="py-3 px-4 font-medium">{t('callLogs.columns.customer')}</th>
+                <th className="py-3 px-4 font-medium">{t('callLogs.columns.subject')}</th>
+                <th className="py-3 px-4 font-medium">{t('callLogs.columns.type')}</th>
+                <th className="py-3 px-4 font-medium">{t('callLogs.columns.priority')}</th>
+                <th className="py-3 px-4 font-medium">{t('callLogs.columns.followup')}</th>
+                <th className="py-3 px-4 font-medium text-right">{t('callLogs.columns.actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...Array(6)].map((_, i) => (
+                <tr key={i} className="border-b">
+                  <td className="py-3 px-4"><Skeleton className="h-4 w-24" /></td>
+                  <td className="py-3 px-4"><Skeleton className="h-4 w-28" /></td>
+                  <td className="py-3 px-4"><Skeleton className="h-4 w-32" /></td>
+                  <td className="py-3 px-4"><Skeleton className="h-4 w-20" /></td>
+                  <td className="py-3 px-4"><Skeleton className="h-4 w-16" /></td>
+                  <td className="py-3 px-4"><Skeleton className="h-4 w-24" /></td>
+                  <td className="py-3 px-4 text-right">
+                    <div className="flex items-center justify-end space-x-2">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     );
@@ -266,67 +284,84 @@ const CallLogs: React.FC = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {filteredCallLogs.map((call) => (
-                  <Card key={call.id} className="overflow-hidden">
-                    <CardHeader className="pb-2">
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-base line-clamp-1">{call.subject}</CardTitle>
-                        <Badge 
-                          variant="outline" 
-                          className={getCallTypeColor(call.callType)}
-                        >
-                          {t(`callLogs.form.callTypes.${call.callType}`)}
-                        </Badge>
-                      </div>
-                      <CardDescription className="line-clamp-1">
-                        {call.customerName}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="pb-2">
-                      <div className="text-sm">
-                        <div className="flex justify-between mb-1">
-                          <span className="text-muted-foreground">{t('callLogs.details.date')}:</span>
-                          <span>{formatDate(call.callDate)}</span>
-                        </div>
-                        
-                        {call.outcome && (
-                          <div className="flex justify-between mb-1">
-                            <span className="text-muted-foreground">{t('callLogs.details.outcome')}:</span>
-                            <span>{t(`callLogs.form.outcomes.${call.outcome}`)}</span>
-                          </div>
-                        )}
-                        
-                        <div className="flex justify-between mb-1">
-                          <span className="text-muted-foreground">{t('callLogs.details.priority')}:</span>
+              <div className="rounded-md border">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/50 text-left">
+                      <th className="py-3 px-4 font-medium">{t('callLogs.columns.date')}</th>
+                      <th className="py-3 px-4 font-medium">{t('callLogs.columns.customer')}</th>
+                      <th className="py-3 px-4 font-medium">{t('callLogs.columns.subject')}</th>
+                      <th className="py-3 px-4 font-medium">{t('callLogs.columns.type')}</th>
+                      <th className="py-3 px-4 font-medium">{t('callLogs.columns.priority')}</th>
+                      <th className="py-3 px-4 font-medium">{t('callLogs.columns.followup')}</th>
+                      <th className="py-3 px-4 font-medium text-right">{t('callLogs.columns.actions')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredCallLogs.map((call) => (
+                      <tr key={call.id} className="border-b hover:bg-muted/50">
+                        <td className="py-3 px-4">
+                          {formatDate(call.callDate)}
+                        </td>
+                        <td className="py-3 px-4">
+                          {call.customerName}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="max-w-[200px] truncate">{call.subject}</div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <Badge 
+                            variant="outline" 
+                            className={getCallTypeColor(call.callType)}
+                          >
+                            {t(`callLogs.form.callTypes.${call.callType}`)}
+                          </Badge>
+                        </td>
+                        <td className="py-3 px-4">
                           <Badge 
                             variant="outline" 
                             className={getPriorityColor(call.priority)}
                           >
                             {t(`callLogs.form.priorities.${call.priority}`)}
                           </Badge>
-                        </div>
-                        
-                        {call.needsFollowup && call.followupDate && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">{t('callLogs.details.followupDate')}:</span>
-                            <span className="font-medium">{formatDate(call.followupDate)}</span>
+                        </td>
+                        <td className="py-3 px-4">
+                          {call.needsFollowup && call.followupDate ? (
+                            <div className="whitespace-nowrap text-amber-600">
+                              {formatDate(call.followupDate)}
+                            </div>
+                          ) : call.needsFollowup ? (
+                            <div className="text-amber-600">
+                              {t('callLogs.needsFollowup')}
+                            </div>
+                          ) : (
+                            <div className="text-muted-foreground">—</div>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <div className="flex items-center justify-end space-x-2">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => handleViewCallClick(call)}
+                              title={t('callLogs.viewCall')}
+                            >
+                              <i className="fas fa-eye"></i>
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => handleEditCallClick(call)}
+                              title={t('callLogs.editCall')}
+                            >
+                              <i className="fas fa-edit"></i>
+                            </Button>
                           </div>
-                        )}
-                      </div>
-                    </CardContent>
-                    <div className="flex items-center justify-between gap-2 p-4 pt-0 flex-col sm:flex-row">
-                      <Button variant="outline" size="sm" className="flex-1 w-full mb-2 sm:mb-0" onClick={() => handleViewCallClick(call)}>
-                        <i className="fas fa-eye mr-1"></i>
-                        {t('callLogs.viewCall')}
-                      </Button>
-                      <Button variant="outline" size="sm" className="flex-1 w-full" onClick={() => handleEditCallClick(call)}>
-                        <i className="fas fa-edit mr-1"></i>
-                        {t('callLogs.editCall')}
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </TabsContent>
