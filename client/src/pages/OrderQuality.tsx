@@ -216,6 +216,8 @@ export default function OrderQuality() {
   const [filterOrderId, setFilterOrderId] = useState<string>('');
   const [filterResolved, setFilterResolved] = useState<string>('all');
   const [filterQualityType, setFilterQualityType] = useState<string>('all');
+  const [orderSearchResults, setOrderSearchResults] = useState<any[]>([]);
+  const [isOrderSearchDialogOpen, setIsOrderSearchDialogOpen] = useState(false);
 
   // Query for fetching quality issues
   const {
@@ -1100,6 +1102,8 @@ export default function OrderQuality() {
                                 size="icon"
                                 className="border-blue-200 hover:bg-blue-100"
                                 onClick={async () => {
+                                  setOrderSearchResults([]);
+                                  
                                   if (!field.value) {
                                     toast({
                                       description: t('orderQuality.emptyOrderNumber'),
@@ -1113,13 +1117,10 @@ export default function OrderQuality() {
                                   });
                                   
                                   try {
-                                    const order = await apiRequest(`/api/orders/by-number/${field.value}`);
-                                    if (order) {
-                                      // Set the orderId in the form
-                                      createForm.setValue("orderId", order.id);
-                                      toast({
-                                        description: t('orderQuality.orderFound'),
-                                      });
+                                    const orders = await apiRequest(`/api/orders/search?query=${field.value}`);
+                                    if (orders && orders.length > 0) {
+                                      setOrderSearchResults(orders);
+                                      setIsOrderSearchDialogOpen(true);
                                     } else {
                                       toast({
                                         description: t('orderQuality.orderNotFound'),
@@ -1605,6 +1606,81 @@ export default function OrderQuality() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Order search dialog */}
+      <Dialog open={isOrderSearchDialogOpen} onOpenChange={setIsOrderSearchDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('orderQuality.selectOrder')}</DialogTitle>
+            <DialogDescription>
+              {t('orderQuality.selectOrderDescription')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-auto max-h-[400px] mt-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('orders.orderNumber')}</TableHead>
+                  <TableHead>{t('orders.customerName')}</TableHead>
+                  <TableHead>{t('orders.orderDate')}</TableHead>
+                  <TableHead>{t('orders.status')}</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {orderSearchResults.map(order => (
+                  <TableRow key={order.id}>
+                    <TableCell>{order.orderNumber}</TableCell>
+                    <TableCell>{order.customerName}</TableCell>
+                    <TableCell>{formatDate(order.orderDate)}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={
+                          order.status === 'shipped' ? 'bg-green-100 text-green-800' :
+                          order.status === 'pending' ? 'bg-blue-100 text-blue-800' :
+                          order.status === 'processing' ? 'bg-amber-100 text-amber-800' :
+                          order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }
+                      >
+                        {t(`orders.status.${order.status}`)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          // Set the order information in the form
+                          createForm.setValue("orderId", order.id);
+                          createForm.setValue("orderNumber", order.orderNumber);
+                          setIsOrderSearchDialogOpen(false);
+                          toast({
+                            description: t('orderQuality.orderSelected', { orderNumber: order.orderNumber }),
+                          });
+                        }}
+                      >
+                        {t('common.select')}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {orderSearchResults.length === 0 && (
+              <div className="text-center py-4 text-gray-500">
+                {t('common.noResults')}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsOrderSearchDialogOpen(false)}>
+              {t('common.cancel')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

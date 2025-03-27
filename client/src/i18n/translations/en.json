@@ -488,6 +488,9 @@
     "orderNotFound": "No order found with this number",
     "orderSearchError": "Error searching for order",
     "enterOrderNumberDescription": "Enter an order number to link to this quality issue",
+    "selectOrder": "Select Order",
+    "selectOrderDescription": "Choose an order from the search results",
+    "orderSelected": "Order {{orderNumber}} selected",
     "filters": {
       "title": "Filter Quality Issues",
       "description": "Filter quality issue reports by order number, status, or type",
