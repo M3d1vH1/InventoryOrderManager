@@ -118,6 +118,8 @@ const Customers = () => {
   const [viewDetailsId, setViewDetailsId] = useState<number | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<string>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -440,6 +442,41 @@ const Customers = () => {
     if (!company) return 'None';
     return company;
   };
+  
+  // Function to sort customers based on the current sort criteria
+  const sortedCustomers = [...customers].sort((a, b) => {
+    const aValue = a[sortBy as keyof Customer];
+    const bValue = b[sortBy as keyof Customer];
+    
+    // Handle null values
+    if (aValue === null && bValue === null) return 0;
+    if (aValue === null) return sortOrder === 'asc' ? 1 : -1;
+    if (bValue === null) return sortOrder === 'asc' ? -1 : 1;
+    
+    // Perform string comparison for sorting
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      return sortOrder === 'asc' 
+        ? aValue.localeCompare(bValue) 
+        : bValue.localeCompare(aValue);
+    }
+    
+    // Fallback for other types
+    return sortOrder === 'asc' 
+      ? (aValue > bValue ? 1 : -1) 
+      : (bValue > aValue ? 1 : -1);
+  });
+  
+  // Toggle sorting when clicking on table headers
+  const handleSort = (column: string) => {
+    if (sortBy === column) {
+      // If clicking the same column, toggle the sort order
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      // If clicking a different column, set it as the sort column and default to ascending
+      setSortBy(column);
+      setSortOrder('asc');
+    }
+  };
 
   // Function to export customer data
   const handleExport = (format: string) => {
@@ -557,16 +594,76 @@ const Customers = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>VAT Number</TableHead>
-                    <TableHead>Contact Person</TableHead>
-                    <TableHead>Country</TableHead>
-                    <TableHead>Shipping Company</TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort('name')}
+                    >
+                      <div className="flex items-center">
+                        Name
+                        {sortBy === 'name' && (
+                          <span className="ml-1">
+                            {sortOrder === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort('vatNumber')}
+                    >
+                      <div className="flex items-center">
+                        VAT Number
+                        {sortBy === 'vatNumber' && (
+                          <span className="ml-1">
+                            {sortOrder === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort('contactPerson')}
+                    >
+                      <div className="flex items-center">
+                        Contact Person
+                        {sortBy === 'contactPerson' && (
+                          <span className="ml-1">
+                            {sortOrder === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort('country')}
+                    >
+                      <div className="flex items-center">
+                        Country
+                        {sortBy === 'country' && (
+                          <span className="ml-1">
+                            {sortOrder === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort('shippingCompany')}
+                    >
+                      <div className="flex items-center">
+                        Shipping Company
+                        {sortBy === 'shippingCompany' && (
+                          <span className="ml-1">
+                            {sortOrder === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </div>
+                    </TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {customers.map((customer: Customer) => (
+                  {sortedCustomers.map((customer: Customer) => (
                     <TableRow key={customer.id}>
                       <TableCell className="font-medium">{customer.name}</TableCell>
                       <TableCell>{customer.vatNumber || '-'}</TableCell>
@@ -666,7 +763,11 @@ const Customers = () => {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="info@acmecorp.com" {...field} />
+                        <Input 
+                          placeholder="info@acmecorp.com" 
+                          {...field} 
+                          value={field.value || ''}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -877,7 +978,11 @@ const Customers = () => {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="info@acmecorp.com" {...field} />
+                        <Input 
+                          placeholder="info@acmecorp.com" 
+                          {...field} 
+                          value={field.value || ''}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
