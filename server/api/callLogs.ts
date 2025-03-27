@@ -123,7 +123,9 @@ router.post('/', async (req, res) => {
         contactName: quickData.subject, // Use subject as contact name for quick calls
         notes: quickData.notes || '',
         isFollowup: quickData.needsFollowup,
-        callDate: quickData.callDate.toISOString(),
+        callDate: typeof quickData.callDate === 'string' 
+                  ? quickData.callDate 
+                  : quickData.callDate.toISOString(),
         duration: quickData.duration,
         tags: []
       };
@@ -135,7 +137,9 @@ router.post('/', async (req, res) => {
       
       // Add followup date if needed
       if (quickData.needsFollowup && quickData.followupDate) {
-        callData.followupDate = quickData.followupDate.toISOString();
+        callData.followupDate = typeof quickData.followupDate === 'string'
+                                ? quickData.followupDate
+                                : quickData.followupDate.toISOString();
       }
       
       console.log('Transformed call data:', callData);

@@ -627,12 +627,19 @@ export const quickCallLogSchema = z.object({
   prospectiveCustomerId: z.number().optional().nullable(),
   subject: z.string().min(1, { message: "Subject is required" }),
   callType: z.string(), // Matches frontend form values: 'inbound', 'outbound', 'missed', 'scheduled'
-  callDate: z.date(),
+  callDate: z.union([
+    z.string().transform(val => new Date(val)),
+    z.date()
+  ]),
   duration: z.number().min(1),
   notes: z.string().optional(),
   priority: z.string(), // Matches frontend form values: 'low', 'medium', 'high', 'urgent'
   needsFollowup: z.boolean().default(false),
-  followupDate: z.date().optional().nullable(),
+  followupDate: z.union([
+    z.string().transform(val => new Date(val)),
+    z.date(),
+    z.null()
+  ]).optional().nullable(),
 });
 
 export type InsertCallLog = z.infer<typeof insertCallLogSchema>;
