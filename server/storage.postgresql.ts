@@ -18,7 +18,9 @@ import {
   notificationSettings, type NotificationSettings, type InsertNotificationSettings,
   rolePermissions, type RolePermission, type InsertRolePermission,
   orderQuality, type OrderQuality, type InsertOrderQuality,
-  inventoryChanges, type InventoryChange, type InsertInventoryChange
+  inventoryChanges, type InventoryChange, type InsertInventoryChange,
+  callLogs, type CallLog, type InsertCallLog,
+  callOutcomes, type CallOutcome, type InsertCallOutcome
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { log } from './vite';
@@ -2212,6 +2214,286 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error fetching inventory changes by type:", error);
       return [];
+    }
+  }
+
+  // Call Logs methods
+  async getCallLog(id: number): Promise<CallLog | undefined> {
+    try {
+      const result = await this.db.select().from(callLogs).where(eq(callLogs.id, id));
+      return result[0];
+    } catch (error) {
+      console.error("Error fetching call log:", error);
+      return undefined;
+    }
+  }
+  
+  async getAllCallLogs(dateFrom?: string, dateTo?: string): Promise<CallLog[]> {
+    try {
+      let query = this.db.select().from(callLogs);
+      
+      if (dateFrom) {
+        const fromDate = new Date(dateFrom);
+        query = query.where(sql`${callLogs.callDate} >= ${fromDate.toISOString()}`);
+      }
+      
+      if (dateTo) {
+        const toDate = new Date(dateTo);
+        query = query.where(sql`${callLogs.callDate} <= ${toDate.toISOString()}`);
+      }
+      
+      return await query.orderBy(desc(callLogs.callDate));
+    } catch (error) {
+      console.error("Error fetching all call logs:", error);
+      return [];
+    }
+  }
+  
+  async getCallLogsByCustomer(customerId: number): Promise<CallLog[]> {
+    try {
+      return await this.db
+        .select()
+        .from(callLogs)
+        .where(eq(callLogs.customerId, customerId))
+        .orderBy(desc(callLogs.callDate));
+    } catch (error) {
+      console.error("Error fetching call logs by customer:", error);
+      return [];
+    }
+  }
+  
+  async getScheduledCalls(userId?: number): Promise<CallLog[]> {
+    try {
+      let query = this.db
+        .select()
+        .from(callLogs)
+        .where(eq(callLogs.callStatus, 'scheduled'));
+      
+      if (userId) {
+        query = query.where(
+          or(
+            eq(callLogs.userId, userId),
+            eq(callLogs.followupAssignedTo, userId)
+          )
+        );
+      }
+      
+      return await query.orderBy(asc(callLogs.callDate));
+    } catch (error) {
+      console.error("Error fetching scheduled calls:", error);
+      return [];
+    }
+  }
+  
+  async getCallLogsRequiringFollowup(): Promise<CallLog[]> {
+    try {
+      return await this.db
+        .select()
+        .from(callLogs)
+        .where(eq(callLogs.callStatus, 'needs_followup'))
+        .orderBy(asc(callLogs.followupDate));
+    } catch (error) {
+      console.error("Error fetching calls requiring followup:", error);
+      return [];
+    }
+  }
+  
+  async searchCallLogs(query: string): Promise<CallLog[]> {
+    try {
+      const lowercaseQuery = `%${query.toLowerCase()}%`;
+      return await this.db
+        .select()
+        .from(callLogs)
+        .where(
+          or(
+            sql`LOWER(${callLogs.contactName}) LIKE ${lowercaseQuery}`,
+            sql`LOWER(${callLogs.companyName}) LIKE ${lowercaseQuery}`,
+            sql`LOWER(${callLogs.notes}) LIKE ${lowercaseQuery}`,
+            sql`EXISTS (SELECT 1 FROM UNNEST(${callLogs.tags}) AS tag WHERE LOWER(tag) LIKE ${lowercaseQuery})`
+          )
+        )
+        .orderBy(desc(callLogs.callDate));
+    } catch (error) {
+      console.error("Error searching call logs:", error);
+      return [];
+    }
+  }
+  
+  async createCallLog(callLog: InsertCallLog): Promise<CallLog> {
+    try {
+      const now = new Date();
+      
+      const [createdCallLog] = await this.db
+        .insert(callLogs)
+        .values({
+          ...callLog,
+          customerId: callLog.customerId || null,
+          companyName: callLog.companyName || null,
+          callTime: callLog.callTime || null,
+          duration: callLog.duration || null,
+          notes: callLog.notes || null,
+          followupDate: callLog.followupDate || null,
+          followupTime: callLog.followupTime || null,
+          followupAssignedTo: callLog.followupAssignedTo || null,
+          reminderSent: false,
+          previousCallId: callLog.previousCallId || null,
+          tags: callLog.tags || [],
+          createdAt: now,
+          updatedAt: now
+        })
+        .returning();
+      
+      return createdCallLog;
+    } catch (error) {
+      console.error("Error creating call log:", error);
+      throw error;
+    }
+  }
+  
+  async updateCallLog(id: number, callLog: Partial<InsertCallLog>): Promise<CallLog | undefined> {
+    try {
+      const [updatedCallLog] = await this.db
+        .update(callLogs)
+        .set({
+          ...callLog,
+          updatedAt: new Date()
+        })
+        .where(eq(callLogs.id, id))
+        .returning();
+      
+      return updatedCallLog;
+    } catch (error) {
+      console.error("Error updating call log:", error);
+      return undefined;
+    }
+  }
+  
+  async deleteCallLog(id: number): Promise<boolean> {
+    try {
+      // First delete any associated outcomes
+      await this.db
+        .delete(callOutcomes)
+        .where(eq(callOutcomes.callId, id));
+      
+      // Then delete the call log
+      const result = await this.db
+        .delete(callLogs)
+        .where(eq(callLogs.id, id))
+        .returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting call log:", error);
+      return false;
+    }
+  }
+  
+  // Call Outcomes methods
+  async getCallOutcome(id: number): Promise<CallOutcome | undefined> {
+    try {
+      const result = await this.db.select().from(callOutcomes).where(eq(callOutcomes.id, id));
+      return result[0];
+    } catch (error) {
+      console.error("Error fetching call outcome:", error);
+      return undefined;
+    }
+  }
+  
+  async getCallOutcomesByCall(callId: number): Promise<CallOutcome[]> {
+    try {
+      return await this.db
+        .select()
+        .from(callOutcomes)
+        .where(eq(callOutcomes.callId, callId))
+        .orderBy(asc(callOutcomes.createdAt));
+    } catch (error) {
+      console.error("Error fetching call outcomes by call:", error);
+      return [];
+    }
+  }
+  
+  async createCallOutcome(outcome: InsertCallOutcome): Promise<CallOutcome> {
+    try {
+      const now = new Date();
+      
+      const [createdOutcome] = await this.db
+        .insert(callOutcomes)
+        .values({
+          ...outcome,
+          dueDate: outcome.dueDate || null,
+          assignedToId: outcome.assignedToId || null,
+          notes: outcome.notes || null,
+          completedById: null,
+          completedAt: null,
+          createdAt: now,
+          updatedAt: now
+        })
+        .returning();
+      
+      return createdOutcome;
+    } catch (error) {
+      console.error("Error creating call outcome:", error);
+      throw error;
+    }
+  }
+  
+  async updateCallOutcome(id: number, outcome: Partial<InsertCallOutcome>): Promise<CallOutcome | undefined> {
+    try {
+      const [updatedOutcome] = await this.db
+        .update(callOutcomes)
+        .set({
+          ...outcome,
+          updatedAt: new Date()
+        })
+        .where(eq(callOutcomes.id, id))
+        .returning();
+      
+      return updatedOutcome;
+    } catch (error) {
+      console.error("Error updating call outcome:", error);
+      return undefined;
+    }
+  }
+  
+  async completeCallOutcome(id: number, userId: number, notes?: string): Promise<CallOutcome | undefined> {
+    try {
+      const now = new Date();
+      
+      let updateData: any = {
+        status: 'completed',
+        completedById: userId,
+        completedAt: now,
+        updatedAt: now
+      };
+      
+      if (notes !== undefined) {
+        updateData.notes = notes;
+      }
+      
+      const [completedOutcome] = await this.db
+        .update(callOutcomes)
+        .set(updateData)
+        .where(eq(callOutcomes.id, id))
+        .returning();
+      
+      return completedOutcome;
+    } catch (error) {
+      console.error("Error completing call outcome:", error);
+      return undefined;
+    }
+  }
+  
+  async deleteCallOutcome(id: number): Promise<boolean> {
+    try {
+      const result = await this.db
+        .delete(callOutcomes)
+        .where(eq(callOutcomes.id, id))
+        .returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting call outcome:", error);
+      return false;
     }
   }
 }

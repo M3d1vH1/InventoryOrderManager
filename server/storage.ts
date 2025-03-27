@@ -15,7 +15,9 @@ import {
   notificationSettings, type NotificationSettings, type InsertNotificationSettings,
   rolePermissions, type RolePermission, type InsertRolePermission,
   orderQuality, type OrderQuality, type InsertOrderQuality,
-  inventoryChanges, type InventoryChange, type InsertInventoryChange
+  inventoryChanges, type InventoryChange, type InsertInventoryChange,
+  callLogs, type CallLog, type InsertCallLog,
+  callOutcomes, type CallOutcome, type InsertCallOutcome
 } from "@shared/schema";
 import { DatabaseStorage, initStorage } from './storage.postgresql';
 import { log } from './vite';
@@ -198,6 +200,25 @@ export interface IStorage {
   addInventoryChange(change: InsertInventoryChange): Promise<InventoryChange>;
   getRecentInventoryChanges(limit: number): Promise<InventoryChange[]>;
   getInventoryChangesByType(changeType: string): Promise<InventoryChange[]>;
+  
+  // Call Logs methods
+  getCallLog(id: number): Promise<CallLog | undefined>;
+  getAllCallLogs(dateFrom?: string, dateTo?: string): Promise<CallLog[]>;
+  getCallLogsByCustomer(customerId: number): Promise<CallLog[]>;
+  getScheduledCalls(userId?: number): Promise<CallLog[]>;
+  getCallLogsRequiringFollowup(): Promise<CallLog[]>;
+  searchCallLogs(query: string): Promise<CallLog[]>;
+  createCallLog(callLog: InsertCallLog): Promise<CallLog>;
+  updateCallLog(id: number, callLog: Partial<InsertCallLog>): Promise<CallLog | undefined>;
+  deleteCallLog(id: number): Promise<boolean>;
+  
+  // Call Outcomes methods
+  getCallOutcome(id: number): Promise<CallOutcome | undefined>;
+  getCallOutcomesByCall(callId: number): Promise<CallOutcome[]>;
+  createCallOutcome(outcome: InsertCallOutcome): Promise<CallOutcome>;
+  updateCallOutcome(id: number, outcome: Partial<InsertCallOutcome>): Promise<CallOutcome | undefined>;
+  completeCallOutcome(id: number, userId: number, notes?: string): Promise<CallOutcome | undefined>;
+  deleteCallOutcome(id: number): Promise<boolean>;
 }
 
 // We're keeping the MemStorage class definition for fallback
@@ -216,6 +237,8 @@ export class MemStorage implements IStorage {
   private emailSettingsData: EmailSettings | undefined;
   private companySettingsData: CompanySettings | undefined;
   private notificationSettingsData: NotificationSettings | undefined;
+  private callLogs: Map<number, CallLog>;
+  private callOutcomes: Map<number, CallOutcome>;
   
   private userIdCounter: number;
   private categoryIdCounter: number;
@@ -227,6 +250,8 @@ export class MemStorage implements IStorage {
   private orderChangelogIdCounter: number;
   private tagIdCounter: number;
   private unshippedItemIdCounter: number;
+  private callLogIdCounter: number;
+  private callOutcomeIdCounter: number;
   
   constructor() {
     this.users = new Map();
@@ -240,6 +265,8 @@ export class MemStorage implements IStorage {
     this.tags = new Map();
     this.productTagsMap = new Map();
     this.unshippedItems = new Map();
+    this.callLogs = new Map();
+    this.callOutcomes = new Map();
     
     this.userIdCounter = 1;
     this.categoryIdCounter = 1;
@@ -251,6 +278,8 @@ export class MemStorage implements IStorage {
     this.orderChangelogIdCounter = 1;
     this.tagIdCounter = 1;
     this.unshippedItemIdCounter = 1;
+    this.callLogIdCounter = 1;
+    this.callOutcomeIdCounter = 1;
     
     // Initialize with sample data (async)
     // We're calling this in a non-blocking way since constructor can't be async
@@ -1612,6 +1641,186 @@ export class MemStorage implements IStorage {
     
     // If permission record doesn't exist, deny access
     return permissionRecord ? permissionRecord.enabled : false;
+  }
+  
+  // Call Logs methods
+  async getCallLog(id: number): Promise<CallLog | undefined> {
+    return this.callLogs.get(id);
+  }
+  
+  async getAllCallLogs(dateFrom?: string, dateTo?: string): Promise<CallLog[]> {
+    let logs = Array.from(this.callLogs.values());
+    
+    if (dateFrom) {
+      const fromDate = new Date(dateFrom);
+      logs = logs.filter(log => log.callDate >= fromDate);
+    }
+    
+    if (dateTo) {
+      const toDate = new Date(dateTo);
+      logs = logs.filter(log => log.callDate <= toDate);
+    }
+    
+    return logs.sort((a, b) => b.callDate.getTime() - a.callDate.getTime());
+  }
+  
+  async getCallLogsByCustomer(customerId: number): Promise<CallLog[]> {
+    return Array.from(this.callLogs.values())
+      .filter(log => log.customerId === customerId)
+      .sort((a, b) => b.callDate.getTime() - a.callDate.getTime());
+  }
+  
+  async getScheduledCalls(userId?: number): Promise<CallLog[]> {
+    let logs = Array.from(this.callLogs.values())
+      .filter(log => log.callStatus === 'scheduled');
+    
+    if (userId) {
+      logs = logs.filter(log => log.userId === userId || log.followupAssignedTo === userId);
+    }
+    
+    return logs.sort((a, b) => a.callDate.getTime() - b.callDate.getTime());
+  }
+  
+  async getCallLogsRequiringFollowup(): Promise<CallLog[]> {
+    return Array.from(this.callLogs.values())
+      .filter(log => log.callStatus === 'needs_followup')
+      .sort((a, b) => (a.followupDate?.getTime() || 0) - (b.followupDate?.getTime() || 0));
+  }
+  
+  async searchCallLogs(query: string): Promise<CallLog[]> {
+    const lowercaseQuery = query.toLowerCase();
+    return Array.from(this.callLogs.values())
+      .filter(log => 
+        log.contactName.toLowerCase().includes(lowercaseQuery) ||
+        (log.companyName && log.companyName.toLowerCase().includes(lowercaseQuery)) ||
+        (log.notes && log.notes.toLowerCase().includes(lowercaseQuery)) ||
+        (log.tags && log.tags.some(tag => tag.toLowerCase().includes(lowercaseQuery)))
+      )
+      .sort((a, b) => b.callDate.getTime() - a.callDate.getTime());
+  }
+  
+  async createCallLog(callLog: InsertCallLog): Promise<CallLog> {
+    const id = this.callLogIdCounter++;
+    
+    const now = new Date();
+    const newCallLog: CallLog = {
+      id,
+      ...callLog,
+      customerId: callLog.customerId || null,
+      companyName: callLog.companyName || null,
+      callTime: callLog.callTime || null,
+      duration: callLog.duration || null,
+      notes: callLog.notes || null,
+      followupDate: callLog.followupDate || null,
+      followupTime: callLog.followupTime || null,
+      followupAssignedTo: callLog.followupAssignedTo || null,
+      reminderSent: false,
+      previousCallId: callLog.previousCallId || null,
+      tags: callLog.tags || [],
+      createdAt: now,
+      updatedAt: now
+    };
+    
+    this.callLogs.set(id, newCallLog);
+    return newCallLog;
+  }
+  
+  async updateCallLog(id: number, callLog: Partial<InsertCallLog>): Promise<CallLog | undefined> {
+    const existingLog = this.callLogs.get(id);
+    if (!existingLog) return undefined;
+    
+    const updatedLog: CallLog = {
+      ...existingLog,
+      ...callLog,
+      customerId: callLog.customerId !== undefined ? callLog.customerId : existingLog.customerId,
+      companyName: callLog.companyName !== undefined ? callLog.companyName : existingLog.companyName,
+      callTime: callLog.callTime !== undefined ? callLog.callTime : existingLog.callTime,
+      duration: callLog.duration !== undefined ? callLog.duration : existingLog.duration,
+      notes: callLog.notes !== undefined ? callLog.notes : existingLog.notes,
+      followupDate: callLog.followupDate !== undefined ? callLog.followupDate : existingLog.followupDate,
+      followupTime: callLog.followupTime !== undefined ? callLog.followupTime : existingLog.followupTime,
+      followupAssignedTo: callLog.followupAssignedTo !== undefined ? callLog.followupAssignedTo : existingLog.followupAssignedTo,
+      previousCallId: callLog.previousCallId !== undefined ? callLog.previousCallId : existingLog.previousCallId,
+      tags: callLog.tags !== undefined ? callLog.tags : existingLog.tags,
+      updatedAt: new Date()
+    };
+    
+    this.callLogs.set(id, updatedLog);
+    return updatedLog;
+  }
+  
+  async deleteCallLog(id: number): Promise<boolean> {
+    return this.callLogs.delete(id);
+  }
+  
+  // Call Outcome methods
+  async getCallOutcome(id: number): Promise<CallOutcome | undefined> {
+    return this.callOutcomes.get(id);
+  }
+  
+  async getCallOutcomesByCall(callId: number): Promise<CallOutcome[]> {
+    return Array.from(this.callOutcomes.values())
+      .filter(outcome => outcome.callId === callId)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  }
+  
+  async createCallOutcome(outcome: InsertCallOutcome): Promise<CallOutcome> {
+    const id = this.callOutcomeIdCounter++;
+    
+    const now = new Date();
+    const newOutcome: CallOutcome = {
+      id,
+      ...outcome,
+      dueDate: outcome.dueDate || null,
+      assignedToId: outcome.assignedToId || null,
+      notes: outcome.notes || null,
+      completedById: null,
+      completedAt: null,
+      createdAt: now,
+      updatedAt: now
+    };
+    
+    this.callOutcomes.set(id, newOutcome);
+    return newOutcome;
+  }
+  
+  async updateCallOutcome(id: number, outcome: Partial<InsertCallOutcome>): Promise<CallOutcome | undefined> {
+    const existingOutcome = this.callOutcomes.get(id);
+    if (!existingOutcome) return undefined;
+    
+    const updatedOutcome: CallOutcome = {
+      ...existingOutcome,
+      ...outcome,
+      dueDate: outcome.dueDate !== undefined ? outcome.dueDate : existingOutcome.dueDate,
+      assignedToId: outcome.assignedToId !== undefined ? outcome.assignedToId : existingOutcome.assignedToId,
+      notes: outcome.notes !== undefined ? outcome.notes : existingOutcome.notes,
+      updatedAt: new Date()
+    };
+    
+    this.callOutcomes.set(id, updatedOutcome);
+    return updatedOutcome;
+  }
+  
+  async completeCallOutcome(id: number, userId: number, notes?: string): Promise<CallOutcome | undefined> {
+    const existingOutcome = this.callOutcomes.get(id);
+    if (!existingOutcome) return undefined;
+    
+    const now = new Date();
+    const completedOutcome: CallOutcome = {
+      ...existingOutcome,
+      status: 'completed',
+      notes: notes !== undefined ? notes : existingOutcome.notes,
+      completedById: userId,
+      completedAt: now,
+      updatedAt: now
+    };
+    
+    this.callOutcomes.set(id, completedOutcome);
+    return completedOutcome;
+  }
+  
+  async deleteCallOutcome(id: number): Promise<boolean> {
+    return this.callOutcomes.delete(id);
   }
   
   // Initialize with sample data

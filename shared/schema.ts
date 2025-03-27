@@ -537,3 +537,118 @@ export const insertInventoryChangeSchema = createInsertSchema(inventoryChanges)
 
 export type InsertInventoryChange = z.infer<typeof insertInventoryChangeSchema>;
 export type InventoryChange = typeof inventoryChanges.$inferSelect;
+
+// Call Type Enum
+export const callTypeEnum = pgEnum('call_type', [
+  'incoming',
+  'outgoing',
+  'missed'
+]);
+
+// Call Purpose Enum
+export const callPurposeEnum = pgEnum('call_purpose', [
+  'sales',
+  'support',
+  'followup',
+  'complaint',
+  'inquiry',
+  'other'
+]);
+
+// Call Priority Enum
+export const callPriorityEnum = pgEnum('call_priority', [
+  'low',
+  'normal',
+  'high',
+  'urgent'
+]);
+
+// Call Status Enum
+export const callStatusEnum = pgEnum('call_status', [
+  'scheduled',
+  'completed',
+  'no_answer',
+  'needs_followup',
+  'cancelled'
+]);
+
+// Call Logs Schema
+export const callLogs = pgTable("call_logs", {
+  id: serial("id").primaryKey(),
+  customerId: integer("customer_id"), // Optional - for tracking non-customer calls
+  contactName: text("contact_name").notNull(), // Name of person contacted
+  companyName: text("company_name"), // Company name (for non-customers)
+  callDate: timestamp("call_date").notNull().defaultNow(),
+  callTime: text("call_time"), // Time as string for better display control
+  duration: integer("duration"), // Call duration in seconds
+  callType: callTypeEnum("call_type").notNull().default('outgoing'),
+  callPurpose: callPurposeEnum("call_purpose").notNull().default('other'),
+  callStatus: callStatusEnum("call_status").notNull().default('completed'),
+  priority: callPriorityEnum("priority").default('normal'),
+  notes: text("notes"),
+  userId: integer("user_id").notNull(), // User who made/received the call
+  followupDate: timestamp("followup_date"), // Date for any needed follow-up
+  followupTime: text("followup_time"), // Time for follow-up
+  followupAssignedTo: integer("followup_assigned_to"), // User assigned to follow up
+  reminderSent: boolean("reminder_sent").default(false),
+  isFollowup: boolean("is_followup").default(false), // Whether this call is a follow-up to previous one
+  previousCallId: integer("previous_call_id"), // Reference to previous call this follows up on
+  tags: text("tags").array(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull(),
+});
+
+export const insertCallLogSchema = createInsertSchema(callLogs)
+  .omit({ id: true, createdAt: true, updatedAt: true, reminderSent: true })
+  .extend({
+    customerId: z.number().optional(), 
+    contactName: z.string().min(1, { message: "Contact name is required" }),
+    companyName: z.string().optional(),
+    callDate: z.string().transform(val => val ? new Date(val) : new Date()),
+    callTime: z.string().optional(),
+    duration: z.number().min(0).optional(),
+    callType: z.enum(['incoming', 'outgoing', 'missed']),
+    callPurpose: z.enum(['sales', 'support', 'followup', 'complaint', 'inquiry', 'other']),
+    callStatus: z.enum(['scheduled', 'completed', 'no_answer', 'needs_followup', 'cancelled']),
+    priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
+    notes: z.string().optional(),
+    userId: z.number(),
+    followupDate: z.string().optional().transform(val => val ? new Date(val) : null),
+    followupTime: z.string().optional(),
+    followupAssignedTo: z.number().optional(),
+    isFollowup: z.boolean().default(false),
+    previousCallId: z.number().optional(),
+    tags: z.array(z.string()).optional().default([]),
+  });
+
+export type InsertCallLog = z.infer<typeof insertCallLogSchema>;
+export type CallLog = typeof callLogs.$inferSelect;
+
+// Call Outcomes Schema - For tracking action items from calls
+export const callOutcomes = pgTable("call_outcomes", {
+  id: serial("id").primaryKey(),
+  callId: integer("call_id").notNull(),
+  outcome: text("outcome").notNull(),
+  status: text("status").notNull().default('pending'), // pending, in-progress, completed
+  dueDate: timestamp("due_date"),
+  assignedToId: integer("assigned_to_id"),
+  completedById: integer("completed_by_id"),
+  completedAt: timestamp("completed_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull(),
+});
+
+export const insertCallOutcomeSchema = createInsertSchema(callOutcomes)
+  .omit({ id: true, createdAt: true, updatedAt: true, completedById: true, completedAt: true })
+  .extend({
+    callId: z.number(),
+    outcome: z.string().min(1, { message: "Outcome description is required" }),
+    status: z.string().default('pending'),
+    dueDate: z.string().optional().transform(val => val ? new Date(val) : null),
+    assignedToId: z.number().optional(),
+    notes: z.string().optional(),
+  });
+
+export type InsertCallOutcome = z.infer<typeof insertCallOutcomeSchema>;
+export type CallOutcome = typeof callOutcomes.$inferSelect;
