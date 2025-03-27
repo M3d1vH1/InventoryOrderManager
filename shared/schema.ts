@@ -621,6 +621,20 @@ export const insertCallLogSchema = createInsertSchema(callLogs)
     tags: z.array(z.string()).optional().default([]),
   });
 
+// Simplified schema for quick call creation from the header/modal
+export const quickCallLogSchema = z.object({
+  customerId: z.number().optional().nullable(),
+  prospectiveCustomerId: z.number().optional().nullable(),
+  subject: z.string().min(1, { message: "Subject is required" }),
+  callType: z.string(), // Matches frontend form values: 'inbound', 'outbound', 'missed', 'scheduled'
+  callDate: z.date(),
+  duration: z.number().min(1),
+  notes: z.string().optional(),
+  priority: z.string(), // Matches frontend form values: 'low', 'medium', 'high', 'urgent'
+  needsFollowup: z.boolean().default(false),
+  followupDate: z.date().optional().nullable(),
+});
+
 export type InsertCallLog = z.infer<typeof insertCallLogSchema>;
 export type CallLog = typeof callLogs.$inferSelect;
 

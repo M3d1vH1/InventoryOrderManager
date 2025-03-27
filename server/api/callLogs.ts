@@ -1,6 +1,6 @@
 import express from 'express';
 import { storage } from '../storage';
-import { insertCallLogSchema, insertCallOutcomeSchema } from '@shared/schema';
+import { insertCallLogSchema, insertCallOutcomeSchema, quickCallLogSchema } from '@shared/schema';
 import { hasRole } from '../auth';
 import { User } from '@shared/schema';
 
@@ -99,16 +99,60 @@ router.get('/:id', async (req, res) => {
 // Create a new call log
 router.post('/', async (req, res) => {
   try {
-    // Validate the request body
-    const validatedData = insertCallLogSchema.parse(req.body);
-    
-    // Set the user ID from session if not provided
-    if (!validatedData.userId && req.user) {
-      validatedData.userId = (req.user as User).id;
+    // Check if the request is from the quick call form
+    if (req.query.quick === 'true') {
+      console.log('Processing quick call log creation');
+      
+      // Validate with the simplified schema
+      const quickData = quickCallLogSchema.parse(req.body);
+      console.log('Quick call data validated:', quickData);
+      
+      // Transform to the format required by the database
+      const callData: any = {
+        // Map the proper callType values
+        callType: quickData.callType === 'inbound' ? 'incoming' :
+                  quickData.callType === 'outbound' ? 'outgoing' :
+                  quickData.callType === 'missed' ? 'missed' : 'incoming',
+        callPurpose: 'other', // Default for quick calls
+        callStatus: quickData.needsFollowup ? 'needs_followup' : 'completed',
+        priority: quickData.priority === 'medium' ? 'normal' : 
+                 quickData.priority === 'low' ? 'low' :
+                 quickData.priority === 'high' ? 'high' : 
+                 quickData.priority === 'urgent' ? 'urgent' : 'normal',
+        customerId: quickData.customerId || null,
+        contactName: quickData.subject, // Use subject as contact name for quick calls
+        notes: quickData.notes || '',
+        isFollowup: quickData.needsFollowup,
+        callDate: quickData.callDate.toISOString(),
+        duration: quickData.duration,
+        tags: []
+      };
+      
+      // Set the user ID from session
+      if (req.user) {
+        callData.userId = (req.user as User).id;
+      }
+      
+      // Add followup date if needed
+      if (quickData.needsFollowup && quickData.followupDate) {
+        callData.followupDate = quickData.followupDate.toISOString();
+      }
+      
+      console.log('Transformed call data:', callData);
+      const newLog = await storage.createCallLog(callData);
+      res.status(201).json(newLog);
+    } else {
+      // Standard call log creation
+      const validatedData = insertCallLogSchema.parse(req.body);
+      
+      // Set the user ID from session if not provided
+      if (!validatedData.userId && req.user) {
+        validatedData.userId = (req.user as User).id;
+      }
+      
+      const newLog = await storage.createCallLog(validatedData);
+      res.status(201).json(newLog);
     }
-    
-    const newLog = await storage.createCallLog(validatedData);
-    res.status(201).json(newLog);
   } catch (error) {
     console.error('Error creating call log:', error);
     res.status(400).json({ error: 'Invalid call log data', details: error });

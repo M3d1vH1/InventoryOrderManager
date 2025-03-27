@@ -650,6 +650,29 @@
     "scheduledCalls": "Scheduled Calls",
     "needsFollowup": "Needs Follow-up",
     "allCalls": "All Calls",
+    "quickForm": {
+      "title": "Quick Call Log",
+      "buttonTitle": "Quick call log",
+      "subject": "Subject",
+      "subjectPlaceholder": "Enter call subject",
+      "callType": "Call Type",
+      "selectCallType": "Select call type",
+      "customer": "Customer (Optional)",
+      "selectCustomer": "Select customer",
+      "noCustomer": "No customer",
+      "date": "Date",
+      "selectDate": "Select date",
+      "duration": "Duration",
+      "minutes": "minutes",
+      "priority": "Priority",
+      "selectPriority": "Select priority",
+      "notes": "Notes",
+      "notesPlaceholder": "Enter call notes",
+      "needsFollowup": "Needs Follow-up",
+      "needsFollowupDescription": "Mark if this call requires a follow-up",
+      "followupDate": "Follow-up Date",
+      "selectFollowupDate": "Select follow-up date"
+    },
     "form": {
       "callType": "Call Type",
       "callTypes": {
@@ -732,7 +755,9 @@
       "callCreated": "Call log created successfully",
       "callUpdated": "Call log updated successfully",
       "errorCreating": "Error creating call log",
-      "errorUpdating": "Error updating call log"
+      "errorUpdating": "Error updating call log",
+      "successTitle": "Success",
+      "quickCallSuccessDescription": "Quick call log has been saved successfully"
     },
     "details": {
       "callInfo": "Call Information",

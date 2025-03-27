@@ -195,8 +195,8 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
       delete callLogData.customerType;
       delete callLogData.newProspectiveCustomer;
       
-      // Create the call log
-      return apiRequest('/api/call-logs', {
+      // Create the call log - Use the quick endpoint
+      return apiRequest('/api/call-logs?quick=true', {
         method: 'POST',
         body: JSON.stringify(callLogData),
         headers: {
