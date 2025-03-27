@@ -453,6 +453,8 @@
     "createError": "Failed to create quality issue report",
     "resolveError": "Failed to resolve quality issue",
     "inventoryAdjustError": "Failed to adjust inventory",
+    "inventoryAdjustmentInfo": "Inventory Adjustment Needed",
+    "manualAdjustmentPrompt": "You can manually adjust inventory for the affected products from the quality issue details view",
     "identifierColumn": "Identifier",
     "qualityLabel": "Quality Label",
     "qualityLabelPlaceholder": "Enter a unique identifier for this quality issue...",
