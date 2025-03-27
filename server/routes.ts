@@ -541,14 +541,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Search orders by query string
+  // Search orders by query string or get recent orders if no query
   app.get('/api/orders/search', async (req, res) => {
     try {
       // Support both 'query' and 'q' parameter names
       const query = (req.query.query || req.query.q) as string;
       
+      // If no query is provided, return recent orders instead
       if (!query) {
-        return res.status(400).json({ message: 'Search query is required' });
+        // Get the 10 most recent orders
+        const recentOrders = await storage.getRecentOrders(10);
+        return res.json(recentOrders);
       }
       
       // For now, just get all orders and filter them

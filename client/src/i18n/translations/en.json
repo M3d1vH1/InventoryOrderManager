@@ -49,7 +49,9 @@
     "days": "days",
     "never": "Never",
     "noData": "No data available",
-    "error": "Error"
+    "error": "Error",
+    "select": "Select",
+    "noResults": "No results found"
   },
   "categories": {
     "title": "Product Categories",

@@ -1589,7 +1589,16 @@ export default function OrderQuality() {
       </AlertDialog>
 
       {/* Order search dialog */}
-      <Dialog open={isOrderSearchDialogOpen} onOpenChange={setIsOrderSearchDialogOpen}>
+      <Dialog 
+        open={isOrderSearchDialogOpen} 
+        onOpenChange={(open) => {
+          setIsOrderSearchDialogOpen(open);
+          // When opening the dialog, automatically load recent orders
+          if (open) {
+            handleOrderSearch("");
+          }
+        }}
+      >
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>{t('orderQuality.selectOrder')}</DialogTitle>
@@ -1666,7 +1675,7 @@ export default function OrderQuality() {
               <div className="text-center py-12 px-4">
                 <Search className="mx-auto h-8 w-8 text-gray-400 mb-3" />
                 <p className="text-gray-500 mb-1">{t('common.noResults')}</p>
-                <p className="text-sm text-gray-400">{t('orderQuality.searchOrderTip')}</p>
+                <p className="text-sm text-gray-400">Try searching by order number</p>
               </div>
             )}
           </div>
