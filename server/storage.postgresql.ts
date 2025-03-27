@@ -1859,6 +1859,14 @@ export class DatabaseStorage implements IStorage {
             dailyReports: settings.dailyReports ?? false,
             weeklyReports: settings.weeklyReports ?? true,
             soundEnabled: settings.soundEnabled ?? true,
+            
+            // Slack notification settings
+            slackEnabled: settings.slackEnabled ?? false,
+            slackWebhookUrl: settings.slackWebhookUrl,
+            slackNotifyNewOrders: settings.slackNotifyNewOrders ?? true,
+            slackNotifyCallLogs: settings.slackNotifyCallLogs ?? true,
+            slackNotifyLowStock: settings.slackNotifyLowStock ?? false,
+            
             updatedAt: new Date(),
           })
           .returning();
@@ -1877,6 +1885,13 @@ export class DatabaseStorage implements IStorage {
         if (settings.dailyReports !== undefined) updateObject.dailyReports = settings.dailyReports;
         if (settings.weeklyReports !== undefined) updateObject.weeklyReports = settings.weeklyReports;
         if (settings.soundEnabled !== undefined) updateObject.soundEnabled = settings.soundEnabled;
+        
+        // Slack notification settings
+        if (settings.slackEnabled !== undefined) updateObject.slackEnabled = settings.slackEnabled;
+        if (settings.slackWebhookUrl !== undefined) updateObject.slackWebhookUrl = settings.slackWebhookUrl;
+        if (settings.slackNotifyNewOrders !== undefined) updateObject.slackNotifyNewOrders = settings.slackNotifyNewOrders;
+        if (settings.slackNotifyCallLogs !== undefined) updateObject.slackNotifyCallLogs = settings.slackNotifyCallLogs;
+        if (settings.slackNotifyLowStock !== undefined) updateObject.slackNotifyLowStock = settings.slackNotifyLowStock;
         
         // Log the update for debugging
         console.log("Updating notification settings with:", JSON.stringify(updateObject));

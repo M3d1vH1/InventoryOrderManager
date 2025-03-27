@@ -12,7 +12,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { exec } from "child_process";
 import { promisify } from "util";
 import { getEmailSettings, updateEmailSettings, testEmailConnection, getEmailTemplate, updateEmailTemplate, getLabelTemplate, updateLabelTemplate } from "./api/emailSettings";
-import { getCompanySettings, updateCompanySettings, getNotificationSettings, updateNotificationSettings } from "./api/settings";
+import { getCompanySettings, updateCompanySettings, getNotificationSettings, updateNotificationSettings, testSlackWebhook } from "./api/settings";
 import { getOrderErrors, getOrderQuality, createOrderError, updateOrderError, resolveOrderError, adjustInventoryForError, getErrorStats } from "./api/orderErrors";
 import { getInventoryChanges, getInventoryChange, addInventoryChange, getRecentInventoryChanges, getInventoryChangesByType } from "./api/inventoryChanges";
 import callLogsRouter from "./api/callLogs";
@@ -2118,6 +2118,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/notification-settings', isAuthenticated, getNotificationSettings);
   
   app.put('/api/notification-settings', isAuthenticated, hasRole(['admin']), updateNotificationSettings);
+  
+  // Slack webhook test route
+  app.post('/api/test-slack-webhook', isAuthenticated, hasRole(['admin']), testSlackWebhook);
   
   // Role permissions management routes
   app.get('/api/role-permissions', isAuthenticated, hasRole(['admin']), async (req, res) => {

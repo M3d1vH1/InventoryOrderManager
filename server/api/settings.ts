@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { storage } from '../storage';
 import { z } from 'zod';
+import { createSlackService } from '../services/notifications/slackService';
 
 /**
  * Get company settings
@@ -99,5 +100,37 @@ export async function updateNotificationSettings(req: Request, res: Response) {
       });
     }
     return res.status(500).json({ message: 'Failed to update notification settings' });
+  }
+}
+
+/**
+ * Test Slack webhook
+ */
+export async function testSlackWebhook(req: Request, res: Response) {
+  try {
+    const schema = z.object({
+      webhookUrl: z.string()
+    });
+
+    const validatedData = schema.parse(req.body);
+    const slackService = createSlackService(storage);
+    
+    const success = await slackService.testConnection(validatedData.webhookUrl);
+    
+    if (success) {
+      return res.json({ success: true, message: 'Slack webhook test was successful!' });
+    }
+    
+    return res.status(400).json({ success: false, message: 'Failed to send test message to Slack. Please check your webhook URL.' });
+  } catch (error) {
+    console.error('Error testing Slack webhook:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid webhook URL', 
+        errors: error.errors 
+      });
+    }
+    return res.status(500).json({ success: false, message: 'An error occurred while testing the Slack webhook' });
   }
 }
