@@ -1,0 +1,298 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "id": "50d11c57-0fd5-4b99-a639-35e2c8c2bfb5",
+  "prevId": "b6f1e20b-c9db-48e7-8e77-8b79ffb4e0c4",
+  "tables": {
+    "call_logs": {
+      "name": "call_logs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contact_name": {
+          "name": "contact_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "company_name": {
+          "name": "company_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "call_date": {
+          "name": "call_date",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "call_time": {
+          "name": "call_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "duration": {
+          "name": "duration",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "call_type": {
+          "name": "call_type",
+          "type": "call_type",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'outgoing'"
+        },
+        "call_purpose": {
+          "name": "call_purpose",
+          "type": "call_purpose",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'other'"
+        },
+        "call_status": {
+          "name": "call_status",
+          "type": "call_status",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'completed'"
+        },
+        "priority": {
+          "name": "priority",
+          "type": "call_priority",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'normal'"
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "followup_date": {
+          "name": "followup_date",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "followup_time": {
+          "name": "followup_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "followup_assigned_to": {
+          "name": "followup_assigned_to",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reminder_sent": {
+          "name": "reminder_sent",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "is_followup": {
+          "name": "is_followup",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "previous_call_id": {
+          "name": "previous_call_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tags": {
+          "name": "tags",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "call_outcomes": {
+      "name": "call_outcomes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "call_id": {
+          "name": "call_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "due_date": {
+          "name": "due_date",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assigned_to_id": {
+          "name": "assigned_to_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_by_id": {
+          "name": "completed_by_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "call_outcomes_call_id_call_logs_id_fk": {
+          "name": "call_outcomes_call_id_call_logs_id_fk",
+          "tableFrom": "call_outcomes",
+          "tableTo": "call_logs",
+          "columnsFrom": [
+            "call_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    }
+  },
+  "enums": {
+    "call_type": {
+      "name": "call_type",
+      "values": {
+        "incoming": "incoming",
+        "outgoing": "outgoing",
+        "missed": "missed"
+      }
+    },
+    "call_purpose": {
+      "name": "call_purpose",
+      "values": {
+        "sales": "sales",
+        "support": "support",
+        "followup": "followup",
+        "complaint": "complaint",
+        "inquiry": "inquiry",
+        "other": "other"
+      }
+    },
+    "call_priority": {
+      "name": "call_priority",
+      "values": {
+        "low": "low",
+        "normal": "normal",
+        "high": "high",
+        "urgent": "urgent"
+      }
+    },
+    "call_status": {
+      "name": "call_status",
+      "values": {
+        "scheduled": "scheduled",
+        "completed": "completed",
+        "no_answer": "no_answer",
+        "needs_followup": "needs_followup",
+        "cancelled": "cancelled"
+      }
+    }
+  },
+  "schemas": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  }
+}

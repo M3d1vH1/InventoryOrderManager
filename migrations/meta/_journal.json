@@ -8,6 +8,13 @@
       "when": 1742457130660,
       "tag": "0000_skinny_the_hunter",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1743080197775,
+      "tag": "0001_call_logs_and_outcomes",
+      "breakpoints": true
     }
   ]
 }
