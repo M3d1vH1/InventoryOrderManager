@@ -20,7 +20,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useNotifications } from '@/context/NotificationContext';
-import { AlertCircle, Bell, Cog, Edit, HelpCircle, Mail, Plus, Printer, Save, Send, Tag, Trash2, UserCog, Variable, Volume2, VolumeX } from 'lucide-react';
+import { AlertCircle, Bell, Cog, Edit, HelpCircle, Mail, Plus, Printer, Save, Send, Tag, Trash2, UserCog, Variable, Volume2, VolumeX, Link2, Slack } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 const companySettingsSchema = z.object({
@@ -986,13 +986,57 @@ const Settings = () => {
       variant: type === 'error' ? 'destructive' : 'default',
     });
   };
+  
+  // Slack test connection
+  const testSlackConnection = async () => {
+    if (!notificationForm.getValues().slackWebhookUrl) {
+      toast({
+        title: "Error",
+        description: "Please enter a Slack webhook URL first",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      const webhookUrl = notificationForm.getValues().slackWebhookUrl;
+      const response = await fetch('/api/settings/test-slack', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ webhookUrl }),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Successfully connected to Slack!",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: data.message || "Failed to connect to Slack",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to test Slack connection",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-3xl font-bold mb-6">Settings</h1>
       
       <Tabs defaultValue="general" onValueChange={setActiveTab} value={activeTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="general">
             <Cog className="h-4 w-4 mr-2" />
             General
@@ -1004,6 +1048,10 @@ const Settings = () => {
           <TabsTrigger value="email">
             <Mail className="h-4 w-4 mr-2" />
             Email Settings
+          </TabsTrigger>
+          <TabsTrigger value="integrations">
+            <Link2 className="h-4 w-4 mr-2" />
+            Integrations
           </TabsTrigger>
           <TabsTrigger value="labels">
             <Printer className="h-4 w-4 mr-2" />
@@ -1741,6 +1789,160 @@ const Settings = () => {
           </Card>
         </TabsContent>
         
+        <TabsContent value="integrations" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Integrations</CardTitle>
+              <CardDescription>
+                Connect with external services and platforms
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Slack className="h-8 w-8 text-[#4A154B]" />
+                      <div>
+                        <h3 className="text-lg font-medium">Slack</h3>
+                        <p className="text-sm text-slate-500">Send notifications to your Slack workspace</p>
+                      </div>
+                    </div>
+                    <FormField
+                      control={notificationForm.control}
+                      name="slackEnabled"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center space-x-2">
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-xs">
+                              {field.value ? 'Enabled' : 'Disabled'}
+                            </FormLabel>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  {notificationForm.watch('slackEnabled') && (
+                    <>
+                      <Separator className="my-4" />
+                      
+                      <div className="space-y-4">
+                        <FormField
+                          control={notificationForm.control}
+                          name="slackWebhookUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Webhook URL</FormLabel>
+                              <FormDescription>
+                                Enter your Slack incoming webhook URL
+                              </FormDescription>
+                              <div className="flex space-x-2">
+                                <FormControl className="flex-1">
+                                  <Input placeholder="https://hooks.slack.com/services/..." {...field} value={field.value || ''} />
+                                </FormControl>
+                                <Button 
+                                  type="button" 
+                                  variant="outline"
+                                  onClick={testSlackConnection}
+                                >
+                                  Test Connection
+                                </Button>
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <div className="space-y-2 mt-6">
+                          <h4 className="text-sm font-medium">Notification Types</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <FormField
+                              control={notificationForm.control}
+                              name="slackNotifyNewOrders"
+                              render={({ field }) => (
+                                <FormItem className="flex items-center space-x-2 rounded-lg border p-3">
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                    />
+                                  </FormControl>
+                                  <div>
+                                    <FormLabel className="text-sm">New Orders</FormLabel>
+                                    <FormDescription className="text-xs">
+                                      Notify when new orders are created
+                                    </FormDescription>
+                                  </div>
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={notificationForm.control}
+                              name="slackNotifyCallLogs"
+                              render={({ field }) => (
+                                <FormItem className="flex items-center space-x-2 rounded-lg border p-3">
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                    />
+                                  </FormControl>
+                                  <div>
+                                    <FormLabel className="text-sm">Call Logs</FormLabel>
+                                    <FormDescription className="text-xs">
+                                      Notify when new call logs are created
+                                    </FormDescription>
+                                  </div>
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={notificationForm.control}
+                              name="slackNotifyLowStock"
+                              render={({ field }) => (
+                                <FormItem className="flex items-center space-x-2 rounded-lg border p-3">
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                    />
+                                  </FormControl>
+                                  <div>
+                                    <FormLabel className="text-sm">Low Stock Alerts</FormLabel>
+                                    <FormDescription className="text-xs">
+                                      Notify when products reach low stock levels
+                                    </FormDescription>
+                                  </div>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-end mt-6">
+                        <Button type="button" onClick={() => notificationForm.handleSubmit(onNotificationSubmit)()}>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Integration Settings
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
         <TabsContent value="labels" className="mt-4">
           <Card>
             <CardHeader>
@@ -2070,7 +2272,7 @@ const LabelTemplateEditor = () => {
             )}
             
             <Form {...labelTemplateForm}>
-              <form onSubmit={templateForm.handleSubmit(onTemplateSubmit)} className="space-y-4">
+              <form onSubmit={labelTemplateForm.handleSubmit(onTemplateSubmit)} className="space-y-4">
                 <FormField
                   control={labelTemplateForm.control}
                   name="content"
@@ -2203,7 +2405,7 @@ const EmailTemplateEditor = () => {
         content: emailTemplateData.content,
       });
     }
-  }, [emailTemplateData, templateForm]);
+  }, [emailTemplateData, labelTemplateForm]);
   
   // Update template mutation
   const updateTemplateMutation = useMutation({

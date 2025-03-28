@@ -2120,7 +2120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/notification-settings', isAuthenticated, hasRole(['admin']), updateNotificationSettings);
   
   // Slack webhook test route
-  app.post('/api/test-slack-webhook', isAuthenticated, hasRole(['admin']), testSlackWebhook);
+  app.post('/api/settings/test-slack', isAuthenticated, hasRole(['admin']), testSlackWebhook);
   
   // Role permissions management routes
   app.get('/api/role-permissions', isAuthenticated, hasRole(['admin']), async (req, res) => {
