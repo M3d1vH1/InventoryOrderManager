@@ -401,7 +401,7 @@ const UserManagement = () => {
             </DialogDescription>
           </DialogHeader>
           <Form {...userForm}>
-            <form onSubmit={userForm.handleSubmit(handleCreateUser)} className="space-y-4">
+            <div className="space-y-4">
               <FormField
                 control={userForm.control}
                 name="username"
@@ -497,11 +497,11 @@ const UserManagement = () => {
                 )}
               />
               <DialogFooter>
-                <Button type="submit" disabled={createUserMutation.isPending}>
+                <Button type="submit" disabled={createUserMutation.isPending} onClick={userForm.handleSubmit(handleCreateUser)}>
                   {createUserMutation.isPending ? "Creating..." : "Create User"}
                 </Button>
               </DialogFooter>
-            </form>
+            </div>
           </Form>
         </DialogContent>
       </Dialog>
@@ -516,7 +516,7 @@ const UserManagement = () => {
             </DialogDescription>
           </DialogHeader>
           <Form {...userUpdateForm}>
-            <form onSubmit={userUpdateForm.handleSubmit(handleUpdateUser)} className="space-y-4">
+            <div className="space-y-4">
               <FormField
                 control={userUpdateForm.control}
                 name="username"
@@ -627,11 +627,11 @@ const UserManagement = () => {
                 )}
               />
               <DialogFooter>
-                <Button type="submit" disabled={updateUserMutation.isPending}>
+                <Button type="submit" disabled={updateUserMutation.isPending} onClick={userUpdateForm.handleSubmit(handleUpdateUser)}>
                   {updateUserMutation.isPending ? "Updating..." : "Update User"}
                 </Button>
               </DialogFooter>
-            </form>
+            </div>
           </Form>
         </DialogContent>
       </Dialog>
@@ -1080,7 +1080,7 @@ const Settings = () => {
               ) : (
                 <>
                   <Form {...companyForm}>
-                    <form onSubmit={companyForm.handleSubmit(onCompanySubmit)} className="space-y-6">
+                    <div className="space-y-6">
                       <FormField
                         control={companyForm.control}
                         name="companyName"
@@ -1140,12 +1140,15 @@ const Settings = () => {
                       />
                       
                       <div className="flex justify-end">
-                        <Button type="submit">
+                        <Button 
+                          type="button" 
+                          onClick={companyForm.handleSubmit(onCompanySubmit)}
+                        >
                           <Save className="h-4 w-4 mr-2" />
                           Save Changes
                         </Button>
                       </div>
-                    </form>
+                    </div>
                   </Form>
                   
                   <Separator className="my-6" />
@@ -1203,7 +1206,7 @@ const Settings = () => {
               ) : (
                 <>
                   <Form {...notificationForm}>
-                    <form onSubmit={notificationForm.handleSubmit(onNotificationSubmit)} className="space-y-6">
+                    <div className="space-y-6">
                       <div className="space-y-4">
                         <h3 className="text-lg font-medium">System Alerts</h3>
                         <FormField
@@ -1453,12 +1456,12 @@ const Settings = () => {
                   </div>
                   
                   <div className="flex justify-end mt-6">
-                    <Button type="submit">
+                    <Button type="submit" onClick={notificationForm.handleSubmit(onNotificationSubmit)}>
                       <Save className="h-4 w-4 mr-2" />
                       Save Preferences
                     </Button>
                   </div>
-                </form>
+                </div>
               </Form>
               
               <Separator className="my-6" />
@@ -1557,7 +1560,7 @@ const Settings = () => {
             </div>
             <CardContent>
               <Form {...emailForm}>
-                <form onSubmit={emailForm.handleSubmit(onEmailSettingsSubmit)} className="space-y-6">
+                <div className="space-y-6">
                   <div className="space-y-4">
                     <h3 className="text-lg font-medium">SMTP Server Configuration</h3>
                     
@@ -1726,12 +1729,16 @@ const Settings = () => {
                       Test Connection
                     </Button>
                     
-                    <Button type="submit" disabled={emailSettingsMutation.isPending}>
+                    <Button 
+                      type="submit" 
+                      disabled={emailSettingsMutation.isPending}
+                      onClick={emailForm.handleSubmit(onEmailSettingsSubmit)}
+                    >
                       <Save className="h-4 w-4 mr-2" />
                       {emailSettingsMutation.isPending ? "Saving..." : "Save Settings"}
                     </Button>
                   </div>
-                </form>
+                </div>
               </Form>
               
               <Dialog open={isTestEmailDialogOpen} onOpenChange={setIsTestEmailDialogOpen}>
@@ -1743,7 +1750,7 @@ const Settings = () => {
                     </DialogDescription>
                   </DialogHeader>
                   <Form {...testEmailForm}>
-                    <form onSubmit={testEmailForm.handleSubmit(handleTestEmail)} className="space-y-4">
+                    <div className="space-y-4">
                       <FormField
                         control={testEmailForm.control}
                         name="testEmail"
@@ -1762,13 +1769,14 @@ const Settings = () => {
                       />
                       <DialogFooter>
                         <Button 
-                          type="submit" 
+                          type="button" 
                           disabled={testEmailMutation.isPending}
+                          onClick={testEmailForm.handleSubmit(handleTestEmail)}
                         >
                           {testEmailMutation.isPending ? "Sending..." : "Send Test Email"}
                         </Button>
                       </DialogFooter>
-                    </form>
+                    </div>
                   </Form>
                 </DialogContent>
               </Dialog>
