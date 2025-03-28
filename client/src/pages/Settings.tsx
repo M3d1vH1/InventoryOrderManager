@@ -2379,7 +2379,7 @@ const EmailTemplateEditor = () => {
   const [showVariableHelp, setShowVariableHelp] = useState(false);
   
   // Template form
-  const labelTemplateForm = useForm<z.infer<typeof templateEditSchema>>({
+  const emailTemplateForm = useForm<z.infer<typeof templateEditSchema>>({
     resolver: zodResolver(templateEditSchema),
     defaultValues: {
       content: '',
@@ -2401,11 +2401,11 @@ const EmailTemplateEditor = () => {
   // Effect to update form when template data changes
   useEffect(() => {
     if (emailTemplateData && emailTemplateData.content) {
-      labelTemplateForm.reset({
+      emailTemplateForm.reset({
         content: emailTemplateData.content,
       });
     }
-  }, [emailTemplateData, labelTemplateForm]);
+  }, [emailTemplateData, emailTemplateForm]);
   
   // Update template mutation
   const updateTemplateMutation = useMutation({
@@ -2460,13 +2460,13 @@ const EmailTemplateEditor = () => {
     
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const text = labelTemplateForm.getValues().content;
+    const text = emailTemplateForm.getValues().content;
     const before = text.substring(0, start);
     const after = text.substring(end, text.length);
     
     // Insert the variable at cursor position
     const newText = `${before}{{${variable}}}${after}`;
-    labelTemplateForm.setValue('content', newText);
+    emailTemplateForm.setValue('content', newText);
     
     // Set focus back to textarea and place cursor after inserted variable
     setTimeout(() => {
@@ -2497,7 +2497,7 @@ const EmailTemplateEditor = () => {
                 onClick={() => {
                   setIsEditing(false);
                   if (emailTemplateData && emailTemplateData.content) {
-                    labelTemplateForm.reset({
+                    emailTemplateForm.reset({
                       content: emailTemplateData.content,
                     });
                   }
@@ -2506,7 +2506,7 @@ const EmailTemplateEditor = () => {
                 Cancel
               </Button>
               <Button 
-                onClick={labelTemplateForm.handleSubmit(onTemplateSubmit)}
+                onClick={emailTemplateForm.handleSubmit(onTemplateSubmit)}
                 disabled={updateTemplateMutation.isPending}
               >
                 {updateTemplateMutation.isPending ? "Saving..." : "Save Template"}
@@ -2598,10 +2598,10 @@ const EmailTemplateEditor = () => {
                     </div>
                   )}
                   
-                  <Form {...labelTemplateForm}>
-                    <form onSubmit={labelTemplateForm.handleSubmit(onTemplateSubmit)} className="space-y-4">
+                  <Form {...emailTemplateForm}>
+                    <form onSubmit={emailTemplateForm.handleSubmit(onTemplateSubmit)} className="space-y-4">
                       <FormField
-                        control={labelTemplateForm.control}
+                        control={emailTemplateForm.control}
                         name="content"
                         render={({ field }) => (
                           <FormItem>
