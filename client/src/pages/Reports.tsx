@@ -139,11 +139,7 @@ interface OrderQualitySummary {
   rootCauseAnalysis: Record<string, number>;
 }
 
-interface ProspectivePipeline {
-  totalProspects: number;
-  pipelineData: { name: string; value: number }[];
-  conversionRate: number;
-}
+
 
 // Colors for charts
 const COLORS = ['#4ade80', '#3b82f6', '#f97316', '#ec4899', '#8b5cf6', '#fbbf24', '#ef4444'];
@@ -196,10 +192,6 @@ const Reports = () => {
   
   const { data: orderQualitySummary, isLoading: isLoadingOrderQuality } = useQuery<OrderQualitySummary>({
     queryKey: ['/api/analytics/order-quality-summary', timeRange],
-  });
-  
-  const { data: prospectivePipeline, isLoading: isLoadingProspectives } = useQuery<ProspectivePipeline>({
-    queryKey: ['/api/analytics/prospective-customer-pipeline'],
   });
 
   useEffect(() => {
@@ -343,7 +335,7 @@ const Reports = () => {
       </div>
 
       <Tabs defaultValue="inventory">
-        <TabsList className="grid w-full grid-cols-9">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="inventory">Inventory</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
@@ -352,7 +344,6 @@ const Reports = () => {
           <TabsTrigger value="call-logs">Call Logs</TabsTrigger>
           <TabsTrigger value="customer-engagement">Customer Engagement</TabsTrigger>
           <TabsTrigger value="order-quality">Order Quality</TabsTrigger>
-          <TabsTrigger value="sales-pipeline">Sales Pipeline</TabsTrigger>
         </TabsList>
         
         {/* Inventory Tab */}
@@ -1452,243 +1443,6 @@ const Reports = () => {
                   </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        {/* Sales Pipeline Tab */}
-        <TabsContent value="sales-pipeline" className="mt-4 grid gap-4 md:grid-cols-2">
-          <Card className="col-span-2">
-            <CardHeader>
-              <CardTitle>Sales Pipeline Overview</CardTitle>
-              <CardDescription>
-                Prospective customer journey stages
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px]">
-                {isLoadingProspectives ? (
-                  <div className="h-full flex items-center justify-center">
-                    <p className="text-muted-foreground">Loading sales pipeline data...</p>
-                  </div>
-                ) : prospectivePipeline?.pipelineData && prospectivePipeline.pipelineData.length > 0 ? (
-                  <div className="grid md:grid-cols-2 gap-6 h-full">
-                    <div className="flex flex-col justify-center">
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart
-                          data={prospectivePipeline.pipelineData}
-                          layout="vertical"
-                          margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis type="number" />
-                          <YAxis type="category" dataKey="name" />
-                          <Tooltip />
-                          <Legend />
-                          <Bar dataKey="value" name="Prospects" fill="#3b82f6">
-                            {prospectivePipeline.pipelineData.map((entry, index) => (
-                              <Cell 
-                                key={`cell-${index}`} 
-                                fill={
-                                  entry.name === 'converted' ? '#4ade80' : 
-                                  entry.name === 'rejected' ? '#ef4444' : 
-                                  entry.name === 'qualified' ? '#8b5cf6' : 
-                                  entry.name === 'contacted' ? '#3b82f6' : 
-                                  '#fbbf24'
-                                } 
-                              />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="flex flex-col justify-center">
-                      <div className="bg-white p-6 rounded-lg border space-y-4">
-                        <div>
-                          <h3 className="text-lg font-medium mb-1">Key Performance Metrics</h3>
-                          <p className="text-sm text-muted-foreground">Sales pipeline health</p>
-                        </div>
-                        <div className="space-y-4">
-                          <div>
-                            <div className="flex justify-between items-center mb-1">
-                              <span className="text-sm font-medium">Total Prospects</span>
-                              <span className="text-lg font-bold">{prospectivePipeline.totalProspects}</span>
-                            </div>
-                          </div>
-                          <div>
-                            <div className="flex justify-between items-center mb-1">
-                              <span className="text-sm font-medium">Conversion Rate</span>
-                              <span className="text-lg font-bold text-emerald-600">{prospectivePipeline.conversionRate.toFixed(1)}%</span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2.5">
-                              <div 
-                                className="bg-emerald-600 h-2.5 rounded-full" 
-                                style={{ width: `${Math.min(100, prospectivePipeline.conversionRate)}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                          <div>
-                            <div className="flex justify-between items-center mb-1">
-                              <span className="text-sm font-medium">Qualification Rate</span>
-                              <span className="text-lg font-bold text-violet-600">
-                                {(() => {
-                                  const qualified = prospectivePipeline.pipelineData.find(d => d.name === 'qualified' || d.name === 'Qualified')?.value || 0;
-                                  const converted = prospectivePipeline.pipelineData.find(d => d.name === 'converted' || d.name === 'Converted')?.value || 0;
-                                  const total = prospectivePipeline.totalProspects;
-                                  return total > 0 ? (((qualified + converted) / total) * 100).toFixed(1) : '0.0';
-                                })()}%
-                              </span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2.5">
-                              <div 
-                                className="bg-violet-600 h-2.5 rounded-full" 
-                                style={{ 
-                                  width: `${Math.min(100, (() => {
-                                    const qualified = prospectivePipeline.pipelineData.find(d => d.name === 'qualified' || d.name === 'Qualified')?.value || 0;
-                                    const converted = prospectivePipeline.pipelineData.find(d => d.name === 'converted' || d.name === 'Converted')?.value || 0;
-                                    const total = prospectivePipeline.totalProspects;
-                                    return total > 0 ? ((qualified + converted) / total) * 100 : 0;
-                                  })())}%` 
-                                }}
-                              ></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="h-full flex items-center justify-center">
-                    <p className="text-muted-foreground">No sales pipeline data available.</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="col-span-2">
-            <CardHeader>
-              <CardTitle>Pipeline Stage Conversion</CardTitle>
-              <CardDescription>
-                Conversion rates between pipeline stages
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingProspectives ? (
-                <div className="h-[200px] flex items-center justify-center">
-                  <p className="text-muted-foreground">Loading pipeline data...</p>
-                </div>
-              ) : prospectivePipeline?.pipelineData && prospectivePipeline.pipelineData.length > 0 ? (
-                <div className="overflow-hidden">
-                  <div className="relative">
-                    <div className="flex justify-between items-center py-5">
-                      {['New', 'Contacted', 'Qualified', 'Converted'].map((stage, i) => {
-                        const stageData = prospectivePipeline.pipelineData.find(
-                          d => d.name.toLowerCase() === stage.toLowerCase()
-                        );
-                        const count = stageData?.value || 0;
-                        const percentage = prospectivePipeline.totalProspects > 0 
-                          ? (count / prospectivePipeline.totalProspects) * 100 
-                          : 0;
-                            
-                        return (
-                          <div key={i} className="flex-1 text-center">
-                            <div className={`
-                              mx-auto w-16 h-16 flex items-center justify-center rounded-full mb-2
-                              ${i === 0 ? 'bg-amber-100 text-amber-600' : 
-                                i === 1 ? 'bg-blue-100 text-blue-600' : 
-                                i === 2 ? 'bg-violet-100 text-violet-600' : 
-                                'bg-emerald-100 text-emerald-600'}
-                            `}>
-                              <span className="text-xl font-bold">{count}</span>
-                            </div>
-                            <p className="font-medium">{stage}</p>
-                            <p className="text-sm text-muted-foreground">{percentage.toFixed(1)}%</p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    
-                    {/* Arrows connecting stages */}
-                    <div className="absolute top-1/2 left-0 w-full transform -translate-y-1/2 z-0 px-16">
-                      <div className="h-1 w-full bg-gray-200 rounded flex">
-                        <div className="h-full rounded bg-amber-500" style={{ width: '33%' }}></div>
-                        <div className="h-full rounded bg-blue-500" style={{ width: '33%' }}></div>
-                        <div className="h-full rounded bg-violet-500" style={{ width: '34%' }}></div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-8 grid grid-cols-3 gap-4">
-                    <div className="bg-slate-50 p-4 rounded-lg">
-                      <p className="text-sm font-medium mb-1">New → Contacted</p>
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center">
-                          <div className="w-3 h-3 rounded-full bg-amber-500 mr-2"></div>
-                          <span className="text-sm">Conversion:</span>
-                        </div>
-                        <span className="font-bold">
-                          {(() => {
-                            const newCount = prospectivePipeline.pipelineData.find(d => d.name.toLowerCase() === 'new')?.value || 0;
-                            const contactedCount = prospectivePipeline.pipelineData.find(d => d.name.toLowerCase() === 'contacted')?.value || 0;
-                            const qualifiedCount = prospectivePipeline.pipelineData.find(d => d.name.toLowerCase() === 'qualified')?.value || 0;
-                            const convertedCount = prospectivePipeline.pipelineData.find(d => d.name.toLowerCase() === 'converted')?.value || 0;
-                            
-                            return newCount > 0 
-                              ? (((contactedCount + qualifiedCount + convertedCount) / (newCount + contactedCount + qualifiedCount + convertedCount)) * 100).toFixed(1) + '%'
-                              : '0.0%';
-                          })()}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-slate-50 p-4 rounded-lg">
-                      <p className="text-sm font-medium mb-1">Contacted → Qualified</p>
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center">
-                          <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-                          <span className="text-sm">Conversion:</span>
-                        </div>
-                        <span className="font-bold">
-                          {(() => {
-                            const contactedCount = prospectivePipeline.pipelineData.find(d => d.name.toLowerCase() === 'contacted')?.value || 0;
-                            const qualifiedCount = prospectivePipeline.pipelineData.find(d => d.name.toLowerCase() === 'qualified')?.value || 0;
-                            const convertedCount = prospectivePipeline.pipelineData.find(d => d.name.toLowerCase() === 'converted')?.value || 0;
-                            
-                            return contactedCount > 0 
-                              ? (((qualifiedCount + convertedCount) / (contactedCount + qualifiedCount + convertedCount)) * 100).toFixed(1) + '%'
-                              : '0.0%';
-                          })()}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-slate-50 p-4 rounded-lg">
-                      <p className="text-sm font-medium mb-1">Qualified → Converted</p>
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center">
-                          <div className="w-3 h-3 rounded-full bg-violet-500 mr-2"></div>
-                          <span className="text-sm">Conversion:</span>
-                        </div>
-                        <span className="font-bold">
-                          {(() => {
-                            const qualifiedCount = prospectivePipeline.pipelineData.find(d => d.name.toLowerCase() === 'qualified')?.value || 0;
-                            const convertedCount = prospectivePipeline.pipelineData.find(d => d.name.toLowerCase() === 'converted')?.value || 0;
-                            
-                            return (qualifiedCount + convertedCount) > 0 
-                              ? ((convertedCount / (qualifiedCount + convertedCount)) * 100).toFixed(1) + '%'
-                              : '0.0%';
-                          })()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="h-[200px] flex items-center justify-center">
-                  <p className="text-muted-foreground">No pipeline stage data available.</p>
-                </div>
-              )}
             </CardContent>
           </Card>
         </TabsContent>
