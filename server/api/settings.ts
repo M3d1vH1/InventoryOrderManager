@@ -228,16 +228,21 @@ export async function testSlackTemplate(req: Request, res: Response) {
     try {
       // First test the order template
       if (validatedData.templates.orderTemplate) {
-        const orderMessage = {
-          text: "Test order notification",
-          blocks: [{
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: replaceTemplateVars(validatedData.templates.orderTemplate, sampleOrder)
-            }
-          }]
+        // Create a mock order that matches the expected format for the Slack service
+        const mockOrder = {
+          id: 999,
+          orderNumber: 'TEST-001',
+          customerName: sampleOrder.customerName,
+          orderDate: new Date().toISOString(),
+          status: sampleOrder.status,
+          notes: 'This is a test order',
         };
+        
+        // Use the formatOrderNotification method directly with our template
+        const orderMessage = slackService['formatOrderNotification'](
+          mockOrder as any, 
+          validatedData.templates.orderTemplate
+        );
         
         const orderResult = await slackService['sendSlackMessage'](orderMessage, validatedData.webhookUrl);
         if (!orderResult) success = false;
@@ -245,16 +250,23 @@ export async function testSlackTemplate(req: Request, res: Response) {
       
       // Then test the call log template
       if (validatedData.templates.callLogTemplate) {
-        const callLogMessage = {
-          text: "Test call log notification",
-          blocks: [{
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: replaceTemplateVars(validatedData.templates.callLogTemplate, sampleCallLog)
-            }
-          }]
+        // Create a mock call log that matches the expected format for the Slack service
+        const mockCallLog = {
+          id: 999,
+          contactName: sampleCallLog.caller,
+          companyName: sampleCallLog.customer,
+          callType: 'outbound',
+          callPurpose: sampleCallLog.callPurpose,
+          callDate: new Date().toISOString(),
+          priority: 'medium',
+          notes: sampleCallLog.notes,
         };
+        
+        // Use the formatCallLogNotification method directly with our template
+        const callLogMessage = slackService['formatCallLogNotification'](
+          mockCallLog as any, 
+          validatedData.templates.callLogTemplate
+        );
         
         const callLogResult = await slackService['sendSlackMessage'](callLogMessage, validatedData.webhookUrl);
         if (!callLogResult) success = false;
@@ -262,16 +274,22 @@ export async function testSlackTemplate(req: Request, res: Response) {
       
       // Finally test the low stock template
       if (validatedData.templates.lowStockTemplate) {
-        const lowStockMessage = {
-          text: "Test low stock notification",
-          blocks: [{
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: replaceTemplateVars(validatedData.templates.lowStockTemplate, sampleProduct)
-            }
-          }]
+        // Create a mock product that matches the expected format for the Slack service
+        const mockProduct = {
+          id: 999,
+          name: sampleProduct.productName,
+          sku: sampleProduct.sku,
+          currentStock: sampleProduct.quantity,
+          minStockLevel: sampleProduct.reorderPoint,
+          location: 'Warehouse A',
+          categoryId: 1
         };
+        
+        // Use the formatLowStockNotification method directly with our template
+        const lowStockMessage = slackService['formatLowStockNotification'](
+          mockProduct as any, 
+          validatedData.templates.lowStockTemplate
+        );
         
         const stockResult = await slackService['sendSlackMessage'](lowStockMessage, validatedData.webhookUrl);
         if (!stockResult) success = false;

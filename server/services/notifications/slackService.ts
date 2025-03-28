@@ -49,16 +49,44 @@ export class SlackNotificationService {
   // Apply template with data
   private applyTemplate(template: string, data: Record<string, any>): SlackMessage {
     try {
-      let templateStr = template;
+      // Determine if template is a JSON string or a plain text template
+      let parsedTemplate: SlackMessage;
+      let isJsonTemplate = false;
       
-      // Replace all template variables with actual data
-      Object.entries(data).forEach(([key, value]) => {
-        const regex = new RegExp(`{${key}}`, 'g');
-        templateStr = templateStr.replace(regex, String(value ?? ''));
-      });
+      try {
+        parsedTemplate = JSON.parse(template);
+        isJsonTemplate = true;
+      } catch (e) {
+        // Not a JSON string, treat as plain text template
+        isJsonTemplate = false;
+      }
       
-      // Parse the template as JSON
-      return JSON.parse(templateStr);
+      if (isJsonTemplate) {
+        // It's a JSON template - replace variables in the parsed object
+        let templateStr = template;
+        
+        // Replace all template variables with actual data
+        Object.entries(data).forEach(([key, value]) => {
+          const regex = new RegExp(`{${key}}`, 'g');
+          templateStr = templateStr.replace(regex, String(value ?? ''));
+        });
+        
+        // Parse the template as JSON after variable replacement
+        return JSON.parse(templateStr);
+      } else {
+        // It's a plain text template - create a simple message with replaced variables
+        let messageText = template;
+        
+        // Replace all template variables with actual data
+        Object.entries(data).forEach(([key, value]) => {
+          const regex = new RegExp(`{${key}}`, 'g');
+          messageText = messageText.replace(regex, String(value ?? ''));
+        });
+        
+        return {
+          text: messageText
+        };
+      }
     } catch (error) {
       console.error('Error applying template:', error);
       // Fallback to a simple text message if template parsing fails

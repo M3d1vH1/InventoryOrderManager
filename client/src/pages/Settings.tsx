@@ -1581,7 +1581,9 @@ const Settings = () => {
                                 type="button"
                                 variant="secondary"
                                 onClick={async () => {
-                                  if (!notificationForm.getValues().slackWebhookUrl) {
+                                  const formValues = notificationForm.getValues();
+                                  
+                                  if (!formValues.slackWebhookUrl) {
                                     toast({
                                       title: "Error",
                                       description: "Please enter a Slack webhook URL first",
@@ -1591,17 +1593,22 @@ const Settings = () => {
                                   }
                                   
                                   try {
+                                    // Ensure we have default templates if none provided
+                                    const orderTemplate = formValues.slackOrderTemplate || 'New order #{orderNumber} from {customerName} for ${totalValue}';
+                                    const callLogTemplate = formValues.slackCallLogTemplate || 'New call with {contactName} from {companyName} regarding {callPurpose}';
+                                    const lowStockTemplate = formValues.slackLowStockTemplate || 'Low stock alert: {name} is down to {currentStock} units';
+                                    
                                     const response = await fetch('/api/settings/test-slack-templates', {
                                       method: 'POST',
                                       headers: {
                                         'Content-Type': 'application/json',
                                       },
                                       body: JSON.stringify({
-                                        webhookUrl: notificationForm.getValues().slackWebhookUrl,
+                                        webhookUrl: formValues.slackWebhookUrl,
                                         templates: {
-                                          orderTemplate: notificationForm.getValues().slackOrderTemplate,
-                                          callLogTemplate: notificationForm.getValues().slackCallLogTemplate,
-                                          lowStockTemplate: notificationForm.getValues().slackLowStockTemplate,
+                                          orderTemplate,
+                                          callLogTemplate,
+                                          lowStockTemplate,
                                         }
                                       }),
                                     });
@@ -1638,18 +1645,34 @@ const Settings = () => {
                                 variant="secondary"
                                 onClick={async () => {
                                   // Test sending notification with current template
+                                  const formValues = notificationForm.getValues();
+                                  
+                                  if (!formValues.slackWebhookUrl) {
+                                    toast({
+                                      title: "Error",
+                                      description: "Please enter a Slack webhook URL first",
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
+                                  
                                   try {
+                                    // Ensure we have default templates if none provided
+                                    const orderTemplate = formValues.slackOrderTemplate || 'New order #{orderNumber} from {customerName} for ${totalValue}';
+                                    const callLogTemplate = formValues.slackCallLogTemplate || 'New call with {contactName} from {companyName} regarding {callPurpose}';
+                                    const lowStockTemplate = formValues.slackLowStockTemplate || 'Low stock alert: {name} is down to {currentStock} units';
+                                    
                                     const response = await fetch('/api/settings/test-slack-template', {
                                       method: 'POST',
                                       headers: {
                                         'Content-Type': 'application/json',
                                       },
                                       body: JSON.stringify({
-                                        webhookUrl: notificationForm.getValues().slackWebhookUrl,
+                                        webhookUrl: formValues.slackWebhookUrl,
                                         templates: {
-                                          orderTemplate: notificationForm.getValues().slackOrderTemplate,
-                                          callLogTemplate: notificationForm.getValues().slackCallLogTemplate,
-                                          lowStockTemplate: notificationForm.getValues().slackLowStockTemplate
+                                          orderTemplate,
+                                          callLogTemplate,
+                                          lowStockTemplate
                                         }
                                       }),
                                     });
@@ -1669,6 +1692,7 @@ const Settings = () => {
                                       });
                                     }
                                   } catch (error) {
+                                    console.error("Error testing templates:", error);
                                     toast({
                                       title: "Error",
                                       description: "Failed to send test notification",
