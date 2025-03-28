@@ -2244,12 +2244,13 @@ const Settings = () => {
                                         }
                                         
                                         const template = notificationForm.getValues('slackOrderTemplate');
-                                        apiRequest('/api/settings/test-slack-template', {
+                                        apiRequest('/api/settings/test-slack-templates', {
                                           method: 'POST',
                                           body: JSON.stringify({
-                                            type: 'order',
-                                            webhookUrl,
-                                            template
+                                            templates: {
+                                              orderTemplate: template
+                                            },
+                                            webhookUrl
                                           }),
                                           headers: {
                                             'Content-Type': 'application/json'
@@ -2320,12 +2321,13 @@ const Settings = () => {
                                         }
                                         
                                         const template = notificationForm.getValues('slackCallLogTemplate');
-                                        apiRequest('/api/settings/test-slack-template', {
+                                        apiRequest('/api/settings/test-slack-templates', {
                                           method: 'POST',
                                           body: JSON.stringify({
-                                            type: 'callLog',
-                                            webhookUrl,
-                                            template
+                                            templates: {
+                                              callLogTemplate: template
+                                            },
+                                            webhookUrl
                                           }),
                                           headers: {
                                             'Content-Type': 'application/json'
@@ -2396,12 +2398,13 @@ const Settings = () => {
                                         }
                                         
                                         const template = notificationForm.getValues('slackLowStockTemplate');
-                                        apiRequest('/api/settings/test-slack-template', {
+                                        apiRequest('/api/settings/test-slack-templates', {
                                           method: 'POST',
                                           body: JSON.stringify({
-                                            type: 'lowStock',
-                                            webhookUrl,
-                                            template
+                                            templates: {
+                                              lowStockTemplate: template
+                                            },
+                                            webhookUrl
                                           }),
                                           headers: {
                                             'Content-Type': 'application/json'
@@ -2445,13 +2448,15 @@ const Settings = () => {
                                       return;
                                     }
                                     
-                                    apiRequest('/api/settings/test-slack-all-templates', {
+                                    apiRequest('/api/settings/test-slack-templates', {
                                       method: 'POST',
                                       body: JSON.stringify({
                                         webhookUrl,
-                                        orderTemplate: notificationForm.getValues('slackOrderTemplate'),
-                                        callLogTemplate: notificationForm.getValues('slackCallLogTemplate'),
-                                        lowStockTemplate: notificationForm.getValues('slackLowStockTemplate')
+                                        templates: {
+                                          orderTemplate: notificationForm.getValues('slackOrderTemplate'),
+                                          callLogTemplate: notificationForm.getValues('slackCallLogTemplate'),
+                                          lowStockTemplate: notificationForm.getValues('slackLowStockTemplate')
+                                        }
                                       }),
                                       headers: {
                                         'Content-Type': 'application/json'
