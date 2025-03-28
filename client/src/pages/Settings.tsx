@@ -2089,7 +2089,7 @@ const LabelTemplateEditor = () => {
   const [showVariableHelp, setShowVariableHelp] = useState(false);
   
   // Template form
-  const labelTemplateForm = useForm<z.infer<typeof templateEditSchema>>({
+  const shippingLabelForm = useForm<z.infer<typeof templateEditSchema>>({
     resolver: zodResolver(templateEditSchema),
     defaultValues: {
       content: '',
@@ -2111,11 +2111,11 @@ const LabelTemplateEditor = () => {
   // Effect to update form when template data changes
   useEffect(() => {
     if (labelTemplateData && labelTemplateData.content) {
-      labelTemplateForm.reset({
+      shippingLabelForm.reset({
         content: labelTemplateData.content,
       });
     }
-  }, [labelTemplateData, labelTemplateForm]);
+  }, [labelTemplateData, shippingLabelForm]);
   
   // Update template mutation
   const updateTemplateMutation = useMutation({
@@ -2174,13 +2174,13 @@ const LabelTemplateEditor = () => {
     
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const text = labelTemplateForm.getValues().content;
+    const text = shippingLabelForm.getValues().content;
     const before = text.substring(0, start);
     const after = text.substring(end, text.length);
     
     // Insert the variable at cursor position
     const newText = `${before}{${variable}}${after}`;
-    labelTemplateForm.setValue('content', newText);
+    shippingLabelForm.setValue('content', newText);
     
     // Set focus back to textarea and place cursor after inserted variable
     setTimeout(() => {
@@ -2210,7 +2210,7 @@ const LabelTemplateEditor = () => {
               onClick={() => {
                 setIsEditing(false);
                 if (labelTemplateData && labelTemplateData.content) {
-                  labelTemplateForm.reset({
+                  shippingLabelForm.reset({
                     content: labelTemplateData.content,
                   });
                 }
@@ -2219,7 +2219,7 @@ const LabelTemplateEditor = () => {
               Cancel
             </Button>
             <Button 
-              onClick={labelTemplateForm.handleSubmit(onTemplateSubmit)}
+              onClick={shippingLabelForm.handleSubmit(onTemplateSubmit)}
               disabled={updateTemplateMutation.isPending}
             >
               {updateTemplateMutation.isPending ? "Saving..." : "Save Template"}
@@ -2271,10 +2271,10 @@ const LabelTemplateEditor = () => {
               </div>
             )}
             
-            <Form {...labelTemplateForm}>
-              <form onSubmit={labelTemplateForm.handleSubmit(onTemplateSubmit)} className="space-y-4">
+            <Form {...shippingLabelForm}>
+              <form onSubmit={shippingLabelForm.handleSubmit(onTemplateSubmit)} className="space-y-4">
                 <FormField
-                  control={labelTemplateForm.control}
+                  control={shippingLabelForm.control}
                   name="content"
                   render={({ field }) => (
                     <FormItem>
