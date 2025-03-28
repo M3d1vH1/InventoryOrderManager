@@ -103,6 +103,48 @@ interface PickingEfficiencyReport {
   }[];
 }
 
+// New interfaces for the enhanced reporting area
+interface CallLogsSummary {
+  totalCalls: number;
+  callTypeData: { name: string; value: number }[];
+  callStatusData: { name: string; value: number }[];
+  trendData: { date: string; count: number }[];
+}
+
+interface CustomerEngagement {
+  totalCustomers: number;
+  totalInteractions: number;
+  avgCallsPerCustomer: number;
+  engagementSegments: { name: string; value: number }[];
+  topEngagedCustomers: {
+    id: number;
+    name: string;
+    callCount: number;
+    lastInteractionDate: string | null;
+    daysSinceLastInteraction: number | null;
+  }[];
+}
+
+interface OrderQualitySummary {
+  totalErrors: number;
+  totalShippedOrders: number;
+  errorRate: number;
+  errorsByType: { type: string; count: number }[];
+  trending: { date: string; errorRate: number }[];
+  totalErrorsInPeriod: number;
+  resolvedErrorsCount: number;
+  unresolvedErrorsCount: number;
+  resolutionRate: number;
+  avgResolutionTimeInDays: number;
+  rootCauseAnalysis: Record<string, number>;
+}
+
+interface ProspectivePipeline {
+  totalProspects: number;
+  pipelineData: { name: string; value: number }[];
+  conversionRate: number;
+}
+
 // Colors for charts
 const COLORS = ['#4ade80', '#3b82f6', '#f97316', '#ec4899', '#8b5cf6', '#fbbf24', '#ef4444'];
 
@@ -141,6 +183,23 @@ const Reports = () => {
 
   const { data: pickingEfficiency, isLoading: isLoadingPickingEfficiency } = useQuery<PickingEfficiencyReport>({
     queryKey: ['/api/analytics/picking-efficiency'],
+  });
+  
+  // New analytics data queries for enhanced reporting
+  const { data: callLogsSummary, isLoading: isLoadingCallLogs } = useQuery<CallLogsSummary>({
+    queryKey: ['/api/analytics/call-logs-summary', timeRange],
+  });
+  
+  const { data: customerEngagement, isLoading: isLoadingCustomerEngagement } = useQuery<CustomerEngagement>({
+    queryKey: ['/api/analytics/customer-engagement'],
+  });
+  
+  const { data: orderQualitySummary, isLoading: isLoadingOrderQuality } = useQuery<OrderQualitySummary>({
+    queryKey: ['/api/analytics/order-quality-summary', timeRange],
+  });
+  
+  const { data: prospectivePipeline, isLoading: isLoadingProspectives } = useQuery<ProspectivePipeline>({
+    queryKey: ['/api/analytics/prospective-customer-pipeline'],
   });
 
   useEffect(() => {
@@ -284,12 +343,16 @@ const Reports = () => {
       </div>
 
       <Tabs defaultValue="inventory">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="inventory">Inventory</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="value">Value Analysis</TabsTrigger>
           <TabsTrigger value="efficiency">Efficiency</TabsTrigger>
+          <TabsTrigger value="call-logs">Call Logs</TabsTrigger>
+          <TabsTrigger value="customer-engagement">Customer Engagement</TabsTrigger>
+          <TabsTrigger value="order-quality">Order Quality</TabsTrigger>
+          <TabsTrigger value="sales-pipeline">Sales Pipeline</TabsTrigger>
         </TabsList>
         
         {/* Inventory Tab */}
@@ -844,6 +907,789 @@ const Reports = () => {
                 </table>
               </div>
             </CardFooter>
+          </Card>
+        </TabsContent>
+        
+        {/* Call Logs Tab */}
+        <TabsContent value="call-logs" className="mt-4 grid gap-4 md:grid-cols-2">
+          <Card className="col-span-2">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Call Log Trends</CardTitle>
+                  <CardDescription>
+                    Call activity over time
+                  </CardDescription>
+                </div>
+                <Select value={timeRange} onValueChange={setTimeRange}>
+                  <SelectTrigger className="w-28">
+                    <SelectValue placeholder="Time Range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30">30 Days</SelectItem>
+                    <SelectItem value="90">90 Days</SelectItem>
+                    <SelectItem value="180">180 Days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px]">
+                {isLoadingCallLogs ? (
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-muted-foreground">Loading call data...</p>
+                  </div>
+                ) : callLogsSummary?.trendData && callLogsSummary.trendData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={callLogsSummary.trendData}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="date" 
+                        tickFormatter={(value) => {
+                          const date = new Date(value);
+                          return `${date.getMonth() + 1}/${date.getDate()}`;
+                        }}
+                      />
+                      <YAxis />
+                      <Tooltip 
+                        labelFormatter={(value) => {
+                          const date = new Date(value);
+                          return date.toLocaleDateString();
+                        }}
+                      />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="count"
+                        name="Call Count"
+                        stroke="#8b5cf6"
+                        strokeWidth={2}
+                        activeDot={{ r: 8 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-muted-foreground">No call data available for the selected period.</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+            <CardFooter className="border-t pt-4">
+              <div className="grid grid-cols-3 gap-4 w-full">
+                <div className="rounded-lg bg-purple-50 p-4 border border-purple-200">
+                  <p className="text-purple-600 text-sm font-medium">Total Calls</p>
+                  <p className="text-2xl font-bold text-purple-800">
+                    {callLogsSummary?.totalCalls || 0}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-indigo-50 p-4 border border-indigo-200">
+                  <p className="text-indigo-600 text-sm font-medium">Avg. Daily Calls</p>
+                  <p className="text-2xl font-bold text-indigo-800">
+                    {callLogsSummary?.trendData && callLogsSummary.trendData.length > 0 
+                      ? (callLogsSummary.totalCalls / callLogsSummary.trendData.length).toFixed(1) 
+                      : '0'}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-violet-50 p-4 border border-violet-200">
+                  <p className="text-violet-600 text-sm font-medium">Call Types</p>
+                  <p className="text-2xl font-bold text-violet-800">
+                    {callLogsSummary?.callTypeData.length || 0}
+                  </p>
+                </div>
+              </div>
+            </CardFooter>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Call Types Distribution</CardTitle>
+              <CardDescription>
+                Breakdown of calls by type
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                {isLoadingCallLogs ? (
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-muted-foreground">Loading call data...</p>
+                  </div>
+                ) : callLogsSummary?.callTypeData && callLogsSummary.callTypeData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={callLogsSummary.callTypeData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={100}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {callLogsSummary.callTypeData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-muted-foreground">No call type data available.</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Call Status Distribution</CardTitle>
+              <CardDescription>
+                Breakdown of calls by status
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                {isLoadingCallLogs ? (
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-muted-foreground">Loading call data...</p>
+                  </div>
+                ) : callLogsSummary?.callStatusData && callLogsSummary.callStatusData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={callLogsSummary.callStatusData}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="value" name="Call Count">
+                        {callLogsSummary.callStatusData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-muted-foreground">No call status data available.</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* Customer Engagement Tab */}
+        <TabsContent value="customer-engagement" className="mt-4 grid gap-4 md:grid-cols-2">
+          <Card className="col-span-2">
+            <CardHeader>
+              <CardTitle>Customer Engagement Segmentation</CardTitle>
+              <CardDescription>
+                Distribution of customers by engagement level
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px]">
+                {isLoadingCustomerEngagement ? (
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-muted-foreground">Loading customer engagement data...</p>
+                  </div>
+                ) : customerEngagement?.engagementSegments && customerEngagement.engagementSegments.length > 0 ? (
+                  <div className="grid md:grid-cols-2 gap-6 h-full">
+                    <div className="flex flex-col justify-center">
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={customerEngagement.engagementSegments}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={130}
+                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          >
+                            <Cell fill="#4ade80" /> {/* Active */}
+                            <Cell fill="#fbbf24" /> {/* At Risk */}
+                            <Cell fill="#ef4444" /> {/* Dormant */}
+                          </Pie>
+                          <Tooltip />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="flex flex-col justify-center">
+                      <div className="space-y-6">
+                        <div className="rounded-lg bg-emerald-50 p-4 border border-emerald-200">
+                          <p className="text-emerald-600 text-sm font-medium">Active Customers (&lt; 30 days)</p>
+                          <div className="mt-1 flex items-baseline justify-between">
+                            <p className="text-2xl font-bold text-emerald-800">
+                              {customerEngagement.engagementSegments[0]?.value || 0}
+                            </p>
+                            <p className="text-emerald-600">
+                              {customerEngagement.totalCustomers > 0 
+                                ? ((customerEngagement.engagementSegments[0]?.value || 0) / customerEngagement.totalCustomers * 100).toFixed(1) + '%'
+                                : '0%'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="rounded-lg bg-amber-50 p-4 border border-amber-200">
+                          <p className="text-amber-600 text-sm font-medium">At Risk Customers (30-90 days)</p>
+                          <div className="mt-1 flex items-baseline justify-between">
+                            <p className="text-2xl font-bold text-amber-800">
+                              {customerEngagement.engagementSegments[1]?.value || 0}
+                            </p>
+                            <p className="text-amber-600">
+                              {customerEngagement.totalCustomers > 0 
+                                ? ((customerEngagement.engagementSegments[1]?.value || 0) / customerEngagement.totalCustomers * 100).toFixed(1) + '%'
+                                : '0%'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="rounded-lg bg-red-50 p-4 border border-red-200">
+                          <p className="text-red-600 text-sm font-medium">Dormant Customers (&gt; 90 days)</p>
+                          <div className="mt-1 flex items-baseline justify-between">
+                            <p className="text-2xl font-bold text-red-800">
+                              {customerEngagement.engagementSegments[2]?.value || 0}
+                            </p>
+                            <p className="text-red-600">
+                              {customerEngagement.totalCustomers > 0 
+                                ? ((customerEngagement.engagementSegments[2]?.value || 0) / customerEngagement.totalCustomers * 100).toFixed(1) + '%'
+                                : '0%'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-muted-foreground">No customer engagement data available.</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+            <CardFooter className="border-t pt-4">
+              <div className="grid grid-cols-3 gap-4 w-full">
+                <div className="rounded-lg bg-blue-50 p-4 border border-blue-200">
+                  <p className="text-blue-600 text-sm font-medium">Total Customers</p>
+                  <p className="text-2xl font-bold text-blue-800">
+                    {customerEngagement?.totalCustomers || 0}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-purple-50 p-4 border border-purple-200">
+                  <p className="text-purple-600 text-sm font-medium">Total Interactions</p>
+                  <p className="text-2xl font-bold text-purple-800">
+                    {customerEngagement?.totalInteractions || 0}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-indigo-50 p-4 border border-indigo-200">
+                  <p className="text-indigo-600 text-sm font-medium">Avg. Calls/Customer</p>
+                  <p className="text-2xl font-bold text-indigo-800">
+                    {customerEngagement?.avgCallsPerCustomer.toFixed(1) || '0.0'}
+                  </p>
+                </div>
+              </div>
+            </CardFooter>
+          </Card>
+
+          <Card className="col-span-2">
+            <CardHeader>
+              <CardTitle>Top Engaged Customers</CardTitle>
+              <CardDescription>
+                Customers with highest interaction count
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingCustomerEngagement ? (
+                <div className="h-[200px] flex items-center justify-center">
+                  <p className="text-muted-foreground">Loading customer data...</p>
+                </div>
+              ) : customerEngagement?.topEngagedCustomers && customerEngagement.topEngagedCustomers.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full bg-white border divide-y">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer Name</th>
+                        <th className="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Call Count</th>
+                        <th className="py-3 px-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Last Interaction</th>
+                        <th className="py-3 px-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Days Since Last Call</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {customerEngagement.topEngagedCustomers.map((customer) => (
+                        <tr key={customer.id}>
+                          <td className="py-2 px-4">{customer.name}</td>
+                          <td className="py-2 px-4 text-center">{customer.callCount}</td>
+                          <td className="py-2 px-4 text-right">
+                            {customer.lastInteractionDate 
+                              ? new Date(customer.lastInteractionDate).toLocaleDateString() 
+                              : 'Never'}
+                          </td>
+                          <td className={`py-2 px-4 text-right ${
+                            customer.daysSinceLastInteraction === null ? 'text-gray-400' :
+                            customer.daysSinceLastInteraction < 30 ? 'text-emerald-600' :
+                            customer.daysSinceLastInteraction < 90 ? 'text-amber-600' :
+                            'text-red-600'
+                          }`}>
+                            {customer.daysSinceLastInteraction === null ? 'N/A' : customer.daysSinceLastInteraction}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="h-[200px] flex items-center justify-center">
+                  <p className="text-muted-foreground">No customer engagement data available.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* Order Quality Tab */}
+        <TabsContent value="order-quality" className="mt-4 grid gap-4 md:grid-cols-2">
+          <Card className="col-span-2">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Order Error Rate Trends</CardTitle>
+                  <CardDescription>
+                    Order quality metrics over time
+                  </CardDescription>
+                </div>
+                <Select value={timeRange} onValueChange={setTimeRange}>
+                  <SelectTrigger className="w-28">
+                    <SelectValue placeholder="Time Range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30">30 Days</SelectItem>
+                    <SelectItem value="90">90 Days</SelectItem>
+                    <SelectItem value="180">180 Days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px]">
+                {isLoadingOrderQuality ? (
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-muted-foreground">Loading order quality data...</p>
+                  </div>
+                ) : orderQualitySummary?.trending && orderQualitySummary.trending.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={orderQualitySummary.trending}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="date" 
+                        tickFormatter={(value) => {
+                          const date = new Date(value);
+                          return `${date.getMonth() + 1}/${date.getDate()}`;
+                        }}
+                      />
+                      <YAxis 
+                        tickFormatter={(value) => `${value}%`}
+                      />
+                      <Tooltip 
+                        formatter={(value) => [`${Number(value).toFixed(2)}%`, 'Error Rate']}
+                        labelFormatter={(value) => {
+                          const date = new Date(value);
+                          return date.toLocaleDateString();
+                        }}
+                      />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="errorRate"
+                        name="Error Rate"
+                        stroke="#ef4444"
+                        strokeWidth={2}
+                        activeDot={{ r: 8 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-muted-foreground">No order quality data available for the selected period.</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+            <CardFooter className="border-t pt-4">
+              <div className="grid grid-cols-4 gap-4 w-full">
+                <div className="rounded-lg bg-blue-50 p-4 border border-blue-200">
+                  <p className="text-blue-600 text-sm font-medium">Shipped Orders</p>
+                  <p className="text-2xl font-bold text-blue-800">
+                    {orderQualitySummary?.totalShippedOrders || 0}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-red-50 p-4 border border-red-200">
+                  <p className="text-red-600 text-sm font-medium">Total Errors</p>
+                  <p className="text-2xl font-bold text-red-800">
+                    {orderQualitySummary?.totalErrorsInPeriod || 0}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-amber-50 p-4 border border-amber-200">
+                  <p className="text-amber-600 text-sm font-medium">Error Rate</p>
+                  <p className="text-2xl font-bold text-amber-800">
+                    {orderQualitySummary?.errorRate.toFixed(2) || '0.00'}%
+                  </p>
+                </div>
+                <div className="rounded-lg bg-emerald-50 p-4 border border-emerald-200">
+                  <p className="text-emerald-600 text-sm font-medium">Resolution Rate</p>
+                  <p className="text-2xl font-bold text-emerald-800">
+                    {orderQualitySummary?.resolutionRate.toFixed(1) || '0.0'}%
+                  </p>
+                </div>
+              </div>
+            </CardFooter>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Error Types Distribution</CardTitle>
+              <CardDescription>
+                Breakdown of errors by category
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                {isLoadingOrderQuality ? (
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-muted-foreground">Loading error data...</p>
+                  </div>
+                ) : orderQualitySummary?.errorsByType && orderQualitySummary.errorsByType.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={orderQualitySummary.errorsByType}
+                        dataKey="count"
+                        nameKey="type"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={100}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {orderQualitySummary.errorsByType.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-muted-foreground">No error type data available.</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Error Resolution Metrics</CardTitle>
+              <CardDescription>
+                Key performance indicators for error resolution
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="bg-slate-50 p-6 rounded-lg">
+                  <h3 className="text-lg font-medium mb-4">Error Resolution Time</h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-muted-foreground">Average Days to Resolve:</span>
+                    <span className="text-lg font-bold">
+                      {orderQualitySummary?.avgResolutionTimeInDays 
+                        ? orderQualitySummary.avgResolutionTimeInDays.toFixed(1) + ' days'
+                        : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="mt-6">
+                    <h4 className="text-sm font-medium mb-2">Status of Reported Errors</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-white p-4 rounded border">
+                        <p className="text-emerald-600 text-sm font-medium">Resolved</p>
+                        <p className="text-2xl font-bold text-emerald-800">
+                          {orderQualitySummary?.resolvedErrorsCount || 0}
+                        </p>
+                      </div>
+                      <div className="bg-white p-4 rounded border">
+                        <p className="text-red-600 text-sm font-medium">Unresolved</p>
+                        <p className="text-2xl font-bold text-red-800">
+                          {orderQualitySummary?.unresolvedErrorsCount || 0}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {orderQualitySummary?.rootCauseAnalysis && Object.keys(orderQualitySummary.rootCauseAnalysis).length > 0 && (
+                  <div className="bg-slate-50 p-6 rounded-lg">
+                    <h3 className="text-lg font-medium mb-4">Common Root Causes</h3>
+                    <div className="space-y-2">
+                      {Object.entries(orderQualitySummary.rootCauseAnalysis)
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 3)
+                        .map(([cause, count], index) => (
+                          <div key={index} className="flex justify-between items-center">
+                            <span className="text-sm truncate max-w-[70%]">{cause}</span>
+                            <span className="text-sm font-medium">{count} issues</span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* Sales Pipeline Tab */}
+        <TabsContent value="sales-pipeline" className="mt-4 grid gap-4 md:grid-cols-2">
+          <Card className="col-span-2">
+            <CardHeader>
+              <CardTitle>Sales Pipeline Overview</CardTitle>
+              <CardDescription>
+                Prospective customer journey stages
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px]">
+                {isLoadingProspectives ? (
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-muted-foreground">Loading sales pipeline data...</p>
+                  </div>
+                ) : prospectivePipeline?.pipelineData && prospectivePipeline.pipelineData.length > 0 ? (
+                  <div className="grid md:grid-cols-2 gap-6 h-full">
+                    <div className="flex flex-col justify-center">
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart
+                          data={prospectivePipeline.pipelineData}
+                          layout="vertical"
+                          margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis type="number" />
+                          <YAxis type="category" dataKey="name" />
+                          <Tooltip />
+                          <Legend />
+                          <Bar dataKey="value" name="Prospects" fill="#3b82f6">
+                            {prospectivePipeline.pipelineData.map((entry, index) => (
+                              <Cell 
+                                key={`cell-${index}`} 
+                                fill={
+                                  entry.name === 'converted' ? '#4ade80' : 
+                                  entry.name === 'rejected' ? '#ef4444' : 
+                                  entry.name === 'qualified' ? '#8b5cf6' : 
+                                  entry.name === 'contacted' ? '#3b82f6' : 
+                                  '#fbbf24'
+                                } 
+                              />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="flex flex-col justify-center">
+                      <div className="bg-white p-6 rounded-lg border space-y-4">
+                        <div>
+                          <h3 className="text-lg font-medium mb-1">Key Performance Metrics</h3>
+                          <p className="text-sm text-muted-foreground">Sales pipeline health</p>
+                        </div>
+                        <div className="space-y-4">
+                          <div>
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-sm font-medium">Total Prospects</span>
+                              <span className="text-lg font-bold">{prospectivePipeline.totalProspects}</span>
+                            </div>
+                          </div>
+                          <div>
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-sm font-medium">Conversion Rate</span>
+                              <span className="text-lg font-bold text-emerald-600">{prospectivePipeline.conversionRate.toFixed(1)}%</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2.5">
+                              <div 
+                                className="bg-emerald-600 h-2.5 rounded-full" 
+                                style={{ width: `${Math.min(100, prospectivePipeline.conversionRate)}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                          <div>
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-sm font-medium">Qualification Rate</span>
+                              <span className="text-lg font-bold text-violet-600">
+                                {(() => {
+                                  const qualified = prospectivePipeline.pipelineData.find(d => d.name === 'qualified' || d.name === 'Qualified')?.value || 0;
+                                  const converted = prospectivePipeline.pipelineData.find(d => d.name === 'converted' || d.name === 'Converted')?.value || 0;
+                                  const total = prospectivePipeline.totalProspects;
+                                  return total > 0 ? (((qualified + converted) / total) * 100).toFixed(1) : '0.0';
+                                })()}%
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2.5">
+                              <div 
+                                className="bg-violet-600 h-2.5 rounded-full" 
+                                style={{ 
+                                  width: `${Math.min(100, (() => {
+                                    const qualified = prospectivePipeline.pipelineData.find(d => d.name === 'qualified' || d.name === 'Qualified')?.value || 0;
+                                    const converted = prospectivePipeline.pipelineData.find(d => d.name === 'converted' || d.name === 'Converted')?.value || 0;
+                                    const total = prospectivePipeline.totalProspects;
+                                    return total > 0 ? ((qualified + converted) / total) * 100 : 0;
+                                  })())}%` 
+                                }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-muted-foreground">No sales pipeline data available.</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="col-span-2">
+            <CardHeader>
+              <CardTitle>Pipeline Stage Conversion</CardTitle>
+              <CardDescription>
+                Conversion rates between pipeline stages
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingProspectives ? (
+                <div className="h-[200px] flex items-center justify-center">
+                  <p className="text-muted-foreground">Loading pipeline data...</p>
+                </div>
+              ) : prospectivePipeline?.pipelineData && prospectivePipeline.pipelineData.length > 0 ? (
+                <div className="overflow-hidden">
+                  <div className="relative">
+                    <div className="flex justify-between items-center py-5">
+                      {['New', 'Contacted', 'Qualified', 'Converted'].map((stage, i) => {
+                        const stageData = prospectivePipeline.pipelineData.find(
+                          d => d.name.toLowerCase() === stage.toLowerCase()
+                        );
+                        const count = stageData?.value || 0;
+                        const percentage = prospectivePipeline.totalProspects > 0 
+                          ? (count / prospectivePipeline.totalProspects) * 100 
+                          : 0;
+                            
+                        return (
+                          <div key={i} className="flex-1 text-center">
+                            <div className={`
+                              mx-auto w-16 h-16 flex items-center justify-center rounded-full mb-2
+                              ${i === 0 ? 'bg-amber-100 text-amber-600' : 
+                                i === 1 ? 'bg-blue-100 text-blue-600' : 
+                                i === 2 ? 'bg-violet-100 text-violet-600' : 
+                                'bg-emerald-100 text-emerald-600'}
+                            `}>
+                              <span className="text-xl font-bold">{count}</span>
+                            </div>
+                            <p className="font-medium">{stage}</p>
+                            <p className="text-sm text-muted-foreground">{percentage.toFixed(1)}%</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Arrows connecting stages */}
+                    <div className="absolute top-1/2 left-0 w-full transform -translate-y-1/2 z-0 px-16">
+                      <div className="h-1 w-full bg-gray-200 rounded flex">
+                        <div className="h-full rounded bg-amber-500" style={{ width: '33%' }}></div>
+                        <div className="h-full rounded bg-blue-500" style={{ width: '33%' }}></div>
+                        <div className="h-full rounded bg-violet-500" style={{ width: '34%' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-8 grid grid-cols-3 gap-4">
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <p className="text-sm font-medium mb-1">New → Contacted</p>
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-amber-500 mr-2"></div>
+                          <span className="text-sm">Conversion:</span>
+                        </div>
+                        <span className="font-bold">
+                          {(() => {
+                            const newCount = prospectivePipeline.pipelineData.find(d => d.name.toLowerCase() === 'new')?.value || 0;
+                            const contactedCount = prospectivePipeline.pipelineData.find(d => d.name.toLowerCase() === 'contacted')?.value || 0;
+                            const qualifiedCount = prospectivePipeline.pipelineData.find(d => d.name.toLowerCase() === 'qualified')?.value || 0;
+                            const convertedCount = prospectivePipeline.pipelineData.find(d => d.name.toLowerCase() === 'converted')?.value || 0;
+                            
+                            return newCount > 0 
+                              ? (((contactedCount + qualifiedCount + convertedCount) / (newCount + contactedCount + qualifiedCount + convertedCount)) * 100).toFixed(1) + '%'
+                              : '0.0%';
+                          })()}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <p className="text-sm font-medium mb-1">Contacted → Qualified</p>
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+                          <span className="text-sm">Conversion:</span>
+                        </div>
+                        <span className="font-bold">
+                          {(() => {
+                            const contactedCount = prospectivePipeline.pipelineData.find(d => d.name.toLowerCase() === 'contacted')?.value || 0;
+                            const qualifiedCount = prospectivePipeline.pipelineData.find(d => d.name.toLowerCase() === 'qualified')?.value || 0;
+                            const convertedCount = prospectivePipeline.pipelineData.find(d => d.name.toLowerCase() === 'converted')?.value || 0;
+                            
+                            return contactedCount > 0 
+                              ? (((qualifiedCount + convertedCount) / (contactedCount + qualifiedCount + convertedCount)) * 100).toFixed(1) + '%'
+                              : '0.0%';
+                          })()}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <p className="text-sm font-medium mb-1">Qualified → Converted</p>
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-violet-500 mr-2"></div>
+                          <span className="text-sm">Conversion:</span>
+                        </div>
+                        <span className="font-bold">
+                          {(() => {
+                            const qualifiedCount = prospectivePipeline.pipelineData.find(d => d.name.toLowerCase() === 'qualified')?.value || 0;
+                            const convertedCount = prospectivePipeline.pipelineData.find(d => d.name.toLowerCase() === 'converted')?.value || 0;
+                            
+                            return (qualifiedCount + convertedCount) > 0 
+                              ? ((convertedCount / (qualifiedCount + convertedCount)) * 100).toFixed(1) + '%'
+                              : '0.0%';
+                          })()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-[200px] flex items-center justify-center">
+                  <p className="text-muted-foreground">No pipeline stage data available.</p>
+                </div>
+              )}
+            </CardContent>
           </Card>
         </TabsContent>
       </Tabs>

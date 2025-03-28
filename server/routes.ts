@@ -1657,6 +1657,207 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // New analytics endpoints for the enhanced reporting area
+  app.get('/api/analytics/call-logs-summary', async (req, res) => {
+    try {
+      const timeframe = req.query.timeframe ? parseInt(req.query.timeframe as string) : 90; // Default to 90 days
+      
+      // Get all call logs within the timeframe
+      const dateFrom = new Date();
+      dateFrom.setDate(dateFrom.getDate() - timeframe);
+      
+      const callLogs = await storage.getAllCallLogs(dateFrom.toISOString());
+      
+      // Calculate summary statistics
+      const totalCalls = callLogs.length;
+      
+      // Group by call type
+      const callsByType = callLogs.reduce((acc: Record<string, number>, log) => {
+        const type = log.callType || 'other';
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+      }, {});
+      
+      // Group by status
+      const callsByStatus = callLogs.reduce((acc: Record<string, number>, log) => {
+        const status = log.callStatus || 'unknown';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {});
+      
+      // Format for chart display
+      const callTypeData = Object.entries(callsByType).map(([name, value]) => ({ name, value }));
+      const callStatusData = Object.entries(callsByStatus).map(([name, value]) => ({ name, value }));
+      
+      // Group by date for trend analysis
+      const callsByDate: Record<string, number> = {};
+      callLogs.forEach(log => {
+        const date = new Date(log.callDate).toISOString().split('T')[0];
+        callsByDate[date] = (callsByDate[date] || 0) + 1;
+      });
+      
+      // Convert to array and sort by date
+      const trendData = Object.entries(callsByDate)
+        .map(([date, count]) => ({ date, count }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+      
+      res.json({
+        totalCalls,
+        callTypeData,
+        callStatusData,
+        trendData
+      });
+    } catch (error: any) {
+      console.error('Error generating call logs summary:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.get('/api/analytics/customer-engagement', async (req, res) => {
+    try {
+      // Get all customers and their call logs
+      const customers = await storage.getAllCustomers();
+      const callLogs = await storage.getAllCallLogs();
+      
+      // Calculate engagement metrics
+      let totalInteractions = 0;
+      const customerEngagement = customers.map(customer => {
+        // Get calls for this customer
+        const customerCalls = callLogs.filter(log => log.customerId === customer.id);
+        const callCount = customerCalls.length;
+        
+        // Get most recent interaction
+        const lastInteractionDate = customerCalls.length > 0 
+          ? new Date(Math.max(...customerCalls.map(c => new Date(c.callDate).getTime())))
+          : null;
+        
+        totalInteractions += callCount;
+        
+        return {
+          id: customer.id,
+          name: customer.name,
+          callCount,
+          lastInteractionDate,
+          // Calculate days since last interaction
+          daysSinceLastInteraction: lastInteractionDate 
+            ? Math.floor((new Date().getTime() - lastInteractionDate.getTime()) / (1000 * 60 * 60 * 24))
+            : null
+        };
+      });
+      
+      // Sort by engagement (call count)
+      const sortedByEngagement = [...customerEngagement].sort((a, b) => b.callCount - a.callCount);
+      
+      // Get top engaged customers
+      const topEngagedCustomers = sortedByEngagement.slice(0, 10);
+      
+      // Calculate engagement segments
+      const activeCustomers = customerEngagement.filter(c => c.callCount > 0 && c.daysSinceLastInteraction !== null && c.daysSinceLastInteraction < 30).length;
+      const atRiskCustomers = customerEngagement.filter(c => c.callCount > 0 && c.daysSinceLastInteraction !== null && c.daysSinceLastInteraction >= 30 && c.daysSinceLastInteraction < 90).length;
+      const dormantCustomers = customerEngagement.filter(c => c.daysSinceLastInteraction === null || c.daysSinceLastInteraction >= 90).length;
+      
+      // Calculate average calls per customer
+      const avgCallsPerCustomer = customers.length > 0 ? totalInteractions / customers.length : 0;
+      
+      res.json({
+        totalCustomers: customers.length,
+        totalInteractions,
+        avgCallsPerCustomer,
+        engagementSegments: [
+          { name: 'Active (< 30 days)', value: activeCustomers },
+          { name: 'At Risk (30-90 days)', value: atRiskCustomers },
+          { name: 'Dormant (> 90 days)', value: dormantCustomers }
+        ],
+        topEngagedCustomers
+      });
+    } catch (error: any) {
+      console.error('Error generating customer engagement analytics:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.get('/api/analytics/order-quality-summary', async (req, res) => {
+    try {
+      const period = req.query.period ? parseInt(req.query.period as string) : 90;
+      
+      // Get error statistics
+      const errorStats = await storage.getErrorStats(period);
+      
+      // Get additional insight for error trends
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - period);
+      
+      const orderErrors = await storage.getOrderErrors();
+      const recentErrors = orderErrors.filter(err => 
+        new Date(err.reportDate) >= startDate
+      );
+      
+      // Calculate resolution metrics
+      const resolvedErrors = recentErrors.filter(err => err.resolved);
+      const unresolvedErrors = recentErrors.filter(err => !err.resolved);
+      const avgResolutionTime = resolvedErrors.length > 0 
+        ? resolvedErrors.reduce((acc, err) => {
+            if (err.resolvedDate) {
+              const reportDate = new Date(err.reportDate);
+              const resolvedDate = new Date(err.resolvedDate);
+              return acc + (resolvedDate.getTime() - reportDate.getTime()) / (1000 * 60 * 60 * 24); // in days
+            }
+            return acc;
+          }, 0) / resolvedErrors.length
+        : 0;
+      
+      res.json({
+        ...errorStats,
+        totalErrorsInPeriod: recentErrors.length,
+        resolvedErrorsCount: resolvedErrors.length,
+        unresolvedErrorsCount: unresolvedErrors.length,
+        resolutionRate: recentErrors.length > 0 ? (resolvedErrors.length / recentErrors.length) * 100 : 0,
+        avgResolutionTimeInDays: avgResolutionTime,
+        // Group errors by root cause for insights
+        rootCauseAnalysis: resolvedErrors.reduce((acc: Record<string, number>, err) => {
+          const rootCause = err.rootCause || 'Unknown';
+          acc[rootCause] = (acc[rootCause] || 0) + 1;
+          return acc;
+        }, {})
+      });
+    } catch (error: any) {
+      console.error('Error generating order quality summary:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.get('/api/analytics/prospective-customer-pipeline', async (req, res) => {
+    try {
+      const prospects = await storage.getAllProspectiveCustomers();
+      
+      // Group by status
+      const statusCounts: Record<string, number> = {};
+      prospects.forEach(prospect => {
+        const status = prospect.status || 'unknown';
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+      });
+      
+      // Convert to chart-friendly format
+      const pipelineData = Object.entries(statusCounts).map(([name, value]) => ({ name, value }));
+      
+      // Calculate conversion rate
+      const convertedCount = statusCounts['converted'] || 0;
+      const conversionRate = prospects.length > 0 ? (convertedCount / prospects.length) * 100 : 0;
+      
+      // Calculate average time in pipeline for converted prospects
+      // (This would require more data than we currently have, like status change timestamps)
+      
+      res.json({
+        totalProspects: prospects.length,
+        pipelineData,
+        conversionRate
+      });
+    } catch (error: any) {
+      console.error('Error generating prospective customer pipeline report:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
   // Test notification endpoint
   app.post('/api/test-notification', async (req, res) => {
     try {
