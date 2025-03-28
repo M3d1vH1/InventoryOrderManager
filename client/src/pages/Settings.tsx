@@ -2272,7 +2272,7 @@ const LabelTemplateEditor = () => {
             )}
             
             <Form {...shippingLabelForm}>
-              <form onSubmit={shippingLabelForm.handleSubmit(onTemplateSubmit)} className="space-y-4">
+              <div className="space-y-4">
                 <FormField
                   control={shippingLabelForm.control}
                   name="content"
@@ -2293,7 +2293,7 @@ const LabelTemplateEditor = () => {
                     </FormItem>
                   )}
                 />
-              </form>
+              </div>
             </Form>
           </div>
         </div>
@@ -2599,7 +2599,7 @@ const EmailTemplateEditor = () => {
                   )}
                   
                   <Form {...emailTemplateForm}>
-                    <form onSubmit={emailTemplateForm.handleSubmit(onTemplateSubmit)} className="space-y-4">
+                    <div className="space-y-4">
                       <FormField
                         control={emailTemplateForm.control}
                         name="content"
@@ -2620,7 +2620,7 @@ const EmailTemplateEditor = () => {
                           </FormItem>
                         )}
                       />
-                    </form>
+                    </div>
                   </Form>
                 </div>
               ) : (
