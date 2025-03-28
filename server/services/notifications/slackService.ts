@@ -49,39 +49,57 @@ export class SlackNotificationService {
   // Apply template with data
   private applyTemplate(template: string, data: Record<string, any>): SlackMessage {
     try {
+      // Log the incoming template and data
+      console.log('Applying template:', template ? template.substring(0, 100) + '...' : 'undefined');
+      console.log('With data:', JSON.stringify(data));
+
       // Determine if template is a JSON string or a plain text template
-      let parsedTemplate: SlackMessage;
       let isJsonTemplate = false;
       
       try {
-        parsedTemplate = JSON.parse(template);
-        isJsonTemplate = true;
+        const test = JSON.parse(template);
+        isJsonTemplate = test && typeof test === 'object';
+        console.log('Detected JSON template');
       } catch (e) {
-        // Not a JSON string, treat as plain text template
+        console.log('Detected plain text template');
         isJsonTemplate = false;
       }
       
       if (isJsonTemplate) {
-        // It's a JSON template - replace variables in the parsed object
+        // It's a JSON template - replace variables in the string first, then parse
         let templateStr = template;
         
         // Replace all template variables with actual data
         Object.entries(data).forEach(([key, value]) => {
-          const regex = new RegExp(`{${key}}`, 'g');
-          templateStr = templateStr.replace(regex, String(value ?? ''));
+          const regex = new RegExp(`\\{${key}\\}`, 'g');
+          const strValue = value !== undefined && value !== null ? String(value) : '';
+          templateStr = templateStr.replace(regex, strValue);
         });
         
+        console.log('JSON template after variable replacement:', templateStr.substring(0, 100) + '...');
+        
         // Parse the template as JSON after variable replacement
-        return JSON.parse(templateStr);
+        try {
+          return JSON.parse(templateStr);
+        } catch (error) {
+          console.error('Error parsing JSON template after replacement:', error);
+          // If JSON parsing fails after replacement, fall back to plain text
+          return {
+            text: templateStr
+          };
+        }
       } else {
         // It's a plain text template - create a simple message with replaced variables
         let messageText = template;
         
         // Replace all template variables with actual data
         Object.entries(data).forEach(([key, value]) => {
-          const regex = new RegExp(`{${key}}`, 'g');
-          messageText = messageText.replace(regex, String(value ?? ''));
+          const regex = new RegExp(`\\{${key}\\}`, 'g');
+          const strValue = value !== undefined && value !== null ? String(value) : '';
+          messageText = messageText.replace(regex, strValue);
         });
+        
+        console.log('Plain text template after variable replacement:', messageText);
         
         return {
           text: messageText
@@ -159,22 +177,29 @@ export class SlackNotificationService {
     
     // Get the order items to calculate the total items (if not available directly)
     let totalItems = (order as any).totalItems || 0;
-    let totalValue = (order as any).totalPrice || 0;
+    let totalPrice = (order as any).totalPrice || 0;
     let shippingAddress = (order as any).shippingAddress || '';
     
     // Prepare data for template variables
     const data = {
       id: order.id,
       orderNumber: order.orderNumber,
+      customer: order.customerName, // Both customer and customerName for flexibility
       customerName: order.customerName,
       orderDate: new Date(order.orderDate).toLocaleString(),
       status: order.status,
+      items: (order as any).items || 'Unknown items',
       totalItems: totalItems,
-      totalValue: typeof totalValue === 'number' ? totalValue.toFixed(2) : '0.00',
+      total: typeof totalPrice === 'number' ? `$${totalPrice.toFixed(2)}` : '$0.00',
+      totalPrice: typeof totalPrice === 'number' ? `$${totalPrice.toFixed(2)}` : '$0.00',
+      totalValue: typeof totalPrice === 'number' ? `$${totalPrice.toFixed(2)}` : '$0.00',
       shippingAddress: shippingAddress,
       notes: order.notes || 'No notes',
       appUrl: process.env.APP_URL || '',
     };
+    
+    console.log('Order notification data:', data);
+    console.log('Order template:', template);
     
     return this.applyTemplate(template || defaultTemplate, data);
   }
@@ -264,14 +289,20 @@ export class SlackNotificationService {
     const data = {
       id: callLog.id,
       contactName: callLog.contactName,
+      caller: callLog.contactName, // Add caller as synonym for contactName
       companyName: callLog.companyName || 'Not specified',
+      customer: callLog.companyName || 'Not specified', // Add customer as synonym for companyName
       callType: callLog.callType,
       callPurpose: callLog.callPurpose,
       callDate: callLog.callDate ? new Date(callLog.callDate).toLocaleString() : 'Not specified',
+      callTime: callLog.callDate ? new Date(callLog.callDate).toLocaleString() : 'Not specified', // Add callTime as synonym
       priority: callLog.priority,
       notes: callLog.notes || 'No notes provided',
       appUrl: process.env.APP_URL || '',
     };
+    
+    console.log('Call log notification data:', data);
+    console.log('Call log template:', template);
     
     return this.applyTemplate(template || defaultTemplate, data);
   }
@@ -351,13 +382,19 @@ export class SlackNotificationService {
     const data = {
       id: product.id,
       productName: product.name,
+      name: product.name, // Add name as synonym for productName
       sku: product.sku,
       currentStock: product.currentStock,
+      quantity: product.currentStock, // Add quantity as synonym for currentStock
+      reorderPoint: reorderLevel, // Add reorderPoint as synonym
       reorderLevel: reorderLevel,
       location: product.location || 'Not specified',
       category: categoryName,
       appUrl: process.env.APP_URL || '',
     };
+    
+    console.log('Product notification data:', data);
+    console.log('Product template:', template);
     
     return this.applyTemplate(template || defaultTemplate, data);
   }

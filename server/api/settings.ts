@@ -187,6 +187,11 @@ export async function testSlackTemplate(req: Request, res: Response) {
     const validatedData = schema.parse(req.body);
     const slackService = createSlackService(storage);
     
+    console.log('Testing Slack templates with webhook URL:', validatedData.webhookUrl);
+    console.log('Order template:', validatedData.templates.orderTemplate);
+    console.log('Call log template:', validatedData.templates.callLogTemplate);
+    console.log('Low stock template:', validatedData.templates.lowStockTemplate);
+    
     // Create sample data for tests
     const sampleOrder = {
       id: 999,
@@ -215,19 +220,14 @@ export async function testSlackTemplate(req: Request, res: Response) {
       category: 'Food Products'
     };
     
-    // Local helper function to replace variables in templates
-    const replaceTemplateVars = (template: string, data: Record<string, any>): string => {
-      return template.replace(/\{([^}]+)\}/g, (match, key) => {
-        return data[key] !== undefined ? String(data[key]) : match;
-      });
-    };
-    
     let success = true;
     
     // Test each template
     try {
       // First test the order template
       if (validatedData.templates.orderTemplate) {
+        console.log('Testing order template');
+        
         // Create a mock order that matches the expected format for the Slack service
         const mockOrder = {
           id: 999,
@@ -236,7 +236,15 @@ export async function testSlackTemplate(req: Request, res: Response) {
           orderDate: new Date().toISOString(),
           status: sampleOrder.status,
           notes: 'This is a test order',
+          totalPrice: sampleOrder.totalPrice,
+          items: sampleOrder.items,
+          // Add all possible fields that might be in templates
+          customer: sampleOrder.customerName,
+          total: sampleOrder.totalPrice,
+          totalValue: sampleOrder.totalPrice
         };
+        
+        console.log('Mock order data:', mockOrder);
         
         // Use the formatOrderNotification method directly with our template
         const orderMessage = slackService['formatOrderNotification'](
@@ -244,23 +252,35 @@ export async function testSlackTemplate(req: Request, res: Response) {
           validatedData.templates.orderTemplate
         );
         
+        console.log('Formatted order message:', JSON.stringify(orderMessage));
+        
         const orderResult = await slackService['sendSlackMessage'](orderMessage, validatedData.webhookUrl);
+        console.log('Order template test result:', orderResult);
         if (!orderResult) success = false;
       }
       
       // Then test the call log template
       if (validatedData.templates.callLogTemplate) {
+        console.log('Testing call log template');
+        
         // Create a mock call log that matches the expected format for the Slack service
         const mockCallLog = {
           id: 999,
           contactName: sampleCallLog.caller,
           companyName: sampleCallLog.customer,
-          callType: 'outbound',
+          callType: 'Outbound',
           callPurpose: sampleCallLog.callPurpose,
           callDate: new Date().toISOString(),
-          priority: 'medium',
+          priority: 'Medium',
           notes: sampleCallLog.notes,
+          // Add all possible fields that might be in templates
+          caller: sampleCallLog.caller,
+          customer: sampleCallLog.customer,
+          callTime: new Date().toLocaleString(),
+          subject: sampleCallLog.callPurpose
         };
+        
+        console.log('Mock call log data:', mockCallLog);
         
         // Use the formatCallLogNotification method directly with our template
         const callLogMessage = slackService['formatCallLogNotification'](
@@ -268,12 +288,17 @@ export async function testSlackTemplate(req: Request, res: Response) {
           validatedData.templates.callLogTemplate
         );
         
+        console.log('Formatted call log message:', JSON.stringify(callLogMessage));
+        
         const callLogResult = await slackService['sendSlackMessage'](callLogMessage, validatedData.webhookUrl);
+        console.log('Call log template test result:', callLogResult);
         if (!callLogResult) success = false;
       }
       
       // Finally test the low stock template
       if (validatedData.templates.lowStockTemplate) {
+        console.log('Testing low stock template');
+        
         // Create a mock product that matches the expected format for the Slack service
         const mockProduct = {
           id: 999,
@@ -281,9 +306,17 @@ export async function testSlackTemplate(req: Request, res: Response) {
           sku: sampleProduct.sku,
           currentStock: sampleProduct.quantity,
           minStockLevel: sampleProduct.reorderPoint,
+          category: sampleProduct.category,
           location: 'Warehouse A',
-          categoryId: 1
+          categoryId: 1,
+          // Add all possible fields that might be in templates
+          productName: sampleProduct.productName,
+          quantity: sampleProduct.quantity,
+          reorderPoint: sampleProduct.reorderPoint,
+          reorderLevel: sampleProduct.reorderPoint
         };
+        
+        console.log('Mock product data:', mockProduct);
         
         // Use the formatLowStockNotification method directly with our template
         const lowStockMessage = slackService['formatLowStockNotification'](
@@ -291,7 +324,10 @@ export async function testSlackTemplate(req: Request, res: Response) {
           validatedData.templates.lowStockTemplate
         );
         
+        console.log('Formatted low stock message:', JSON.stringify(lowStockMessage));
+        
         const stockResult = await slackService['sendSlackMessage'](lowStockMessage, validatedData.webhookUrl);
+        console.log('Low stock template test result:', stockResult);
         if (!stockResult) success = false;
       }
     } catch (error) {
