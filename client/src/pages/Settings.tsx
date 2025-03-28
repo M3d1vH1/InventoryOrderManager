@@ -2191,6 +2191,292 @@ const Settings = () => {
                               />
                             </div>
                           </div>
+                          
+                          <div className="mt-6 space-y-4 border-t pt-4">
+                            <h4 className="text-md font-semibold">Customize Notification Templates</h4>
+                            <p className="text-sm text-gray-500">
+                              You can customize the templates for different types of Slack notifications. 
+                              Use placeholders like {"{orderNumber}"}, {"{customer}"}, {"{productName}"}, etc.
+                            </p>
+                            
+                            <Accordion type="single" collapsible className="w-full">
+                              <AccordionItem value="order-template">
+                                <AccordionTrigger>Order Notification Template</AccordionTrigger>
+                                <AccordionContent>
+                                  <FormField
+                                    control={notificationForm.control}
+                                    name="slackOrderTemplate"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormControl>
+                                          <Textarea
+                                            placeholder="New order #{orderNumber} from {customer} for ${total}"
+                                            className="min-h-[120px]"
+                                            value={field.value || ''}
+                                            onChange={field.onChange}
+                                            onBlur={field.onBlur}
+                                            name={field.name}
+                                            ref={field.ref}
+                                          />
+                                        </FormControl>
+                                        <FormDescription>
+                                          Available variables: {"{orderNumber}"}, {"{customer}"}, {"{total}"}, {"{items}"}, {"{status}"}
+                                        </FormDescription>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  {notificationForm.watch('slackWebhookUrl') && (
+                                    <Button 
+                                      type="button" 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="mt-2"
+                                      onClick={() => {
+                                        const webhookUrl = notificationForm.getValues('slackWebhookUrl');
+                                        if (!webhookUrl) {
+                                          toast({
+                                            title: "Error",
+                                            description: "Please enter a Slack webhook URL first",
+                                            variant: "destructive",
+                                          });
+                                          return;
+                                        }
+                                        
+                                        const template = notificationForm.getValues('slackOrderTemplate');
+                                        apiRequest('/api/settings/test-slack-template', {
+                                          method: 'POST',
+                                          body: JSON.stringify({
+                                            type: 'order',
+                                            webhookUrl,
+                                            template
+                                          }),
+                                          headers: {
+                                            'Content-Type': 'application/json'
+                                          }
+                                        })
+                                        .then(() => {
+                                          toast({
+                                            title: "Success",
+                                            description: "Test notification sent to Slack!",
+                                          });
+                                        })
+                                        .catch(error => {
+                                          toast({
+                                            title: "Error",
+                                            description: error.message || "Failed to send test notification",
+                                            variant: "destructive",
+                                          });
+                                        });
+                                      }}
+                                    >
+                                      Test Template
+                                    </Button>
+                                  )}
+                                </AccordionContent>
+                              </AccordionItem>
+                              
+                              <AccordionItem value="call-template">
+                                <AccordionTrigger>Call Log Notification Template</AccordionTrigger>
+                                <AccordionContent>
+                                  <FormField
+                                    control={notificationForm.control}
+                                    name="slackCallLogTemplate"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormControl>
+                                          <Textarea
+                                            placeholder="New call with {customer} regarding {callPurpose}"
+                                            className="min-h-[120px]"
+                                            value={field.value || ''}
+                                            onChange={field.onChange}
+                                            onBlur={field.onBlur}
+                                            name={field.name}
+                                            ref={field.ref}
+                                          />
+                                        </FormControl>
+                                        <FormDescription>
+                                          Available variables: {"{caller}"}, {"{customer}"}, {"{callPurpose}"}, {"{callTime}"}, {"{notes}"}
+                                        </FormDescription>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  {notificationForm.watch('slackWebhookUrl') && (
+                                    <Button 
+                                      type="button" 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="mt-2"
+                                      onClick={() => {
+                                        const webhookUrl = notificationForm.getValues('slackWebhookUrl');
+                                        if (!webhookUrl) {
+                                          toast({
+                                            title: "Error",
+                                            description: "Please enter a Slack webhook URL first",
+                                            variant: "destructive",
+                                          });
+                                          return;
+                                        }
+                                        
+                                        const template = notificationForm.getValues('slackCallLogTemplate');
+                                        apiRequest('/api/settings/test-slack-template', {
+                                          method: 'POST',
+                                          body: JSON.stringify({
+                                            type: 'callLog',
+                                            webhookUrl,
+                                            template
+                                          }),
+                                          headers: {
+                                            'Content-Type': 'application/json'
+                                          }
+                                        })
+                                        .then(() => {
+                                          toast({
+                                            title: "Success",
+                                            description: "Test notification sent to Slack!",
+                                          });
+                                        })
+                                        .catch(error => {
+                                          toast({
+                                            title: "Error",
+                                            description: error.message || "Failed to send test notification",
+                                            variant: "destructive",
+                                          });
+                                        });
+                                      }}
+                                    >
+                                      Test Template
+                                    </Button>
+                                  )}
+                                </AccordionContent>
+                              </AccordionItem>
+                              
+                              <AccordionItem value="stock-template">
+                                <AccordionTrigger>Low Stock Notification Template</AccordionTrigger>
+                                <AccordionContent>
+                                  <FormField
+                                    control={notificationForm.control}
+                                    name="slackLowStockTemplate"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormControl>
+                                          <Textarea
+                                            placeholder="Low stock alert: {productName} (SKU: {sku}) - only {quantity} units left"
+                                            className="min-h-[120px]"
+                                            value={field.value || ''}
+                                            onChange={field.onChange}
+                                            onBlur={field.onBlur}
+                                            name={field.name}
+                                            ref={field.ref}
+                                          />
+                                        </FormControl>
+                                        <FormDescription>
+                                          Available variables: {"{productName}"}, {"{sku}"}, {"{quantity}"}, {"{minimumStock}"}, {"{category}"}
+                                        </FormDescription>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  {notificationForm.watch('slackWebhookUrl') && (
+                                    <Button 
+                                      type="button" 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="mt-2"
+                                      onClick={() => {
+                                        const webhookUrl = notificationForm.getValues('slackWebhookUrl');
+                                        if (!webhookUrl) {
+                                          toast({
+                                            title: "Error",
+                                            description: "Please enter a Slack webhook URL first",
+                                            variant: "destructive",
+                                          });
+                                          return;
+                                        }
+                                        
+                                        const template = notificationForm.getValues('slackLowStockTemplate');
+                                        apiRequest('/api/settings/test-slack-template', {
+                                          method: 'POST',
+                                          body: JSON.stringify({
+                                            type: 'lowStock',
+                                            webhookUrl,
+                                            template
+                                          }),
+                                          headers: {
+                                            'Content-Type': 'application/json'
+                                          }
+                                        })
+                                        .then(() => {
+                                          toast({
+                                            title: "Success",
+                                            description: "Test notification sent to Slack!",
+                                          });
+                                        })
+                                        .catch(error => {
+                                          toast({
+                                            title: "Error",
+                                            description: error.message || "Failed to send test notification",
+                                            variant: "destructive",
+                                          });
+                                        });
+                                      }}
+                                    >
+                                      Test Template
+                                    </Button>
+                                  )}
+                                </AccordionContent>
+                              </AccordionItem>
+                            </Accordion>
+                            
+                            {notificationForm.watch('slackWebhookUrl') && (
+                              <div className="flex justify-end mt-2">
+                                <Button 
+                                  type="button" 
+                                  variant="outline"
+                                  onClick={() => {
+                                    const webhookUrl = notificationForm.getValues('slackWebhookUrl');
+                                    if (!webhookUrl) {
+                                      toast({
+                                        title: "Error",
+                                        description: "Please enter a Slack webhook URL first",
+                                        variant: "destructive",
+                                      });
+                                      return;
+                                    }
+                                    
+                                    apiRequest('/api/settings/test-slack-all-templates', {
+                                      method: 'POST',
+                                      body: JSON.stringify({
+                                        webhookUrl,
+                                        orderTemplate: notificationForm.getValues('slackOrderTemplate'),
+                                        callLogTemplate: notificationForm.getValues('slackCallLogTemplate'),
+                                        lowStockTemplate: notificationForm.getValues('slackLowStockTemplate')
+                                      }),
+                                      headers: {
+                                        'Content-Type': 'application/json'
+                                      }
+                                    })
+                                    .then(() => {
+                                      toast({
+                                        title: "Success",
+                                        description: "Test notifications sent to Slack!",
+                                      });
+                                    })
+                                    .catch(error => {
+                                      toast({
+                                        title: "Error",
+                                        description: error.message || "Failed to send test notifications",
+                                        variant: "destructive",
+                                      });
+                                    });
+                                  }}
+                                >
+                                  Test All Templates
+                                </Button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                         
                         <div className="flex justify-end mt-6">
