@@ -1466,117 +1466,173 @@ const Settings = () => {
                           />
                         </div>
                         
-                        {notificationForm.watch('slackEnabled') && (
-                          <div className="mt-6 space-y-4 border-t pt-4">
-                            <h4 className="text-md font-semibold">Customize Notification Templates</h4>
-                            <p className="text-sm text-gray-500">
-                              You can customize the templates for different types of Slack notifications. 
-                              Use placeholders like {"{orderNumber}"}, {"{customer}"}, {"{productName}"}, etc.
-                            </p>
+                        <div className="mt-6 space-y-4 border-t pt-4">
+                          <h4 className="text-md font-semibold">Customize Notification Templates</h4>
+                          <p className="text-sm text-gray-500">
+                            You can customize the templates for different types of Slack notifications. 
+                            Use placeholders like {"{orderNumber}"}, {"{customer}"}, {"{productName}"}, etc.
+                          </p>
+                          
+                          <Accordion type="single" collapsible>
+                            <AccordionItem value="order-template">
+                              <AccordionTrigger>Order Notification Template</AccordionTrigger>
+                              <AccordionContent>
+                                <FormField
+                                  control={notificationForm.control}
+                                  name="slackOrderTemplate"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormControl>
+                                        <Textarea
+                                          placeholder="New order #{orderNumber} from {customer} for ${total}"
+                                          className="min-h-[120px]"
+                                          value={field.value || ''}
+                                          onChange={field.onChange}
+                                          onBlur={field.onBlur}
+                                          name={field.name}
+                                          ref={field.ref}
+                                        />
+                                      </FormControl>
+                                      <FormDescription>
+                                        Available variables: {"{orderNumber}"}, {"{customer}"}, {"{items}"}, {"{total}"}, {"{status}"}
+                                      </FormDescription>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </AccordionContent>
+                            </AccordionItem>
                             
-                            <Accordion type="single" collapsible>
-                              <AccordionItem value="order-template">
-                                <AccordionTrigger>Order Notification Template</AccordionTrigger>
-                                <AccordionContent>
-                                  <FormField
-                                    control={notificationForm.control}
-                                    name="slackOrderTemplate"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormControl>
-                                          <Textarea
-                                            placeholder="New order #{orderNumber} from {customer} for ${total}"
-                                            className="min-h-[120px]"
-                                            value={field.value || ''}
-                                            onChange={field.onChange}
-                                            onBlur={field.onBlur}
-                                            name={field.name}
-                                            ref={field.ref}
-                                          />
-                                        </FormControl>
-                                        <FormDescription>
-                                          Available variables: {"{orderNumber}"}, {"{customer}"}, {"{items}"}, {"{total}"}, {"{status}"}
-                                        </FormDescription>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                </AccordionContent>
-                              </AccordionItem>
-                              
-                              <AccordionItem value="call-template">
-                                <AccordionTrigger>Call Log Notification Template</AccordionTrigger>
-                                <AccordionContent>
-                                  <FormField
-                                    control={notificationForm.control}
-                                    name="slackCallLogTemplate"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormControl>
-                                          <Textarea
-                                            placeholder="New call with {customer} regarding {callPurpose}"
-                                            className="min-h-[120px]"
-                                            value={field.value || ''}
-                                            onChange={field.onChange}
-                                            onBlur={field.onBlur}
-                                            name={field.name}
-                                            ref={field.ref}
-                                          />
-                                        </FormControl>
-                                        <FormDescription>
-                                          Available variables: {"{caller}"}, {"{customer}"}, {"{callPurpose}"}, {"{callTime}"}, {"{notes}"}
-                                        </FormDescription>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                </AccordionContent>
-                              </AccordionItem>
-                              
-                              <AccordionItem value="stock-template">
-                                <AccordionTrigger>Low Stock Notification Template</AccordionTrigger>
-                                <AccordionContent>
-                                  <FormField
-                                    control={notificationForm.control}
-                                    name="slackLowStockTemplate"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormControl>
-                                          <Textarea
-                                            placeholder="Low stock alert: {productName} (SKU: {sku}) - only {quantity} units left"
-                                            className="min-h-[120px]"
-                                            value={field.value || ''}
-                                            onChange={field.onChange}
-                                            onBlur={field.onBlur}
-                                            name={field.name}
-                                            ref={field.ref}
-                                          />
-                                        </FormControl>
-                                        <FormDescription>
-                                          Available variables: {"{productName}"}, {"{sku}"}, {"{quantity}"}, {"{reorderPoint}"}, {"{category}"}
-                                        </FormDescription>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                </AccordionContent>
-                              </AccordionItem>
-                            </Accordion>
+                            <AccordionItem value="call-template">
+                              <AccordionTrigger>Call Log Notification Template</AccordionTrigger>
+                              <AccordionContent>
+                                <FormField
+                                  control={notificationForm.control}
+                                  name="slackCallLogTemplate"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormControl>
+                                        <Textarea
+                                          placeholder="New call with {customer} regarding {callPurpose}"
+                                          className="min-h-[120px]"
+                                          value={field.value || ''}
+                                          onChange={field.onChange}
+                                          onBlur={field.onBlur}
+                                          name={field.name}
+                                          ref={field.ref}
+                                        />
+                                      </FormControl>
+                                      <FormDescription>
+                                        Available variables: {"{caller}"}, {"{customer}"}, {"{callPurpose}"}, {"{callTime}"}, {"{notes}"}
+                                      </FormDescription>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </AccordionContent>
+                            </AccordionItem>
                             
-                            <div className="flex justify-between mt-4">
+                            <AccordionItem value="stock-template">
+                              <AccordionTrigger>Low Stock Notification Template</AccordionTrigger>
+                              <AccordionContent>
+                                <FormField
+                                  control={notificationForm.control}
+                                  name="slackLowStockTemplate"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormControl>
+                                        <Textarea
+                                          placeholder="Low stock alert: {productName} (SKU: {sku}) - only {quantity} units left"
+                                          className="min-h-[120px]"
+                                          value={field.value || ''}
+                                          onChange={field.onChange}
+                                          onBlur={field.onBlur}
+                                          name={field.name}
+                                          ref={field.ref}
+                                        />
+                                      </FormControl>
+                                      <FormDescription>
+                                        Available variables: {"{productName}"}, {"{sku}"}, {"{quantity}"}, {"{reorderPoint}"}, {"{category}"}
+                                      </FormDescription>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </AccordionContent>
+                            </AccordionItem>
+                          </Accordion>
+                          
+                          <div className="flex justify-between mt-4">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => {
+                                // Reset templates to default values
+                                notificationForm.setValue("slackOrderTemplate", "New order #{orderNumber} from {customer} for ${total}");
+                                notificationForm.setValue("slackCallLogTemplate", "New call with {customer} regarding {callPurpose}");
+                                notificationForm.setValue("slackLowStockTemplate", "Low stock alert: {productName} (SKU: {sku}) - only {quantity} units left");
+                              }}
+                            >
+                              Reset to Defaults
+                            </Button>
+                            
+                            <div className="space-x-2">
                               <Button
                                 type="button"
-                                variant="outline"
-                                onClick={() => {
-                                  // Reset templates to default values
-                                  notificationForm.setValue("slackOrderTemplate", "New order #{orderNumber} from {customer} for ${total}");
-                                  notificationForm.setValue("slackCallLogTemplate", "New call with {customer} regarding {callPurpose}");
-                                  notificationForm.setValue("slackLowStockTemplate", "Low stock alert: {productName} (SKU: {sku}) - only {quantity} units left");
+                                variant="secondary"
+                                onClick={async () => {
+                                  if (!notificationForm.getValues().slackWebhookUrl) {
+                                    toast({
+                                      title: "Error",
+                                      description: "Please enter a Slack webhook URL first",
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
+                                  
+                                  try {
+                                    const response = await fetch('/api/settings/test-slack-templates', {
+                                      method: 'POST',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                      },
+                                      body: JSON.stringify({
+                                        webhookUrl: notificationForm.getValues().slackWebhookUrl,
+                                        templates: {
+                                          orderTemplate: notificationForm.getValues().slackOrderTemplate,
+                                          callLogTemplate: notificationForm.getValues().slackCallLogTemplate,
+                                          lowStockTemplate: notificationForm.getValues().slackLowStockTemplate,
+                                        }
+                                      }),
+                                    });
+                                    
+                                    const data = await response.json();
+                                    
+                                    if (data.success) {
+                                      toast({
+                                        title: "Success",
+                                        description: "Test notifications sent successfully!",
+                                      });
+                                    } else {
+                                      toast({
+                                        title: "Error",
+                                        description: data.message || "Failed to send test notifications",
+                                        variant: "destructive",
+                                      });
+                                    }
+                                  } catch (error) {
+                                    console.error("Error testing templates:", error);
+                                    toast({
+                                      title: "Error",
+                                      description: "An error occurred while testing the templates",
+                                      variant: "destructive",
+                                    });
+                                  }
                                 }}
                               >
-                                Reset to Defaults
+                                Test All Templates
                               </Button>
-                              
+                            
                               <Button
                                 type="button"
                                 variant="secondary"
@@ -1625,7 +1681,7 @@ const Settings = () => {
                               </Button>
                             </div>
                           </div>
-                        )}
+                        </div>
                       </>
                     )}
                   </div>

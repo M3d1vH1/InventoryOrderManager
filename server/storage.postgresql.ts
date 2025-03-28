@@ -1867,6 +1867,11 @@ export class DatabaseStorage implements IStorage {
             slackNotifyCallLogs: settings.slackNotifyCallLogs ?? true,
             slackNotifyLowStock: settings.slackNotifyLowStock ?? false,
             
+            // Slack notification templates
+            slackOrderTemplate: settings.slackOrderTemplate,
+            slackCallLogTemplate: settings.slackCallLogTemplate,
+            slackLowStockTemplate: settings.slackLowStockTemplate,
+            
             updatedAt: new Date(),
           })
           .returning();
@@ -1892,6 +1897,11 @@ export class DatabaseStorage implements IStorage {
         if (settings.slackNotifyNewOrders !== undefined) updateObject.slackNotifyNewOrders = settings.slackNotifyNewOrders;
         if (settings.slackNotifyCallLogs !== undefined) updateObject.slackNotifyCallLogs = settings.slackNotifyCallLogs;
         if (settings.slackNotifyLowStock !== undefined) updateObject.slackNotifyLowStock = settings.slackNotifyLowStock;
+        
+        // Slack notification templates
+        if (settings.slackOrderTemplate !== undefined) updateObject.slackOrderTemplate = settings.slackOrderTemplate;
+        if (settings.slackCallLogTemplate !== undefined) updateObject.slackCallLogTemplate = settings.slackCallLogTemplate;
+        if (settings.slackLowStockTemplate !== undefined) updateObject.slackLowStockTemplate = settings.slackLowStockTemplate;
         
         // Log the update for debugging
         console.log("Updating notification settings with:", JSON.stringify(updateObject));

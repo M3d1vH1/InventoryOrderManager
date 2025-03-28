@@ -80,7 +80,12 @@ export async function updateNotificationSettings(req: Request, res: Response) {
       slackWebhookUrl: z.string().optional().nullable(),
       slackNotifyNewOrders: z.boolean().optional(),
       slackNotifyCallLogs: z.boolean().optional(),
-      slackNotifyLowStock: z.boolean().optional()
+      slackNotifyLowStock: z.boolean().optional(),
+      
+      // Slack notification templates
+      slackOrderTemplate: z.string().optional(),
+      slackCallLogTemplate: z.string().optional(),
+      slackLowStockTemplate: z.string().optional()
     });
 
     const validatedData = schema.parse(req.body);
