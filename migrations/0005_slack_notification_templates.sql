@@ -1,0 +1,15 @@
+-- Add Slack notification template columns to notification_settings table
+ALTER TABLE notification_settings
+ADD COLUMN IF NOT EXISTS slack_order_template TEXT,
+ADD COLUMN IF NOT EXISTS slack_call_log_template TEXT,
+ADD COLUMN IF NOT EXISTS slack_low_stock_template TEXT;
+
+-- Set default templates
+UPDATE notification_settings
+SET 
+  slack_order_template = '{"text": "New Order #{orderNumber} received from {customerName}", "blocks": [{"type": "header", "text": {"type": "plain_text", "text": "🛒 New Order Received", "emoji": true}}, {"type": "section", "fields": [{"type": "mrkdwn", "text": "*Order Number:*\\n#{orderNumber}"}, {"type": "mrkdwn", "text": "*Customer:*\\n{customerName}"}]}, {"type": "section", "fields": [{"type": "mrkdwn", "text": "*Date:*\\n{orderDate}"}, {"type": "mrkdwn", "text": "*Status:*\\n{status}"}]}, {"type": "section", "fields": [{"type": "mrkdwn", "text": "*Total Items:*\\n{totalItems}"}, {"type": "mrkdwn", "text": "*Total Value:*\\n{totalValue}"}]}, {"type": "divider"}, {"type": "actions", "elements": [{"type": "button", "text": {"type": "plain_text", "text": "View Order", "emoji": true}, "url": "{appUrl}/orders/{id}", "value": "view_order_{id}"}]}]}',
+  
+  slack_call_log_template = '{"text": "New call log recorded with {contactName}, purpose: {callPurpose}", "blocks": [{"type": "header", "text": {"type": "plain_text", "text": "📞 New Call Log Recorded", "emoji": true}}, {"type": "section", "fields": [{"type": "mrkdwn", "text": "*Contact:*\\n{contactName}"}, {"type": "mrkdwn", "text": "*Company:*\\n{companyName}"}]}, {"type": "section", "fields": [{"type": "mrkdwn", "text": "*Call Type:*\\n{callType}"}, {"type": "mrkdwn", "text": "*Purpose:*\\n{callPurpose}"}]}, {"type": "section", "fields": [{"type": "mrkdwn", "text": "*Date:*\\n{callDate}"}, {"type": "mrkdwn", "text": "*Priority:*\\n{priority}"}]}, {"type": "divider"}, {"type": "section", "text": {"type": "mrkdwn", "text": "*Notes:*\\n{notes}"}}, {"type": "actions", "elements": [{"type": "button", "text": {"type": "plain_text", "text": "View Call Log", "emoji": true}, "url": "{appUrl}/call-logs/{id}", "value": "view_call_log_{id}"}]}]}',
+  
+  slack_low_stock_template = '{"text": "Low stock alert: {productName} is running low", "blocks": [{"type": "header", "text": {"type": "plain_text", "text": "⚠️ Low Stock Alert", "emoji": true}}, {"type": "section", "fields": [{"type": "mrkdwn", "text": "*Product:*\\n{productName}"}, {"type": "mrkdwn", "text": "*SKU:*\\n{sku}"}]}, {"type": "section", "fields": [{"type": "mrkdwn", "text": "*Current Stock:*\\n{currentStock}"}, {"type": "mrkdwn", "text": "*Reorder Level:*\\n{reorderLevel}"}]}, {"type": "divider"}, {"type": "actions", "elements": [{"type": "button", "text": {"type": "plain_text", "text": "View Product", "emoji": true}, "url": "{appUrl}/products/{id}", "value": "view_product_{id}"}]}]}'
+WHERE id = 1;

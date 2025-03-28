@@ -12,7 +12,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { exec } from "child_process";
 import { promisify } from "util";
 import { getEmailSettings, updateEmailSettings, testEmailConnection, getEmailTemplate, updateEmailTemplate, getLabelTemplate, updateLabelTemplate } from "./api/emailSettings";
-import { getCompanySettings, updateCompanySettings, getNotificationSettings, updateNotificationSettings, testSlackWebhook } from "./api/settings";
+import { getCompanySettings, updateCompanySettings, getNotificationSettings, updateNotificationSettings, testSlackWebhook, testSlackNotification, testSlackTemplate } from "./api/settings";
 import { getOrderErrors, getOrderQuality, createOrderError, updateOrderError, resolveOrderError, adjustInventoryForError, getErrorStats } from "./api/orderErrors";
 import { getInventoryChanges, getInventoryChange, addInventoryChange, getRecentInventoryChanges, getInventoryChangesByType } from "./api/inventoryChanges";
 import callLogsRouter from "./api/callLogs";
@@ -2121,6 +2121,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Slack webhook test route
   app.post('/api/settings/test-slack', isAuthenticated, hasRole(['admin']), testSlackWebhook);
+  
+  // Test send a notification with custom template
+  app.post('/api/settings/test-slack-notification', isAuthenticated, hasRole(['admin']), testSlackNotification);
+  
+  // Test send notifications with all templates
+  app.post('/api/settings/test-slack-templates', isAuthenticated, hasRole(['admin']), testSlackTemplate);
   
   // Role permissions management routes
   app.get('/api/role-permissions', isAuthenticated, hasRole(['admin']), async (req, res) => {

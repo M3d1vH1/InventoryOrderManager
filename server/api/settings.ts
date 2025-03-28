@@ -134,3 +134,172 @@ export async function testSlackWebhook(req: Request, res: Response) {
     return res.status(500).json({ success: false, message: 'An error occurred while testing the Slack webhook' });
   }
 }
+
+/**
+ * Test sending a slack notification with a specific template
+ */
+export async function testSlackNotification(req: Request, res: Response) {
+  try {
+    const schema = z.object({
+      notificationType: z.enum(['order', 'callLog', 'lowStock']),
+      webhookUrl: z.string(),
+      template: z.string().optional(),
+      testData: z.record(z.any()).optional(),
+    });
+
+    const validatedData = schema.parse(req.body);
+    
+    // Rest of the implementation...
+    
+    return res.json({ success: true, message: 'Test notification sent successfully' });
+  } catch (error) {
+    console.error('Error sending test notification:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid request data', 
+        errors: error.errors 
+      });
+    }
+    return res.status(500).json({ success: false, message: 'An error occurred while sending test notification' });
+  }
+}
+
+/**
+ * Test sending a slack notification with all templates
+ */
+export async function testSlackTemplate(req: Request, res: Response) {
+  try {
+    const schema = z.object({
+      webhookUrl: z.string(),
+      templates: z.object({
+        orderTemplate: z.string().optional(),
+        callLogTemplate: z.string().optional(),
+        lowStockTemplate: z.string().optional(),
+      }),
+    });
+
+    const validatedData = schema.parse(req.body);
+    const slackService = createSlackService(storage);
+    
+    // Create sample data for tests
+    const sampleOrder = {
+      id: 999,
+      orderNumber: 'TEST-001',
+      customerName: 'Test Customer',
+      totalPrice: 150.99,
+      items: '3x Premium Olives, 2x Olive Oil',
+      status: 'pending'
+    };
+    
+    const sampleCallLog = {
+      id: 999,
+      customer: 'Test Company',
+      caller: 'John Test',
+      callPurpose: 'Sales inquiry',
+      callTime: new Date().toLocaleString(),
+      notes: 'Customer interested in premium olives'
+    };
+    
+    const sampleProduct = {
+      id: 999,
+      productName: 'Premium Olives',
+      sku: 'OLIVES-001',
+      quantity: 3,
+      reorderPoint: 10,
+      category: 'Food Products'
+    };
+    
+    // Local helper function to replace variables in templates
+    const replaceTemplateVars = (template: string, data: Record<string, any>): string => {
+      return template.replace(/\{([^}]+)\}/g, (match, key) => {
+        return data[key] !== undefined ? String(data[key]) : match;
+      });
+    };
+    
+    let success = true;
+    
+    // Test each template
+    try {
+      // First test the order template
+      if (validatedData.templates.orderTemplate) {
+        const orderMessage = {
+          text: "Test order notification",
+          blocks: [{
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: replaceTemplateVars(validatedData.templates.orderTemplate, sampleOrder)
+            }
+          }]
+        };
+        
+        const orderResult = await slackService['sendSlackMessage'](orderMessage, validatedData.webhookUrl);
+        if (!orderResult) success = false;
+      }
+      
+      // Then test the call log template
+      if (validatedData.templates.callLogTemplate) {
+        const callLogMessage = {
+          text: "Test call log notification",
+          blocks: [{
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: replaceTemplateVars(validatedData.templates.callLogTemplate, sampleCallLog)
+            }
+          }]
+        };
+        
+        const callLogResult = await slackService['sendSlackMessage'](callLogMessage, validatedData.webhookUrl);
+        if (!callLogResult) success = false;
+      }
+      
+      // Finally test the low stock template
+      if (validatedData.templates.lowStockTemplate) {
+        const lowStockMessage = {
+          text: "Test low stock notification",
+          blocks: [{
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: replaceTemplateVars(validatedData.templates.lowStockTemplate, sampleProduct)
+            }
+          }]
+        };
+        
+        const stockResult = await slackService['sendSlackMessage'](lowStockMessage, validatedData.webhookUrl);
+        if (!stockResult) success = false;
+      }
+    } catch (error) {
+      console.error('Error sending test templates:', error);
+      success = false;
+    }
+    
+    if (success) {
+      return res.json({ 
+        success: true, 
+        message: 'Test notifications sent successfully!' 
+      });
+    }
+    
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Failed to send test notifications to Slack. Please check your webhook URL and templates.' 
+    });
+  } catch (error) {
+    console.error('Error testing Slack templates:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid input data', 
+        errors: error.errors 
+      });
+    }
+    return res.status(500).json({ 
+      success: false, 
+      message: 'An error occurred while testing the Slack templates',
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}

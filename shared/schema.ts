@@ -388,6 +388,11 @@ export const notificationSettings = pgTable("notification_settings", {
   slackNotifyCallLogs: boolean("slack_notify_call_logs").notNull().default(true),
   slackNotifyLowStock: boolean("slack_notify_low_stock").notNull().default(false),
   
+  // Slack notification templates
+  slackOrderTemplate: text("slack_order_template"),
+  slackCallLogTemplate: text("slack_call_log_template"),
+  slackLowStockTemplate: text("slack_low_stock_template"),
+  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull(),
 });

@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -44,6 +45,11 @@ const notificationSettingsSchema = z.object({
   slackNotifyNewOrders: z.boolean().optional(),
   slackNotifyCallLogs: z.boolean().optional(),
   slackNotifyLowStock: z.boolean().optional(),
+  
+  // Slack notification templates
+  slackOrderTemplate: z.string().optional().nullable(),
+  slackCallLogTemplate: z.string().optional().nullable(),
+  slackLowStockTemplate: z.string().optional().nullable(),
 });
 
 // Email settings schema
@@ -834,6 +840,10 @@ const Settings = () => {
     slackNotifyNewOrders?: boolean;
     slackNotifyCallLogs?: boolean;
     slackNotifyLowStock?: boolean;
+    // Slack notification templates
+    slackOrderTemplate?: string | null;
+    slackCallLogTemplate?: string | null;
+    slackLowStockTemplate?: string | null;
     createdAt: string;
     updatedAt: string;
   }
@@ -934,6 +944,10 @@ const Settings = () => {
         slackNotifyNewOrders: notificationSettingsData.slackNotifyNewOrders || false,
         slackNotifyCallLogs: notificationSettingsData.slackNotifyCallLogs || false,
         slackNotifyLowStock: notificationSettingsData.slackNotifyLowStock || false,
+        // Slack notification templates
+        slackOrderTemplate: notificationSettingsData.slackOrderTemplate || '',
+        slackCallLogTemplate: notificationSettingsData.slackCallLogTemplate || '',
+        slackLowStockTemplate: notificationSettingsData.slackLowStockTemplate || '',
       });
     }
   }, [notificationSettingsData, notificationForm]);
@@ -1451,6 +1465,167 @@ const Settings = () => {
                             )}
                           />
                         </div>
+                        
+                        {notificationForm.watch('slackEnabled') && (
+                          <div className="mt-6 space-y-4 border-t pt-4">
+                            <h4 className="text-md font-semibold">Customize Notification Templates</h4>
+                            <p className="text-sm text-gray-500">
+                              You can customize the templates for different types of Slack notifications. 
+                              Use placeholders like {"{orderNumber}"}, {"{customer}"}, {"{productName}"}, etc.
+                            </p>
+                            
+                            <Accordion type="single" collapsible>
+                              <AccordionItem value="order-template">
+                                <AccordionTrigger>Order Notification Template</AccordionTrigger>
+                                <AccordionContent>
+                                  <FormField
+                                    control={notificationForm.control}
+                                    name="slackOrderTemplate"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormControl>
+                                          <Textarea
+                                            placeholder="New order #{orderNumber} from {customer} for ${total}"
+                                            className="min-h-[120px]"
+                                            value={field.value || ''}
+                                            onChange={field.onChange}
+                                            onBlur={field.onBlur}
+                                            name={field.name}
+                                            ref={field.ref}
+                                          />
+                                        </FormControl>
+                                        <FormDescription>
+                                          Available variables: {"{orderNumber}"}, {"{customer}"}, {"{items}"}, {"{total}"}, {"{status}"}
+                                        </FormDescription>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </AccordionContent>
+                              </AccordionItem>
+                              
+                              <AccordionItem value="call-template">
+                                <AccordionTrigger>Call Log Notification Template</AccordionTrigger>
+                                <AccordionContent>
+                                  <FormField
+                                    control={notificationForm.control}
+                                    name="slackCallLogTemplate"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormControl>
+                                          <Textarea
+                                            placeholder="New call with {customer} regarding {callPurpose}"
+                                            className="min-h-[120px]"
+                                            value={field.value || ''}
+                                            onChange={field.onChange}
+                                            onBlur={field.onBlur}
+                                            name={field.name}
+                                            ref={field.ref}
+                                          />
+                                        </FormControl>
+                                        <FormDescription>
+                                          Available variables: {"{caller}"}, {"{customer}"}, {"{callPurpose}"}, {"{callTime}"}, {"{notes}"}
+                                        </FormDescription>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </AccordionContent>
+                              </AccordionItem>
+                              
+                              <AccordionItem value="stock-template">
+                                <AccordionTrigger>Low Stock Notification Template</AccordionTrigger>
+                                <AccordionContent>
+                                  <FormField
+                                    control={notificationForm.control}
+                                    name="slackLowStockTemplate"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormControl>
+                                          <Textarea
+                                            placeholder="Low stock alert: {productName} (SKU: {sku}) - only {quantity} units left"
+                                            className="min-h-[120px]"
+                                            value={field.value || ''}
+                                            onChange={field.onChange}
+                                            onBlur={field.onBlur}
+                                            name={field.name}
+                                            ref={field.ref}
+                                          />
+                                        </FormControl>
+                                        <FormDescription>
+                                          Available variables: {"{productName}"}, {"{sku}"}, {"{quantity}"}, {"{reorderPoint}"}, {"{category}"}
+                                        </FormDescription>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </AccordionContent>
+                              </AccordionItem>
+                            </Accordion>
+                            
+                            <div className="flex justify-between mt-4">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                  // Reset templates to default values
+                                  notificationForm.setValue("slackOrderTemplate", "New order #{orderNumber} from {customer} for ${total}");
+                                  notificationForm.setValue("slackCallLogTemplate", "New call with {customer} regarding {callPurpose}");
+                                  notificationForm.setValue("slackLowStockTemplate", "Low stock alert: {productName} (SKU: {sku}) - only {quantity} units left");
+                                }}
+                              >
+                                Reset to Defaults
+                              </Button>
+                              
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={async () => {
+                                  // Test sending notification with current template
+                                  try {
+                                    const response = await fetch('/api/settings/test-slack-template', {
+                                      method: 'POST',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                      },
+                                      body: JSON.stringify({
+                                        webhookUrl: notificationForm.getValues().slackWebhookUrl,
+                                        templates: {
+                                          orderTemplate: notificationForm.getValues().slackOrderTemplate,
+                                          callLogTemplate: notificationForm.getValues().slackCallLogTemplate,
+                                          lowStockTemplate: notificationForm.getValues().slackLowStockTemplate
+                                        }
+                                      }),
+                                    });
+                                    
+                                    const data = await response.json();
+                                    
+                                    if (response.ok) {
+                                      toast({
+                                        title: "Success",
+                                        description: "Test notification sent to Slack!",
+                                      });
+                                    } else {
+                                      toast({
+                                        title: "Error",
+                                        description: data.message || "Failed to send test notification",
+                                        variant: "destructive",
+                                      });
+                                    }
+                                  } catch (error) {
+                                    toast({
+                                      title: "Error",
+                                      description: "Failed to send test notification",
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }}
+                              >
+                                Test Templates
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </>
                     )}
                   </div>
