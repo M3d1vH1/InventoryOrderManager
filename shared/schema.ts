@@ -159,6 +159,8 @@ export const orders = pgTable("orders", {
   orderNumber: text("order_number").notNull().unique(),
   customerName: text("customer_name").notNull(),
   orderDate: timestamp("order_date").notNull().defaultNow(),
+  estimatedShippingDate: timestamp("estimated_shipping_date"), // Required field for shipping date estimation
+  actualShippingDate: timestamp("actual_shipping_date"), // When the order was actually shipped
   status: orderStatusEnum("status").notNull().default('pending'),
   notes: text("notes"),
   hasShippingDocument: boolean("has_shipping_document").notNull().default(false),
@@ -172,11 +174,13 @@ export const orders = pgTable("orders", {
 });
 
 export const insertOrderSchema = createInsertSchema(orders)
-  .omit({ id: true, orderNumber: true, orderDate: true, lastUpdated: true, updatedById: true })
+  .omit({ id: true, orderNumber: true, orderDate: true, lastUpdated: true, updatedById: true, actualShippingDate: true })
   .extend({
     customerName: z.string().min(2),
     notes: z.string().optional(),
     orderDate: z.string().optional().transform(val => val ? new Date(val) : new Date()),
+    estimatedShippingDate: z.string().min(1, { message: "Estimated shipping date is required" })
+      .transform(val => new Date(val)),
     createdById: z.number(),
   });
 

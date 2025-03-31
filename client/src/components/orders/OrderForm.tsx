@@ -55,6 +55,7 @@ interface OrderFormProps {
     orderNumber?: string;
     customerName: string;
     orderDate: string;
+    estimatedShippingDate?: string;
     notes?: string;
     status?: 'pending' | 'picked' | 'shipped' | 'cancelled';
     items?: {
@@ -75,6 +76,7 @@ const orderFormSchema = z.object({
   notes: z.string().optional(),
   // Add these fields but we'll handle them separately from the API request
   orderDate: z.string().min(1, { message: "Order date is required" }),
+  estimatedShippingDate: z.string().min(1, { message: "Estimated shipping date is required" }),
   items: z.array(z.object({ 
     productId: z.number(), 
     quantity: z.number().min(1) 
@@ -195,6 +197,7 @@ const OrderForm = ({
     defaultValues: {
       customerName: initialData?.customerName || "",
       orderDate: initialData?.orderDate || format(new Date(), "yyyy-MM-dd"),
+      estimatedShippingDate: initialData?.estimatedShippingDate || format(new Date(new Date().setDate(new Date().getDate() + 3)), "yyyy-MM-dd"),
       notes: initialData?.notes || "",
       items: initialData?.items?.map(item => ({
         productId: item.productId,
@@ -342,6 +345,7 @@ const OrderForm = ({
           customerName: values.customerName,
           notes: values.notes,
           items: values.items,
+          estimatedShippingDate: values.estimatedShippingDate,
           createdById: user.id
         }),
         headers: {
@@ -391,6 +395,7 @@ const OrderForm = ({
           customerName: values.customerName,
           notes: values.notes,
           items: values.items,
+          estimatedShippingDate: values.estimatedShippingDate,
           updatedById: user.id
         }),
         headers: {
@@ -580,6 +585,24 @@ const OrderForm = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-base font-medium">{t('orders.form.orderDate')}</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="date" 
+                        className="h-12 text-base"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="estimatedShippingDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base font-medium">Estimated Shipping Date</FormLabel>
                     <FormControl>
                       <Input 
                         type="date" 
