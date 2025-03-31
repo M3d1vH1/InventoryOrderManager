@@ -3,7 +3,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/context/NotificationContext";
 import { apiRequest } from "@/lib/queryClient";
-import { Menu, Bell, PlusCircle, Globe, PhoneCall } from "lucide-react";
+import { Menu, Bell, PlusCircle, Globe, PhoneCall, MoreVertical } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,31 +74,46 @@ const Header = () => {
           >
             <Menu />
           </Button>
-          <h2 className="text-xl font-semibold ml-2">{currentPage}</h2>
+          <h2 className="text-xl font-semibold ml-2 truncate max-w-[150px] sm:max-w-xs md:max-w-md">{currentPage}</h2>
         </div>
-        <div className="flex items-center gap-4">
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => setShowOrderForm(true)}
-            className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
-          >
-            <PlusCircle className="h-4 w-4" />
-            <span>{t('orders.createNew')}</span>
-          </Button>
+        
+        {/* Responsive actions section */}
+        <div className="flex items-center gap-2 md:gap-4">
+          {/* Buttons for larger screens */}
+          <div className="hidden md:flex items-center gap-2">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setShowOrderForm(true)}
+              className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
+            >
+              <PlusCircle className="h-4 w-4" />
+              <span>{t('orders.createNew')}</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCallLogForm(true)}
+              className="flex items-center gap-1"
+            >
+              <PhoneCall className="h-4 w-4" />
+              <span>{t('callLogs.addNewCall')}</span>
+            </Button>
+          </div>
           
+          {/* Language toggle button */}
           <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowCallLogForm(true)}
-            className="flex items-center gap-1"
+            variant="ghost"
+            size="icon"
+            onClick={toggleLanguage}
+            className="hidden sm:flex relative rounded-full"
+            title={i18n.language === 'en' ? 'Switch to Greek' : 'Switch to English'}
           >
-            <PhoneCall className="h-4 w-4" />
-            <span>{t('callLogs.addNewCall')}</span>
+            <Globe className="h-5 w-5" />
           </Button>
-          
 
-          
+          {/* Notifications dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative">
@@ -151,13 +166,15 @@ const Header = () => {
               </ScrollArea>
             </DropdownMenuContent>
           </DropdownMenu>
+          
+          {/* User profile dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <div className="flex items-center gap-2 cursor-pointer p-1 rounded-md hover:bg-slate-100">
                 <div className="w-8 h-8 bg-slate-300 rounded-full flex items-center justify-center text-slate-600">
                   <i className="fas fa-user"></i>
                 </div>
-                <span className="hidden md:inline">{user?.fullName || "User"}</span>
+                <span className="hidden md:inline text-sm">{user?.fullName || "User"}</span>
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -173,8 +190,35 @@ const Header = () => {
               <DropdownMenuItem className="cursor-pointer" onClick={() => window.location.href = "/settings"}>
                 Settings
               </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer" onClick={toggleLanguage}>
+                {i18n.language === 'en' ? 'Switch to Greek' : 'Switch to English'}
+              </DropdownMenuItem>
               <DropdownMenuItem className="cursor-pointer text-red-500" onClick={handleLogout}>
                 Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          {/* Mobile actions dropdown (only for small screens) */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild className="md:hidden">
+              <Button variant="ghost" size="icon" className="flex md:hidden">
+                <MoreVertical className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setShowOrderForm(true)}>
+                <PlusCircle className="h-4 w-4 mr-2" />
+                <span>{t('orders.createNew')}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowCallLogForm(true)}>
+                <PhoneCall className="h-4 w-4 mr-2" />
+                <span>{t('callLogs.addNewCall')}</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={toggleLanguage}>
+                <Globe className="h-4 w-4 mr-2" />
+                {i18n.language === 'en' ? 'Switch to Greek' : 'Switch to English'}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
