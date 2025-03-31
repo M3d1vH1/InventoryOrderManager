@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { CalendarIcon, Clock, User, FileText, Tag, Phone, ChevronRight } from 'lucide-react';
+import { CalendarIcon, ChevronLeft, ChevronRight, Clock, User, FileText, Tag, Phone } from 'lucide-react';
 
 // Set up localizer for the calendar
 const localizer = momentLocalizer(moment);
