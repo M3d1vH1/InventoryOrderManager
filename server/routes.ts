@@ -32,6 +32,7 @@ import {
 } from "./api/inventoryPrediction";
 import callLogsRouter from "./api/callLogs";
 import prospectiveCustomersRouter from "./api/prospectiveCustomers";
+import reportsRouter from "./api/reports";
 import { createSlackService } from "./services/notifications/slackService";
 
 // Function to determine the appropriate storage path based on environment
@@ -2644,6 +2645,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Call Logs routes
   app.use('/api/call-logs', isAuthenticated, callLogsRouter);
   app.use('/api/prospective-customers', isAuthenticated, prospectiveCustomersRouter);
+  
+  // Reports routes
+  app.use('/api/reports', isAuthenticated, reportsRouter);
   
   // Inventory Prediction Routes
   app.get('/api/inventory-predictions', isAuthenticated, getInventoryPredictions);
