@@ -66,6 +66,7 @@ export class SlackNotificationService {
       // Log the incoming template and data
       console.log('Applying template:', template ? template.substring(0, 100) + '...' : 'undefined');
       console.log('With data:', JSON.stringify(data));
+      console.log('totalItems value in applyTemplate:', data.totalItems);
 
       // Determine if template is a JSON string or a plain text template
       let isJsonTemplate = false;
@@ -189,10 +190,19 @@ export class SlackNotificationService {
       ]
     });
     
+    // Log incoming order object to see what properties are available
+    console.log('Raw order object in formatOrderNotification:', JSON.stringify(order));
+    console.log('totalItems from order object:', (order as any).totalItems);
+    
     // Get the order items to calculate the total items (if not available directly)
     let totalItems = (order as any).totalItems || 0;
     let totalPrice = (order as any).totalPrice || 0;
     let shippingAddress = (order as any).shippingAddress || '';
+    
+    // Force totalItems to use the value from the incoming order object 
+    // and set a default of 1 if it's missing or zero (orders must have at least one item)
+    totalItems = typeof (order as any).totalItems === 'number' ? (order as any).totalItems : 
+                (totalItems > 0 ? totalItems : 1);
     
     // Prepare data for template variables
     const data = {
@@ -203,7 +213,7 @@ export class SlackNotificationService {
       orderDate: new Date(order.orderDate).toLocaleString(),
       status: order.status,
       items: (order as any).items || 'Unknown items',
-      totalItems: (order as any).totalItems || totalItems, // Use value from order object if available
+      totalItems: totalItems, // Use the forced value we determined above
       total: typeof totalPrice === 'number' ? `$${totalPrice.toFixed(2)}` : '$0.00',
       totalPrice: typeof totalPrice === 'number' ? `$${totalPrice.toFixed(2)}` : '$0.00',
       totalValue: typeof totalPrice === 'number' ? `$${totalPrice.toFixed(2)}` : '$0.00',
@@ -415,6 +425,8 @@ export class SlackNotificationService {
   
   // Notify about a new order
   async notifyNewOrder(order: Order): Promise<boolean> {
+    console.log('Starting Slack notification process for order:', order.orderNumber);
+    
     const settings = await this.getNotificationSettings();
     
     if (!settings || !settings.slackEnabled || !settings.slackNotifyNewOrders || !settings.slackWebhookUrl) {
@@ -426,26 +438,54 @@ export class SlackNotificationService {
       return false;
     }
     
-    // Preserve any existing totalItems from earlier in the chain
-    const existingTotalItems = (order as any).totalItems;
+    console.log('Notification settings for order notification:', {
+      slackEnabled: settings.slackEnabled,
+      slackNotifyNewOrders: settings.slackNotifyNewOrders,
+      hasWebhookUrl: !!settings.slackWebhookUrl,
+      hasOrderTemplate: !!settings.slackOrderTemplate
+    });
     
-    // Get the order items to include in notification only if we don't already have a count
-    if (!existingTotalItems) {
-      try {
-        const orderItems = await this.storage.getOrderItems(order.id);
-        // Add totalItems property to the order object
-        (order as any).totalItems = orderItems.length;
-        // You could also calculate total price here if needed
-      } catch (error) {
-        console.error(`Error getting order items for notification: ${error}`);
-        // Continue with default values if we can't get the items
-      }
+    console.log('About to send slack notification for order');
+    
+    // Always fetch the order items to get the most accurate count
+    try {
+      const orderItems = await this.storage.getOrderItems(order.id);
+      console.log(`Found ${orderItems.length} items for order ${order.orderNumber}`);
+      
+      // Calculate total items and total price
+      const totalItems = orderItems.length;
+      
+      // Add these properties to the order object
+      (order as any).totalItems = totalItems;
+      (order as any).items = totalItems > 0 
+        ? `${totalItems} item${totalItems !== 1 ? 's' : ''}` 
+        : 'No items';
+      
+      console.log(`Order now has totalItems=${totalItems}`);
+      
+    } catch (error) {
+      console.error(`Error getting order items for notification: ${error}`);
+      // Set default values if we can't get the items
+      (order as any).totalItems = 0;
+      (order as any).items = 'No items';
     }
     
     // Log the notification settings and order data
     console.log('Order template:', settings.slackOrderTemplate);
     
-    // Cast the template to string | undefined to handle null values
+    // Explicitly fetch the template from the database again to ensure we have the latest
+    try {
+      const freshSettings = await this.storage.getNotificationSettings();
+      if (freshSettings && freshSettings.slackOrderTemplate) {
+        console.log('Using freshly fetched template:', freshSettings.slackOrderTemplate);
+        const message = this.formatOrderNotification(order, freshSettings.slackOrderTemplate);
+        return this.sendSlackMessage(message, settings.slackWebhookUrl);
+      }
+    } catch (error) {
+      console.error('Error fetching fresh notification settings:', error);
+    }
+    
+    // Fall back to the original template if needed
     const template = settings.slackOrderTemplate ? settings.slackOrderTemplate : undefined;
     const message = this.formatOrderNotification(order, template);
     return this.sendSlackMessage(message, settings.slackWebhookUrl);
