@@ -23,9 +23,9 @@ function transformCallLog(callLog: CallLog | undefined): any {
     id: callLog.id,
     customerId: callLog.customerId,
     // Map database field names to frontend field names
-    customerName: callLog.contactName,
-    // Use contactName as subject since there's no subject field in the database schema
-    subject: callLog.contactName,
+    customerName: callLog.contactName || 'Unknown',
+    // Use contactName + callPurpose as subject since there's no subject field in the database schema
+    subject: callLog.contactName || (callLog.callPurpose ? `Call: ${callLog.callPurpose}` : 'No subject'),
     needsFollowup: callLog.callStatus === 'needs_followup',
     outcome: callLog.callPurpose,
     assignedToId: callLog.followupAssignedTo,
@@ -36,11 +36,11 @@ function transformCallLog(callLog: CallLog | undefined): any {
               callLog.callType,
     // Map database priority values to frontend priority values
     priority: callLog.priority === 'normal' ? 'medium' : 
-              callLog.priority,
+              callLog.priority || 'medium',
     // Add other fields needed by the frontend
-    callDate: callLog.callDate,
-    duration: callLog.duration,
-    notes: callLog.notes,
+    callDate: callLog.callDate || new Date(),
+    duration: callLog.duration || 0,
+    notes: callLog.notes || '',
     followupDate: callLog.followupDate,
     createdAt: callLog.createdAt,
     updatedAt: callLog.updatedAt
