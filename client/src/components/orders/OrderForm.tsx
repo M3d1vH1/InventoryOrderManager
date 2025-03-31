@@ -197,7 +197,7 @@ const OrderForm = ({
     defaultValues: {
       customerName: initialData?.customerName || "",
       orderDate: initialData?.orderDate || format(new Date(), "yyyy-MM-dd"),
-      estimatedShippingDate: initialData?.estimatedShippingDate || format(new Date(new Date().setDate(new Date().getDate() + 3)), "yyyy-MM-dd"),
+      estimatedShippingDate: initialData?.estimatedShippingDate || format(new Date(new Date().setDate(new Date().getDate() + 5)), "yyyy-MM-dd"),
       notes: initialData?.notes || "",
       items: initialData?.items?.map(item => ({
         productId: item.productId,
