@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from 'zod';
-import { insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCustomerSchema, insertUserSchema, insertCategorySchema, type Product } from "@shared/schema";
+import { insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCustomerSchema, insertUserSchema, insertCategorySchema, insertTagSchema, type Product } from "@shared/schema";
 import { isAuthenticated, hasRole } from "./auth";
 import { hashPassword } from "./auth";
 import { UploadedFile } from "express-fileupload";
@@ -1643,6 +1643,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message });
     }
   });
+  
+  app.get('/api/analytics/product-tags', async (req, res) => {
+    try {
+      // Get all products
+      const products = await storage.getAllProducts();
+      
+      // Create a map to count products by tag
+      const tagCounts = new Map<string, number>();
+      
+      // Count products for each tag
+      for (const product of products) {
+        if (product.tags && Array.isArray(product.tags)) {
+          for (const tag of product.tags) {
+            if (tag) {
+              tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+            }
+          }
+        }
+      }
+      
+      // Convert to array of objects
+      const data = Array.from(tagCounts.entries()).map(([name, value]) => ({
+        name,
+        value
+      }));
+      
+      // Sort by count descending
+      data.sort((a, b) => b.value - a.value);
+      
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
 
   app.get('/api/analytics/top-selling-products', async (req, res) => {
     try {
@@ -2131,6 +2165,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Tag management routes
+  app.get('/api/tags', async (req, res) => {
+    try {
+      const tags = await storage.getAllTags();
+      return res.status(200).json(tags);
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  app.get('/api/tags/:id', async (req, res) => {
+    try {
+      const tagId = parseInt(req.params.id, 10);
+      const tag = await storage.getTag(tagId);
+      
+      if (tag) {
+        return res.status(200).json(tag);
+      } else {
+        return res.status(404).json({ message: 'Tag not found' });
+      }
+    } catch (error) {
+      console.error('Error fetching tag:', error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  app.post('/api/tags', isAuthenticated, hasRole(['admin']), async (req, res) => {
+    try {
+      const tagData = insertTagSchema.parse(req.body);
+      const newTag = await storage.createTag(tagData);
+      return res.status(201).json(newTag);
+    } catch (error) {
+      console.error('Error creating tag:', error);
+      return res.status(400).json({ message: 'Invalid tag data', error: (error as any).message });
+    }
+  });
+
+  app.patch('/api/tags/:id', isAuthenticated, hasRole(['admin']), async (req, res) => {
+    try {
+      const tagId = parseInt(req.params.id, 10);
+      const tag = await storage.updateTag(tagId, req.body);
+      
+      if (tag) {
+        return res.status(200).json(tag);
+      } else {
+        return res.status(404).json({ message: 'Tag not found' });
+      }
+    } catch (error) {
+      console.error('Error updating tag:', error);
+      return res.status(400).json({ message: 'Invalid tag data', error: (error as any).message });
+    }
+  });
+
+  app.delete('/api/tags/:id', isAuthenticated, hasRole(['admin']), async (req, res) => {
+    try {
+      const tagId = parseInt(req.params.id, 10);
+      const deleted = await storage.deleteTag(tagId);
+      
+      if (deleted) {
+        return res.status(200).json({ message: 'Tag deleted successfully' });
+      } else {
+        return res.status(404).json({ message: 'Tag not found' });
+      }
+    } catch (error) {
+      console.error('Error deleting tag:', error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  // Product Tags API Endpoint
+  app.get('/api/products/:id/tags', async (req, res) => {
+    try {
+      const productId = parseInt(req.params.id, 10);
+      const tags = await storage.getProductTags(productId);
+      return res.status(200).json(tags);
+    } catch (error) {
+      console.error('Error fetching product tags:', error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  app.post('/api/products/:id/tags', isAuthenticated, hasRole(['admin']), async (req, res) => {
+    try {
+      const productId = parseInt(req.params.id, 10);
+      const { tagIds } = req.body;
+      
+      if (!tagIds || !Array.isArray(tagIds)) {
+        return res.status(400).json({ message: 'tagIds array is required' });
+      }
+      
+      await storage.updateProductTags(productId, tagIds);
+      const tags = await storage.getProductTags(productId);
+      return res.status(200).json(tags);
+    } catch (error) {
+      console.error('Error updating product tags:', error);
+      return res.status(500).json({ message: 'Internal server error' });
     }
   });
 

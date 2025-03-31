@@ -195,6 +195,12 @@ const Reports = () => {
     queryKey: ['/api/analytics/orders-trend', timeRange],
   });
 
+  // Get tag distribution data for charts
+  const { data: tagsData = [], isLoading: isLoadingTags } = useQuery<CategoryItem[]>({
+    queryKey: ['/api/analytics/product-tags'],
+  });
+  
+  // Keep this for backwards compatibility but it will be removed later
   const { data: categoriesData = [], isLoading: isLoadingCategories } = useQuery<CategoryItem[]>({
     queryKey: ['/api/analytics/product-categories'],
   });
@@ -321,16 +327,16 @@ const Reports = () => {
         title = 'Orders_Report';
         break;
         
-      case 'categories':
-        // Prepare category data for export
-        if (categoriesData.length > 0) {
-          data = categoriesData.map(category => ({
-            Category: category.name,
-            'Product Count': category.value,
-            'Percentage': ((category.value / categoriesData.reduce((acc, curr) => acc + curr.value, 0)) * 100).toFixed(1) + '%'
+      case 'tags':
+        // Prepare tag data for export
+        if (tagsData.length > 0) {
+          data = tagsData.map(tag => ({
+            Tag: tag.name,
+            'Product Count': tag.value,
+            'Percentage': ((tag.value / tagsData.reduce((acc, curr) => acc + curr.value, 0)) * 100).toFixed(1) + '%'
           }));
         }
-        title = 'Categories_Report';
+        title = 'Tags_Report';
         break;
         
       case 'value':
@@ -423,8 +429,7 @@ const Reports = () => {
           <TabsList className="w-full flex flex-nowrap min-w-max">
             <TabsTrigger value="inventory" className="flex-shrink-0">Inventory</TabsTrigger>
             <TabsTrigger value="orders" className="flex-shrink-0">Orders</TabsTrigger>
-            <TabsTrigger value="categories" className="flex-shrink-0">Categories</TabsTrigger>
-            <TabsTrigger value="value" className="flex-shrink-0">Value Analysis</TabsTrigger>
+            <TabsTrigger value="tags" className="flex-shrink-0">Tags</TabsTrigger>
             <TabsTrigger value="efficiency" className="flex-shrink-0">Efficiency</TabsTrigger>
             <TabsTrigger value="call-logs" className="flex-shrink-0">Call Logs</TabsTrigger>
             <TabsTrigger value="customer-engagement" className="flex-shrink-0">Customer Engagement</TabsTrigger>
@@ -744,13 +749,13 @@ const Reports = () => {
           </Card>
         </TabsContent>
         
-        {/* Categories Tab */}
-        <TabsContent value="categories" className="mt-4 grid gap-4 md:grid-cols-2">
+        {/* Tags Tab */}
+        <TabsContent value="tags" className="mt-4 grid gap-4 md:grid-cols-2">
           <Card className="col-span-2">
             <CardHeader>
-              <CardTitle>Products by Category</CardTitle>
+              <CardTitle>Products by Tag</CardTitle>
               <CardDescription>
-                Distribution of products across categories
+                Distribution of products across tags
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -759,7 +764,7 @@ const Reports = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       layout="vertical"
-                      data={categoriesData}
+                      data={tagsData}
                       margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
@@ -768,7 +773,7 @@ const Reports = () => {
                       <Tooltip />
                       <Legend />
                       <Bar dataKey="value" fill="#3b82f6">
-                        {categoriesData.map((entry, index) => (
+                        {tagsData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Bar>
@@ -779,7 +784,7 @@ const Reports = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={categoriesData}
+                        data={tagsData}
                         dataKey="value"
                         nameKey="name"
                         cx="50%"
@@ -787,7 +792,7 @@ const Reports = () => {
                         outerRadius={130}
                         label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                       >
-                        {categoriesData.map((entry, index) => (
+                        {tagsData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
@@ -803,113 +808,21 @@ const Reports = () => {
                 <table className="min-w-full">
                   <thead className="bg-slate-50">
                     <tr>
-                      <th className="py-2 px-4 text-left font-medium text-slate-600">Category</th>
+                      <th className="py-2 px-4 text-left font-medium text-slate-600">Tag</th>
                       <th className="py-2 px-4 text-right font-medium text-slate-600">Count</th>
                       <th className="py-2 px-4 text-right font-medium text-slate-600">Percentage</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
-                    {categoriesData.map((category) => (
-                      <tr key={category.name}>
-                        <td className="py-2 px-4">{category.name}</td>
-                        <td className="py-2 px-4 text-right">{category.value}</td>
+                    {tagsData.map((tag) => (
+                      <tr key={tag.name}>
+                        <td className="py-2 px-4">{tag.name}</td>
+                        <td className="py-2 px-4 text-right">{tag.value}</td>
                         <td className="py-2 px-4 text-right">
-                          {(category.value / categoriesData.reduce((acc, curr) => acc + curr.value, 0) * 100).toFixed(1)}%
+                          {(tag.value / tagsData.reduce((acc, curr) => acc + curr.value, 0) * 100).toFixed(1)}%
                         </td>
                       </tr>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-
-        {/* Value Analysis Tab */}
-        <TabsContent value="value" className="mt-4 grid gap-4 md:grid-cols-2">
-          <Card className="col-span-2">
-            <CardHeader>
-              <CardTitle>Inventory Value Analysis</CardTitle>
-              <CardDescription>
-                Total inventory value: {inventoryValue ? formatCurrency(inventoryValue.totalValue) : 'Loading...'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      layout="vertical"
-                      data={inventoryValue?.categoryBreakdown}
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" 
-                        tickFormatter={(value) => formatCurrency(value)} />
-                      <YAxis type="category" dataKey="category" width={100} />
-                      <Tooltip formatter={(value) => formatCurrency(value as number)} />
-                      <Legend />
-                      <Bar dataKey="totalValue" name="Value" fill="#3b82f6">
-                        {inventoryValue?.categoryBreakdown.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={inventoryValue?.categoryBreakdown}
-                        dataKey="totalValue"
-                        nameKey="category"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={130}
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {inventoryValue?.categoryBreakdown.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value) => formatCurrency(value as number)} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="border-t pt-4">
-              <div className="w-full">
-                <table className="min-w-full">
-                  <thead className="bg-slate-50">
-                    <tr>
-                      <th className="py-2 px-4 text-left font-medium text-slate-600">Category</th>
-                      <th className="py-2 px-4 text-right font-medium text-slate-600">Count</th>
-                      <th className="py-2 px-4 text-right font-medium text-slate-600">Value</th>
-                      <th className="py-2 px-4 text-right font-medium text-slate-600">Percentage</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200">
-                    {inventoryValue?.categoryBreakdown.map((category) => (
-                      <tr key={category.category}>
-                        <td className="py-2 px-4">{category.category}</td>
-                        <td className="py-2 px-4 text-right">{category.productCount}</td>
-                        <td className="py-2 px-4 text-right">{formatCurrency(category.totalValue)}</td>
-                        <td className="py-2 px-4 text-right">
-                          {category.percentageOfTotal.toFixed(1)}%
-                        </td>
-                      </tr>
-                    ))}
-                    <tr className="font-medium bg-slate-50">
-                      <td className="py-2 px-4">Total</td>
-                      <td className="py-2 px-4 text-right">
-                        {inventoryValue?.categoryBreakdown.reduce((acc, curr) => acc + curr.productCount, 0)}
-                      </td>
-                      <td className="py-2 px-4 text-right">{inventoryValue ? formatCurrency(inventoryValue.totalValue) : '-'}</td>
-                      <td className="py-2 px-4 text-right">100%</td>
-                    </tr>
                   </tbody>
                 </table>
               </div>
