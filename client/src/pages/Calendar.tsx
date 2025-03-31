@@ -41,7 +41,7 @@ type CalendarEvent = {
   title: string;
   start: Date;
   end: Date;
-  type: 'created' | 'shipped' | 'call';
+  type: 'created' | 'shipped' | 'estimated' | 'call';
   orderNumber?: string;
   customerName: string;
   callDetails?: string;
@@ -58,6 +58,7 @@ type Order = {
   customerName: string;
   orderDate: string;
   shippedDate?: string;
+  estimatedShippingDate?: string;
   notes: string | null;
 };
 
@@ -145,6 +146,21 @@ const CalendarPage: React.FC = () => {
           orderId: order.id
         });
       }
+      
+      // Estimated shipping date event (if applicable)
+      if (order.estimatedShippingDate && order.status !== 'shipped' && order.status !== 'cancelled') {
+        const estimatedDate = new Date(order.estimatedShippingDate);
+        calendarEvents.push({
+          id: `estimated-${order.id}`,
+          title: `${t('calendar.estimatedShipping')}: ${order.orderNumber}`,
+          start: estimatedDate,
+          end: estimatedDate,
+          type: 'estimated',
+          orderNumber: order.orderNumber,
+          customerName: order.customerName,
+          orderId: order.id
+        });
+      }
     });
     }
 
@@ -194,6 +210,8 @@ const CalendarPage: React.FC = () => {
       return events.filter(event => event.type === 'created');
     } else if (filterView === 'shipped') {
       return events.filter(event => event.type === 'shipped');
+    } else if (filterView === 'estimated') {
+      return events.filter(event => event.type === 'estimated');
     } else if (filterView === 'calls') {
       return events.filter(event => event.type === 'call');
     }
@@ -245,6 +263,9 @@ const CalendarPage: React.FC = () => {
       backgroundColor = '#4F46E5'; // Blue for order created
     } else if (event.type === 'shipped') {
       backgroundColor = '#10B981'; // Green for shipped
+    } else if (event.type === 'estimated') {
+      backgroundColor = '#8B5CF6'; // Purple for estimated shipping date
+      borderLeft = '3px solid #7C3AED';
     } else if (event.type === 'call') {
       if (event.isFollowUp) {
         backgroundColor = '#F43F5E'; // Pink for follow-up calls
@@ -366,10 +387,11 @@ const CalendarPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2">
           <Tabs value={filterView} onValueChange={setFilterView} className="w-full">
-            <TabsList className="grid grid-cols-4 gap-1 w-full mb-4">
+            <TabsList className="grid grid-cols-5 gap-1 w-full mb-4">
               <TabsTrigger value="month" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.allEvents')}</TabsTrigger>
               <TabsTrigger value="created" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.ordersCreated')}</TabsTrigger>
               <TabsTrigger value="shipped" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.ordersShipped')}</TabsTrigger>
+              <TabsTrigger value="estimated" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.estimatedShipping')}</TabsTrigger>
               <TabsTrigger value="calls" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.customerCalls')}</TabsTrigger>
             </TabsList>
 
@@ -379,6 +401,7 @@ const CalendarPage: React.FC = () => {
                   <div className="mb-4 flex flex-wrap gap-2">
                     <Badge className="bg-[#4F46E5]">{t('calendar.orderCreated')}</Badge>
                     <Badge className="bg-[#10B981]">{t('calendar.orderShipped')}</Badge>
+                    <Badge className="bg-[#8B5CF6]">{t('calendar.estimatedShipping')}</Badge>
                     <Badge className="bg-[#F59E0B]">{t('calendar.scheduledCall')}</Badge>
                     <Badge className="bg-[#F43F5E]">{t('calendar.followUpCall')}</Badge>
                   </div>
@@ -525,6 +548,9 @@ const CalendarPage: React.FC = () => {
                             {event.type === 'shipped' && (
                               <Badge className="bg-[#10B981]">{t('calendar.orderShipped')}</Badge>
                             )}
+                            {event.type === 'estimated' && (
+                              <Badge className="bg-[#8B5CF6]">{t('calendar.estimatedShipping')}</Badge>
+                            )}
                             {event.type === 'call' && event.isFollowUp && (
                               <Badge className="bg-[#F43F5E]">{t('calendar.followUpCall')}</Badge>
                             )}
@@ -597,6 +623,9 @@ const CalendarPage: React.FC = () => {
                 {selectedEvent?.type === 'shipped' && (
                   <Badge className="bg-[#10B981]">{t('calendar.orderShipped')}</Badge>
                 )}
+                {selectedEvent?.type === 'estimated' && (
+                  <Badge className="bg-[#8B5CF6]">{t('calendar.estimatedShipping')}</Badge>
+                )}
                 {selectedEvent?.type === 'call' && selectedEvent?.isFollowUp && (
                   <Badge className="bg-[#F43F5E]">{t('calendar.followUpCall')}</Badge>
                 )}
@@ -646,10 +675,10 @@ const CalendarPage: React.FC = () => {
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
             {selectedEvent?.type === 'call' && (
               <Button type="button" onClick={handleViewCall}>
-                {t('calendar.viewOrder')}
+                {t('calendar.viewCall')}
               </Button>
             )}
-            {(selectedEvent?.type === 'created' || selectedEvent?.type === 'shipped') && (
+            {(selectedEvent?.type === 'created' || selectedEvent?.type === 'shipped' || selectedEvent?.type === 'estimated') && (
               <Button type="button" onClick={handleViewOrder}>
                 {t('calendar.viewOrder')}
               </Button>
