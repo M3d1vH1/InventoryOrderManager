@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
+import { Calendar as BigCalendar, momentLocalizer, Views } from 'react-big-calendar';
 import moment from 'moment';
 import 'moment/locale/el';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -8,14 +8,29 @@ import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useSidebar } from '@/context/SidebarContext';
 import { PageHeader } from '@/components/common/PageHeader';
+import { useLocation } from 'wouter';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
+  CardFooter,
+  CardDescription,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { CalendarIcon, Clock, User, FileText, Tag, Phone, ChevronRight } from 'lucide-react';
 
 // Set up localizer for the calendar
 const localizer = momentLocalizer(moment);
@@ -30,6 +45,9 @@ type CalendarEvent = {
   orderNumber?: string;
   customerName: string;
   callDetails?: string;
+  callId?: number;
+  orderId?: number;
+  isFollowUp?: boolean;
 };
 
 // Order type definition
@@ -63,7 +81,12 @@ const CalendarPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { toast } = useToast();
   const { setCurrentPage } = useSidebar();
-  const [view, setView] = React.useState('month');
+  const [filterView, setFilterView] = useState('month');
+  const [calendarView, setCalendarView] = useState<any>(Views.MONTH);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [_, navigate] = useLocation();
 
   useEffect(() => {
     setCurrentPage(t('calendar.title'));
@@ -104,7 +127,8 @@ const CalendarPage: React.FC = () => {
         end: orderDate,
         type: 'created',
         orderNumber: order.orderNumber,
-        customerName: order.customerName
+        customerName: order.customerName,
+        orderId: order.id
       });
       
       // Order shipped event (if applicable)
@@ -117,7 +141,8 @@ const CalendarPage: React.FC = () => {
           end: shippedDate,
           type: 'shipped',
           orderNumber: order.orderNumber,
-          customerName: order.customerName
+          customerName: order.customerName,
+          orderId: order.id
         });
       }
     });
@@ -136,7 +161,9 @@ const CalendarPage: React.FC = () => {
             end: scheduledDate,
             type: 'call',
             customerName: call.customerName,
-            callDetails: call.summary
+            callDetails: call.summary,
+            callId: call.id,
+            isFollowUp: false
           });
         }
 
@@ -150,7 +177,9 @@ const CalendarPage: React.FC = () => {
             end: followUpDate,
             type: 'call',
             customerName: call.customerName,
-            callDetails: call.summary
+            callDetails: call.summary,
+            callId: call.id,
+            isFollowUp: true
           });
         }
       });
@@ -161,19 +190,55 @@ const CalendarPage: React.FC = () => {
 
   // Filter events based on the selected tab
   const filteredEvents = useMemo(() => {
-    if (view === 'created') {
+    if (filterView === 'created') {
       return events.filter(event => event.type === 'created');
-    } else if (view === 'shipped') {
+    } else if (filterView === 'shipped') {
       return events.filter(event => event.type === 'shipped');
-    } else if (view === 'calls') {
+    } else if (filterView === 'calls') {
       return events.filter(event => event.type === 'call');
     }
     return events;
-  }, [events, view]);
+  }, [events, filterView]);
+  
+  // Get upcoming events for the sidebar
+  const upcomingEvents = useMemo(() => {
+    const now = new Date();
+    const nextWeek = new Date();
+    nextWeek.setDate(now.getDate() + 7);
+    
+    return events
+      .filter(event => {
+        return event.start >= now && event.start <= nextWeek;
+      })
+      .sort((a, b) => a.start.getTime() - b.start.getTime())
+      .slice(0, 5);
+  }, [events]);
+  
+  // Format relative date for upcoming events
+  const getRelativeDate = (date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const eventDate = new Date(date);
+    eventDate.setHours(0, 0, 0, 0);
+    
+    if (eventDate.getTime() === today.getTime()) {
+      return t('calendar.today');
+    } else if (eventDate.getTime() === tomorrow.getTime()) {
+      return t('calendar.tomorrow');
+    } else {
+      const diffDays = Math.round((eventDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      return t('calendar.inXDays', { days: diffDays });
+    }
+  };
 
   // Custom event styling
   const eventStyleGetter = (event: CalendarEvent) => {
     let backgroundColor;
+    let borderLeft;
     
     // Determine color based on event type
     if (event.type === 'created') {
@@ -181,7 +246,13 @@ const CalendarPage: React.FC = () => {
     } else if (event.type === 'shipped') {
       backgroundColor = '#10B981'; // Green for shipped
     } else if (event.type === 'call') {
-      backgroundColor = '#F59E0B'; // Amber for calls
+      if (event.isFollowUp) {
+        backgroundColor = '#F43F5E'; // Pink for follow-up calls
+        borderLeft = '3px solid #BE185D';
+      } else {
+        backgroundColor = '#F59E0B'; // Amber for scheduled calls
+        borderLeft = '3px solid #D97706';
+      }
     } else {
       backgroundColor = '#6B7280'; // Gray default
     }
@@ -189,15 +260,58 @@ const CalendarPage: React.FC = () => {
     let style = {
       backgroundColor,
       borderRadius: '4px',
-      opacity: 0.8,
+      opacity: 0.9,
       color: 'white',
       border: '0px',
-      display: 'block'
+      display: 'block',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+      fontSize: '0.8rem',
+      borderLeft
     };
     
     return {
       style
     };
+  };
+  
+  // Handle event click
+  const handleEventClick = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setIsEventModalOpen(true);
+  };
+  
+  // Handle view customer
+  const handleViewCustomer = () => {
+    // Future implementation: Navigate to customer details
+    toast({
+      title: "Feature coming soon",
+      description: "Customer details navigation will be available in a future update",
+    });
+    setIsEventModalOpen(false);
+  };
+  
+  // Handle view order
+  const handleViewOrder = () => {
+    if (selectedEvent?.orderId) {
+      navigate(`/orders/${selectedEvent.orderId}`);
+      setIsEventModalOpen(false);
+    }
+  };
+  
+  // Handle view call
+  const handleViewCall = () => {
+    if (selectedEvent?.callId) {
+      navigate(`/call-logs/${selectedEvent.callId}`);
+      setIsEventModalOpen(false);
+    }
+  };
+  
+  // Handle new call log
+  const handleNewCallLog = () => {
+    navigate("/call-logs/new");
+    setIsEventModalOpen(false);
   };
 
   // Loading state
@@ -249,57 +363,231 @@ const CalendarPage: React.FC = () => {
         description={t('calendar.pageDescription')}
       />
 
-      <Tabs value={view} onValueChange={setView} className="w-full">
-        <TabsList className="grid w-full md:w-auto grid-cols-4 mb-4">
-          <TabsTrigger value="month">{t('calendar.allEvents')}</TabsTrigger>
-          <TabsTrigger value="created">{t('calendar.ordersCreated')}</TabsTrigger>
-          <TabsTrigger value="shipped">{t('calendar.ordersShipped')}</TabsTrigger>
-          <TabsTrigger value="calls">{t('calendar.customerCalls')}</TabsTrigger>
-        </TabsList>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2">
+          <Tabs value={filterView} onValueChange={setFilterView} className="w-full">
+            <TabsList className="grid w-full md:w-auto grid-cols-4 mb-4">
+              <TabsTrigger value="month">{t('calendar.allEvents')}</TabsTrigger>
+              <TabsTrigger value="created">{t('calendar.ordersCreated')}</TabsTrigger>
+              <TabsTrigger value="shipped">{t('calendar.ordersShipped')}</TabsTrigger>
+              <TabsTrigger value="calls">{t('calendar.customerCalls')}</TabsTrigger>
+            </TabsList>
 
-        <TabsContent value={view} className="space-y-4">
+            <TabsContent value={filterView} className="space-y-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="mb-4 flex flex-wrap gap-2">
+                    <Badge className="bg-[#4F46E5]">{t('calendar.orderCreated')}</Badge>
+                    <Badge className="bg-[#10B981]">{t('calendar.orderShipped')}</Badge>
+                    <Badge className="bg-[#F59E0B]">{t('calendar.scheduledCall')}</Badge>
+                    <Badge className="bg-[#F43F5E]">{t('calendar.followUpCall')}</Badge>
+                  </div>
+
+                  <div className="h-[600px]">
+                    <BigCalendar
+                      localizer={localizer}
+                      events={filteredEvents}
+                      startAccessor="start"
+                      endAccessor="end"
+                      style={{ height: '100%' }}
+                      eventPropGetter={eventStyleGetter}
+                      views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
+                      view={calendarView}
+                      onView={(view) => setCalendarView(view)}
+                      onNavigate={(date) => setSelectedDate(date)}
+                      date={selectedDate}
+                      onSelectEvent={handleEventClick}
+                      popup
+                      messages={{
+                        next: t('calendar.controls.next'),
+                        previous: t('calendar.controls.previous'),
+                        today: t('calendar.controls.today'),
+                        month: t('calendar.controls.month'),
+                        week: t('calendar.controls.week'),
+                        day: t('calendar.controls.day'),
+                        agenda: t('calendar.controls.agenda'),
+                        date: t('calendar.controls.date'),
+                        time: t('calendar.controls.time'),
+                        event: t('calendar.controls.event'),
+                        noEventsInRange: t('calendar.controls.noEventsInRange'),
+                      }}
+                      tooltipAccessor={(event: any) => {
+                        if (event.type === 'call') {
+                          return `${event.customerName} - ${event.callDetails || t('calendar.noCallDetails')}`;
+                        }
+                        return `${event.customerName} - ${event.orderNumber || ''}`;
+                      }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+        
+        <div className="space-y-4">
           <Card>
-            <CardContent className="pt-6">
-              <div className="mb-4 flex flex-wrap gap-2">
-                <Badge className="bg-[#4F46E5]">{t('calendar.orderCreated')}</Badge>
-                <Badge className="bg-[#10B981]">{t('calendar.orderShipped')}</Badge>
-                <Badge className="bg-[#F59E0B]">{t('calendar.customerCalls')}</Badge>
-              </div>
-
-              <div className="h-[600px]">
-                <BigCalendar
-                  localizer={localizer}
-                  events={filteredEvents}
-                  startAccessor="start"
-                  endAccessor="end"
-                  style={{ height: '100%' }}
-                  eventPropGetter={eventStyleGetter}
-                  views={['month', 'week', 'day', 'agenda']}
-                  messages={{
-                    next: t('calendar.controls.next'),
-                    previous: t('calendar.controls.previous'),
-                    today: t('calendar.controls.today'),
-                    month: t('calendar.controls.month'),
-                    week: t('calendar.controls.week'),
-                    day: t('calendar.controls.day'),
-                    agenda: t('calendar.controls.agenda'),
-                    date: t('calendar.controls.date'),
-                    time: t('calendar.controls.time'),
-                    event: t('calendar.controls.event'),
-                    noEventsInRange: t('calendar.controls.noEventsInRange'),
-                  }}
-                  tooltipAccessor={(event: any) => {
-                    if (event.type === 'call') {
-                      return `${event.customerName} - ${event.callDetails || t('calendar.noCallDetails')}`;
-                    }
-                    return `${event.customerName} - ${event.orderNumber || ''}`;
-                  }}
-                />
-              </div>
+            <CardHeader>
+              <CardTitle>{t('calendar.upcomingEvents')}</CardTitle>
+              <CardDescription>{t('calendar.today')}</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[400px] overflow-auto">
+              {upcomingEvents.length > 0 ? (
+                <ul className="space-y-3">
+                  {upcomingEvents.map((event) => (
+                    <li key={event.id} className="flex flex-col space-y-1">
+                      <div 
+                        className="p-3 border rounded-md cursor-pointer hover:bg-accent transition-colors"
+                        onClick={() => handleEventClick(event)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            {event.type === 'created' && (
+                              <Badge className="bg-[#4F46E5]">{t('calendar.orderCreated')}</Badge>
+                            )}
+                            {event.type === 'shipped' && (
+                              <Badge className="bg-[#10B981]">{t('calendar.orderShipped')}</Badge>
+                            )}
+                            {event.type === 'call' && event.isFollowUp && (
+                              <Badge className="bg-[#F43F5E]">{t('calendar.followUpCall')}</Badge>
+                            )}
+                            {event.type === 'call' && !event.isFollowUp && (
+                              <Badge className="bg-[#F59E0B]">{t('calendar.scheduledCall')}</Badge>
+                            )}
+                            <span className="text-sm font-medium">{getRelativeDate(event.start)}</span>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="mt-2">
+                          <div className="flex items-start space-x-2">
+                            <User className="h-4 w-4 text-muted-foreground mt-0.5" />
+                            <span className="text-sm">{event.customerName}</span>
+                          </div>
+                          {event.orderNumber && (
+                            <div className="flex items-start space-x-2 mt-1">
+                              <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <span className="text-sm">{event.orderNumber}</span>
+                            </div>
+                          )}
+                          {event.callDetails && (
+                            <div className="flex items-start space-x-2 mt-1">
+                              <Phone className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <span className="text-sm truncate">{event.callDetails}</span>
+                            </div>
+                          )}
+                          <div className="flex items-start space-x-2 mt-1">
+                            <Clock className="h-4 w-4 text-muted-foreground mt-0.5" />
+                            <span className="text-sm">{moment(event.start).format('h:mm A')}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full">
+                  <CalendarIcon className="h-10 w-10 text-muted-foreground" />
+                  <p className="mt-2 text-muted-foreground">{t('calendar.noUpcomingEvents')}</p>
+                </div>
+              )}
             </CardContent>
+            <CardFooter>
+              <Button className="w-full" variant="outline" onClick={handleNewCallLog}>
+                {t('calendar.newCallLog')}
+              </Button>
+            </CardFooter>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
+      
+      {/* Event Details Modal */}
+      <Dialog open={isEventModalOpen} onOpenChange={setIsEventModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{t('calendar.viewEventDetails')}</DialogTitle>
+            <DialogDescription>
+              {selectedEvent?.title}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">{t('calendar.eventType')}</span>
+                {selectedEvent?.type === 'created' && (
+                  <Badge className="bg-[#4F46E5]">{t('calendar.orderCreated')}</Badge>
+                )}
+                {selectedEvent?.type === 'shipped' && (
+                  <Badge className="bg-[#10B981]">{t('calendar.orderShipped')}</Badge>
+                )}
+                {selectedEvent?.type === 'call' && selectedEvent?.isFollowUp && (
+                  <Badge className="bg-[#F43F5E]">{t('calendar.followUpCall')}</Badge>
+                )}
+                {selectedEvent?.type === 'call' && !selectedEvent?.isFollowUp && (
+                  <Badge className="bg-[#F59E0B]">{t('calendar.scheduledCall')}</Badge>
+                )}
+              </div>
+              
+              <Separator />
+              
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">{t('calendar.customer')}</span>
+                <span className="text-sm">{selectedEvent?.customerName}</span>
+              </div>
+              
+              <Separator />
+              
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">{t('calendar.date')}</span>
+                <span className="text-sm">
+                  {selectedEvent?.start ? moment(selectedEvent.start).format('MMMM Do YYYY, h:mm a') : ''}
+                </span>
+              </div>
+              
+              {selectedEvent?.orderNumber && (
+                <>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{t('calendar.orderNumber')}</span>
+                    <span className="text-sm">{selectedEvent.orderNumber}</span>
+                  </div>
+                </>
+              )}
+              
+              {selectedEvent?.callDetails && (
+                <>
+                  <Separator />
+                  <div>
+                    <span className="text-sm font-medium">{t('calendar.details')}</span>
+                    <p className="text-sm mt-1">{selectedEvent.callDetails}</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+          
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            {selectedEvent?.type === 'call' && (
+              <Button type="button" onClick={handleViewCall}>
+                {t('calendar.viewOrder')}
+              </Button>
+            )}
+            {(selectedEvent?.type === 'created' || selectedEvent?.type === 'shipped') && (
+              <Button type="button" onClick={handleViewOrder}>
+                {t('calendar.viewOrder')}
+              </Button>
+            )}
+            <Button type="button" variant="outline" onClick={handleViewCustomer}>
+              {t('calendar.viewCustomer')}
+            </Button>
+            <DialogClose asChild>
+              <Button type="button" variant="secondary">
+                {t('calendar.close')}
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
