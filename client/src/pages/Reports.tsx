@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSidebar } from "@/context/SidebarContext";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -29,6 +29,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { RefreshCw } from "lucide-react";
 
 interface Product {
   id: number;
@@ -139,6 +142,33 @@ interface OrderQualitySummary {
   rootCauseAnalysis: Record<string, number>;
 }
 
+// New interfaces for Inventory Prediction
+interface InventoryPrediction {
+  id: number;
+  productId: number;
+  productName: string;
+  generatedAt: string;
+  predictionMethod: 'moving_average' | 'linear_regression' | 'seasonal_adjustment' | 'weighted_average' | 'manual';
+  predictedDemand: number;
+  confidenceLevel: number;
+  accuracy: 'low' | 'medium' | 'high';
+  predictedStockoutDate: string | null;
+  recommendedReorderDate: string | null;
+  recommendedQuantity: number | null;
+  currentStock: number;
+  notes: string | null;
+}
+
+interface PredictionMethodDistribution {
+  method: string;
+  count: number;
+}
+
+interface PredictionAccuracyDistribution {
+  name: string;
+  count: number;
+}
+
 
 
 // Colors for charts
@@ -193,6 +223,43 @@ const Reports = () => {
   const { data: orderQualitySummary, isLoading: isLoadingOrderQuality } = useQuery<OrderQualitySummary>({
     queryKey: ['/api/analytics/order-quality-summary', timeRange],
   });
+  
+  // Inventory prediction queries
+  const { data: productsRequiringReorder = [], isLoading: isLoadingPredictions } = useQuery<InventoryPrediction[]>({
+    queryKey: ['/api/inventory-predictions/reorder-required'],
+  });
+  
+  // Create derived data for prediction charts
+  const predictionMethodsDistribution = useMemo(() => {
+    const methodCounts: Record<string, number> = {};
+    
+    productsRequiringReorder.forEach(item => {
+      const method = item.predictionMethod
+        .replace(/_/g, ' ')
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+      
+      methodCounts[method] = (methodCounts[method] || 0) + 1;
+    });
+    
+    return Object.entries(methodCounts).map(([method, count]) => ({ method, count }));
+  }, [productsRequiringReorder]);
+  
+  const predictionAccuracyDistribution = useMemo(() => {
+    const accuracyCounts: Record<string, number> = {
+      'High': 0,
+      'Medium': 0,
+      'Low': 0
+    };
+    
+    productsRequiringReorder.forEach(item => {
+      const accuracy = item.accuracy.charAt(0).toUpperCase() + item.accuracy.slice(1);
+      accuracyCounts[accuracy] = (accuracyCounts[accuracy] || 0) + 1;
+    });
+    
+    return Object.entries(accuracyCounts).map(([name, count]) => ({ name, count }));
+  }, [productsRequiringReorder]);
 
   useEffect(() => {
     setCurrentPage("Reports");
@@ -335,7 +402,7 @@ const Reports = () => {
       </div>
 
       <Tabs defaultValue="inventory">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="inventory">Inventory</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
@@ -344,6 +411,7 @@ const Reports = () => {
           <TabsTrigger value="call-logs">Call Logs</TabsTrigger>
           <TabsTrigger value="customer-engagement">Customer Engagement</TabsTrigger>
           <TabsTrigger value="order-quality">Order Quality</TabsTrigger>
+          <TabsTrigger value="predictions">Predictions</TabsTrigger>
         </TabsList>
         
         {/* Inventory Tab */}
@@ -1442,6 +1510,184 @@ const Reports = () => {
                     </div>
                   </div>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* Predictions Tab */}
+        <TabsContent value="predictions" className="mt-4 grid gap-4 md:grid-cols-2">
+          <Card className="col-span-2">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Inventory Prediction Overview</CardTitle>
+                  <CardDescription>
+                    Products requiring reorder and predicted stockout dates
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Select defaultValue="moving_average" onValueChange={(method) => {
+                    if (window.confirm(`Generate new predictions using ${method} method?`)) {
+                      fetch(`/api/inventory-predictions/generate?method=${method}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                      }).then(() => {
+                        window.location.reload();
+                      });
+                    }
+                  }}>
+                    <SelectTrigger className="w-44">
+                      <SelectValue placeholder="Prediction Method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="moving_average">Moving Average</SelectItem>
+                      <SelectItem value="linear_regression">Linear Regression</SelectItem>
+                      <SelectItem value="seasonal_adjustment">Seasonal Adjustment</SelectItem>
+                      <SelectItem value="weighted_average">Weighted Average</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button variant="outline" onClick={() => {
+                    window.location.reload();
+                  }}>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product</TableHead>
+                      <TableHead>Current Stock</TableHead>
+                      <TableHead>Predicted Demand</TableHead>
+                      <TableHead>Stockout Date</TableHead>
+                      <TableHead>Recommended Reorder Date</TableHead>
+                      <TableHead>Recommended Quantity</TableHead>
+                      <TableHead>Confidence</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {productsRequiringReorder.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
+                          No products requiring reorder at this time
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      productsRequiringReorder.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium">{item.productName}</TableCell>
+                          <TableCell>
+                            <Badge variant={item.currentStock === 0 ? "destructive" : item.currentStock < 10 ? "outline" : "default"}>
+                              {item.currentStock}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{item.predictedDemand} units</TableCell>
+                          <TableCell>
+                            {item.predictedStockoutDate ? 
+                              new Date(item.predictedStockoutDate).toLocaleDateString() : 'N/A'}
+                          </TableCell>
+                          <TableCell>
+                            {item.recommendedReorderDate ? 
+                              new Date(item.recommendedReorderDate).toLocaleDateString() : 'ASAP'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-blue-50">
+                              {item.recommendedQuantity || 'N/A'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={
+                                item.accuracy === 'high' ? 'default' :
+                                item.accuracy === 'medium' ? 'outline' : 'destructive'
+                              }
+                              className={
+                                item.accuracy === 'high' ? 'bg-green-100 text-green-800 hover:bg-green-200' :
+                                item.accuracy === 'medium' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' : ''
+                              }
+                            >
+                              {item.confidenceLevel}% ({item.accuracy})
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Prediction Methods Distribution</CardTitle>
+              <CardDescription>
+                Breakdown of prediction methods used
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={predictionMethodsDistribution}
+                      dataKey="count"
+                      nameKey="method"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      fill="#82ca9d"
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {predictionMethodsDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => [value, 'Count']} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Prediction Accuracy</CardTitle>
+              <CardDescription>
+                Confidence level distribution
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={predictionAccuracyDistribution}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip formatter={(value) => [value, 'Count']} />
+                    <Legend />
+                    <Bar dataKey="count" fill="#3b82f6">
+                      {predictionAccuracyDistribution.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={
+                            entry.name === 'High' ? '#4ade80' : 
+                            entry.name === 'Medium' ? '#fbbf24' : '#ef4444'
+                          } 
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>

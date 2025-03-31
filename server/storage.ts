@@ -18,7 +18,10 @@ import {
   inventoryChanges, type InventoryChange, type InsertInventoryChange,
   callLogs, type CallLog, type InsertCallLog,
   callOutcomes, type CallOutcome, type InsertCallOutcome,
-  prospectiveCustomers, type ProspectiveCustomer, type InsertProspectiveCustomer
+  prospectiveCustomers, type ProspectiveCustomer, type InsertProspectiveCustomer,
+  inventoryHistory, type InventoryHistory, type InsertInventoryHistory,
+  inventoryPredictions, type InventoryPrediction, type InsertInventoryPrediction,
+  seasonalPatterns, type SeasonalPattern, type InsertSeasonalPattern
 } from "@shared/schema";
 import { DatabaseStorage, initStorage } from './storage.postgresql';
 import { log } from './vite';
@@ -232,6 +235,28 @@ export interface IStorage {
   updateProspectiveCustomer(id: number, customer: Partial<InsertProspectiveCustomer>): Promise<ProspectiveCustomer | undefined>;
   deleteProspectiveCustomer(id: number): Promise<boolean>;
   convertToCustomer(id: number): Promise<Customer | undefined>;
+
+  // Inventory History methods
+  getInventoryHistory(productId?: number, dateFrom?: Date, dateTo?: Date): Promise<InventoryHistory[]>;
+  getInventoryHistoryById(id: number): Promise<InventoryHistory | undefined>;
+  createInventoryHistory(history: InsertInventoryHistory): Promise<InventoryHistory>;
+  
+  // Inventory Prediction methods
+  getInventoryPredictions(productId?: number): Promise<InventoryPrediction[]>;
+  getInventoryPredictionById(id: number): Promise<InventoryPrediction | undefined>;
+  createInventoryPrediction(prediction: InsertInventoryPrediction): Promise<InventoryPrediction>;
+  updateInventoryPrediction(id: number, prediction: Partial<InsertInventoryPrediction>): Promise<InventoryPrediction | undefined>;
+  deleteInventoryPrediction(id: number): Promise<boolean>;
+  generatePredictions(method: string): Promise<number>; // Returns count of predictions generated
+  getProductsRequiringReorder(): Promise<Array<InventoryPrediction & { productName: string, currentStock: number }>>;
+  
+  // Seasonal Pattern methods
+  getSeasonalPatterns(productId?: number): Promise<SeasonalPattern[]>;
+  getSeasonalPatternById(id: number): Promise<SeasonalPattern | undefined>;
+  createSeasonalPattern(pattern: InsertSeasonalPattern): Promise<SeasonalPattern>;
+  updateSeasonalPattern(id: number, pattern: Partial<InsertSeasonalPattern>): Promise<SeasonalPattern | undefined>;
+  deleteSeasonalPattern(id: number): Promise<boolean>;
+  importSeasonalPatterns(patterns: InsertSeasonalPattern[]): Promise<number>; // Returns count of imported patterns
 }
 
 // We're keeping the MemStorage class definition for fallback
@@ -253,6 +278,10 @@ export class MemStorage implements IStorage {
   private callLogs: Map<number, CallLog>;
   private callOutcomes: Map<number, CallOutcome>;
   private prospectiveCustomers: Map<number, ProspectiveCustomer>;
+  private inventoryHistoryData: Map<number, InventoryHistory>;
+  private inventoryPredictionsData: Map<number, InventoryPrediction>;
+  private seasonalPatternsData: Map<number, SeasonalPattern>;
+  private orderQualityData: Map<number, OrderQuality>;
   
   private userIdCounter: number;
   private categoryIdCounter: number;
@@ -267,6 +296,10 @@ export class MemStorage implements IStorage {
   private callLogIdCounter: number;
   private callOutcomeIdCounter: number;
   private prospectiveCustomerIdCounter: number;
+  private inventoryHistoryIdCounter: number;
+  private inventoryPredictionIdCounter: number;
+  private seasonalPatternIdCounter: number;
+  private orderQualityIdCounter: number;
   
   constructor() {
     this.users = new Map();
@@ -283,6 +316,10 @@ export class MemStorage implements IStorage {
     this.callLogs = new Map();
     this.callOutcomes = new Map();
     this.prospectiveCustomers = new Map();
+    this.inventoryHistoryData = new Map();
+    this.inventoryPredictionsData = new Map();
+    this.seasonalPatternsData = new Map();
+    this.orderQualityData = new Map();
     
     this.userIdCounter = 1;
     this.categoryIdCounter = 1;
@@ -297,6 +334,10 @@ export class MemStorage implements IStorage {
     this.callLogIdCounter = 1;
     this.callOutcomeIdCounter = 1;
     this.prospectiveCustomerIdCounter = 1;
+    this.inventoryHistoryIdCounter = 1;
+    this.inventoryPredictionIdCounter = 1;
+    this.seasonalPatternIdCounter = 1;
+    this.orderQualityIdCounter = 1;
     
     // Initialize with sample data (async)
     // We're calling this in a non-blocking way since constructor can't be async
@@ -1969,6 +2010,447 @@ export class MemStorage implements IStorage {
     this.prospectiveCustomers.delete(id);
     
     return newCustomer;
+  }
+
+  // Inventory History methods
+  async getInventoryHistory(productId?: number, dateFrom?: Date, dateTo?: Date): Promise<InventoryHistory[]> {
+    let history = Array.from(this.inventoryHistoryData.values());
+    
+    if (productId) {
+      history = history.filter(record => record.productId === productId);
+    }
+    
+    if (dateFrom) {
+      history = history.filter(record => record.recordDate >= dateFrom);
+    }
+    
+    if (dateTo) {
+      history = history.filter(record => record.recordDate <= dateTo);
+    }
+    
+    return history.sort((a, b) => b.recordDate.getTime() - a.recordDate.getTime());
+  }
+  
+  async getInventoryHistoryById(id: number): Promise<InventoryHistory | undefined> {
+    return this.inventoryHistoryData.get(id);
+  }
+  
+  async createInventoryHistory(history: InsertInventoryHistory): Promise<InventoryHistory> {
+    const id = this.inventoryHistoryIdCounter++;
+    const now = new Date();
+    
+    const newRecord: InventoryHistory = {
+      id,
+      productId: history.productId,
+      recordDate: history.recordDate || now,
+      quantity: history.quantity,
+      stockStatus: history.stockStatus,
+      demandRate: history.demandRate || 0,
+      weeklySales: history.weeklySales || 0,
+      seasonalFactor: history.seasonalFactor || 100
+    };
+    
+    this.inventoryHistoryData.set(id, newRecord);
+    return newRecord;
+  }
+  
+  // Inventory Prediction methods
+  async getInventoryPredictions(productId?: number): Promise<InventoryPrediction[]> {
+    let predictions = Array.from(this.inventoryPredictionsData.values());
+    
+    if (productId) {
+      predictions = predictions.filter(p => p.productId === productId);
+    }
+    
+    return predictions.sort((a, b) => b.generatedAt.getTime() - a.generatedAt.getTime());
+  }
+  
+  async getInventoryPredictionById(id: number): Promise<InventoryPrediction | undefined> {
+    return this.inventoryPredictionsData.get(id);
+  }
+  
+  async createInventoryPrediction(prediction: InsertInventoryPrediction): Promise<InventoryPrediction> {
+    const id = this.inventoryPredictionIdCounter++;
+    const now = new Date();
+    
+    const newPrediction: InventoryPrediction = {
+      id,
+      productId: prediction.productId,
+      generatedAt: now,
+      predictionMethod: prediction.predictionMethod,
+      predictedDemand: prediction.predictedDemand,
+      confidenceLevel: prediction.confidenceLevel,
+      accuracy: prediction.accuracy || 'medium',
+      predictedStockoutDate: prediction.predictedStockoutDate || null,
+      recommendedReorderDate: prediction.recommendedReorderDate || null,
+      recommendedQuantity: prediction.recommendedQuantity || null,
+      notes: prediction.notes || null,
+      createdById: prediction.createdById || null,
+      updatedAt: now
+    };
+    
+    this.inventoryPredictionsData.set(id, newPrediction);
+    return newPrediction;
+  }
+  
+  async updateInventoryPrediction(id: number, predictionUpdate: Partial<InsertInventoryPrediction>): Promise<InventoryPrediction | undefined> {
+    const prediction = this.inventoryPredictionsData.get(id);
+    if (!prediction) return undefined;
+    
+    const updatedPrediction: InventoryPrediction = {
+      ...prediction,
+      ...predictionUpdate,
+      updatedAt: new Date()
+    };
+    
+    this.inventoryPredictionsData.set(id, updatedPrediction);
+    return updatedPrediction;
+  }
+  
+  async deleteInventoryPrediction(id: number): Promise<boolean> {
+    return this.inventoryPredictionsData.delete(id);
+  }
+  
+  async generatePredictions(method: string): Promise<number> {
+    // In a real implementation, this would process historical data and generate predictions
+    // For the MemStorage implementation, we'll just simulate creating predictions for products
+    const products = await this.getAllProducts();
+    let count = 0;
+    
+    for (const product of products) {
+      if (product.currentStock <= product.minStockLevel * 1.5) {
+        // Calculate a predicted demand based on product's current stock and min level
+        const predictedDemand = Math.round(product.minStockLevel * 1.2);
+        const daysUntilStockout = product.currentStock > 0 
+          ? Math.round((product.currentStock / predictedDemand) * 30) 
+          : 0;
+          
+        const predictedStockoutDate = new Date();
+        predictedStockoutDate.setDate(predictedStockoutDate.getDate() + daysUntilStockout);
+        
+        const recommendedReorderDate = new Date();
+        recommendedReorderDate.setDate(recommendedReorderDate.getDate() + Math.max(daysUntilStockout - 14, 1));
+        
+        await this.createInventoryPrediction({
+          productId: product.id,
+          predictionMethod: method as any,
+          predictedDemand,
+          confidenceLevel: 75,
+          accuracy: 'medium',
+          predictedStockoutDate,
+          recommendedReorderDate,
+          recommendedQuantity: Math.round(product.minStockLevel * 2),
+          notes: `Automatic prediction using ${method} method`
+        });
+        
+        count++;
+      }
+    }
+    
+    return count;
+  }
+  
+  async getProductsRequiringReorder(): Promise<Array<InventoryPrediction & { productName: string, currentStock: number }>> {
+    const predictions = await this.getInventoryPredictions();
+    const results: Array<InventoryPrediction & { productName: string, currentStock: number }> = [];
+    
+    // Get only the most recent prediction for each product
+    const latestPredictions = new Map<number, InventoryPrediction>();
+    for (const prediction of predictions) {
+      const existing = latestPredictions.get(prediction.productId);
+      if (!existing || prediction.generatedAt > existing.generatedAt) {
+        latestPredictions.set(prediction.productId, prediction);
+      }
+    }
+    
+    // Now add product details
+    for (const prediction of latestPredictions.values()) {
+      const product = await this.getProduct(prediction.productId);
+      if (product) {
+        const reorderNeeded = prediction.recommendedReorderDate && 
+                              prediction.recommendedReorderDate <= new Date();
+        
+        if (reorderNeeded) {
+          results.push({
+            ...prediction,
+            productName: product.name,
+            currentStock: product.currentStock
+          });
+        }
+      }
+    }
+    
+    return results.sort((a, b) => {
+      if (a.recommendedReorderDate && b.recommendedReorderDate) {
+        return a.recommendedReorderDate.getTime() - b.recommendedReorderDate.getTime();
+      }
+      return 0;
+    });
+  }
+  
+  // Seasonal Pattern methods
+  async getSeasonalPatterns(productId?: number): Promise<SeasonalPattern[]> {
+    let patterns = Array.from(this.seasonalPatternsData.values());
+    
+    if (productId) {
+      patterns = patterns.filter(pattern => pattern.productId === productId);
+    }
+    
+    return patterns.sort((a, b) => a.month - b.month);
+  }
+  
+  async getSeasonalPatternById(id: number): Promise<SeasonalPattern | undefined> {
+    return this.seasonalPatternsData.get(id);
+  }
+  
+  async createSeasonalPattern(pattern: InsertSeasonalPattern): Promise<SeasonalPattern> {
+    const id = this.seasonalPatternIdCounter++;
+    
+    const newPattern: SeasonalPattern = {
+      id,
+      productId: pattern.productId,
+      month: pattern.month,
+      adjustmentFactor: pattern.adjustmentFactor || 100,
+      notes: pattern.notes || null,
+      updatedAt: new Date()
+    };
+    
+    this.seasonalPatternsData.set(id, newPattern);
+    return newPattern;
+  }
+  
+  async updateSeasonalPattern(id: number, patternUpdate: Partial<InsertSeasonalPattern>): Promise<SeasonalPattern | undefined> {
+    const pattern = this.seasonalPatternsData.get(id);
+    if (!pattern) return undefined;
+    
+    const updatedPattern: SeasonalPattern = {
+      ...pattern,
+      ...patternUpdate,
+      updatedAt: new Date()
+    };
+    
+    this.seasonalPatternsData.set(id, updatedPattern);
+    return updatedPattern;
+  }
+  
+  async deleteSeasonalPattern(id: number): Promise<boolean> {
+    return this.seasonalPatternsData.delete(id);
+  }
+  
+  async importSeasonalPatterns(patterns: InsertSeasonalPattern[]): Promise<number> {
+    let count = 0;
+    
+    for (const pattern of patterns) {
+      // Check if there's already a pattern for this product and month
+      const existingPatterns = await this.getSeasonalPatterns(pattern.productId);
+      const existing = existingPatterns.find(p => p.month === pattern.month);
+      
+      if (existing) {
+        // Update existing
+        await this.updateSeasonalPattern(existing.id, pattern);
+      } else {
+        // Create new
+        await this.createSeasonalPattern(pattern);
+      }
+      
+      count++;
+    }
+    
+    return count;
+  }
+  
+  // Order Quality methods
+  async getOrderErrors(orderId?: number): Promise<OrderQuality[]> {
+    let errors = Array.from(this.orderQualityData.values());
+    
+    if (orderId) {
+      errors = errors.filter(error => error.orderId === orderId);
+    }
+    
+    return errors.sort((a, b) => {
+      if (!a.createdAt || !b.createdAt) return 0;
+      return b.createdAt.getTime() - a.createdAt.getTime();
+    });
+  }
+  
+  async getOrderQuality(id: number): Promise<OrderQuality | undefined> {
+    return this.orderQualityData.get(id);
+  }
+  
+  async createOrderError(error: InsertOrderQuality): Promise<OrderQuality> {
+    const id = this.orderQualityIdCounter++;
+    const now = new Date();
+    
+    const newError: OrderQuality = {
+      id,
+      orderId: error.orderId,
+      errorType: error.errorType,
+      errorDescription: error.errorDescription,
+      reportedById: error.reportedById,
+      createdAt: now,
+      resolvedAt: null,
+      resolvedById: null,
+      rootCause: error.rootCause || null,
+      preventiveMeasures: error.preventiveMeasures || null,
+      severity: error.severity || 'medium',
+      status: error.status || 'open',
+      qualityLabel: error.qualityLabel || null,
+      qualityCategory: error.qualityCategory || null,
+      qualityStatus: error.qualityStatus || null,
+      assignedToId: error.assignedToId || null,
+      dueDate: error.dueDate ? new Date(error.dueDate) : null,
+      priority: error.priority || null,
+      qualityNotes: error.qualityNotes || null
+    };
+    
+    this.orderQualityData.set(id, newError);
+    return newError;
+  }
+  
+  async updateOrderError(id: number, errorUpdate: Partial<InsertOrderQuality>): Promise<OrderQuality | undefined> {
+    const error = this.orderQualityData.get(id);
+    if (!error) return undefined;
+    
+    const updatedError: OrderQuality = {
+      ...error,
+      ...(errorUpdate as any), // Need to cast due to date conversion
+      status: errorUpdate.status || error.status,
+    };
+    
+    this.orderQualityData.set(id, updatedError);
+    return updatedError;
+  }
+  
+  async resolveOrderError(id: number, userId: number, resolution: { rootCause?: string, preventiveMeasures?: string }): Promise<OrderQuality | undefined> {
+    const error = this.orderQualityData.get(id);
+    if (!error) return undefined;
+    
+    const updatedError: OrderQuality = {
+      ...error,
+      resolvedAt: new Date(),
+      resolvedById: userId,
+      rootCause: resolution.rootCause || error.rootCause,
+      preventiveMeasures: resolution.preventiveMeasures || error.preventiveMeasures,
+      status: 'resolved'
+    };
+    
+    this.orderQualityData.set(id, updatedError);
+    return updatedError;
+  }
+  
+  async getErrorStats(period: number = 30): Promise<{
+    totalErrors: number,
+    totalShippedOrders: number,
+    errorRate: number,
+    errorsByType: { type: string, count: number }[],
+    trending: { date: string, errorRate: number }[]
+  }> {
+    // Get errors within the period
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - period);
+    
+    const errors = Array.from(this.orderQualityData.values())
+      .filter(error => error.createdAt && error.createdAt >= cutoffDate);
+    
+    // Get shipped orders within the period
+    const orders = Array.from(this.orders.values())
+      .filter(order => order.status === 'shipped' && order.orderDate >= cutoffDate);
+    
+    // Calculate error rate
+    const totalErrors = errors.length;
+    const totalShippedOrders = orders.length;
+    const errorRate = totalShippedOrders > 0 ? (totalErrors / totalShippedOrders) * 100 : 0;
+    
+    // Count errors by type
+    const errorTypeCount: Record<string, number> = {};
+    for (const error of errors) {
+      errorTypeCount[error.errorType] = (errorTypeCount[error.errorType] || 0) + 1;
+    }
+    
+    const errorsByType = Object.entries(errorTypeCount)
+      .map(([type, count]) => ({ type, count }))
+      .sort((a, b) => b.count - a.count);
+    
+    // Calculate trending data (weekly error rates)
+    const weeklyErrors: Record<string, { errors: number, orders: number }> = {};
+    
+    // Group orders by week
+    for (const order of orders) {
+      const weekStart = new Date(order.orderDate);
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
+      const weekKey = weekStart.toISOString().substring(0, 10);
+      
+      if (!weeklyErrors[weekKey]) {
+        weeklyErrors[weekKey] = { errors: 0, orders: 0 };
+      }
+      
+      weeklyErrors[weekKey].orders++;
+    }
+    
+    // Group errors by week
+    for (const error of errors) {
+      if (!error.createdAt) continue;
+      
+      const weekStart = new Date(error.createdAt);
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
+      const weekKey = weekStart.toISOString().substring(0, 10);
+      
+      if (!weeklyErrors[weekKey]) {
+        weeklyErrors[weekKey] = { errors: 0, orders: 0 };
+      }
+      
+      weeklyErrors[weekKey].errors++;
+    }
+    
+    // Calculate weekly error rates
+    const trending = Object.entries(weeklyErrors)
+      .map(([date, { errors, orders }]) => ({
+        date,
+        errorRate: orders > 0 ? (errors / orders) * 100 : 0
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    return {
+      totalErrors,
+      totalShippedOrders,
+      errorRate,
+      errorsByType,
+      trending
+    };
+  }
+  
+  async adjustInventoryForError(errorId: number, adjustments: { productId: number, quantity: number }[]): Promise<boolean> {
+    const error = this.orderQualityData.get(errorId);
+    if (!error) return false;
+    
+    for (const adjustment of adjustments) {
+      const product = this.products.get(adjustment.productId);
+      if (product) {
+        const newStock = product.currentStock + adjustment.quantity;
+        
+        // Create a history record for the adjustment
+        await this.createInventoryHistory({
+          productId: product.id,
+          quantity: newStock,
+          stockStatus: newStock <= 0 ? 'out_of_stock' : newStock <= product.minStockLevel ? 'low_stock' : 'in_stock',
+        });
+        
+        // Update the product
+        this.products.set(product.id, {
+          ...product,
+          currentStock: newStock,
+          lastStockUpdate: new Date()
+        });
+      }
+    }
+    
+    // Update the error to reflect the adjustment
+    this.orderQualityData.set(errorId, {
+      ...error,
+      qualityNotes: (error.qualityNotes || '') + `\nInventory adjusted on ${new Date().toLocaleString()}`
+    });
+    
+    return true;
   }
   
   // Initialize with sample data

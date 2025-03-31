@@ -756,3 +756,105 @@ export const insertCallOutcomeSchema = createInsertSchema(callOutcomes)
 
 export type InsertCallOutcome = z.infer<typeof insertCallOutcomeSchema>;
 export type CallOutcome = typeof callOutcomes.$inferSelect;
+
+// ====== Smart Inventory Prediction Models ======
+
+// Prediction Method Enum
+export const predictionMethodEnum = pgEnum('prediction_method', [
+  'moving_average',
+  'linear_regression',
+  'seasonal_adjustment',
+  'weighted_average',
+  'manual'
+]);
+
+// Prediction Accuracy Enum
+export const predictionAccuracyEnum = pgEnum('prediction_accuracy', [
+  'low',
+  'medium',
+  'high'
+]);
+
+// Historical Inventory Data
+export const inventoryHistory = pgTable("inventory_history", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").notNull(),
+  recordDate: timestamp("record_date").notNull().defaultNow(),
+  quantity: integer("quantity").notNull(),
+  stockStatus: text("stock_status").notNull(), // "in_stock", "low_stock", "out_of_stock"
+  demandRate: integer("demand_rate"), // Units per week
+  weeklySales: integer("weekly_sales").default(0), // Quantity sold that week
+  seasonalFactor: integer("seasonal_factor").default(100), // Percentage: 100 = normal, 120 = 20% higher seasonal demand
+});
+
+export const insertInventoryHistorySchema = createInsertSchema(inventoryHistory)
+  .omit({ id: true })
+  .extend({
+    productId: z.number(),
+    recordDate: z.date().default(new Date()),
+    quantity: z.number(),
+    stockStatus: z.string(),
+    demandRate: z.number().optional(),
+    weeklySales: z.number().optional(),
+    seasonalFactor: z.number().optional(),
+  });
+
+export type InsertInventoryHistory = z.infer<typeof insertInventoryHistorySchema>;
+export type InventoryHistory = typeof inventoryHistory.$inferSelect;
+
+// Inventory Predictions
+export const inventoryPredictions = pgTable("inventory_predictions", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").notNull(),
+  generatedAt: timestamp("generated_at").notNull().defaultNow(),
+  predictionMethod: predictionMethodEnum("prediction_method").notNull().default('moving_average'),
+  predictedDemand: integer("predicted_demand").notNull(), // Predicted units needed
+  confidenceLevel: integer("confidence_level").notNull().default(70), // Percentage confidence (0-100)
+  accuracy: predictionAccuracyEnum("accuracy").default('medium'),
+  predictedStockoutDate: timestamp("predicted_stockout_date"), // When product will run out
+  recommendedReorderDate: timestamp("recommended_reorder_date"), // When to reorder
+  recommendedQuantity: integer("recommended_quantity"), // How much to order
+  notes: text("notes"),
+  createdById: integer("created_by_id"),
+  updatedAt: timestamp("updated_at").notNull(),
+});
+
+export const insertInventoryPredictionSchema = createInsertSchema(inventoryPredictions)
+  .omit({ id: true, generatedAt: true, updatedAt: true })
+  .extend({
+    productId: z.number(),
+    predictionMethod: z.enum(['moving_average', 'linear_regression', 'seasonal_adjustment', 'weighted_average', 'manual']),
+    predictedDemand: z.number(),
+    confidenceLevel: z.number().min(0).max(100),
+    accuracy: z.enum(['low', 'medium', 'high']).default('medium'),
+    predictedStockoutDate: z.date().optional(),
+    recommendedReorderDate: z.date().optional(),
+    recommendedQuantity: z.number().optional(),
+    notes: z.string().optional(),
+    createdById: z.number().optional(),
+  });
+
+export type InsertInventoryPrediction = z.infer<typeof insertInventoryPredictionSchema>;
+export type InventoryPrediction = typeof inventoryPredictions.$inferSelect;
+
+// Seasonal Patterns
+export const seasonalPatterns = pgTable("seasonal_patterns", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").notNull(),
+  month: integer("month").notNull(), // 1-12
+  adjustmentFactor: integer("adjustment_factor").notNull().default(100), // Percentage: 100 = normal, 120 = 20% higher
+  notes: text("notes"),
+  updatedAt: timestamp("updated_at").notNull(),
+});
+
+export const insertSeasonalPatternSchema = createInsertSchema(seasonalPatterns)
+  .omit({ id: true, updatedAt: true })
+  .extend({
+    productId: z.number(),
+    month: z.number().min(1).max(12),
+    adjustmentFactor: z.number().default(100),
+    notes: z.string().optional(),
+  });
+
+export type InsertSeasonalPattern = z.infer<typeof insertSeasonalPatternSchema>;
+export type SeasonalPattern = typeof seasonalPatterns.$inferSelect;

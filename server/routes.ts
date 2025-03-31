@@ -15,6 +15,21 @@ import { getEmailSettings, updateEmailSettings, testEmailConnection, getEmailTem
 import { getCompanySettings, updateCompanySettings, getNotificationSettings, updateNotificationSettings, testSlackWebhook, testSlackNotification, testSlackTemplate } from "./api/settings";
 import { getOrderErrors, getOrderQuality, createOrderError, updateOrderError, resolveOrderError, adjustInventoryForError, getErrorStats } from "./api/orderErrors";
 import { getInventoryChanges, getInventoryChange, addInventoryChange, getRecentInventoryChanges, getInventoryChangesByType } from "./api/inventoryChanges";
+import {
+  getInventoryPredictions,
+  getInventoryPrediction,
+  createInventoryPrediction,
+  updateInventoryPrediction,
+  deleteInventoryPrediction,
+  getProductsRequiringReorder,
+  generatePredictions,
+  getInventoryHistory,
+  createInventoryHistory,
+  getSeasonalPatterns,
+  createSeasonalPattern,
+  deleteSeasonalPattern,
+  importSeasonalPatterns
+} from "./api/inventoryPrediction";
 import callLogsRouter from "./api/callLogs";
 import prospectiveCustomersRouter from "./api/prospectiveCustomers";
 import { createSlackService } from "./services/notifications/slackService";
@@ -2495,6 +2510,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Call Logs routes
   app.use('/api/call-logs', isAuthenticated, callLogsRouter);
   app.use('/api/prospective-customers', isAuthenticated, prospectiveCustomersRouter);
+  
+  // Inventory Prediction Routes
+  app.get('/api/inventory-predictions', isAuthenticated, getInventoryPredictions);
+  app.get('/api/inventory-predictions/:id', isAuthenticated, getInventoryPrediction);
+  app.post('/api/inventory-predictions', isAuthenticated, createInventoryPrediction);
+  app.patch('/api/inventory-predictions/:id', isAuthenticated, updateInventoryPrediction);
+  app.delete('/api/inventory-predictions/:id', isAuthenticated, deleteInventoryPrediction);
+  app.get('/api/inventory-predictions/reorder-required', isAuthenticated, getProductsRequiringReorder);
+  app.post('/api/inventory-predictions/generate', isAuthenticated, hasRole('admin'), generatePredictions);
+  
+  // Inventory History Routes
+  app.get('/api/inventory-history', isAuthenticated, getInventoryHistory);
+  app.post('/api/inventory-history', isAuthenticated, createInventoryHistory);
+  
+  // Seasonal Patterns Routes
+  app.get('/api/seasonal-patterns', isAuthenticated, getSeasonalPatterns);
+  app.post('/api/seasonal-patterns', isAuthenticated, createSeasonalPattern);
+  app.delete('/api/seasonal-patterns/:id', isAuthenticated, deleteSeasonalPattern);
+  app.post('/api/seasonal-patterns/import', isAuthenticated, hasRole('admin'), importSeasonalPatterns);
   
   return httpServer;
 }
