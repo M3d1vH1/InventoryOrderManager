@@ -426,18 +426,29 @@ const Reports = () => {
 
       <Tabs defaultValue="inventory">
         <div className="overflow-x-auto pb-2">
-          <TabsList className="w-full flex flex-nowrap min-w-max">
-            <TabsTrigger value="inventory" className="flex-shrink-0">Inventory</TabsTrigger>
-            <TabsTrigger value="orders" className="flex-shrink-0">Orders</TabsTrigger>
-            <TabsTrigger value="tags" className="flex-shrink-0">Tags</TabsTrigger>
-            <TabsTrigger value="efficiency" className="flex-shrink-0">Efficiency</TabsTrigger>
-            <TabsTrigger value="call-logs" className="flex-shrink-0">Call Logs</TabsTrigger>
-            <TabsTrigger value="customer-engagement" className="flex-shrink-0">Customer Engagement</TabsTrigger>
-            <TabsTrigger value="order-quality" className="flex-shrink-0">Order Quality</TabsTrigger>
-            <TabsTrigger value="predictions" className="flex-shrink-0">Predictions</TabsTrigger>
-            <TabsTrigger value="dispatch-schedule" className="flex-shrink-0">Dispatch Schedule</TabsTrigger>
-            <TabsTrigger value="shipping-delays" className="flex-shrink-0">Shipping Delays</TabsTrigger>
-            <TabsTrigger value="fulfillment-stats" className="flex-shrink-0">Fulfillment Stats</TabsTrigger>
+          <TabsList className="w-full flex flex-wrap mb-4">
+            <div className="flex flex-col w-full">
+              <div className="flex flex-wrap gap-1 mb-2">
+                <span className="text-sm font-medium text-gray-500 pr-2 py-1">Analytics:</span>
+                <TabsTrigger value="inventory" className="flex-shrink-0">Inventory</TabsTrigger>
+                <TabsTrigger value="orders" className="flex-shrink-0">Orders</TabsTrigger>
+                <TabsTrigger value="tags" className="flex-shrink-0">Tags</TabsTrigger>
+                <TabsTrigger value="efficiency" className="flex-shrink-0">Efficiency</TabsTrigger>
+                <TabsTrigger value="predictions" className="flex-shrink-0">Predictions</TabsTrigger>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                <span className="text-sm font-medium text-gray-500 pr-2 py-1">Reports:</span>
+                <TabsTrigger value="dispatch-schedule" className="flex-shrink-0">Dispatch Schedule</TabsTrigger>
+                <TabsTrigger value="shipping-delays" className="flex-shrink-0">Shipping Delays</TabsTrigger>
+                <TabsTrigger value="fulfillment-stats" className="flex-shrink-0">Fulfillment Stats</TabsTrigger>
+              </div>
+              <div className="flex flex-wrap gap-1 mt-2">
+                <span className="text-sm font-medium text-gray-500 pr-2 py-1">Call Data:</span>
+                <TabsTrigger value="call-logs" className="flex-shrink-0">Call Logs</TabsTrigger>
+                <TabsTrigger value="customer-engagement" className="flex-shrink-0">Customer Engagement</TabsTrigger>
+                <TabsTrigger value="order-quality" className="flex-shrink-0">Order Quality</TabsTrigger>
+              </div>
+            </div>
           </TabsList>
         </div>
         

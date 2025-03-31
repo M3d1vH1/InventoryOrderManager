@@ -55,6 +55,18 @@ export async function updateCompanySettings(req: Request, res: Response) {
 export async function getNotificationSettings(req: Request, res: Response) {
   try {
     const settings = await storage.getNotificationSettings();
+    
+    // Log notification settings for debugging
+    console.log('Retrieved notification settings:', {
+      slackEnabled: settings?.slackEnabled,
+      slackWebhookUrl: settings?.slackWebhookUrl ? `***${settings.slackWebhookUrl.substring(0, 10)}...` : 'Not set',
+      slackNotifyNewOrders: settings?.slackNotifyNewOrders,
+      slackNotifyCallLogs: settings?.slackNotifyCallLogs,
+      slackNotifyLowStock: settings?.slackNotifyLowStock,
+      hasOrderTemplate: !!settings?.slackOrderTemplate,
+      APP_URL: process.env.APP_URL || 'Not set'
+    });
+    
     res.json(settings || {});
   } catch (error) {
     console.error('Error getting notification settings:', error);

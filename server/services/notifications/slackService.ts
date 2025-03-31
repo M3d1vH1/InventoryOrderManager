@@ -33,15 +33,29 @@ export class SlackNotificationService {
         return false;
       }
       
-      await axios.post(webhookUrl, message, {
+      console.log('Sending Slack message to webhook URL:', webhookUrl);
+      console.log('Message payload:', JSON.stringify(message, null, 2));
+      
+      const response = await axios.post(webhookUrl, message, {
         headers: {
           'Content-Type': 'application/json'
         }
       });
       
+      console.log('Slack API response status:', response.status, response.statusText);
+      console.log('Slack API response data:', response.data || 'No response data');
+      
       return true;
     } catch (error) {
       console.error('Error sending Slack notification:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('Axios error details:', {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          message: error.message
+        });
+      }
       return false;
     }
   }
@@ -189,7 +203,7 @@ export class SlackNotificationService {
       orderDate: new Date(order.orderDate).toLocaleString(),
       status: order.status,
       items: (order as any).items || 'Unknown items',
-      totalItems: totalItems,
+      totalItems: (order as any).totalItems || totalItems, // Use value from order object if available
       total: typeof totalPrice === 'number' ? `$${totalPrice.toFixed(2)}` : '$0.00',
       totalPrice: typeof totalPrice === 'number' ? `$${totalPrice.toFixed(2)}` : '$0.00',
       totalValue: typeof totalPrice === 'number' ? `$${totalPrice.toFixed(2)}` : '$0.00',
@@ -404,8 +418,32 @@ export class SlackNotificationService {
     const settings = await this.getNotificationSettings();
     
     if (!settings || !settings.slackEnabled || !settings.slackNotifyNewOrders || !settings.slackWebhookUrl) {
+      console.log('Slack notification skipped: either not enabled or missing webhook URL', {
+        enabled: settings?.slackEnabled,
+        notifyNewOrders: settings?.slackNotifyNewOrders,
+        hasWebhookUrl: !!settings?.slackWebhookUrl
+      });
       return false;
     }
+    
+    // Preserve any existing totalItems from earlier in the chain
+    const existingTotalItems = (order as any).totalItems;
+    
+    // Get the order items to include in notification only if we don't already have a count
+    if (!existingTotalItems) {
+      try {
+        const orderItems = await this.storage.getOrderItems(order.id);
+        // Add totalItems property to the order object
+        (order as any).totalItems = orderItems.length;
+        // You could also calculate total price here if needed
+      } catch (error) {
+        console.error(`Error getting order items for notification: ${error}`);
+        // Continue with default values if we can't get the items
+      }
+    }
+    
+    // Log the notification settings and order data
+    console.log('Order template:', settings.slackOrderTemplate);
     
     // Cast the template to string | undefined to handle null values
     const template = settings.slackOrderTemplate ? settings.slackOrderTemplate : undefined;

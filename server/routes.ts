@@ -118,6 +118,13 @@ function broadcastMessage(message: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set APP_URL with a fallback
+  if (!process.env.APP_URL) {
+    process.env.APP_URL = 'https://warehouse-management-system.replit.app';
+    console.log('Setting default APP_URL:', process.env.APP_URL);
+  } else {
+    console.log('Using APP_URL from environment:', process.env.APP_URL);
+  }
   // Initialize Slack notification service
   const slackService = createSlackService(storage);
   
@@ -611,23 +618,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post('/api/orders', async (req, res) => {
+    // Log environment variables for debugging Slack notifications
+    console.log('Environment variables for Slack notification:', {
+      APP_URL: process.env.APP_URL || 'Not set',
+    });
+    console.log('Order request payload:', {
+      ...req.body,
+      items: req.body.items ? `${req.body.items.length} items` : 'No items',
+    });
+    
     try {
       const { items, ...orderData } = req.body;
+      console.log('Validating order data:', {
+        customerName: orderData.customerName,
+        estimatedShippingDate: orderData.estimatedShippingDate,
+        createdById: orderData.createdById,
+        notes: orderData.notes ? 'present' : 'not present',
+        hasItems: items && Array.isArray(items),
+        itemsCount: items && Array.isArray(items) ? items.length : 0,
+      });
+      
       const validatedOrder = insertOrderSchema.parse(orderData);
+      console.log('Order validated successfully');
       
       // Check if this customer has unshipped items before creating a new order
       const customerName = validatedOrder.customerName;
       const unshippedItems = await storage.getUnshippedItems(customerName);
+      console.log(`Found ${unshippedItems.length} unshipped items for customer ${customerName}`);
       
       // Create the order
+      console.log('About to create order in database');
       const order = await storage.createOrder({
         ...validatedOrder,
         orderDate: validatedOrder.orderDate || new Date(),
       });
+      console.log('Order created successfully:', {
+        id: order.id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+      });
       
       // Send Slack notification about new order
       try {
-        await slackService.notifyNewOrder(order);
+        // Add totalItems property to order object for Slack notification
+        const itemCount = items && Array.isArray(items) ? items.length : 0;
+        (order as any).totalItems = itemCount;
+        (order as any).items = items && Array.isArray(items) ? `${items.length} items` : 'Unknown items';
+        
+        // Log order details to diagnose if we have the right data for Slack
+        console.log('Order notification data:', {
+          id: order.id,
+          orderNumber: order.orderNumber,
+          customer: order.customerName,
+          customerName: order.customerName,
+          orderDate: order.orderDate ? new Date(order.orderDate).toLocaleString() : 'Unknown',
+          status: order.status,
+          items: items && Array.isArray(items) ? `${items.length} items` : 'Unknown items',
+          totalItems: itemCount,
+          appUrl: process.env.APP_URL || '',
+        });
+        
+        // Get notification settings first to check if they're properly configured
+        const settings = await storage.getNotificationSettings();
+        console.log('Notification settings for order notification:', {
+          slackEnabled: settings?.slackEnabled,
+          slackNotifyNewOrders: settings?.slackNotifyNewOrders,
+          hasWebhookUrl: !!settings?.slackWebhookUrl,
+          hasOrderTemplate: !!settings?.slackOrderTemplate,
+        });
+        
+        console.log('About to send slack notification for order');
+        const notificationResult = await slackService.notifyNewOrder(order);
+        console.log('Slack notification result:', notificationResult ? 'Success' : 'Failed');
       } catch (slackError) {
         console.error('Error sending Slack notification for new order:', slackError);
         // Don't fail the request if Slack notification fails
@@ -2473,6 +2535,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Slack webhook test route
   app.post('/api/settings/test-slack', isAuthenticated, hasRole(['admin']), testSlackWebhook);
+  
+  // DEBUG: Temporary endpoint to check notification settings without auth - REMOVE IN PRODUCTION
+  app.get('/api/debug/notification-settings', async (req, res) => {
+    try {
+      const settings = await storage.getNotificationSettings();
+      
+      // Log notification settings for debugging
+      console.log('DEBUG Retrieved notification settings:', {
+        slackEnabled: settings?.slackEnabled,
+        slackWebhookUrl: settings?.slackWebhookUrl ? `***${settings.slackWebhookUrl.substring(0, 10)}...` : 'Not set',
+        slackNotifyNewOrders: settings?.slackNotifyNewOrders,
+        slackNotifyCallLogs: settings?.slackNotifyCallLogs,
+        slackNotifyLowStock: settings?.slackNotifyLowStock,
+        hasOrderTemplate: !!settings?.slackOrderTemplate,
+        APP_URL: process.env.APP_URL || 'Not set'
+      });
+      
+      res.json({
+        success: true,
+        message: 'Check server logs for notification settings details',
+        settings: {
+          slackEnabled: settings?.slackEnabled ?? false,
+          slackNotifyNewOrders: settings?.slackNotifyNewOrders ?? false,
+          hasWebhookUrl: !!settings?.slackWebhookUrl,
+          hasOrderTemplate: !!settings?.slackOrderTemplate,
+          APP_URL: process.env.APP_URL || 'Not set'
+        }
+      });
+    } catch (error: any) {
+      console.error('Error getting notification settings for debug:', error);
+      res.status(500).json({ message: 'Failed to get notification settings' });
+    }
+  });
+  
+  // DEBUG: Test Slack notification for order without auth - REMOVE IN PRODUCTION
+  app.get('/api/debug/test-slack-order', async (req, res) => {
+    try {
+      // Create a test order
+      const testOrder = {
+        id: 9999,
+        orderNumber: 'TEST-999',
+        customerName: 'Test Customer (via Debug API)',
+        orderDate: new Date(),
+        status: 'pending' as const,
+        notes: 'Test order created via debug API',
+        hasShippingDocument: false,
+        isPartialFulfillment: false,
+        partialFulfillmentApproved: false,
+        partialFulfillmentApprovedById: null,
+        partialFulfillmentApprovedAt: null,
+        estimatedShippingDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
+        actualShippingDate: null,
+        createdById: 1,
+        updatedById: null,
+        lastUpdated: null
+      };
+      
+      console.log('Testing Slack notification with order:', testOrder);
+      console.log('APP_URL:', process.env.APP_URL);
+      
+      try {
+        // Send notification
+        const result = await slackService.notifyNewOrder(testOrder);
+        
+        if (result) {
+          console.log('✅ Slack notification sent successfully');
+        } else {
+          console.error('❌ Slack notification failed');
+        }
+        
+        // Return order and result
+        res.json({
+          success: result,
+          message: result ? 'Slack notification sent successfully' : 'Failed to send notification',
+          testOrder
+        });
+      } catch (error) {
+        console.error('Error sending test Slack notification:', error);
+        res.status(500).json({ 
+          success: false,
+          message: 'Error during Slack notification',
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    } catch (error: any) {
+      console.error('Error in test-slack-order endpoint:', error);
+      res.status(500).json({ message: 'Failed to test Slack notification' });
+    }
+  });
   
   // Test send a notification with custom template
   app.post('/api/settings/test-slack-notification', isAuthenticated, hasRole(['admin']), testSlackNotification);

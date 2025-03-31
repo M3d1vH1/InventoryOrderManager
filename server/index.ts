@@ -9,6 +9,13 @@ import dotenv from "dotenv";
 // Load environment variables from .env file
 dotenv.config();
 
+// Log critical environment variables at startup
+console.log('Environment variables at startup:', {
+  APP_URL: process.env.APP_URL || 'Not set',
+  NODE_ENV: process.env.NODE_ENV || 'Not set',
+  PORT: process.env.PORT || 'Not set'
+});
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
