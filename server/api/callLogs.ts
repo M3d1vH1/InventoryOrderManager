@@ -24,8 +24,8 @@ function transformCallLog(callLog: CallLog | undefined): any {
     customerId: callLog.customerId,
     // Map database field names to frontend field names
     customerName: callLog.contactName,
-    // Use callPurpose as subject since there's no subject field in the schema
-    subject: callLog.callPurpose || callLog.contactName,
+    // Use contactName as subject since there's no subject field in the database schema
+    subject: callLog.contactName,
     needsFollowup: callLog.callStatus === 'needs_followup',
     outcome: callLog.callPurpose,
     assignedToId: callLog.followupAssignedTo,
@@ -172,7 +172,7 @@ router.post('/', async (req, res) => {
                  quickData.priority === 'high' ? 'high' : 
                  quickData.priority === 'urgent' ? 'urgent' : 'normal',
         customerId: quickData.customerId || null,
-        contactName: quickData.subject, // Use subject as contact name for quick calls
+        contactName: quickData.subject || 'No subject', // Use subject as contact name for quick calls
         notes: quickData.notes || '',
         isFollowup: quickData.needsFollowup,
         duration: quickData.duration,
