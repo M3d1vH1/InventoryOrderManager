@@ -4,6 +4,10 @@ import { setupVite, serveStatic, log } from "./vite";
 import fileUpload from "express-fileupload";
 import path from "path";
 import { setupAuth } from "./auth";
+import dotenv from "dotenv";
+
+// Load environment variables from .env file
+dotenv.config();
 
 const app = express();
 app.use(express.json());
