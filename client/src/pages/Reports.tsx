@@ -225,8 +225,25 @@ const Reports = () => {
   });
   
   // Inventory prediction queries
-  const { data: productsRequiringReorder = [], isLoading: isLoadingPredictions } = useQuery<InventoryPrediction[]>({
+  const { 
+    data: productsRequiringReorder = [], 
+    isLoading: isLoadingPredictions,
+    isError: isReorderError,
+    error: reorderError 
+  } = useQuery<InventoryPrediction[]>({
     queryKey: ['/api/inventory-predictions/reorder-required'],
+    queryFn: async () => {
+      try {
+        const response = await fetch('/api/inventory-predictions/reorder-required');
+        if (!response.ok) {
+          throw new Error('Failed to fetch products requiring reorder');
+        }
+        return response.json();
+      } catch (error) {
+        console.error('Error fetching reorder data:', error);
+        return [];
+      }
+    }
   });
   
   // Create derived data for prediction charts
@@ -402,17 +419,19 @@ const Reports = () => {
       </div>
 
       <Tabs defaultValue="inventory">
-        <TabsList className="grid w-full grid-cols-9">
-          <TabsTrigger value="inventory">Inventory</TabsTrigger>
-          <TabsTrigger value="orders">Orders</TabsTrigger>
-          <TabsTrigger value="categories">Categories</TabsTrigger>
-          <TabsTrigger value="value">Value Analysis</TabsTrigger>
-          <TabsTrigger value="efficiency">Efficiency</TabsTrigger>
-          <TabsTrigger value="call-logs">Call Logs</TabsTrigger>
-          <TabsTrigger value="customer-engagement">Customer Engagement</TabsTrigger>
-          <TabsTrigger value="order-quality">Order Quality</TabsTrigger>
-          <TabsTrigger value="predictions">Predictions</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto pb-2">
+          <TabsList className="w-full flex flex-nowrap min-w-max">
+            <TabsTrigger value="inventory" className="flex-shrink-0">Inventory</TabsTrigger>
+            <TabsTrigger value="orders" className="flex-shrink-0">Orders</TabsTrigger>
+            <TabsTrigger value="categories" className="flex-shrink-0">Categories</TabsTrigger>
+            <TabsTrigger value="value" className="flex-shrink-0">Value Analysis</TabsTrigger>
+            <TabsTrigger value="efficiency" className="flex-shrink-0">Efficiency</TabsTrigger>
+            <TabsTrigger value="call-logs" className="flex-shrink-0">Call Logs</TabsTrigger>
+            <TabsTrigger value="customer-engagement" className="flex-shrink-0">Customer Engagement</TabsTrigger>
+            <TabsTrigger value="order-quality" className="flex-shrink-0">Order Quality</TabsTrigger>
+            <TabsTrigger value="predictions" className="flex-shrink-0">Predictions</TabsTrigger>
+          </TabsList>
+        </div>
         
         {/* Inventory Tab */}
         <TabsContent value="inventory" className="mt-4 grid gap-4 md:grid-cols-2">

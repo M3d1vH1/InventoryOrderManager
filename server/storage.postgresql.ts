@@ -21,7 +21,10 @@ import {
   inventoryChanges, type InventoryChange, type InsertInventoryChange,
   callLogs, type CallLog, type InsertCallLog,
   callOutcomes, type CallOutcome, type InsertCallOutcome,
-  prospectiveCustomers, type ProspectiveCustomer, type InsertProspectiveCustomer
+  prospectiveCustomers, type ProspectiveCustomer, type InsertProspectiveCustomer,
+  inventoryHistory, type InventoryHistory, type InsertInventoryHistory,
+  inventoryPredictions, type InventoryPrediction, type InsertInventoryPrediction,
+  seasonalPatterns, type SeasonalPattern, type InsertSeasonalPattern
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { log } from './vite';
@@ -2845,7 +2848,348 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Inventory Prediction Methods
+  async getInventoryPredictions(): Promise<InventoryPrediction[]> {
+    try {
+      return await this.db.select().from(inventoryPredictions).orderBy(desc(inventoryPredictions.updatedAt));
+    } catch (error) {
+      console.error('Error getting inventory predictions:', error);
+      return [];
+    }
+  }
 
+  async getInventoryPredictionById(id: number): Promise<InventoryPrediction | undefined> {
+    try {
+      const results = await this.db
+        .select()
+        .from(inventoryPredictions)
+        .where(eq(inventoryPredictions.id, id))
+        .limit(1);
+      
+      return results.length > 0 ? results[0] : undefined;
+    } catch (error) {
+      console.error(`Error getting inventory prediction with ID ${id}:`, error);
+      return undefined;
+    }
+  }
+
+  async getInventoryPredictionsByProduct(productId: number): Promise<InventoryPrediction[]> {
+    try {
+      return await this.db
+        .select()
+        .from(inventoryPredictions)
+        .where(eq(inventoryPredictions.productId, productId))
+        .orderBy(desc(inventoryPredictions.generatedAt));
+    } catch (error) {
+      console.error(`Error getting inventory predictions for product ${productId}:`, error);
+      return [];
+    }
+  }
+
+  async createInventoryPrediction(prediction: InsertInventoryPrediction): Promise<InventoryPrediction> {
+    try {
+      // Set the updated timestamp
+      const insertData = {
+        ...prediction,
+        updatedAt: new Date()
+      };
+      
+      const result = await this.db
+        .insert(inventoryPredictions)
+        .values(insertData)
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error creating inventory prediction:', error);
+      throw error;
+    }
+  }
+
+  async updateInventoryPrediction(id: number, predictionUpdate: Partial<InsertInventoryPrediction>): Promise<InventoryPrediction | undefined> {
+    try {
+      // Add the updated timestamp
+      const updateData = {
+        ...predictionUpdate,
+        updatedAt: new Date()
+      };
+      
+      const result = await this.db
+        .update(inventoryPredictions)
+        .set(updateData)
+        .where(eq(inventoryPredictions.id, id))
+        .returning();
+      
+      return result.length > 0 ? result[0] : undefined;
+    } catch (error) {
+      console.error(`Error updating inventory prediction with ID ${id}:`, error);
+      return undefined;
+    }
+  }
+
+  async deleteInventoryPrediction(id: number): Promise<boolean> {
+    try {
+      const result = await this.db
+        .delete(inventoryPredictions)
+        .where(eq(inventoryPredictions.id, id))
+        .returning({ id: inventoryPredictions.id });
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error(`Error deleting inventory prediction with ID ${id}:`, error);
+      return false;
+    }
+  }
+
+  async getProductsRequiringReorder(): Promise<Array<InventoryPrediction & { productName: string, currentStock: number }>> {
+    try {
+      // First, get all the products with their current information
+      const productsWithStock = await this.db
+        .select({
+          id: products.id,
+          name: products.name,
+          currentStock: products.currentStock
+        })
+        .from(products);
+      
+      // Create a map for easy lookup
+      const productMap = new Map(productsWithStock.map(p => [p.id, p]));
+      
+      // Get latest prediction for each product
+      const latestPredictions = await this.db
+        .select()
+        .from(inventoryPredictions)
+        .orderBy(desc(inventoryPredictions.generatedAt));
+      
+      // Filter to get only the latest prediction for each product
+      const productIdsToPredictions = new Map<number, InventoryPrediction>();
+      for (const prediction of latestPredictions) {
+        if (!productIdsToPredictions.has(prediction.productId)) {
+          productIdsToPredictions.set(prediction.productId, prediction);
+        }
+      }
+      
+      // Combine predictions with product information
+      const result: Array<InventoryPrediction & { productName: string, currentStock: number }> = [];
+      
+      for (const [productId, prediction] of productIdsToPredictions.entries()) {
+        const product = productMap.get(productId);
+        if (product) {
+          result.push({
+            ...prediction,
+            productName: product.name,
+            currentStock: product.currentStock
+          });
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error getting products requiring reorder:', error);
+      return [];
+    }
+  }
+
+  async generatePredictions(method: string): Promise<number> {
+    try {
+      // Get all products
+      const products = await this.getAllProducts();
+      let count = 0;
+      
+      for (const product of products) {
+        if (product.currentStock <= product.minStockLevel * 1.5) {
+          // Calculate a predicted demand based on product's current stock and min level
+          const predictedDemand = Math.round(product.minStockLevel * 1.2);
+          const daysUntilStockout = product.currentStock > 0 
+            ? Math.round((product.currentStock / predictedDemand) * 30) 
+            : 0;
+            
+          const predictedStockoutDate = new Date();
+          predictedStockoutDate.setDate(predictedStockoutDate.getDate() + daysUntilStockout);
+          
+          const recommendedReorderDate = new Date();
+          recommendedReorderDate.setDate(recommendedReorderDate.getDate() + Math.max(daysUntilStockout - 14, 1));
+          
+          await this.createInventoryPrediction({
+            productId: product.id,
+            predictionMethod: method as any,
+            predictedDemand,
+            confidenceLevel: 75,
+            accuracy: 'medium',
+            predictedStockoutDate,
+            recommendedReorderDate,
+            recommendedQuantity: Math.round(product.minStockLevel * 2),
+            notes: `Automatic prediction using ${method} method`,
+            updatedAt: new Date()
+          });
+          
+          count++;
+        }
+      }
+      
+      return count;
+    } catch (error) {
+      console.error('Error generating predictions:', error);
+      return 0;
+    }
+  }
+
+  // Methods for Inventory History (needed for predictions)
+  async getInventoryHistory(productId?: number): Promise<InventoryHistory[]> {
+    try {
+      if (productId) {
+        return await this.db
+          .select()
+          .from(inventoryHistory)
+          .where(eq(inventoryHistory.productId, productId))
+          .orderBy(desc(inventoryHistory.recordDate));
+      } else {
+        return await this.db
+          .select()
+          .from(inventoryHistory)
+          .orderBy(desc(inventoryHistory.recordDate));
+      }
+    } catch (error) {
+      console.error('Error getting inventory history:', error);
+      return [];
+    }
+  }
+
+  async getInventoryHistoryById(id: number): Promise<InventoryHistory | undefined> {
+    try {
+      const results = await this.db
+        .select()
+        .from(inventoryHistory)
+        .where(eq(inventoryHistory.id, id))
+        .limit(1);
+      
+      return results.length > 0 ? results[0] : undefined;
+    } catch (error) {
+      console.error(`Error getting inventory history with ID ${id}:`, error);
+      return undefined;
+    }
+  }
+
+  async createInventoryHistory(data: InsertInventoryHistory): Promise<InventoryHistory> {
+    try {
+      const result = await this.db
+        .insert(inventoryHistory)
+        .values(data)
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error creating inventory history:', error);
+      throw error;
+    }
+  }
+
+  // Methods for Seasonal Patterns
+  async getSeasonalPatterns(productId?: number): Promise<SeasonalPattern[]> {
+    try {
+      if (productId) {
+        return await this.db
+          .select()
+          .from(seasonalPatterns)
+          .where(eq(seasonalPatterns.productId, productId))
+          .orderBy(seasonalPatterns.month);
+      } else {
+        return await this.db
+          .select()
+          .from(seasonalPatterns)
+          .orderBy(seasonalPatterns.productId)
+          .orderBy(seasonalPatterns.month);
+      }
+    } catch (error) {
+      console.error('Error getting seasonal patterns:', error);
+      return [];
+    }
+  }
+
+  async getSeasonalPatternById(id: number): Promise<SeasonalPattern | undefined> {
+    try {
+      const results = await this.db
+        .select()
+        .from(seasonalPatterns)
+        .where(eq(seasonalPatterns.id, id))
+        .limit(1);
+      
+      return results.length > 0 ? results[0] : undefined;
+    } catch (error) {
+      console.error(`Error getting seasonal pattern with ID ${id}:`, error);
+      return undefined;
+    }
+  }
+
+  async createSeasonalPattern(data: InsertSeasonalPattern): Promise<SeasonalPattern> {
+    try {
+      const result = await this.db
+        .insert(seasonalPatterns)
+        .values(data)
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error creating seasonal pattern:', error);
+      throw error;
+    }
+  }
+
+  async updateSeasonalPattern(id: number, data: Partial<InsertSeasonalPattern>): Promise<SeasonalPattern | undefined> {
+    try {
+      const result = await this.db
+        .update(seasonalPatterns)
+        .set(data)
+        .where(eq(seasonalPatterns.id, id))
+        .returning();
+      
+      return result.length > 0 ? result[0] : undefined;
+    } catch (error) {
+      console.error(`Error updating seasonal pattern with ID ${id}:`, error);
+      return undefined;
+    }
+  }
+
+  async deleteSeasonalPattern(id: number): Promise<boolean> {
+    try {
+      const result = await this.db
+        .delete(seasonalPatterns)
+        .where(eq(seasonalPatterns.id, id))
+        .returning({ id: seasonalPatterns.id });
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error(`Error deleting seasonal pattern with ID ${id}:`, error);
+      return false;
+    }
+  }
+  
+  async importSeasonalPatterns(patterns: InsertSeasonalPattern[]): Promise<number> {
+    try {
+      // Insert all patterns in a transaction to ensure either all succeed or all fail
+      const result = await this.db.transaction(async (tx) => {
+        let insertedCount = 0;
+        
+        for (const pattern of patterns) {
+          const inserted = await tx
+            .insert(seasonalPatterns)
+            .values(pattern)
+            .returning();
+          
+          if (inserted.length > 0) {
+            insertedCount++;
+          }
+        }
+        
+        return insertedCount;
+      });
+      
+      return result;
+    } catch (error) {
+      console.error('Error importing seasonal patterns:', error);
+      return 0;
+    }
+  }
 }
 
 // This will be initialized when the server starts
