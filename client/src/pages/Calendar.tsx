@@ -366,11 +366,11 @@ const CalendarPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2">
           <Tabs value={filterView} onValueChange={setFilterView} className="w-full">
-            <TabsList className="grid w-full md:w-auto grid-cols-4 mb-4">
-              <TabsTrigger value="month">{t('calendar.allEvents')}</TabsTrigger>
-              <TabsTrigger value="created">{t('calendar.ordersCreated')}</TabsTrigger>
-              <TabsTrigger value="shipped">{t('calendar.ordersShipped')}</TabsTrigger>
-              <TabsTrigger value="calls">{t('calendar.customerCalls')}</TabsTrigger>
+            <TabsList className="flex flex-wrap w-full mb-4 space-x-0 md:space-x-1">
+              <TabsTrigger value="month" className="flex-1 text-xs sm:text-sm md:text-base whitespace-nowrap">{t('calendar.allEvents')}</TabsTrigger>
+              <TabsTrigger value="created" className="flex-1 text-xs sm:text-sm md:text-base whitespace-nowrap">{t('calendar.ordersCreated')}</TabsTrigger>
+              <TabsTrigger value="shipped" className="flex-1 text-xs sm:text-sm md:text-base whitespace-nowrap">{t('calendar.ordersShipped')}</TabsTrigger>
+              <TabsTrigger value="calls" className="flex-1 text-xs sm:text-sm md:text-base whitespace-nowrap">{t('calendar.customerCalls')}</TabsTrigger>
             </TabsList>
 
             <TabsContent value={filterView} className="space-y-4">
@@ -394,6 +394,80 @@ const CalendarPage: React.FC = () => {
                       views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
                       view={calendarView}
                       onView={(view) => setCalendarView(view)}
+                      components={{
+                        toolbar: props => (
+                          <div className="flex flex-wrap justify-between items-center mb-4 gap-2">
+                            <div className="flex gap-2">
+                              <button 
+                                type="button" 
+                                onClick={() => props.onNavigate('TODAY')}
+                                className="inline-flex items-center justify-center h-8 px-3 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
+                              >
+                                {t('calendar.controls.today')}
+                              </button>
+                              <button 
+                                type="button" 
+                                onClick={() => props.onNavigate('PREV')}
+                                className="inline-flex items-center justify-center h-8 px-2 text-xs font-medium rounded-md border border-input bg-background hover:bg-accent"
+                              >
+                                <ChevronLeft className="h-4 w-4" />
+                              </button>
+                              <button 
+                                type="button" 
+                                onClick={() => props.onNavigate('NEXT')}
+                                className="inline-flex items-center justify-center h-8 px-2 text-xs font-medium rounded-md border border-input bg-background hover:bg-accent"
+                              >
+                                <ChevronRight className="h-4 w-4" />
+                              </button>
+                            </div>
+                            <span className="text-sm font-medium">
+                              {moment(props.date).format('MMMM YYYY')}
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                              <button 
+                                type="button" 
+                                onClick={() => props.onView('month')}
+                                className={`inline-flex items-center justify-center h-7 px-2 text-xs font-medium rounded-md ${props.view === 'month' 
+                                  ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                                  : 'border border-input bg-background hover:bg-accent'
+                                }`}
+                              >
+                                {t('calendar.controls.month')}
+                              </button>
+                              <button 
+                                type="button" 
+                                onClick={() => props.onView('week')}
+                                className={`inline-flex items-center justify-center h-7 px-2 text-xs font-medium rounded-md ${props.view === 'week' 
+                                  ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                                  : 'border border-input bg-background hover:bg-accent'
+                                }`}
+                              >
+                                {t('calendar.controls.week')}
+                              </button>
+                              <button 
+                                type="button" 
+                                onClick={() => props.onView('day')}
+                                className={`inline-flex items-center justify-center h-7 px-2 text-xs font-medium rounded-md ${props.view === 'day' 
+                                  ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                                  : 'border border-input bg-background hover:bg-accent'
+                                }`}
+                              >
+                                {t('calendar.controls.day')}
+                              </button>
+                              <button 
+                                type="button" 
+                                onClick={() => props.onView('agenda')}
+                                className={`inline-flex items-center justify-center h-7 px-2 text-xs font-medium rounded-md ${props.view === 'agenda' 
+                                  ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                                  : 'border border-input bg-background hover:bg-accent'
+                                }`}
+                              >
+                                {t('calendar.controls.agenda')}
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      }}
                       onNavigate={(date) => setSelectedDate(date)}
                       date={selectedDate}
                       onSelectEvent={handleEventClick}
