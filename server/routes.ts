@@ -11,6 +11,7 @@ import fs from "fs";
 import { WebSocketServer, WebSocket } from 'ws';
 import { exec } from "child_process";
 import { promisify } from "util";
+import PDFDocument from 'pdfkit';
 import { getEmailSettings, updateEmailSettings, testEmailConnection, getEmailTemplate, updateEmailTemplate, getLabelTemplate, updateLabelTemplate } from "./api/emailSettings";
 import { getCompanySettings, updateCompanySettings, getNotificationSettings, updateNotificationSettings, testSlackWebhook, testSlackNotification, testSlackTemplate } from "./api/settings";
 import { getOrderErrors, getOrderQuality, createOrderError, updateOrderError, resolveOrderError, adjustInventoryForError, getErrorStats } from "./api/orderErrors";
@@ -2646,7 +2647,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/call-logs', isAuthenticated, callLogsRouter);
   app.use('/api/prospective-customers', isAuthenticated, prospectiveCustomersRouter);
   
-  // Reports routes
+  // Special test endpoint without authentication
+  app.get('/api/reports/test-pdf', (req, res) => {
+    try {
+      // Create a simple test PDF document
+      const doc = new PDFDocument({ margin: 50 });
+      
+      // Add title and metadata
+      doc.info.Title = 'Test PDF Document';
+      doc.info.Author = 'Warehouse Management System';
+      
+      // Add some content
+      doc.text('Test PDF Generation', { align: 'center' });
+      doc.moveDown(0.5);
+      doc.fontSize(12).text('If you can see this text, PDF generation is working correctly!');
+      doc.moveDown(1);
+      doc.text(`Generated on: ${new Date().toLocaleString()}`);
+      
+      // Finalize and send the PDF
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename=test.pdf');
+      
+      doc.pipe(res);
+      doc.end();
+    } catch (error) {
+      console.error('Error generating test PDF:', error);
+      return res.status(500).json({ error: 'Failed to generate test PDF' });
+    }
+  });
+  
+  // Reports routes with authentication
   app.use('/api/reports', isAuthenticated, reportsRouter);
   
   // Inventory Prediction Routes
