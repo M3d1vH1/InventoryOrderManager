@@ -31,7 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Download, FileDown, FileText } from "lucide-react";
 
 interface Product {
   id: number;
@@ -435,8 +435,130 @@ const Reports = () => {
             <TabsTrigger value="customer-engagement" className="flex-shrink-0">Customer Engagement</TabsTrigger>
             <TabsTrigger value="order-quality" className="flex-shrink-0">Order Quality</TabsTrigger>
             <TabsTrigger value="predictions" className="flex-shrink-0">Predictions</TabsTrigger>
+            <TabsTrigger value="dispatch-schedule" className="flex-shrink-0">Dispatch Schedule</TabsTrigger>
+            <TabsTrigger value="shipping-delays" className="flex-shrink-0">Shipping Delays</TabsTrigger>
+            <TabsTrigger value="fulfillment-stats" className="flex-shrink-0">Fulfillment Stats</TabsTrigger>
           </TabsList>
         </div>
+        
+        {/* New PDF Report Tabs */}
+        <TabsContent value="dispatch-schedule" className="mt-4">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Dispatch Schedule Report</CardTitle>
+                  <CardDescription>
+                    View upcoming and recent order dispatches
+                  </CardDescription>
+                </div>
+                <Button 
+                  variant="default" 
+                  className="flex items-center gap-2"
+                  onClick={() => window.open('/api/reports/dispatch-schedule/pdf', '_blank')}
+                >
+                  <FileDown className="h-4 w-4" />
+                  Download PDF
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">
+                The Dispatch Schedule Report provides a complete overview of orders that are scheduled for dispatch, 
+                including order details, customer information, and shipping method.
+              </p>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                <h4 className="text-blue-700 font-medium text-sm">What's in this report?</h4>
+                <ul className="mt-2 text-blue-700 text-sm list-disc pl-5 space-y-1">
+                  <li>Order numbers and customer names</li>
+                  <li>Order dates and estimated shipping dates</li>
+                  <li>Current order status</li>
+                  <li>Shipping carrier information</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="shipping-delays" className="mt-4">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Shipping Delays Report</CardTitle>
+                  <CardDescription>
+                    Monitor delayed shipments and contact information
+                  </CardDescription>
+                </div>
+                <Button 
+                  variant="default" 
+                  className="flex items-center gap-2"
+                  onClick={() => window.open('/api/reports/shipping-delays/pdf', '_blank')}
+                >
+                  <FileDown className="h-4 w-4" />
+                  Download PDF
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">
+                The Shipping Delays Report highlights orders that are past their estimated shipping date and 
+                provides customer contact information to facilitate communication about delays.
+              </p>
+              
+              <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
+                <h4 className="text-amber-700 font-medium text-sm">What's in this report?</h4>
+                <ul className="mt-2 text-amber-700 text-sm list-disc pl-5 space-y-1">
+                  <li>Delayed order information</li>
+                  <li>Days of delay for each order</li>
+                  <li>Customer contact details</li>
+                  <li>Order status and estimated shipping dates</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="fulfillment-stats" className="mt-4">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Fulfillment Statistics Report</CardTitle>
+                  <CardDescription>
+                    Analyze order fulfillment performance and metrics
+                  </CardDescription>
+                </div>
+                <Button 
+                  variant="default" 
+                  className="flex items-center gap-2"
+                  onClick={() => window.open('/api/reports/fulfillment-stats/pdf', '_blank')}
+                >
+                  <FileDown className="h-4 w-4" />
+                  Download PDF
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">
+                The Fulfillment Statistics Report provides a comprehensive analysis of your order fulfillment 
+                performance, including metrics on shipping times, order statuses, and fulfillment efficiency.
+              </p>
+              
+              <div className="bg-emerald-50 border border-emerald-200 rounded-md p-4">
+                <h4 className="text-emerald-700 font-medium text-sm">What's in this report?</h4>
+                <ul className="mt-2 text-emerald-700 text-sm list-disc pl-5 space-y-1">
+                  <li>Order volume and status breakdown</li>
+                  <li>Average fulfillment time analysis</li>
+                  <li>Fulfillment efficiency metrics</li>
+                  <li>Trends in shipping performance</li>
+                  <li>Partial fulfillment statistics</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
         
         {/* Inventory Tab */}
         <TabsContent value="inventory" className="mt-4 grid gap-4 md:grid-cols-2">
