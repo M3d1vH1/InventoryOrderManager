@@ -143,7 +143,7 @@ const OrderPicking = () => {
 
           <div className="mt-4 pt-4 border-t border-slate-200">
             <div className="flex flex-wrap gap-2 mb-2">
-              <h3 className="text-sm font-medium mr-2">{t('orders.status')}:</h3>
+              <h3 className="text-sm font-medium mr-2">{t('orders.columns.status')}:</h3>
               <Badge>{t('orders.statusValues.pending')}</Badge>
               <Badge variant="outline" className="border-amber-500 text-amber-700 bg-amber-50">
                 {t('orders.statusValues.picking')}

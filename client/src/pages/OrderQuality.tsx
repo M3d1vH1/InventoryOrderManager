@@ -1591,7 +1591,7 @@ export default function OrderQuality() {
                     <TableHead>{t('orders.orderNumber')}</TableHead>
                     <TableHead>{t('orders.customerName')}</TableHead>
                     <TableHead className="hidden md:table-cell">{t('orders.orderDate')}</TableHead>
-                    <TableHead className="hidden md:table-cell">{t('orders.status')}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t('orders.columns.status')}</TableHead>
                     <TableHead className="text-right"></TableHead>
                   </TableRow>
                 </TableHeader>
