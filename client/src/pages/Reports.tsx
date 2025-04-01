@@ -57,6 +57,13 @@ interface Order {
   status: 'pending' | 'picked' | 'shipped' | 'cancelled';
   notes?: string;
   items?: OrderItem[];
+  estimatedShippingDate?: string | null;
+  priority?: 'low' | 'medium' | 'high' | 'urgent' | null;
+  createdById?: number;
+  hasShippingDocument?: boolean;
+  isPartialFulfillment?: boolean;
+  partialFulfillmentApproved?: boolean;
+  lastUpdated?: string | null;
 }
 
 interface InventoryTrendItem {
@@ -584,7 +591,7 @@ const Reports = () => {
                     </CardDescription>
                   </div>
                   <Button 
-                    variant="default" 
+                    variant="outline" 
                     className="flex items-center gap-2"
                     onClick={() => window.open('/api/reports/dispatch-schedule/pdf', '_blank')}
                   >
@@ -594,18 +601,78 @@ const Reports = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="mb-4">
-                  The Dispatch Schedule Report provides a complete overview of orders that are scheduled for dispatch, 
-                  including order details, customer information, and shipping method.
-                </p>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Order #</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Order Date</TableHead>
+                        <TableHead>Est. Shipping Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Priority</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {orders
+                        .filter(o => o.status === 'pending' || o.status === 'picked')
+                        .sort((a, b) => {
+                          // Sort by pending first, then by estimated shipping date
+                          if (a.status === 'pending' && b.status !== 'pending') return -1;
+                          if (a.status !== 'pending' && b.status === 'pending') return 1;
+                          
+                          // Then sort by estimated shipping date if available
+                          const dateA = a.estimatedShippingDate ? new Date(a.estimatedShippingDate).getTime() : Infinity;
+                          const dateB = b.estimatedShippingDate ? new Date(b.estimatedShippingDate).getTime() : Infinity;
+                          return dateA - dateB;
+                        })
+                        .slice(0, 10)
+                        .map((order) => (
+                          <TableRow key={order.id}>
+                            <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                            <TableCell>{order.customerName}</TableCell>
+                            <TableCell>{new Date(order.orderDate).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              {order.estimatedShippingDate ? 
+                                new Date(order.estimatedShippingDate).toLocaleDateString() : 
+                                'Not set'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={order.status === 'pending' ? 'default' : 'outline'}
+                                className={
+                                  order.status === 'picked' ? 'bg-blue-100 text-blue-800' : ''
+                                }
+                              >
+                                {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={
+                                  order.priority === 'low' ? 'bg-slate-100 text-slate-800' :
+                                  order.priority === 'medium' ? 'bg-blue-100 text-blue-800' :
+                                  order.priority === 'high' ? 'bg-amber-100 text-amber-800' :
+                                  order.priority === 'urgent' ? 'bg-red-100 text-red-800' : ''
+                                }
+                              >
+                                {order.priority ? order.priority.charAt(0).toUpperCase() + order.priority.slice(1) : 'Medium'}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </div>
                 
-                <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-                  <h4 className="text-blue-700 font-medium text-sm">What's in this report?</h4>
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mt-4">
+                  <h4 className="text-blue-700 font-medium text-sm">This report includes:</h4>
                   <ul className="mt-2 text-blue-700 text-sm list-disc pl-5 space-y-1">
-                    <li>Order numbers and customer names</li>
-                    <li>Order dates and estimated shipping dates</li>
-                    <li>Current order status</li>
-                    <li>Shipping carrier information</li>
+                    <li>Pending and picked orders scheduled for dispatch</li>
+                    <li>Estimated shipping dates and current status</li>
+                    <li>Priority level indicators for order processing</li>
+                    <li>Download the PDF for additional shipping carrier information</li>
                   </ul>
                 </div>
               </CardContent>
@@ -625,7 +692,7 @@ const Reports = () => {
                     </CardDescription>
                   </div>
                   <Button 
-                    variant="default" 
+                    variant="outline" 
                     className="flex items-center gap-2"
                     onClick={() => window.open('/api/reports/shipping-delays/pdf', '_blank')}
                   >
@@ -635,18 +702,107 @@ const Reports = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="mb-4">
-                  The Shipping Delays Report highlights orders that are past their estimated shipping date and 
-                  provides customer contact information to facilitate communication about delays.
-                </p>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Order #</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Est. Shipping Date</TableHead>
+                        <TableHead>Days Delayed</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Priority</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {orders
+                        .filter(o => {
+                          // Only include orders that:
+                          // 1. Are not shipped or cancelled
+                          // 2. Have estimated shipping date
+                          // 3. Estimated shipping date is in the past
+                          if (o.status === 'shipped' || o.status === 'cancelled') return false;
+                          if (!o.estimatedShippingDate) return false;
+                          
+                          const estShippingDate = new Date(o.estimatedShippingDate);
+                          const today = new Date();
+                          return estShippingDate < today;
+                        })
+                        .sort((a, b) => {
+                          // Sort by days delayed (descending)
+                          const dateA = new Date(a.estimatedShippingDate || '');
+                          const dateB = new Date(b.estimatedShippingDate || '');
+                          const today = new Date();
+                          const daysDelayedA = Math.floor((today.getTime() - dateA.getTime()) / (1000 * 60 * 60 * 24));
+                          const daysDelayedB = Math.floor((today.getTime() - dateB.getTime()) / (1000 * 60 * 60 * 24));
+                          return daysDelayedB - daysDelayedA;
+                        })
+                        .slice(0, 10)
+                        .map((order) => {
+                          const estShippingDate = new Date(order.estimatedShippingDate || '');
+                          const today = new Date();
+                          const daysDelayed = Math.floor((today.getTime() - estShippingDate.getTime()) / (1000 * 60 * 60 * 24));
+                          
+                          return (
+                            <TableRow key={order.id}>
+                              <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                              <TableCell>{order.customerName}</TableCell>
+                              <TableCell>{estShippingDate.toLocaleDateString()}</TableCell>
+                              <TableCell>
+                                <Badge variant="destructive">
+                                  {daysDelayed} days
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={order.status === 'pending' ? 'default' : 'outline'}
+                                  className={
+                                    order.status === 'picked' ? 'bg-blue-100 text-blue-800' : ''
+                                  }
+                                >
+                                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                    order.priority === 'low' ? 'bg-slate-100 text-slate-800' :
+                                    order.priority === 'medium' ? 'bg-blue-100 text-blue-800' :
+                                    order.priority === 'high' ? 'bg-amber-100 text-amber-800' :
+                                    order.priority === 'urgent' ? 'bg-red-100 text-red-800' : ''
+                                  }
+                                >
+                                  {order.priority ? order.priority.charAt(0).toUpperCase() + order.priority.slice(1) : 'Medium'}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                        {orders.filter(o => {
+                          if (o.status === 'shipped' || o.status === 'cancelled') return false;
+                          if (!o.estimatedShippingDate) return false;
+                          const estShippingDate = new Date(o.estimatedShippingDate);
+                          const today = new Date();
+                          return estShippingDate < today;
+                        }).length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
+                              No delayed shipments found. All orders are on schedule.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                    </TableBody>
+                  </Table>
+                </div>
                 
-                <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
-                  <h4 className="text-amber-700 font-medium text-sm">What's in this report?</h4>
+                <div className="bg-amber-50 border border-amber-200 rounded-md p-4 mt-4">
+                  <h4 className="text-amber-700 font-medium text-sm">About the Shipping Delays Report</h4>
                   <ul className="mt-2 text-amber-700 text-sm list-disc pl-5 space-y-1">
-                    <li>Delayed order information</li>
-                    <li>Days of delay for each order</li>
-                    <li>Customer contact details</li>
-                    <li>Order status and estimated shipping dates</li>
+                    <li>Shows orders past their estimated shipping date</li>
+                    <li>Calculates days of delay for each order</li>
+                    <li>Prioritizes most delayed orders at the top</li>
+                    <li>Download the PDF for customer contact details</li>
                   </ul>
                 </div>
               </CardContent>
@@ -666,7 +822,7 @@ const Reports = () => {
                     </CardDescription>
                   </div>
                   <Button 
-                    variant="default" 
+                    variant="outline" 
                     className="flex items-center gap-2"
                     onClick={() => window.open('/api/reports/fulfillment-stats/pdf', '_blank')}
                   >
@@ -676,19 +832,99 @@ const Reports = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="mb-4">
-                  The Fulfillment Statistics Report provides a comprehensive analysis of your order fulfillment 
-                  performance, including metrics on shipping times, order statuses, and fulfillment efficiency.
-                </p>
+                <div className="grid gap-6 mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="rounded-lg bg-emerald-50 p-4 border border-emerald-200">
+                      <p className="text-emerald-600 text-sm font-medium">Total Orders</p>
+                      <p className="text-2xl font-bold text-emerald-800">
+                        {orders.length}
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-blue-50 p-4 border border-blue-200">
+                      <p className="text-blue-600 text-sm font-medium">Shipped Orders</p>
+                      <p className="text-2xl font-bold text-blue-800">
+                        {orders.filter(o => o.status === 'shipped').length}
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-amber-50 p-4 border border-amber-200">
+                      <p className="text-amber-600 text-sm font-medium">Partial Fulfillments</p>
+                      <p className="text-2xl font-bold text-amber-800">
+                        {orders.filter(o => o.isPartialFulfillment).length}
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-purple-50 p-4 border border-purple-200">
+                      <p className="text-purple-600 text-sm font-medium">Ship Rate</p>
+                      <p className="text-2xl font-bold text-purple-800">
+                        {orders.length > 0 
+                          ? Math.round((orders.filter(o => o.status === 'shipped').length / orders.length) * 100) 
+                          : 0}%
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <h3 className="text-lg font-medium mb-2">Order Fulfillment by Priority</h3>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={[
+                          { name: 'Low', value: orders.filter(o => o.priority === 'low' && o.status === 'shipped').length },
+                          { name: 'Medium', value: orders.filter(o => (o.priority === 'medium' || !o.priority) && o.status === 'shipped').length },
+                          { name: 'High', value: orders.filter(o => o.priority === 'high' && o.status === 'shipped').length },
+                          { name: 'Urgent', value: orders.filter(o => o.priority === 'urgent' && o.status === 'shipped').length }
+                        ]}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar 
+                          dataKey="value" 
+                          name="Shipped Orders" 
+                          fill="#10b981"
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <h3 className="text-lg font-medium mb-2">Order Fulfillment Type</h3>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: 'Complete Fulfillment', value: orders.filter(o => o.status === 'shipped' && !o.isPartialFulfillment).length },
+                            { name: 'Partial Fulfillment', value: orders.filter(o => o.status === 'shipped' && o.isPartialFulfillment).length }
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={120}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          <Cell fill="#10b981" />
+                          <Cell fill="#f59e0b" />
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
                 
-                <div className="bg-emerald-50 border border-emerald-200 rounded-md p-4">
-                  <h4 className="text-emerald-700 font-medium text-sm">What's in this report?</h4>
+                <div className="bg-emerald-50 border border-emerald-200 rounded-md p-4 mt-4">
+                  <h4 className="text-emerald-700 font-medium text-sm">About Fulfillment Statistics</h4>
                   <ul className="mt-2 text-emerald-700 text-sm list-disc pl-5 space-y-1">
-                    <li>Order volume and status breakdown</li>
-                    <li>Average fulfillment time analysis</li>
-                    <li>Fulfillment efficiency metrics</li>
-                    <li>Trends in shipping performance</li>
-                    <li>Partial fulfillment statistics</li>
+                    <li>Shows complete vs. partial fulfillment breakdown</li>
+                    <li>Displays fulfillment rates by order priority</li>
+                    <li>Calculates the overall shipping completion rate</li>
+                    <li>Download the PDF for additional detailed metrics and time analysis</li>
                   </ul>
                 </div>
               </CardContent>
