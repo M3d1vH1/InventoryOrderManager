@@ -58,6 +58,7 @@ interface OrderFormProps {
     estimatedShippingDate?: string;
     notes?: string;
     status?: 'pending' | 'picked' | 'shipped' | 'cancelled';
+    priority?: 'low' | 'medium' | 'high' | 'urgent';
     items?: {
       id: number;
       productId: number;
@@ -77,6 +78,7 @@ const orderFormSchema = z.object({
   // Add these fields but we'll handle them separately from the API request
   orderDate: z.string().min(1, { message: "Order date is required" }),
   estimatedShippingDate: z.string().min(1, { message: "Estimated shipping date is required" }),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
   items: z.array(z.object({ 
     productId: z.number(), 
     quantity: z.number().min(1) 
@@ -198,6 +200,7 @@ const OrderForm = ({
       customerName: initialData?.customerName || "",
       orderDate: initialData?.orderDate || format(new Date(), "yyyy-MM-dd"),
       estimatedShippingDate: initialData?.estimatedShippingDate || format(new Date(new Date().setDate(new Date().getDate() + 5)), "yyyy-MM-dd"),
+      priority: initialData?.priority || 'medium',
       notes: initialData?.notes || "",
       items: initialData?.items?.map(item => ({
         productId: item.productId,
@@ -346,6 +349,7 @@ const OrderForm = ({
           notes: values.notes,
           items: values.items,
           estimatedShippingDate: values.estimatedShippingDate,
+          priority: values.priority,
           createdById: user.id
         }),
         headers: {
@@ -396,6 +400,7 @@ const OrderForm = ({
           notes: values.notes,
           items: values.items,
           estimatedShippingDate: values.estimatedShippingDate,
+          priority: values.priority,
           updatedById: user.id
         }),
         headers: {
@@ -610,6 +615,53 @@ const OrderForm = ({
                         {...field} 
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base font-medium">{t('orders.form.priority')}</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="h-12 text-base">
+                          <SelectValue placeholder={t('orders.form.selectPriority')} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="low">
+                          <div className="flex items-center">
+                            <span className="h-2 w-2 rounded-full bg-slate-400 mr-2"></span>
+                            {t('orders.priorities.low')}
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="medium">
+                          <div className="flex items-center">
+                            <span className="h-2 w-2 rounded-full bg-blue-500 mr-2"></span>
+                            {t('orders.priorities.medium')}
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="high">
+                          <div className="flex items-center">
+                            <span className="h-2 w-2 rounded-full bg-orange-500 mr-2"></span>
+                            {t('orders.priorities.high')}
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="urgent">
+                          <div className="flex items-center">
+                            <span className="h-2 w-2 rounded-full bg-red-500 mr-2"></span>
+                            {t('orders.priorities.urgent')}
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

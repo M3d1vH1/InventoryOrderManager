@@ -83,6 +83,7 @@ interface Order {
   customerName: string;
   orderDate: string;
   status: 'pending' | 'picked' | 'shipped' | 'cancelled';
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
   notes?: string;
   items?: OrderItem[];
   hasShippingDocument?: boolean;
@@ -100,6 +101,21 @@ const getStatusBadgeClass = (status: string) => {
       return 'bg-red-100 text-red-800';
     default:
       return 'bg-slate-100 text-slate-800';
+  }
+};
+
+const getPriorityBadgeClass = (priority: string = 'medium') => {
+  switch (priority) {
+    case 'low':
+      return 'bg-slate-100 text-slate-800';
+    case 'medium':
+      return 'bg-blue-100 text-blue-800';
+    case 'high':
+      return 'bg-amber-100 text-amber-800';
+    case 'urgent':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-blue-100 text-blue-800'; // Default to medium
   }
 };
 
@@ -792,6 +808,7 @@ A 1
                 <TableHead>{t('orders.columns.customer')}</TableHead>
                 <TableHead>{t('orders.columns.date')}</TableHead>
                 <TableHead>{t('orders.columns.status')}</TableHead>
+                <TableHead>{t('orders.columns.priority')}</TableHead>
                 <TableHead>{t('orders.columns.items')}</TableHead>
                 <TableHead>{t('orders.columns.actions')}</TableHead>
               </TableRow>
@@ -830,6 +847,11 @@ A 1
                           <SelectItem value="cancelled">{t('orders.status.cancelled')}</SelectItem>
                         </SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityBadgeClass(order.priority)}`}>
+                        {order.priority || 'medium'}
+                      </span>
                     </TableCell>
                     <TableCell>{order.items?.length || 0}</TableCell>
                     <TableCell>
@@ -972,6 +994,12 @@ A 1
                       <h3 className="text-sm font-medium text-slate-500">{t('orders.details.status')}</h3>
                       <div className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-medium ${getStatusBadgeClass(orderDetails.status)}`}>
                         {t(`orders.status.${orderDetails.status}`)}
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-slate-500">{t('orders.details.priority')}</h3>
+                      <div className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-medium ${getPriorityBadgeClass(orderDetails.priority)}`}>
+                        {orderDetails.priority || 'medium'}
                       </div>
                     </div>
                     <div>

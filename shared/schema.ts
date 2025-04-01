@@ -129,6 +129,14 @@ export const orderStatusEnum = pgEnum('order_status', [
   'cancelled'
 ]);
 
+// Order Priority Enum
+export const orderPriorityEnum = pgEnum('order_priority', [
+  'low',
+  'medium',
+  'high',
+  'urgent'
+]);
+
 // Shipping Documents Schema
 export const shippingDocuments = pgTable("shipping_documents", {
   id: serial("id").primaryKey(),
@@ -162,6 +170,7 @@ export const orders = pgTable("orders", {
   estimatedShippingDate: timestamp("estimated_shipping_date"), // Required field for shipping date estimation
   actualShippingDate: timestamp("actual_shipping_date"), // When the order was actually shipped
   status: orderStatusEnum("status").notNull().default('pending'),
+  priority: orderPriorityEnum("priority").default('medium'), // Add priority field with default value
   notes: text("notes"),
   hasShippingDocument: boolean("has_shipping_document").notNull().default(false),
   isPartialFulfillment: boolean("is_partial_fulfillment").notNull().default(false),
@@ -181,6 +190,7 @@ export const insertOrderSchema = createInsertSchema(orders)
     orderDate: z.string().optional().transform(val => val ? new Date(val) : new Date()),
     estimatedShippingDate: z.string().min(1, { message: "Estimated shipping date is required" })
       .transform(val => new Date(val)),
+    priority: z.enum(['low', 'medium', 'high', 'urgent']).optional().default('medium'),
     createdById: z.number(),
   });
 
