@@ -178,6 +178,7 @@ const Reports = () => {
   const { setCurrentPage } = useSidebar();
   const [timeRange, setTimeRange] = useState<string>("6");
   const [exportFormat, setExportFormat] = useState<string>("csv");
+  const [activeTab, setActiveTab] = useState<string>("inventory");
   
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ['/api/products'],
@@ -408,9 +409,9 @@ const Reports = () => {
           <Button 
             variant="outline" 
             className="flex items-center gap-2"
-            onClick={() => handleExport(document.querySelector('[data-state="active"][role="tab"]')?.getAttribute('value') || 'inventory')}
+            onClick={() => handleExport(activeTab)}
           >
-            <i className="fas fa-download"></i>
+            <FileDown className="h-4 w-4 mr-1" />
             Export
           </Button>
           <Button 
@@ -418,38 +419,80 @@ const Reports = () => {
             className="flex items-center gap-2"
             onClick={() => window.print()}
           >
-            <i className="fas fa-print"></i>
+            <FileText className="h-4 w-4 mr-1" />
             Print
           </Button>
         </div>
       </div>
 
-      <Tabs defaultValue="inventory">
-        <div className="overflow-x-auto pb-2">
-          <TabsList className="w-full flex flex-wrap mb-4">
-            <div className="flex flex-col w-full">
-              <div className="flex flex-wrap gap-1 mb-2">
-                <span className="text-sm font-medium text-gray-500 pr-2 py-1">Analytics:</span>
-                <TabsTrigger value="inventory" className="flex-shrink-0">Inventory</TabsTrigger>
-                <TabsTrigger value="orders" className="flex-shrink-0">Orders</TabsTrigger>
-                <TabsTrigger value="tags" className="flex-shrink-0">Tags</TabsTrigger>
-                <TabsTrigger value="efficiency" className="flex-shrink-0">Efficiency</TabsTrigger>
-                <TabsTrigger value="predictions" className="flex-shrink-0">Predictions</TabsTrigger>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                <span className="text-sm font-medium text-gray-500 pr-2 py-1">Reports:</span>
-                <TabsTrigger value="dispatch-schedule" className="flex-shrink-0">Dispatch Schedule</TabsTrigger>
-                <TabsTrigger value="shipping-delays" className="flex-shrink-0">Shipping Delays</TabsTrigger>
-                <TabsTrigger value="fulfillment-stats" className="flex-shrink-0">Fulfillment Stats</TabsTrigger>
-              </div>
-              <div className="flex flex-wrap gap-1 mt-2">
-                <span className="text-sm font-medium text-gray-500 pr-2 py-1">Call Data:</span>
-                <TabsTrigger value="call-logs" className="flex-shrink-0">Call Logs</TabsTrigger>
-                <TabsTrigger value="customer-engagement" className="flex-shrink-0">Customer Engagement</TabsTrigger>
-                <TabsTrigger value="order-quality" className="flex-shrink-0">Order Quality</TabsTrigger>
-              </div>
-            </div>
-          </TabsList>
+      <Tabs defaultValue="inventory" value={activeTab} onValueChange={setActiveTab}>
+        <div className="mb-6">
+          <div className="flex items-center pb-4">
+            <span className="text-sm font-medium mr-4">Time Range:</span>
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Select time range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">Last Month</SelectItem>
+                <SelectItem value="3">Last 3 Months</SelectItem>
+                <SelectItem value="6">Last 6 Months</SelectItem>
+                <SelectItem value="12">Last Year</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
+            <Card className={`cursor-pointer border-2 transition-all hover:shadow-md ${
+              ['inventory', 'tags', 'predictions'].includes(activeTab) 
+                ? 'border-primary' : 'border-transparent'
+            }`} onClick={() => setActiveTab('inventory')}>
+              <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-lg">Inventory Reports</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <div className="flex flex-wrap gap-2">
+                  <TabsTrigger value="inventory" className="flex-shrink-0 text-sm">Overview</TabsTrigger>
+                  <TabsTrigger value="tags" className="flex-shrink-0 text-sm">Tags Analysis</TabsTrigger>
+                  <TabsTrigger value="predictions" className="flex-shrink-0 text-sm">Stock Predictions</TabsTrigger>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className={`cursor-pointer border-2 transition-all hover:shadow-md ${
+              ['orders', 'dispatch-schedule', 'shipping-delays', 'fulfillment-stats', 'efficiency'].includes(activeTab) 
+                ? 'border-primary' : 'border-transparent'
+            }`} onClick={() => setActiveTab('orders')}>
+              <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-lg">Order Reports</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <div className="flex flex-wrap gap-2">
+                  <TabsTrigger value="orders" className="flex-shrink-0 text-sm">Overview</TabsTrigger>
+                  <TabsTrigger value="efficiency" className="flex-shrink-0 text-sm">Efficiency</TabsTrigger>
+                  <TabsTrigger value="dispatch-schedule" className="flex-shrink-0 text-sm">Dispatch</TabsTrigger>
+                  <TabsTrigger value="shipping-delays" className="flex-shrink-0 text-sm">Delays</TabsTrigger>
+                  <TabsTrigger value="fulfillment-stats" className="flex-shrink-0 text-sm">Fulfillment</TabsTrigger>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className={`cursor-pointer border-2 transition-all hover:shadow-md ${
+              ['call-logs', 'customer-engagement', 'order-quality'].includes(activeTab) 
+                ? 'border-primary' : 'border-transparent'
+            }`} onClick={() => setActiveTab('call-logs')}>
+              <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-lg">Call Center Reports</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <div className="flex flex-wrap gap-2">
+                  <TabsTrigger value="call-logs" className="flex-shrink-0 text-sm">Call Logs</TabsTrigger>
+                  <TabsTrigger value="customer-engagement" className="flex-shrink-0 text-sm">Engagement</TabsTrigger>
+                  <TabsTrigger value="order-quality" className="flex-shrink-0 text-sm">Quality Issues</TabsTrigger>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
         
         {/* New PDF Report Tabs */}
