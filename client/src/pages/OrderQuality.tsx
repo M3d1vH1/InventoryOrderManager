@@ -593,8 +593,8 @@ export default function OrderQuality() {
       <div className="space-y-4 p-2">
         <Tabs defaultValue="general" className="w-full">
           <TabsList className="grid grid-cols-2">
-            <TabsTrigger value="general">{t('orderQuality.tabs.generalInfo')}</TabsTrigger>
-            <TabsTrigger value="products">{t('orderQuality.tabs.affectedProducts')}</TabsTrigger>
+            <TabsTrigger value="general">Γενικές Πληροφορίες</TabsTrigger>
+            <TabsTrigger value="products">Επηρεαζόμενα Προϊόντα</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="space-y-4 mt-4">
