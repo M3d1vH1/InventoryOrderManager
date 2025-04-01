@@ -842,7 +842,7 @@ A 1
                     </TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityBadgeClass(order.priority)}`}>
-                        {t(`orders.priorities.${order.priority || 'medium'}`)}
+                        {t(`orders.form.priorities.${order.priority || 'medium'}`)}
                       </span>
                     </TableCell>
                     <TableCell>{order.items?.length || 0}</TableCell>
@@ -991,7 +991,7 @@ A 1
                     <div>
                       <h3 className="text-sm font-medium text-slate-500">{t('orders.details.priority')}</h3>
                       <div className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-medium ${getPriorityBadgeClass(orderDetails.priority)}`}>
-                        {t(`orders.priorities.${orderDetails.priority || 'medium'}`)}
+                        {t(`orders.form.priorities.${orderDetails.priority || 'medium'}`)}
                       </div>
                     </div>
                     <div>
