@@ -1612,7 +1612,7 @@ export default function OrderQuality() {
                             'bg-gray-100 text-gray-800'
                           }
                         >
-                          {t(`orders.status.${order.status}`)}
+                          {t(`orders.statusValues.${order.status}`)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">

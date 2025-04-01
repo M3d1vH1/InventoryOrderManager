@@ -783,10 +783,10 @@ A 1
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t('orders.allStatuses')}</SelectItem>
-                <SelectItem value="pending">{t('orders.status.pending')}</SelectItem>
-                <SelectItem value="picked">{t('orders.status.picked')}</SelectItem>
-                <SelectItem value="shipped">{t('orders.status.shipped')}</SelectItem>
-                <SelectItem value="cancelled">{t('orders.status.cancelled')}</SelectItem>
+                <SelectItem value="pending">{t('orders.statusValues.pending')}</SelectItem>
+                <SelectItem value="picked">{t('orders.statusValues.picked')}</SelectItem>
+                <SelectItem value="shipped">{t('orders.statusValues.shipped')}</SelectItem>
+                <SelectItem value="cancelled">{t('orders.statusValues.cancelled')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -833,10 +833,10 @@ A 1
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="pending">{t('orders.status.pending')}</SelectItem>
-                          <SelectItem value="picked">{t('orders.status.picked')}</SelectItem>
-                          <SelectItem value="shipped">{t('orders.status.shipped')}</SelectItem>
-                          <SelectItem value="cancelled">{t('orders.status.cancelled')}</SelectItem>
+                          <SelectItem value="pending">{t('orders.statusValues.pending')}</SelectItem>
+                          <SelectItem value="picked">{t('orders.statusValues.picked')}</SelectItem>
+                          <SelectItem value="shipped">{t('orders.statusValues.shipped')}</SelectItem>
+                          <SelectItem value="cancelled">{t('orders.statusValues.cancelled')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>
@@ -985,7 +985,7 @@ A 1
                     <div>
                       <h3 className="text-sm font-medium text-slate-500">{t('orders.details.status')}</h3>
                       <div className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-medium ${getStatusBadgeClass(orderDetails.status)}`}>
-                        {t(`orders.status.${orderDetails.status}`)}
+                        {t(`orders.statusValues.${orderDetails.status}`)}
                       </div>
                     </div>
                     <div>
@@ -1194,7 +1194,7 @@ A 1
                   <li><span className="font-medium">{t('orders.columns.orderId')}:</span> {orderToDelete.orderNumber}</li>
                   <li><span className="font-medium">{t('orders.columns.customer')}:</span> {orderToDelete.customerName}</li>
                   <li><span className="font-medium">{t('orders.columns.date')}:</span> {format(new Date(orderToDelete.orderDate), "MMM dd, yyyy")}</li>
-                  <li><span className="font-medium">{t('orders.columns.status')}:</span> {t(`orders.status.${orderToDelete.status}`)}</li>
+                  <li><span className="font-medium">{t('orders.columns.status')}:</span> {t(`orders.statusValues.${orderToDelete.status}`)}</li>
                 </ul>
               </div>
             </div>

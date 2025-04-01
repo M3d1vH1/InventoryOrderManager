@@ -90,7 +90,7 @@ const RecentOrders = () => {
         <td className="py-3 px-4">{format(new Date(order.orderDate), 'MMM dd, yyyy')}</td>
         <td className="py-3 px-4">
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(order.status)}`}>
-            {t(`orders.status.${order.status}`)}
+            {t(`orders.statusValues.${order.status}`)}
           </span>
         </td>
         <td className="py-3 px-4">
