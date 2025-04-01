@@ -627,7 +627,7 @@ const Products = () => {
                       className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer group"
                       onClick={() => handleViewProduct(product)}
                     >
-                      <div className="aspect-square bg-slate-50 relative flex items-center justify-center overflow-hidden">
+                      <div className="aspect-[3/2] bg-slate-50 relative flex items-center justify-center overflow-hidden">
                         {product.imagePath ? (
                           <img 
                             src={product.imagePath.startsWith('http') ? 
@@ -636,7 +636,7 @@ const Products = () => {
                                 product.imagePath :
                                 `/${product.imagePath}`}
                             alt={product.name}
-                            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+                            className="w-4/5 h-4/5 object-contain transform group-hover:scale-105 transition-transform duration-300"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = '/placeholder-image.svg';
                             }}

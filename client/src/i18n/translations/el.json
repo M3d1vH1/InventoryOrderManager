@@ -439,7 +439,7 @@
       "product": "Προϊόν",
       "sku": "Κωδικός SKU",
       "stock": "Απόθεμα",
-      "minStock": "Ελάχιστο Απόθεμα",
+      "minStock": "Ελάχ. Απόθεμα",
       "location": "Τοποθεσία",
       "unitsPerBox": "Τεμάχια/Κουτί",
       "currentStock": "Τρέχον Απόθεμα",
