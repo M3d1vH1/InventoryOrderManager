@@ -42,7 +42,16 @@
     "recentOrders": "Πρόσφατες Παραγγελίες",
     "lowStockItems": "Προϊόντα με Χαμηλό Απόθεμα",
     "slowMovingInventory": "Προϊόντα με Αργή Κίνηση",
-    "selectDays": "Επιλογή Ορίου Ημερών"
+    "selectDays": "Επιλογή Ορίου Ημερών",
+    "columns": {
+      "orderId": "Αριθμός Παραγγελίας",
+      "customer": "Πελάτης",
+      "date": "Ημερομηνία",
+      "status": "Κατάσταση",
+      "priority": "Προτεραιότητα",
+      "items": "Προϊόντα",
+      "actions": "Ενέργειες"
+    }
   },
   "common": {
     "loading": "Φόρτωση...",
