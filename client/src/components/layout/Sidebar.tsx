@@ -2,6 +2,11 @@ import { Link, useLocation } from "wouter";
 import { useSidebar } from "@/context/SidebarContext";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslation } from 'react-i18next';
+import { FaTachometerAlt, FaShoppingCart, FaBox, FaWarehouse, 
+  FaChartBar, FaChartLine, FaUsers, FaPhoneAlt, FaCalendarAlt, 
+  FaCog, FaUserCog, FaSignOutAlt, FaChevronDown, 
+  FaList, FaTruckLoading, FaClipboardCheck, FaClipboardList,
+  FaBell, FaBoxes, FaAngleDoubleLeft, FaAngleDoubleRight } from 'react-icons/fa';
 
 const Sidebar = () => {
   const { isSidebarOpen, toggleSidebar, setCurrentPage } = useSidebar();
@@ -64,7 +69,7 @@ const Sidebar = () => {
                       title={t('dashboard.title')}
                     >
                       <span className="flex items-center w-5 h-5">
-                        <i className="fas fa-tachometer-alt"></i>
+                        <FaTachometerAlt size={16} />
                       </span>
                       {isSidebarOpen && <span className="ml-2">{t('dashboard.title')}</span>}
                     </button>
@@ -88,12 +93,12 @@ const Sidebar = () => {
                       }}
                     >
                       <span className="flex justify-center items-center w-5 h-5">
-                        <i className="fas fa-shopping-cart"></i>
+                        <FaShoppingCart size={16} />
                       </span>
                       {isSidebarOpen && (
                         <div className="flex justify-between items-center flex-grow">
                           <span className="ml-2">{t('orders.title')}</span>
-                          <i className="fas fa-chevron-down text-xs"></i>
+                          <FaChevronDown size={10} />
                         </div>
                       )}
                     </button>
@@ -105,7 +110,7 @@ const Sidebar = () => {
                             className={`flex items-center w-full p-2 text-left rounded ${isActive("/orders") && !isActive("/orders/") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
                             title={t('orders.management')}
                           >
-                            <i className="fas fa-list mr-2 text-xs"></i>
+                            <FaList size={12} className="mr-2" />
                             <span>{t('orders.management')}</span>
                           </button>
                         </Link>
@@ -114,7 +119,7 @@ const Sidebar = () => {
                             className={`flex items-center w-full p-2 text-left rounded ${isActive("/unshipped-items") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
                             title={t('unshippedItems.title')}
                           >
-                            <i className="fas fa-truck-loading mr-2 text-xs"></i>
+                            <FaTruckLoading size={12} className="mr-2" />
                             <span>{t('unshippedItems.title')}</span>
                           </button>
                         </Link>
@@ -123,7 +128,7 @@ const Sidebar = () => {
                             className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-picking") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
                             title={t('app.orderPicking')}
                           >
-                            <i className="fas fa-clipboard-check mr-2 text-xs"></i>
+                            <FaClipboardCheck size={12} className="mr-2" />
                             <span>{t('app.orderPicking')}</span>
                           </button>
                         </Link>
@@ -132,7 +137,7 @@ const Sidebar = () => {
                             className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-quality") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
                             title={t('orderQuality.title')}
                           >
-                            <i className="fas fa-clipboard-list mr-2 text-xs"></i>
+                            <FaClipboardList size={12} className="mr-2" />
                             <span>{t('orderQuality.title')}</span>
                           </button>
                         </Link>
@@ -147,7 +152,7 @@ const Sidebar = () => {
                       title={t('products.title')}
                     >
                       <span className="flex items-center w-5 h-5">
-                        <i className="fas fa-box"></i>
+                        <FaBox size={16} />
                       </span>
                       {isSidebarOpen && <span className="ml-2">{t('products.title')}</span>}
                     </button>
@@ -161,7 +166,7 @@ const Sidebar = () => {
                       title={t('app.inventory')}
                     >
                       <span className="flex items-center w-5 h-5">
-                        <i className="fas fa-warehouse"></i>
+                        <FaWarehouse size={16} />
                       </span>
                       {isSidebarOpen && <span className="ml-2">{t('app.inventory')}</span>}
                     </button>
@@ -175,7 +180,7 @@ const Sidebar = () => {
                       title={t('app.reports')}
                     >
                       <span className="flex items-center w-5 h-5">
-                        <i className="fas fa-chart-bar"></i>
+                        <FaChartBar size={16} />
                       </span>
                       {isSidebarOpen && <span className="ml-2">{t('app.reports')}</span>}
                     </button>
@@ -200,12 +205,12 @@ const Sidebar = () => {
                       }}
                     >
                       <span className="flex items-center w-5 h-5">
-                        <i className="fas fa-chart-line"></i>
+                        <FaChartLine size={16} />
                       </span>
                       {isSidebarOpen && (
                         <div className="flex justify-between items-center flex-grow">
                           <span className="ml-2">{t('app.sales') || "Sales"}</span>
-                          <i className="fas fa-chevron-down text-xs"></i>
+                          <FaChevronDown size={10} />
                         </div>
                       )}
                     </button>
@@ -217,7 +222,7 @@ const Sidebar = () => {
                             className={`flex items-center w-full p-2 text-left rounded ${isActive("/customers") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
                             title={t('app.customers')}
                           >
-                            <i className="fas fa-users mr-2 text-xs"></i>
+                            <FaUsers size={12} className="mr-2" />
                             <span>{t('app.customers')}</span>
                           </button>
                         </Link>
@@ -226,7 +231,7 @@ const Sidebar = () => {
                             className={`flex items-center w-full p-2 text-left rounded ${isActive("/call-logs") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
                             title={t('app.callLogs') || "Call Logs"}
                           >
-                            <i className="fas fa-phone-alt mr-2 text-xs"></i>
+                            <FaPhoneAlt size={12} className="mr-2" />
                             <span>{t('app.callLogs') || "Call Logs"}</span>
                           </button>
                         </Link>
@@ -235,7 +240,7 @@ const Sidebar = () => {
                             className={`flex items-center w-full p-2 text-left rounded ${isActive("/calendar") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
                             title={t('app.calendar') || "Calendar"}
                           >
-                            <i className="fas fa-calendar-alt mr-2 text-xs"></i>
+                            <FaCalendarAlt size={12} className="mr-2" />
                             <span>{t('app.calendar') || "Calendar"}</span>
                           </button>
                         </Link>
@@ -266,12 +271,12 @@ const Sidebar = () => {
                     }}
                   >
                     <span className="flex items-center w-5 h-5">
-                      <i className="fas fa-shopping-cart"></i>
+                      <FaShoppingCart size={16} />
                     </span>
                     {isSidebarOpen && (
                       <div className="flex justify-between items-center flex-grow">
                         <span className="ml-2">{t('orders.title')}</span>
-                        <i className="fas fa-chevron-down text-xs"></i>
+                        <FaChevronDown size={10} />
                       </div>
                     )}
                   </button>
@@ -283,7 +288,7 @@ const Sidebar = () => {
                           className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-picking") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
                           title={t('app.orderPicking')}
                         >
-                          <i className="fas fa-clipboard-check mr-2 text-xs"></i>
+                          <FaClipboardCheck size={12} className="mr-2" />
                           <span>{t('app.orderPicking')}</span>
                         </button>
                       </Link>
@@ -302,7 +307,7 @@ const Sidebar = () => {
                     title={t('app.settings')}
                   >
                     <span className="flex items-center w-5 h-5">
-                      <i className="fas fa-cog"></i>
+                      <FaCog size={16} />
                     </span>
                     {isSidebarOpen && <span className="ml-2">{t('app.settings')}</span>}
                   </button>
@@ -320,7 +325,11 @@ const Sidebar = () => {
             title={isSidebarOpen ? t('app.collapseSidebar') : t('app.expandSidebar')}
           >
             <span className="flex justify-center items-center w-5 h-5">
-              <i className={`fas ${isSidebarOpen ? 'fa-angle-double-left' : 'fa-angle-double-right'} text-blue-400`}></i>
+              {isSidebarOpen ? (
+                <FaAngleDoubleLeft size={16} className="text-blue-400" />
+              ) : (
+                <FaAngleDoubleRight size={16} className="text-blue-400" />
+              )}
             </span>
             {isSidebarOpen && <span className="ml-2">{t('app.collapseSidebar')}</span>}
           </button>
