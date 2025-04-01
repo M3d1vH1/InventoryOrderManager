@@ -31,14 +31,14 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
   const modalRef = useRef<HTMLDivElement>(null);
   
   const { data: products, isLoading, refetch } = useQuery<Product[]>({
-    queryKey: ['/api/products/search', searchTerm, category, stockStatus],
+    queryKey: ['/api/products', searchTerm, category, stockStatus],
     queryFn: async () => {
       const searchParams = new URLSearchParams();
-      if (searchTerm) searchParams.append('query', searchTerm);
+      if (searchTerm) searchParams.append('q', searchTerm);
       if (category && category !== 'all') searchParams.append('category', category);
       if (stockStatus && stockStatus !== 'all') searchParams.append('stockStatus', stockStatus);
       
-      const response = await fetch(`/api/products/search?${searchParams.toString()}`);
+      const response = await fetch(`/api/products?${searchParams.toString()}`);
       if (!response.ok) throw new Error('Failed to search products');
       return response.json();
     },
