@@ -95,6 +95,7 @@
     "customer": "Customer",
     "date": "Date",
     "status": "Status",
+    "priority": "Priority",
     "items": "Items",
     "searchOrders": "Search orders...",
     "filterByStatus": "Filter by status",
@@ -116,6 +117,14 @@
       "addCustomer": "Add New Customer",
       "createCustomer": "Create Customer",
       "orderDate": "Order Date",
+      "priority": "Priority",
+      "selectPriority": "Select priority",
+      "priorities": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "urgent": "Urgent"
+      },
       "products": "Products",
       "addProduct": "Add Product",
       "noProductsMessage": "No products added. Please add products to create an order.",
