@@ -794,7 +794,7 @@ export default function OrderQuality() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">
-                {t('orderQuality.stats.totalIssues')}
+                Συνολικά Ζητήματα Ποιότητας
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -805,7 +805,7 @@ export default function OrderQuality() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">
-                {t('orderQuality.stats.totalShipped')}
+                Συνολικές Αποστολές
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -816,7 +816,7 @@ export default function OrderQuality() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">
-                {t('orderQuality.stats.qualityRate')}
+                Ποσοστό Ζητημάτων Ποιότητας
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -829,13 +829,21 @@ export default function OrderQuality() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">
-                {t('orderQuality.stats.mostCommonIssue')}
+                Συχνότερο Ζήτημα Ποιότητας
               </CardTitle>
             </CardHeader>
             <CardContent>
               {qualityStats?.qualityIssuesByType && qualityStats.qualityIssuesByType.length > 0 ? (
                 <div className="text-lg font-bold">
-                  {t(`orderQuality.types.${qualityStats.qualityIssuesByType[0].type}`)}
+                  {qualityStats.qualityIssuesByType[0].type === 'missing_item' ? 'Ελλείπον Αντικείμενο' :
+                   qualityStats.qualityIssuesByType[0].type === 'wrong_item' ? 'Λάθος Αντικείμενο' :
+                   qualityStats.qualityIssuesByType[0].type === 'damaged_item' ? 'Κατεστραμμένο Αντικείμενο' :
+                   qualityStats.qualityIssuesByType[0].type === 'wrong_quantity' ? 'Λάθος Ποσότητα' :
+                   qualityStats.qualityIssuesByType[0].type === 'duplicate_item' ? 'Διπλό Αντικείμενο' :
+                   qualityStats.qualityIssuesByType[0].type === 'wrong_address' ? 'Λάθος Διεύθυνση' :
+                   qualityStats.qualityIssuesByType[0].type === 'picking_issue' ? 'Πρόβλημα Συλλογής' :
+                   qualityStats.qualityIssuesByType[0].type === 'packing_issue' ? 'Πρόβλημα Συσκευασίας' :
+                   qualityStats.qualityIssuesByType[0].type === 'system_issue' ? 'Πρόβλημα Συστήματος' : 'Άλλο'}
                 </div>
               ) : (
                 <div className="text-lg">-</div>
@@ -850,16 +858,16 @@ export default function OrderQuality() {
         <CardHeader>
           <CardTitle className="text-lg flex items-center">
             <ListFilter className="h-5 w-5 mr-2" />
-            {t('common.filters')}
+            Φίλτρα
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="filter-id">{t('orderQuality.filterById')}</Label>
+              <Label htmlFor="filter-id">Αριθμός Παραγγελίας</Label>
               <Input
                 id="filter-id"
-                placeholder={t('orderQuality.filterByIdPlaceholder')}
+                placeholder="Φιλτράρισμα ανά αναγνωριστικό..."
                 value={filterOrderId}
                 onChange={(e) => setFilterOrderId(e.target.value)}
                 className="mt-1"
@@ -867,37 +875,37 @@ export default function OrderQuality() {
             </div>
             
             <div>
-              <Label htmlFor="filter-resolved">{t('orderQuality.filterByStatus')}</Label>
+              <Label htmlFor="filter-resolved">Κατάσταση</Label>
               <Select value={filterResolved} onValueChange={setFilterResolved}>
                 <SelectTrigger id="filter-resolved" className="mt-1">
-                  <SelectValue placeholder={t('orderQuality.filterByStatusPlaceholder')} />
+                  <SelectValue placeholder="Επιλέξτε κατάσταση" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t('common.all')}</SelectItem>
-                  <SelectItem value="unresolved">{t('orderQuality.unresolved')}</SelectItem>
-                  <SelectItem value="resolved">{t('orderQuality.resolved')}</SelectItem>
+                  <SelectItem value="all">Όλα</SelectItem>
+                  <SelectItem value="unresolved">Εκκρεμεί</SelectItem>
+                  <SelectItem value="resolved">Επιλύθηκε</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div>
-              <Label htmlFor="filter-type">{t('orderQuality.filterByType')}</Label>
+              <Label htmlFor="filter-type">Τύπος Ζητήματος</Label>
               <Select value={filterQualityType} onValueChange={setFilterQualityType}>
                 <SelectTrigger id="filter-type" className="mt-1">
-                  <SelectValue placeholder={t('orderQuality.filterByTypePlaceholder')} />
+                  <SelectValue placeholder="Επιλέξτε τύπο" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t('common.all')}</SelectItem>
-                  <SelectItem value="missing_item">{t('orderQuality.types.missing_item')}</SelectItem>
-                  <SelectItem value="wrong_item">{t('orderQuality.types.wrong_item')}</SelectItem>
-                  <SelectItem value="damaged_item">{t('orderQuality.types.damaged_item')}</SelectItem>
-                  <SelectItem value="wrong_quantity">{t('orderQuality.types.wrong_quantity')}</SelectItem>
-                  <SelectItem value="duplicate_item">{t('orderQuality.types.duplicate_item')}</SelectItem>
-                  <SelectItem value="wrong_address">{t('orderQuality.types.wrong_address')}</SelectItem>
-                  <SelectItem value="picking_issue">{t('orderQuality.types.picking_issue')}</SelectItem>
-                  <SelectItem value="packing_issue">{t('orderQuality.types.packing_issue')}</SelectItem>
-                  <SelectItem value="system_issue">{t('orderQuality.types.system_issue')}</SelectItem>
-                  <SelectItem value="other">{t('orderQuality.types.other')}</SelectItem>
+                  <SelectItem value="all">Όλα</SelectItem>
+                  <SelectItem value="missing_item">Ελλείπον Αντικείμενο</SelectItem>
+                  <SelectItem value="wrong_item">Λάθος Αντικείμενο</SelectItem>
+                  <SelectItem value="damaged_item">Κατεστραμμένο Αντικείμενο</SelectItem>
+                  <SelectItem value="wrong_quantity">Λάθος Ποσότητα</SelectItem>
+                  <SelectItem value="duplicate_item">Διπλό Αντικείμενο</SelectItem>
+                  <SelectItem value="wrong_address">Λάθος Διεύθυνση</SelectItem>
+                  <SelectItem value="picking_issue">Πρόβλημα Συλλογής</SelectItem>
+                  <SelectItem value="packing_issue">Πρόβλημα Συσκευασίας</SelectItem>
+                  <SelectItem value="system_issue">Πρόβλημα Συστήματος</SelectItem>
+                  <SelectItem value="other">Άλλο</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -908,7 +916,7 @@ export default function OrderQuality() {
       {/* Quality issues table */}
       <Card>
         <CardHeader>
-          <CardTitle>{t('orderQuality.qualityIssuesList')}</CardTitle>
+          <CardTitle>Λίστα Ζητημάτων Ποιότητας</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoadingQuality ? (
@@ -929,11 +937,11 @@ export default function OrderQuality() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[180px]">{t('orderQuality.qualityId')}</TableHead>
-                      <TableHead className="w-[150px]">{t('orderQuality.reportDate')}</TableHead>
-                      <TableHead>{t('orderQuality.qualityType')}</TableHead>
-                      <TableHead className="w-[100px]">{t('orderQuality.status')}</TableHead>
-                      <TableHead className="text-right">{t('common.actions')}</TableHead>
+                      <TableHead className="w-[180px]">Αναγνωριστικό</TableHead>
+                      <TableHead className="w-[150px]">Ημερομηνία Αναφοράς</TableHead>
+                      <TableHead>Τύπος Ζητήματος</TableHead>
+                      <TableHead className="w-[100px]">Κατάσταση</TableHead>
+                      <TableHead className="text-right">Ενέργειες</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -951,12 +959,20 @@ export default function OrderQuality() {
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="bg-amber-100 text-amber-800">
-                            {t(`orderQuality.types.${quality.errorType}`)}
+                            {quality.errorType === 'missing_item' ? 'Ελλείπον Αντικείμενο' :
+                             quality.errorType === 'wrong_item' ? 'Λάθος Αντικείμενο' :
+                             quality.errorType === 'damaged_item' ? 'Κατεστραμμένο Αντικείμενο' :
+                             quality.errorType === 'wrong_quantity' ? 'Λάθος Ποσότητα' :
+                             quality.errorType === 'duplicate_item' ? 'Διπλό Αντικείμενο' :
+                             quality.errorType === 'wrong_address' ? 'Λάθος Διεύθυνση' :
+                             quality.errorType === 'picking_issue' ? 'Πρόβλημα Συλλογής' :
+                             quality.errorType === 'packing_issue' ? 'Πρόβλημα Συσκευασίας' :
+                             quality.errorType === 'system_issue' ? 'Πρόβλημα Συστήματος' : 'Άλλο'}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className={quality.resolved ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}>
-                            {quality.resolved ? t('orderQuality.resolved') : t('orderQuality.unresolved')}
+                            {quality.resolved ? 'Επιλύθηκε' : 'Εκκρεμεί'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -1006,7 +1022,7 @@ export default function OrderQuality() {
               ) : (
                 <div className="text-center py-10">
                   <ClipboardList className="h-12 w-12 mx-auto text-gray-400" />
-                  <p className="mt-2 text-gray-500">{t('orderQuality.noQualityIssues')}</p>
+                  <p className="mt-2 text-gray-500">Δεν βρέθηκαν ζητήματα ποιότητας</p>
                 </div>
               )}
             </>
