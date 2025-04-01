@@ -2587,6 +2587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         partialFulfillmentApprovedAt: null,
         estimatedShippingDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
         actualShippingDate: null,
+        priority: 'medium' as const, // Add priority field
         createdById: 1,
         updatedById: null,
         lastUpdated: null

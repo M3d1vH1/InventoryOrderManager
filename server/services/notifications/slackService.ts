@@ -212,6 +212,7 @@ export class SlackNotificationService {
       customerName: order.customerName,
       orderDate: new Date(order.orderDate).toLocaleString(),
       status: order.status,
+      priority: order.priority || 'medium', // Add priority field with default
       items: (order as any).items || 'Unknown items',
       totalItems: totalItems, // Use the forced value we determined above
       total: typeof totalPrice === 'number' ? `$${totalPrice.toFixed(2)}` : '$0.00',
