@@ -3,7 +3,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/context/NotificationContext";
 import { apiRequest } from "@/lib/queryClient";
-import { Menu, Bell, PlusCircle, Globe, PhoneCall, MoreVertical } from "lucide-react";
+import { Menu, Bell, PlusCircle, PhoneCall, MoreVertical } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,24 +29,6 @@ const Header = () => {
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [showCallLogForm, setShowCallLogForm] = useState(false);
   const { t } = useTranslation();
-
-  const toggleLanguage = () => {
-    const currentLang = i18n.language;
-    const newLang = currentLang === 'en' ? 'el' : 'en';
-    
-    // Change language using i18n (this will trigger the event listener in i18n/index.ts)
-    i18n.changeLanguage(newLang);
-    
-    // Show notification about language change
-    toast({
-      title: t('settings.languageChanged'),
-      description: newLang === 'en' ? 'English' : 'Ελληνικά',
-      duration: 3000,
-    });
-    
-    // Force reload to ensure all components update properly
-    window.location.reload();
-  };
 
   const handleLogout = async () => {
     try {
@@ -88,9 +70,7 @@ const Header = () => {
               className="flex items-center gap-1 bg-green-600 hover:bg-green-700 whitespace-nowrap"
             >
               <PlusCircle className="h-4 w-4 flex-shrink-0" />
-              <span className="md:hidden lg:inline xl:inline">{t('orders.new')}</span>
-              <span className="hidden md:inline lg:hidden xl:hidden truncate max-w-[60px]">{t('orders.new')}</span>
-              <span className="hidden lg:inline xl:inline">{t('orders.createNew')}</span>
+              <span>{t('orders.new')}</span>
             </Button>
             
             <Button
@@ -100,22 +80,11 @@ const Header = () => {
               className="flex items-center gap-1 whitespace-nowrap"
             >
               <PhoneCall className="h-4 w-4 flex-shrink-0" />
-              <span className="md:hidden lg:inline xl:inline">{t('callLogs.new')}</span>
-              <span className="hidden md:inline lg:hidden xl:hidden truncate max-w-[60px]">{t('callLogs.new')}</span>
-              <span className="hidden lg:inline xl:inline">{t('callLogs.addNewCall')}</span>
+              <span>{t('callLogs.new')}</span>
             </Button>
           </div>
           
-          {/* Language toggle button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleLanguage}
-            className="hidden sm:flex relative rounded-full"
-            title={i18n.language === 'en' ? 'Switch to Greek' : 'Switch to English'}
-          >
-            <Globe className="h-5 w-5" />
-          </Button>
+          {/* Language toggle button removed - now in settings */}
 
           {/* Notifications dropdown */}
           <DropdownMenu>
@@ -194,9 +163,6 @@ const Header = () => {
               <DropdownMenuItem className="cursor-pointer" onClick={() => window.location.href = "/settings"}>
                 Settings
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer" onClick={toggleLanguage}>
-                {i18n.language === 'en' ? 'Switch to Greek' : 'Switch to English'}
-              </DropdownMenuItem>
               <DropdownMenuItem className="cursor-pointer text-red-500" onClick={handleLogout}>
                 Logout
               </DropdownMenuItem>
@@ -219,11 +185,7 @@ const Header = () => {
                 <PhoneCall className="h-4 w-4 mr-2" />
                 <span>{t('callLogs.addNewCall')}</span>
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={toggleLanguage}>
-                <Globe className="h-4 w-4 mr-2" />
-                {i18n.language === 'en' ? 'Switch to Greek' : 'Switch to English'}
-              </DropdownMenuItem>
+              {/* Language toggle removed - now in settings */}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

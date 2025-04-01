@@ -21,8 +21,10 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useNotifications } from '@/context/NotificationContext';
-import { AlertCircle, Bell, Cog, Edit, HelpCircle, Mail, Plus, Printer, Save, Send, Tag, Trash2, UserCog, Variable, Volume2, VolumeX, Link2, Slack } from 'lucide-react';
+import { AlertCircle, Bell, Cog, Edit, Globe, HelpCircle, Mail, Plus, Printer, Save, Send, Tag, Trash2, UserCog, Variable, Volume2, VolumeX, Link2, Slack } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 
 const companySettingsSchema = z.object({
   companyName: z.string().min(2, { message: "Company name must be at least 2 characters" }),
@@ -671,8 +673,24 @@ const Settings = () => {
   const { toast } = useToast();
   const { playNotificationSound } = useNotifications();
   const { hasPermission } = useAuth();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('general');
   const [isTestEmailDialogOpen, setIsTestEmailDialogOpen] = useState(false);
+  
+  // Function to toggle language
+  const toggleLanguage = () => {
+    const currentLang = i18n.language;
+    const newLang = currentLang === 'en' ? 'el' : 'en';
+    
+    // Change language using i18n
+    i18n.changeLanguage(newLang);
+    
+    // Show notification about language change
+    toast({
+      title: newLang === 'en' ? 'Language Changed' : 'Η γλώσσα άλλαξε',
+      description: newLang === 'en' ? 'Language set to English' : 'Η γλώσσα άλλαξε σε Ελληνικά',
+    });
+  };
 
   // Email settings form
   const emailForm = useForm<z.infer<typeof emailSettingsSchema>>({
@@ -1164,6 +1182,33 @@ const Settings = () => {
                       </div>
                     </div>
                   </Form>
+                  
+                  <Separator className="my-6" />
+                  
+                  {/* Language Settings */}
+                  <div className="space-y-4 mb-6">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="font-medium">Language Settings</h3>
+                        <p className="text-sm text-slate-500">Choose your preferred language</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between py-3 px-4 bg-slate-50 rounded-md">
+                      <div className="flex items-center space-x-2">
+                        <Globe className="h-5 w-5 text-slate-500" />
+                        <div>
+                          <p className="text-sm font-medium">Interface Language</p>
+                          <p className="text-sm text-slate-500">
+                            {i18n.language === 'en' ? 'Currently: English' : 'Τρέχον: Ελληνικά'}
+                          </p>
+                        </div>
+                      </div>
+                      <Button onClick={toggleLanguage}>
+                        {i18n.language === 'en' ? 'Switch to Greek' : 'Αλλαγή σε Αγγλικά'}
+                      </Button>
+                    </div>
+                  </div>
                   
                   <Separator className="my-6" />
                   
