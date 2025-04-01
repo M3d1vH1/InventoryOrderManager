@@ -96,7 +96,7 @@ const RecentOrders = () => {
         <td className="py-3 px-4">
           {order.priority && 
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityBadgeClass(order.priority)}`}>
-              {t(`orders.priority.${order.priority}`)}
+              {t(`orders.form.priorities.${order.priority}`)}
             </span>
           }
         </td>
