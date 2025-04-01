@@ -61,20 +61,37 @@ const CallLogs: React.FC = () => {
     // Use onError inside options
     queryFn: async ({ signal }) => {
       try {
-        const response = await fetch('/api/call-logs', { signal });
+        const response = await fetch('/api/call-logs', { 
+          signal,
+          credentials: 'include' // Ensure cookies are sent
+        });
         if (!response.ok) {
+          if (response.status === 401) {
+            toast({
+              title: t('common.unauthorizedError'),
+              description: t('common.pleaseLogin'),
+              variant: 'destructive',
+            });
+            // Give time for toast to show before redirect
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 2000);
+            return [];
+          }
           throw new Error('Failed to fetch call logs');
         }
         return response.json();
       } catch (error) {
+        console.error("Call logs error:", error);
         toast({
           title: t('common.error'),
           description: t('common.errorLoadingData'),
           variant: 'destructive',
         });
-        throw error;
+        return []; // Return empty array instead of throwing to prevent unhandled rejection
       }
-    }
+    },
+    retry: false // Don't retry on error
   });
 
   const filteredCallLogs = React.useMemo(() => {

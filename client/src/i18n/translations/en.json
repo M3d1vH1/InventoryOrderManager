@@ -61,7 +61,9 @@
     "select": "Select",
     "noResults": "No results found",
     "units": "units",
-    "boxes": "boxes"
+    "boxes": "boxes",
+    "unauthorizedError": "Authentication Required",
+    "pleaseLogin": "Your session has expired. Please log in again."
   },
   "categories": {
     "title": "Product Categories",

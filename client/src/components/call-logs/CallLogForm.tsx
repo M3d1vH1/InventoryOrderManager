@@ -100,18 +100,73 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
   const { data: customers } = useQuery({
     queryKey: ['/api/customers'],
     enabled: open,
+    queryFn: async () => {
+      try {
+        const response = await fetch('/api/customers', { 
+          credentials: 'include'
+        });
+        if (!response.ok) {
+          if (response.status === 401) {
+            toast({
+              title: t('common.unauthorizedError'),
+              description: t('common.pleaseLogin'),
+              variant: 'destructive',
+            });
+            return [];
+          }
+          throw new Error('Failed to fetch customers');
+        }
+        return response.json();
+      } catch (error) {
+        console.error("Customers fetch error:", error);
+        return [];
+      }
+    },
+    retry: false
   });
 
   // Fetch prospective customers for dropdown
   const { data: prospectiveCustomers } = useQuery({
     queryKey: ['/api/prospective-customers'],
     enabled: open,
+    queryFn: async () => {
+      try {
+        const response = await fetch('/api/prospective-customers', { 
+          credentials: 'include'
+        });
+        if (!response.ok) {
+          if (response.status === 401) return [];
+          throw new Error('Failed to fetch prospective customers');
+        }
+        return response.json();
+      } catch (error) {
+        console.error("Prospective customers fetch error:", error);
+        return [];
+      }
+    },
+    retry: false
   });
 
   // Fetch users for assignee dropdown
   const { data: users } = useQuery({
     queryKey: ['/api/users'],
     enabled: open,
+    queryFn: async () => {
+      try {
+        const response = await fetch('/api/users', { 
+          credentials: 'include'
+        });
+        if (!response.ok) {
+          if (response.status === 401) return [];
+          throw new Error('Failed to fetch users');
+        }
+        return response.json();
+      } catch (error) {
+        console.error("Users fetch error:", error);
+        return [];
+      }
+    },
+    retry: false
   });
 
   const defaultValues: Partial<CallLogFormValues> = {
@@ -161,48 +216,75 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
     mutationFn: async (data: CallLogFormValues) => {
       let callLogData: any = { ...data };
       
-      // Handle prospective customer creation
-      if (data.customerType === 'prospective') {
-        if (isNewProspect && data.newProspectiveCustomer) {
-          // Create new prospective customer first
-          const prospectiveData = {
-            ...data.newProspectiveCustomer,
-            status: 'new',
-          };
-          console.log('Creating new prospective customer:', prospectiveData);
-          
-          const prospectiveResponse = await apiRequest('/api/prospective-customers', {
-            method: 'POST',
-            body: JSON.stringify(prospectiveData),
-            headers: {
-              'Content-Type': 'application/json'
+      try {
+        // Handle prospective customer creation
+        if (data.customerType === 'prospective') {
+          if (isNewProspect && data.newProspectiveCustomer) {
+            // Create new prospective customer first
+            const prospectiveData = {
+              ...data.newProspectiveCustomer,
+              status: 'new',
+            };
+            console.log('Creating new prospective customer:', prospectiveData);
+            
+            const prospectiveResponse = await apiRequest('/api/prospective-customers', {
+              method: 'POST',
+              body: JSON.stringify(prospectiveData),
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (prospectiveResponse.id) {
+              callLogData.prospectiveCustomerId = prospectiveResponse.id;
+              callLogData.customerId = null; // Ensure customerId is null
             }
-          });
-          
-          if (prospectiveResponse.id) {
-            callLogData.prospectiveCustomerId = prospectiveResponse.id;
+          } else if (data.prospectiveCustomerId) {
             callLogData.customerId = null; // Ensure customerId is null
           }
-        } else if (data.prospectiveCustomerId) {
-          callLogData.customerId = null; // Ensure customerId is null
+        } else {
+          // For existing customers
+          callLogData.prospectiveCustomerId = null; // Ensure prospectiveCustomerId is null
         }
-      } else {
-        // For existing customers
-        callLogData.prospectiveCustomerId = null; // Ensure prospectiveCustomerId is null
+        
+        // Remove unnecessary fields
+        delete callLogData.customerType;
+        delete callLogData.newProspectiveCustomer;
+        
+        // Create the call log - Use the quick endpoint
+        const response = await fetch('/api/call-logs?quick=true', {
+          method: 'POST',
+          credentials: 'include', // Ensure cookies are sent
+          body: JSON.stringify(callLogData),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          if (response.status === 401) {
+            toast({
+              title: t('common.unauthorizedError'),
+              description: t('common.pleaseLogin'),
+              variant: 'destructive',
+            });
+            // Redirect to login after showing toast
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 2000);
+            throw new Error('Unauthorized');
+          }
+          
+          // Handle other errors
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create call log');
+        }
+        
+        return await response.json();
+      } catch (error: any) {
+        console.error('Error creating call log:', error);
+        throw error;
       }
-      
-      // Remove unnecessary fields
-      delete callLogData.customerType;
-      delete callLogData.newProspectiveCustomer;
-      
-      // Create the call log - Use the quick endpoint
-      return apiRequest('/api/call-logs?quick=true', {
-        method: 'POST',
-        body: JSON.stringify(callLogData),
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/call-logs'] });
@@ -213,23 +295,53 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
       onOpenChange(false);
     },
     onError: (error: any) => {
-      toast({
-        title: t('common.error'),
-        description: error.message || t('common.errorSaving'),
-        variant: 'destructive',
-      });
+      // Don't show error toast for unauthorized errors (already handled in mutationFn)
+      if (error.message !== 'Unauthorized') {
+        toast({
+          title: t('common.error'),
+          description: error.message || t('common.errorSaving'),
+          variant: 'destructive',
+        });
+      }
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: CallLogFormValues) => {
-      return apiRequest(`/api/call-logs/${initialData.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(data),
-        headers: {
-          'Content-Type': 'application/json'
+    mutationFn: async (data: CallLogFormValues) => {
+      try {
+        const response = await fetch(`/api/call-logs/${initialData.id}`, {
+          method: 'PATCH',
+          credentials: 'include', // Ensure cookies are sent
+          body: JSON.stringify(data),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          if (response.status === 401) {
+            toast({
+              title: t('common.unauthorizedError'),
+              description: t('common.pleaseLogin'),
+              variant: 'destructive',
+            });
+            // Redirect to login after showing toast
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 2000);
+            throw new Error('Unauthorized');
+          }
+          
+          // Handle other errors
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update call log');
         }
-      });
+        
+        return await response.json();
+      } catch (error: any) {
+        console.error('Error updating call log:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/call-logs'] });
@@ -240,11 +352,14 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
       onOpenChange(false);
     },
     onError: (error: any) => {
-      toast({
-        title: t('common.error'),
-        description: error.message || t('common.errorSaving'),
-        variant: 'destructive',
-      });
+      // Don't show error toast for unauthorized errors (already handled in mutationFn)
+      if (error.message !== 'Unauthorized') {
+        toast({
+          title: t('common.error'),
+          description: error.message || t('common.errorSaving'),
+          variant: 'destructive',
+        });
+      }
     },
   });
 
