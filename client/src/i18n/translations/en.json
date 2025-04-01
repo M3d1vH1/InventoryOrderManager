@@ -541,6 +541,8 @@
     "qualityNotes": "Notes",
     "orderInfo": "Order Information",
     "tabs": {
+      "generalInfo": "General Information",
+      "affectedProducts": "Affected Products",
       "orderRelated": "Order Related",
       "standalone": "Standalone Quality"
     },
