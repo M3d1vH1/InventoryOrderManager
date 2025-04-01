@@ -5,6 +5,12 @@ import fileUpload from "express-fileupload";
 import path from "path";
 import { setupAuth } from "./auth";
 import dotenv from "dotenv";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import cors from "cors";
+import { forceHttps } from './middlewares/forceHttps';
+// csurf is disabled by default as it requires proper setup with cookies, but you can enable it if needed
+// import csrf from "csurf";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -17,8 +23,62 @@ console.log('Environment variables at startup:', {
 });
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+
+// Enable trust proxy to work correctly with proxied requests
+// This is needed for proper rate limiting when behind a reverse proxy
+app.set('trust proxy', 1);
+
+// Apply HTTPS redirection for production environments
+app.use(forceHttps);
+
+// Security middleware
+// Apply Helmet for secure HTTP headers
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow inline scripts for Vite in development
+        connectSrc: ["'self'", "https:"],
+        imgSrc: ["'self'", "data:", "blob:"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        fontSrc: ["'self'", "data:"],
+      },
+    },
+    // Set HSTS header
+    hsts: {
+      maxAge: 15552000, // 180 days
+      includeSubDomains: true,
+      preload: true,
+    },
+    // Only use the X-Powered-By field if you specifically want it
+    hidePoweredBy: true,
+  })
+);
+
+// Rate limiting - protect against brute force attacks
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  message: 'Too many requests from this IP, please try again later'
+});
+
+// Apply rate limiting to API routes only
+app.use('/api/', apiLimiter);
+
+// CORS configuration
+app.use(cors({
+  origin: process.env.APP_URL ? [process.env.APP_URL] : true, // Restrict to the app URL if defined, otherwise allow all
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
+// Standard middleware
+app.use(express.json({ limit: '1mb' })); // Limit JSON payload size
+app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 app.use(fileUpload({
   createParentPath: true,
   limits: { 
@@ -26,7 +86,9 @@ app.use(fileUpload({
   },
   abortOnLimit: true,
   useTempFiles: true,
-  tempFileDir: '/tmp/'
+  tempFileDir: '/tmp/',
+  safeFileNames: true, // Remove special characters
+  preserveExtension: true, // Keep file extensions
 }));
 
 // Serve static files from public directory
@@ -76,12 +138,29 @@ app.use((req, res, next) => {
   
   const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  // Global error handler
+  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
+    
+    // Log the error (but not in production for sensitive data)
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(`[ERROR] ${req.method} ${req.path} - ${status}: ${message}`);
+      console.error(err.stack);
+    } else {
+      // In production, log minimal information to avoid leaking sensitive data
+      log(`Error ${status}: ${message}`, 'error');
+    }
+    
+    // Don't expose error details in production
+    const responseError = process.env.NODE_ENV === 'production' && status === 500
+      ? { message: 'Internal Server Error' }
+      : { message, ...(process.env.NODE_ENV !== 'production' ? { stack: err.stack } : {}) };
+    
+    res.status(status).json(responseError);
+    
+    // Don't throw the error after handling it
+    // This prevents the server from crashing on unhandled errors
   });
 
   // importantly only setup vite in development and after

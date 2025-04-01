@@ -8,6 +8,7 @@ import { storage } from './storage';
 import { log } from './vite';
 import pg from 'pg';
 import { User } from '@shared/schema';
+import { loginLimiter } from './middlewares/loginRateLimit';
 
 // Configure session storage
 const PgSession = pgSession(session);
@@ -26,12 +27,17 @@ export function setupAuth(app: Express) {
         tableName: 'session',
         createTableIfMissing: true,
       }),
-      secret: process.env.SESSION_SECRET || 'warehouse_mgmt_secret',
+      secret: process.env.SESSION_SECRET || (process.env.NODE_ENV === 'production' 
+        ? require('crypto').randomBytes(64).toString('hex') // Generate random secret in production
+        : 'warehouse_mgmt_dev_secret'), // Static secret for development
       resave: false,
       saveUninitialized: false,
       cookie: {
         maxAge: 1000 * 60 * 60 * 24, // 24 hours
-        secure: process.env.NODE_ENV === 'production',
+        secure: process.env.NODE_ENV === 'production', // Only send cookies over HTTPS in production
+        httpOnly: true, // Prevents JavaScript from reading cookies (XSS protection)
+        sameSite: 'strict', // Prevents CSRF attacks
+        path: '/', // Restrict cookie to base path
       },
     })
   );
@@ -87,7 +93,7 @@ export function setupAuth(app: Express) {
   });
 
   // API authentication routes
-  app.post('/api/login', (req, res, next) => {
+  app.post('/api/login', loginLimiter, (req, res, next) => {
     passport.authenticate('local', (err: any, user: User | false, info: { message: string }) => {
       if (err) {
         return next(err);
@@ -104,6 +110,11 @@ export function setupAuth(app: Express) {
         
         // Don't send password in response
         const { password, ...safeUser } = user;
+        
+        // Add security headers for successful login
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+        
         return res.json(safeUser);
       });
     })(req, res, next);
