@@ -26,7 +26,6 @@ import {
   AreaChart,
   Area,
 } from "recharts";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -425,7 +424,7 @@ const Reports = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="inventory" value={activeTab} onValueChange={setActiveTab}>
+      <div>
         <div className="mb-6">
           <div className="flex items-center pb-4">
             <span className="text-sm font-medium mr-4">Time Range:</span>
@@ -572,460 +571,483 @@ const Reports = () => {
           </div>
         </div>
         
-        {/* New PDF Report Tabs */}
-        <TabsContent value="dispatch-schedule" className="mt-4">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Dispatch Schedule Report</CardTitle>
-                  <CardDescription>
-                    View upcoming and recent order dispatches
-                  </CardDescription>
+        {/* PDF Report Content Sections */}
+        {activeTab === "dispatch-schedule" && (
+          <div className="mt-4">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Dispatch Schedule Report</CardTitle>
+                    <CardDescription>
+                      View upcoming and recent order dispatches
+                    </CardDescription>
+                  </div>
+                  <Button 
+                    variant="default" 
+                    className="flex items-center gap-2"
+                    onClick={() => window.open('/api/reports/dispatch-schedule/pdf', '_blank')}
+                  >
+                    <FileDown className="h-4 w-4" />
+                    Download PDF
+                  </Button>
                 </div>
-                <Button 
-                  variant="default" 
-                  className="flex items-center gap-2"
-                  onClick={() => window.open('/api/reports/dispatch-schedule/pdf', '_blank')}
-                >
-                  <FileDown className="h-4 w-4" />
-                  Download PDF
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-4">
-                The Dispatch Schedule Report provides a complete overview of orders that are scheduled for dispatch, 
-                including order details, customer information, and shipping method.
-              </p>
-              
-              <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-                <h4 className="text-blue-700 font-medium text-sm">What's in this report?</h4>
-                <ul className="mt-2 text-blue-700 text-sm list-disc pl-5 space-y-1">
-                  <li>Order numbers and customer names</li>
-                  <li>Order dates and estimated shipping dates</li>
-                  <li>Current order status</li>
-                  <li>Shipping carrier information</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-4">
+                  The Dispatch Schedule Report provides a complete overview of orders that are scheduled for dispatch, 
+                  including order details, customer information, and shipping method.
+                </p>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                  <h4 className="text-blue-700 font-medium text-sm">What's in this report?</h4>
+                  <ul className="mt-2 text-blue-700 text-sm list-disc pl-5 space-y-1">
+                    <li>Order numbers and customer names</li>
+                    <li>Order dates and estimated shipping dates</li>
+                    <li>Current order status</li>
+                    <li>Shipping carrier information</li>
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
         
-        <TabsContent value="shipping-delays" className="mt-4">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Shipping Delays Report</CardTitle>
-                  <CardDescription>
-                    Monitor delayed shipments and contact information
-                  </CardDescription>
+        {activeTab === "shipping-delays" && (
+          <div className="mt-4">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Shipping Delays Report</CardTitle>
+                    <CardDescription>
+                      Monitor delayed shipments and contact information
+                    </CardDescription>
+                  </div>
+                  <Button 
+                    variant="default" 
+                    className="flex items-center gap-2"
+                    onClick={() => window.open('/api/reports/shipping-delays/pdf', '_blank')}
+                  >
+                    <FileDown className="h-4 w-4" />
+                    Download PDF
+                  </Button>
                 </div>
-                <Button 
-                  variant="default" 
-                  className="flex items-center gap-2"
-                  onClick={() => window.open('/api/reports/shipping-delays/pdf', '_blank')}
-                >
-                  <FileDown className="h-4 w-4" />
-                  Download PDF
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-4">
-                The Shipping Delays Report highlights orders that are past their estimated shipping date and 
-                provides customer contact information to facilitate communication about delays.
-              </p>
-              
-              <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
-                <h4 className="text-amber-700 font-medium text-sm">What's in this report?</h4>
-                <ul className="mt-2 text-amber-700 text-sm list-disc pl-5 space-y-1">
-                  <li>Delayed order information</li>
-                  <li>Days of delay for each order</li>
-                  <li>Customer contact details</li>
-                  <li>Order status and estimated shipping dates</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-4">
+                  The Shipping Delays Report highlights orders that are past their estimated shipping date and 
+                  provides customer contact information to facilitate communication about delays.
+                </p>
+                
+                <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
+                  <h4 className="text-amber-700 font-medium text-sm">What's in this report?</h4>
+                  <ul className="mt-2 text-amber-700 text-sm list-disc pl-5 space-y-1">
+                    <li>Delayed order information</li>
+                    <li>Days of delay for each order</li>
+                    <li>Customer contact details</li>
+                    <li>Order status and estimated shipping dates</li>
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
         
-        <TabsContent value="fulfillment-stats" className="mt-4">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Fulfillment Statistics Report</CardTitle>
-                  <CardDescription>
-                    Analyze order fulfillment performance and metrics
-                  </CardDescription>
+        {activeTab === "fulfillment-stats" && (
+          <div className="mt-4">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Fulfillment Statistics Report</CardTitle>
+                    <CardDescription>
+                      Analyze order fulfillment performance and metrics
+                    </CardDescription>
+                  </div>
+                  <Button 
+                    variant="default" 
+                    className="flex items-center gap-2"
+                    onClick={() => window.open('/api/reports/fulfillment-stats/pdf', '_blank')}
+                  >
+                    <FileDown className="h-4 w-4" />
+                    Download PDF
+                  </Button>
                 </div>
-                <Button 
-                  variant="default" 
-                  className="flex items-center gap-2"
-                  onClick={() => window.open('/api/reports/fulfillment-stats/pdf', '_blank')}
-                >
-                  <FileDown className="h-4 w-4" />
-                  Download PDF
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-4">
-                The Fulfillment Statistics Report provides a comprehensive analysis of your order fulfillment 
-                performance, including metrics on shipping times, order statuses, and fulfillment efficiency.
-              </p>
-              
-              <div className="bg-emerald-50 border border-emerald-200 rounded-md p-4">
-                <h4 className="text-emerald-700 font-medium text-sm">What's in this report?</h4>
-                <ul className="mt-2 text-emerald-700 text-sm list-disc pl-5 space-y-1">
-                  <li>Order volume and status breakdown</li>
-                  <li>Average fulfillment time analysis</li>
-                  <li>Fulfillment efficiency metrics</li>
-                  <li>Trends in shipping performance</li>
-                  <li>Partial fulfillment statistics</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-4">
+                  The Fulfillment Statistics Report provides a comprehensive analysis of your order fulfillment 
+                  performance, including metrics on shipping times, order statuses, and fulfillment efficiency.
+                </p>
+                
+                <div className="bg-emerald-50 border border-emerald-200 rounded-md p-4">
+                  <h4 className="text-emerald-700 font-medium text-sm">What's in this report?</h4>
+                  <ul className="mt-2 text-emerald-700 text-sm list-disc pl-5 space-y-1">
+                    <li>Order volume and status breakdown</li>
+                    <li>Average fulfillment time analysis</li>
+                    <li>Fulfillment efficiency metrics</li>
+                    <li>Trends in shipping performance</li>
+                    <li>Partial fulfillment statistics</li>
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
         
         {/* Inventory Tab */}
-        <TabsContent value="inventory" className="mt-4 grid gap-4 md:grid-cols-2">
-          <Card className="col-span-2">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Inventory Status Over Time</CardTitle>
-                  <CardDescription>
-                    Track inventory levels for the past {timeRange} weeks
-                  </CardDescription>
+        {activeTab === "inventory" && (
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <Card className="col-span-2">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Inventory Status Over Time</CardTitle>
+                    <CardDescription>
+                      Track inventory levels for the past {timeRange} weeks
+                    </CardDescription>
+                  </div>
+                  <Select value={timeRange} onValueChange={setTimeRange}>
+                    <SelectTrigger className="w-28">
+                      <SelectValue placeholder="Time Range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="4">4 Weeks</SelectItem>
+                      <SelectItem value="6">6 Weeks</SelectItem>
+                      <SelectItem value="12">12 Weeks</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Select value={timeRange} onValueChange={setTimeRange}>
-                  <SelectTrigger className="w-28">
-                    <SelectValue placeholder="Time Range" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="4">4 Weeks</SelectItem>
-                    <SelectItem value="6">6 Weeks</SelectItem>
-                    <SelectItem value="12">12 Weeks</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={inventoryTrend}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Area
-                      type="monotone"
-                      dataKey="inStock"
-                      stackId="1"
-                      stroke="#4ade80"
-                      fill="#4ade80"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="lowStock"
-                      stackId="1"
-                      stroke="#fbbf24"
-                      fill="#fbbf24"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="outOfStock"
-                      stackId="1"
-                      stroke="#ef4444"
-                      fill="#ef4444"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-            <CardFooter className="border-t pt-4">
-              <div className="grid grid-cols-3 gap-4 w-full">
-                <div className="rounded-lg bg-emerald-50 p-4 border border-emerald-200">
-                  <p className="text-emerald-600 text-sm font-medium">In Stock Items</p>
-                  <p className="text-2xl font-bold text-emerald-800">
-                    {products?.filter(p => p.currentStock > p.minStockLevel).length || 0}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-amber-50 p-4 border border-amber-200">
-                  <p className="text-amber-600 text-sm font-medium">Low Stock Items</p>
-                  <p className="text-2xl font-bold text-amber-800">
-                    {products?.filter(p => p.currentStock > 0 && p.currentStock <= p.minStockLevel).length || 0}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-red-50 p-4 border border-red-200">
-                  <p className="text-red-600 text-sm font-medium">Out of Stock Items</p>
-                  <p className="text-2xl font-bold text-red-800">
-                    {products?.filter(p => p.currentStock === 0).length || 0}
-                  </p>
-                </div>
-              </div>
-            </CardFooter>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Top Selling Products</CardTitle>
-              <CardDescription>
-                Products with highest sales volume
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    layout="vertical"
-                    data={topSellingProducts}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis type="category" dataKey="name" width={100} />
-                    <Tooltip />
-                    <Bar dataKey="soldQuantity" fill="#3b82f6">
-                      {topSellingProducts.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Stock Level Distribution</CardTitle>
-              <CardDescription>
-                Current inventory status breakdown
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={[
-                        { 
-                          name: 'In Stock', 
-                          value: products?.filter(p => p.currentStock > p.minStockLevel).length || 0 
-                        },
-                        { 
-                          name: 'Low Stock', 
-                          value: products?.filter(p => p.currentStock > 0 && p.currentStock <= p.minStockLevel).length || 0 
-                        },
-                        { 
-                          name: 'Out of Stock', 
-                          value: products?.filter(p => p.currentStock === 0).length || 0 
-                        },
-                      ]}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      <Cell fill="#4ade80" />
-                      <Cell fill="#fbbf24" />
-                      <Cell fill="#ef4444" />
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        {/* Orders Tab */}
-        <TabsContent value="orders" className="mt-4 grid gap-4 md:grid-cols-2">
-          <Card className="col-span-2">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Order Status By Month</CardTitle>
-                  <CardDescription>
-                    Track order status for the past {timeRange} months
-                  </CardDescription>
-                </div>
-                <Select value={timeRange} onValueChange={setTimeRange}>
-                  <SelectTrigger className="w-28">
-                    <SelectValue placeholder="Time Range" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="3">3 Months</SelectItem>
-                    <SelectItem value="6">6 Months</SelectItem>
-                    <SelectItem value="12">12 Months</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={ordersTrend}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="pending" stackId="a" fill="#fbbf24" />
-                    <Bar dataKey="picked" stackId="a" fill="#3b82f6" />
-                    <Bar dataKey="shipped" stackId="a" fill="#4ade80" />
-                    <Bar dataKey="cancelled" stackId="a" fill="#ef4444" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-            <CardFooter className="border-t pt-4">
-              <div className="grid grid-cols-4 gap-4 w-full">
-                <div className="rounded-lg bg-amber-50 p-4 border border-amber-200">
-                  <p className="text-amber-600 text-sm font-medium">Pending</p>
-                  <p className="text-2xl font-bold text-amber-800">
-                    {orders?.filter(o => o.status === 'pending').length || 0}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-blue-50 p-4 border border-blue-200">
-                  <p className="text-blue-600 text-sm font-medium">Picked</p>
-                  <p className="text-2xl font-bold text-blue-800">
-                    {orders?.filter(o => o.status === 'picked').length || 0}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-emerald-50 p-4 border border-emerald-200">
-                  <p className="text-emerald-600 text-sm font-medium">Shipped</p>
-                  <p className="text-2xl font-bold text-emerald-800">
-                    {orders?.filter(o => o.status === 'shipped').length || 0}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-red-50 p-4 border border-red-200">
-                  <p className="text-red-600 text-sm font-medium">Cancelled</p>
-                  <p className="text-2xl font-bold text-red-800">
-                    {orders?.filter(o => o.status === 'cancelled').length || 0}
-                  </p>
-                </div>
-              </div>
-            </CardFooter>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Order Status Distribution</CardTitle>
-              <CardDescription>
-                Current order status breakdown
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={[
-                        { name: 'Pending', value: orders?.filter(o => o.status === 'pending').length || 0 },
-                        { name: 'Picked', value: orders?.filter(o => o.status === 'picked').length || 0 },
-                        { name: 'Shipped', value: orders?.filter(o => o.status === 'shipped').length || 0 },
-                        { name: 'Cancelled', value: orders?.filter(o => o.status === 'cancelled').length || 0 },
-                      ]}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      <Cell fill="#fbbf24" />
-                      <Cell fill="#3b82f6" />
-                      <Cell fill="#4ade80" />
-                      <Cell fill="#ef4444" />
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Monthly Order Trend</CardTitle>
-              <CardDescription>
-                Order volume over time
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={ordersTrend}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="shipped" 
-                      stroke="#4ade80" 
-                      strokeWidth={2}
-                      activeDot={{ r: 8 }} 
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="pending" 
-                      stroke="#fbbf24" 
-                      strokeWidth={2}
-                      activeDot={{ r: 8 }} 
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        {/* Tags Tab */}
-        <TabsContent value="tags" className="mt-4 grid gap-4 md:grid-cols-2">
-          <Card className="col-span-2">
-            <CardHeader>
-              <CardTitle>Products by Tag</CardTitle>
-              <CardDescription>
-                Distribution of products across tags
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-6">
+              </CardHeader>
+              <CardContent>
                 <div className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={inventoryTrend}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Area
+                        type="monotone"
+                        dataKey="inStock"
+                        stackId="1"
+                        stroke="#4ade80"
+                        fill="#4ade80"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="lowStock"
+                        stackId="1"
+                        stroke="#fbbf24"
+                        fill="#fbbf24"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="outOfStock"
+                        stackId="1"
+                        stroke="#ef4444"
+                        fill="#ef4444"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+              <CardFooter className="border-t pt-4">
+                <div className="grid grid-cols-3 gap-4 w-full">
+                  <div className="rounded-lg bg-emerald-50 p-4 border border-emerald-200">
+                    <p className="text-emerald-600 text-sm font-medium">In Stock Items</p>
+                    <p className="text-2xl font-bold text-emerald-800">
+                      {products?.filter(p => p.currentStock > p.minStockLevel).length || 0}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-amber-50 p-4 border border-amber-200">
+                    <p className="text-amber-600 text-sm font-medium">Low Stock Items</p>
+                    <p className="text-2xl font-bold text-amber-800">
+                      {products?.filter(p => p.currentStock > 0 && p.currentStock <= p.minStockLevel).length || 0}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-red-50 p-4 border border-red-200">
+                    <p className="text-red-600 text-sm font-medium">Out of Stock Items</p>
+                    <p className="text-2xl font-bold text-red-800">
+                      {products?.filter(p => p.currentStock === 0).length || 0}
+                    </p>
+                  </div>
+                </div>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Top Selling Products</CardTitle>
+                <CardDescription>
+                  Products with highest sales volume
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       layout="vertical"
-                      data={tagsData}
+                      data={topSellingProducts}
                       margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis type="number" />
                       <YAxis type="category" dataKey="name" width={100} />
                       <Tooltip />
+                      <Bar dataKey="soldQuantity" fill="#3b82f6">
+                        {topSellingProducts.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Stock Level Distribution</CardTitle>
+                <CardDescription>
+                  Current inventory status breakdown
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { 
+                            name: 'In Stock', 
+                            value: products?.filter(p => p.currentStock > p.minStockLevel).length || 0 
+                          },
+                          { 
+                            name: 'Low Stock', 
+                            value: products?.filter(p => p.currentStock > 0 && p.currentStock <= p.minStockLevel).length || 0 
+                          },
+                          { 
+                            name: 'Out of Stock', 
+                            value: products?.filter(p => p.currentStock === 0).length || 0 
+                          },
+                        ]}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={100}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      >
+                        <Cell fill="#4ade80" />
+                        <Cell fill="#fbbf24" />
+                        <Cell fill="#ef4444" />
+                      </Pie>
+                      <Tooltip />
                       <Legend />
-                      <Bar dataKey="value" fill="#3b82f6">
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+        
+        {/* Orders Tab */}
+        {activeTab === "orders" && (
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <Card className="col-span-2">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Order Status By Month</CardTitle>
+                    <CardDescription>
+                      Track order status for the past {timeRange} months
+                    </CardDescription>
+                  </div>
+                  <Select value={timeRange} onValueChange={setTimeRange}>
+                    <SelectTrigger className="w-28">
+                      <SelectValue placeholder="Time Range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3">3 Months</SelectItem>
+                      <SelectItem value="6">6 Months</SelectItem>
+                      <SelectItem value="12">12 Months</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={ordersTrend}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="pending" stackId="a" fill="#fbbf24" />
+                      <Bar dataKey="picked" stackId="a" fill="#3b82f6" />
+                      <Bar dataKey="shipped" stackId="a" fill="#4ade80" />
+                      <Bar dataKey="cancelled" stackId="a" fill="#ef4444" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+              <CardFooter className="border-t pt-4">
+                <div className="grid grid-cols-4 gap-4 w-full">
+                  <div className="rounded-lg bg-amber-50 p-4 border border-amber-200">
+                    <p className="text-amber-600 text-sm font-medium">Pending</p>
+                    <p className="text-2xl font-bold text-amber-800">
+                      {orders?.filter(o => o.status === 'pending').length || 0}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-blue-50 p-4 border border-blue-200">
+                    <p className="text-blue-600 text-sm font-medium">Picked</p>
+                    <p className="text-2xl font-bold text-blue-800">
+                      {orders?.filter(o => o.status === 'picked').length || 0}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-emerald-50 p-4 border border-emerald-200">
+                    <p className="text-emerald-600 text-sm font-medium">Shipped</p>
+                    <p className="text-2xl font-bold text-emerald-800">
+                      {orders?.filter(o => o.status === 'shipped').length || 0}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-red-50 p-4 border border-red-200">
+                    <p className="text-red-600 text-sm font-medium">Cancelled</p>
+                    <p className="text-2xl font-bold text-red-800">
+                      {orders?.filter(o => o.status === 'cancelled').length || 0}
+                    </p>
+                  </div>
+                </div>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Order Status Distribution</CardTitle>
+                <CardDescription>
+                  Current order status breakdown
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { 
+                            name: 'Pending', 
+                            value: orders?.filter(o => o.status === 'pending').length || 0 
+                          },
+                          { 
+                            name: 'Picked', 
+                            value: orders?.filter(o => o.status === 'picked').length || 0 
+                          },
+                          { 
+                            name: 'Shipped', 
+                            value: orders?.filter(o => o.status === 'shipped').length || 0 
+                          },
+                          { 
+                            name: 'Cancelled', 
+                            value: orders?.filter(o => o.status === 'cancelled').length || 0 
+                          },
+                        ]}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={100}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      >
+                        <Cell fill="#fbbf24" />
+                        <Cell fill="#3b82f6" />
+                        <Cell fill="#4ade80" />
+                        <Cell fill="#ef4444" />
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Order Volume Trend</CardTitle>
+                <CardDescription>
+                  Monthly order volume
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={ordersTrend}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="pending" 
+                        stroke="#fbbf24" 
+                        name="Pending"
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 8 }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="shipped" 
+                        stroke="#4ade80" 
+                        name="Shipped"
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 8 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Tags Analysis */}
+        {activeTab === "tags" && (
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <Card className="col-span-2">
+              <CardHeader>
+                <CardTitle>Product Tags Distribution</CardTitle>
+                <CardDescription>
+                  Breakdown of products by tags
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={tagsData}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="value" fill="#8b5cf6">
                         {tagsData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
@@ -1033,19 +1055,30 @@ const Reports = () => {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="h-[400px]">
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Popular Tags</CardTitle>
+                <CardDescription>
+                  Most frequently used product tags
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={tagsData}
+                        data={tagsData.slice(0, 5)}
                         dataKey="value"
                         nameKey="name"
                         cx="50%"
                         cy="50%"
-                        outerRadius={130}
+                        outerRadius={100}
                         label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                       >
-                        {tagsData.map((entry, index) => (
+                        {tagsData.slice(0, 5).map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
@@ -1054,214 +1087,234 @@ const Reports = () => {
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-              </div>
-            </CardContent>
-            <CardFooter className="border-t pt-4">
-              <div className="w-full">
-                <table className="min-w-full">
-                  <thead className="bg-slate-50">
-                    <tr>
-                      <th className="py-2 px-4 text-left font-medium text-slate-600">Tag</th>
-                      <th className="py-2 px-4 text-right font-medium text-slate-600">Count</th>
-                      <th className="py-2 px-4 text-right font-medium text-slate-600">Percentage</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200">
-                    {tagsData.map((tag) => (
-                      <tr key={tag.name}>
-                        <td className="py-2 px-4">{tag.name}</td>
-                        <td className="py-2 px-4 text-right">{tag.value}</td>
-                        <td className="py-2 px-4 text-right">
-                          {(tag.value / tagsData.reduce((acc, curr) => acc + curr.value, 0) * 100).toFixed(1)}%
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardFooter>
-          </Card>
-        </TabsContent>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Tags Performance</CardTitle>
+                <CardDescription>
+                  Average sales by product tag
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Tag Name</TableHead>
+                        <TableHead>Product Count</TableHead>
+                        <TableHead>% of Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {tagsData.slice(0, 10).map((tag) => (
+                        <TableRow key={tag.name}>
+                          <TableCell>{tag.name}</TableCell>
+                          <TableCell>{tag.value}</TableCell>
+                          <TableCell>
+                            {((tag.value / tagsData.reduce((acc, curr) => acc + curr.value, 0)) * 100).toFixed(1)}%
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Efficiency Tab */}
-        <TabsContent value="efficiency" className="mt-4 grid gap-4 md:grid-cols-2">
-          <Card className="col-span-2">
-            <CardHeader>
-              <CardTitle>Warehouse Picking Efficiency</CardTitle>
-              <CardDescription>
-                Average picking time: {pickingEfficiency ? `${pickingEfficiency.averagePickingTimeMinutes.toFixed(1)} minutes` : 'Loading...'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={pickingEfficiency?.pickingEfficiency}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis yAxisId="left" orientation="left" stroke="#3b82f6" />
-                    <YAxis yAxisId="right" orientation="right" stroke="#f97316" />
-                    <Tooltip />
-                    <Legend />
-                    <Line 
-                      yAxisId="left"
-                      type="monotone" 
-                      dataKey="ordersProcessed" 
-                      name="Orders Processed"
-                      stroke="#3b82f6" 
-                      strokeWidth={2}
-                      activeDot={{ r: 8 }} 
-                    />
-                    <Line 
-                      yAxisId="right"
-                      type="monotone" 
-                      dataKey="avgTimeMinutes" 
-                      name="Avg Time (min)"
-                      stroke="#f97316" 
-                      strokeWidth={2}
-                      activeDot={{ r: 8 }} 
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-            <CardFooter className="border-t pt-4">
-              <div className="w-full">
-                <table className="min-w-full">
-                  <thead className="bg-slate-50">
-                    <tr>
-                      <th className="py-2 px-4 text-left font-medium text-slate-600">Date</th>
-                      <th className="py-2 px-4 text-right font-medium text-slate-600">Orders Processed</th>
-                      <th className="py-2 px-4 text-right font-medium text-slate-600">Avg Time (min)</th>
-                      <th className="py-2 px-4 text-right font-medium text-slate-600">Total Time (min)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200">
-                    {pickingEfficiency?.pickingEfficiency.map((day) => (
-                      <tr key={day.date}>
-                        <td className="py-2 px-4">{new Date(day.date).toLocaleDateString()}</td>
-                        <td className="py-2 px-4 text-right">{day.ordersProcessed}</td>
-                        <td className="py-2 px-4 text-right">{day.avgTimeMinutes.toFixed(1)}</td>
-                        <td className="py-2 px-4 text-right">{(day.ordersProcessed * day.avgTimeMinutes).toFixed(1)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        
-        {/* Call Logs Tab */}
-        <TabsContent value="call-logs" className="mt-4 grid gap-4 md:grid-cols-2">
-          <Card className="col-span-2">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Call Log Trends</CardTitle>
-                  <CardDescription>
-                    Call activity over time
-                  </CardDescription>
+        {activeTab === "efficiency" && pickingEfficiency && (
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <Card className="col-span-2">
+              <CardHeader>
+                <CardTitle>Picking Efficiency Over Time</CardTitle>
+                <CardDescription>
+                  Average picking time per order (in minutes)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={pickingEfficiency.pickingEfficiency}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="avgTimeMinutes" 
+                        stroke="#3b82f6" 
+                        name="Avg. Time (mins)"
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 8 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
-                <Select value={timeRange} onValueChange={setTimeRange}>
-                  <SelectTrigger className="w-28">
-                    <SelectValue placeholder="Time Range" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="30">30 Days</SelectItem>
-                    <SelectItem value="90">90 Days</SelectItem>
-                    <SelectItem value="180">180 Days</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px]">
-                {isLoadingCallLogs ? (
-                  <div className="h-full flex items-center justify-center">
-                    <p className="text-muted-foreground">Loading call data...</p>
+              </CardContent>
+              <CardFooter className="border-t pt-4">
+                <div className="rounded-lg bg-blue-50 p-4 border border-blue-200 w-full">
+                  <p className="text-blue-600 text-sm font-medium">Overall Average Picking Time</p>
+                  <p className="text-3xl font-bold text-blue-800">
+                    {pickingEfficiency.averagePickingTimeMinutes.toFixed(1)} minutes
+                  </p>
+                </div>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Orders Processed per Day</CardTitle>
+                <CardDescription>
+                  Daily order processing volume
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={pickingEfficiency.pickingEfficiency}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="ordersProcessed" fill="#4ade80" name="Orders Processed" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Efficiency Metrics</CardTitle>
+                <CardDescription>
+                  Detailed picking efficiency statistics
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Orders</TableHead>
+                        <TableHead>Avg. Time (mins)</TableHead>
+                        <TableHead>Performance</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pickingEfficiency.pickingEfficiency.map((item) => (
+                        <TableRow key={item.date}>
+                          <TableCell>{new Date(item.date).toLocaleDateString()}</TableCell>
+                          <TableCell>{item.ordersProcessed}</TableCell>
+                          <TableCell>{item.avgTimeMinutes.toFixed(1)}</TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={
+                                item.avgTimeMinutes < pickingEfficiency.averagePickingTimeMinutes * 0.8
+                                  ? "success"
+                                  : item.avgTimeMinutes > pickingEfficiency.averagePickingTimeMinutes * 1.2
+                                  ? "destructive"
+                                  : "default"
+                              }
+                            >
+                              {
+                                item.avgTimeMinutes < pickingEfficiency.averagePickingTimeMinutes * 0.8
+                                  ? "Excellent"
+                                  : item.avgTimeMinutes > pickingEfficiency.averagePickingTimeMinutes * 1.2
+                                  ? "Needs Improvement"
+                                  : "Good"
+                              }
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Call Logs Tab */}
+        {activeTab === "call-logs" && callLogsSummary && (
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <Card className="col-span-2">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Call Logs Trend</CardTitle>
+                    <CardDescription>
+                      Call volume over time
+                    </CardDescription>
                   </div>
-                ) : callLogsSummary?.trendData && callLogsSummary.trendData.length > 0 ? (
+                  <Select value={timeRange} onValueChange={setTimeRange}>
+                    <SelectTrigger className="w-28">
+                      <SelectValue placeholder="Time Range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="30">30 Days</SelectItem>
+                      <SelectItem value="60">60 Days</SelectItem>
+                      <SelectItem value="90">90 Days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[400px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
                       data={callLogsSummary.trendData}
                       margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey="date" 
-                        tickFormatter={(value) => {
-                          const date = new Date(value);
-                          return `${date.getMonth() + 1}/${date.getDate()}`;
-                        }}
-                      />
+                      <XAxis dataKey="date" />
                       <YAxis />
-                      <Tooltip 
-                        labelFormatter={(value) => {
-                          const date = new Date(value);
-                          return date.toLocaleDateString();
-                        }}
-                      />
+                      <Tooltip />
                       <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey="count"
+                      <Line 
+                        type="monotone" 
+                        dataKey="count" 
+                        stroke="#8b5cf6" 
                         name="Call Count"
-                        stroke="#8b5cf6"
-                        strokeWidth={2}
+                        dot={{ r: 4 }}
                         activeDot={{ r: 8 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
-                ) : (
-                  <div className="h-full flex items-center justify-center">
-                    <p className="text-muted-foreground">No call data available for the selected period.</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-            <CardFooter className="border-t pt-4">
-              <div className="grid grid-cols-3 gap-4 w-full">
-                <div className="rounded-lg bg-purple-50 p-4 border border-purple-200">
-                  <p className="text-purple-600 text-sm font-medium">Total Calls</p>
-                  <p className="text-2xl font-bold text-purple-800">
-                    {callLogsSummary?.totalCalls || 0}
+                </div>
+              </CardContent>
+              <CardFooter className="border-t pt-4">
+                <div className="rounded-lg bg-violet-50 p-4 border border-violet-200 w-full">
+                  <p className="text-violet-600 text-sm font-medium">Total Calls Logged</p>
+                  <p className="text-3xl font-bold text-violet-800">
+                    {callLogsSummary.totalCalls}
                   </p>
                 </div>
-                <div className="rounded-lg bg-indigo-50 p-4 border border-indigo-200">
-                  <p className="text-indigo-600 text-sm font-medium">Avg. Daily Calls</p>
-                  <p className="text-2xl font-bold text-indigo-800">
-                    {callLogsSummary?.trendData && callLogsSummary.trendData.length > 0 
-                      ? (callLogsSummary.totalCalls / callLogsSummary.trendData.length).toFixed(1) 
-                      : '0'}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-violet-50 p-4 border border-violet-200">
-                  <p className="text-violet-600 text-sm font-medium">Call Types</p>
-                  <p className="text-2xl font-bold text-violet-800">
-                    {callLogsSummary?.callTypeData.length || 0}
-                  </p>
-                </div>
-              </div>
-            </CardFooter>
-          </Card>
+              </CardFooter>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Call Types Distribution</CardTitle>
-              <CardDescription>
-                Breakdown of calls by type
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                {isLoadingCallLogs ? (
-                  <div className="h-full flex items-center justify-center">
-                    <p className="text-muted-foreground">Loading call data...</p>
-                  </div>
-                ) : callLogsSummary?.callTypeData && callLogsSummary.callTypeData.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Call Types Distribution</CardTitle>
+                <CardDescription>
+                  Breakdown by call purpose/type
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -1281,339 +1334,233 @@ const Reports = () => {
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>
-                ) : (
-                  <div className="h-full flex items-center justify-center">
-                    <p className="text-muted-foreground">No call type data available.</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Call Status Distribution</CardTitle>
-              <CardDescription>
-                Breakdown of calls by status
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                {isLoadingCallLogs ? (
-                  <div className="h-full flex items-center justify-center">
-                    <p className="text-muted-foreground">Loading call data...</p>
-                  </div>
-                ) : callLogsSummary?.callStatusData && callLogsSummary.callStatusData.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Call Status Distribution</CardTitle>
+                <CardDescription>
+                  Breakdown by call resolution status
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={callLogsSummary.callStatusData}
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="value" name="Call Count">
+                    <PieChart>
+                      <Pie
+                        data={callLogsSummary.callStatusData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={100}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      >
                         {callLogsSummary.callStatusData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
-                      </Bar>
-                    </BarChart>
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
                   </ResponsiveContainer>
-                ) : (
-                  <div className="h-full flex items-center justify-center">
-                    <p className="text-muted-foreground">No call status data available.</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        {/* Customer Engagement Tab */}
-        <TabsContent value="customer-engagement" className="mt-4 grid gap-4 md:grid-cols-2">
-          <Card className="col-span-2">
-            <CardHeader>
-              <CardTitle>Customer Engagement Segmentation</CardTitle>
-              <CardDescription>
-                Distribution of customers by engagement level
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px]">
-                {isLoadingCustomerEngagement ? (
-                  <div className="h-full flex items-center justify-center">
-                    <p className="text-muted-foreground">Loading customer engagement data...</p>
-                  </div>
-                ) : customerEngagement?.engagementSegments && customerEngagement.engagementSegments.length > 0 ? (
-                  <div className="grid md:grid-cols-2 gap-6 h-full">
-                    <div className="flex flex-col justify-center">
-                      <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                          <Pie
-                            data={customerEngagement.engagementSegments}
-                            dataKey="value"
-                            nameKey="name"
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={130}
-                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                          >
-                            <Cell fill="#4ade80" /> {/* Active */}
-                            <Cell fill="#fbbf24" /> {/* At Risk */}
-                            <Cell fill="#ef4444" /> {/* Dormant */}
-                          </Pie>
-                          <Tooltip />
-                          <Legend />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="flex flex-col justify-center">
-                      <div className="space-y-6">
-                        <div className="rounded-lg bg-emerald-50 p-4 border border-emerald-200">
-                          <p className="text-emerald-600 text-sm font-medium">Active Customers (&lt; 30 days)</p>
-                          <div className="mt-1 flex items-baseline justify-between">
-                            <p className="text-2xl font-bold text-emerald-800">
-                              {customerEngagement.engagementSegments[0]?.value || 0}
-                            </p>
-                            <p className="text-emerald-600">
-                              {customerEngagement.totalCustomers > 0 
-                                ? ((customerEngagement.engagementSegments[0]?.value || 0) / customerEngagement.totalCustomers * 100).toFixed(1) + '%'
-                                : '0%'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="rounded-lg bg-amber-50 p-4 border border-amber-200">
-                          <p className="text-amber-600 text-sm font-medium">At Risk Customers (30-90 days)</p>
-                          <div className="mt-1 flex items-baseline justify-between">
-                            <p className="text-2xl font-bold text-amber-800">
-                              {customerEngagement.engagementSegments[1]?.value || 0}
-                            </p>
-                            <p className="text-amber-600">
-                              {customerEngagement.totalCustomers > 0 
-                                ? ((customerEngagement.engagementSegments[1]?.value || 0) / customerEngagement.totalCustomers * 100).toFixed(1) + '%'
-                                : '0%'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="rounded-lg bg-red-50 p-4 border border-red-200">
-                          <p className="text-red-600 text-sm font-medium">Dormant Customers (&gt; 90 days)</p>
-                          <div className="mt-1 flex items-baseline justify-between">
-                            <p className="text-2xl font-bold text-red-800">
-                              {customerEngagement.engagementSegments[2]?.value || 0}
-                            </p>
-                            <p className="text-red-600">
-                              {customerEngagement.totalCustomers > 0 
-                                ? ((customerEngagement.engagementSegments[2]?.value || 0) / customerEngagement.totalCustomers * 100).toFixed(1) + '%'
-                                : '0%'}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="h-full flex items-center justify-center">
-                    <p className="text-muted-foreground">No customer engagement data available.</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-            <CardFooter className="border-t pt-4">
-              <div className="grid grid-cols-3 gap-4 w-full">
-                <div className="rounded-lg bg-blue-50 p-4 border border-blue-200">
-                  <p className="text-blue-600 text-sm font-medium">Total Customers</p>
-                  <p className="text-2xl font-bold text-blue-800">
-                    {customerEngagement?.totalCustomers || 0}
-                  </p>
                 </div>
-                <div className="rounded-lg bg-purple-50 p-4 border border-purple-200">
-                  <p className="text-purple-600 text-sm font-medium">Total Interactions</p>
-                  <p className="text-2xl font-bold text-purple-800">
-                    {customerEngagement?.totalInteractions || 0}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-indigo-50 p-4 border border-indigo-200">
-                  <p className="text-indigo-600 text-sm font-medium">Avg. Calls/Customer</p>
-                  <p className="text-2xl font-bold text-indigo-800">
-                    {customerEngagement?.avgCallsPerCustomer.toFixed(1) || '0.0'}
-                  </p>
-                </div>
-              </div>
-            </CardFooter>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-          <Card className="col-span-2">
-            <CardHeader>
-              <CardTitle>Top Engaged Customers</CardTitle>
-              <CardDescription>
-                Customers with highest interaction count
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingCustomerEngagement ? (
-                <div className="h-[200px] flex items-center justify-center">
-                  <p className="text-muted-foreground">Loading customer data...</p>
-                </div>
-              ) : customerEngagement?.topEngagedCustomers && customerEngagement.topEngagedCustomers.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full bg-white border divide-y">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer Name</th>
-                        <th className="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Call Count</th>
-                        <th className="py-3 px-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Last Interaction</th>
-                        <th className="py-3 px-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Days Since Last Call</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {customerEngagement.topEngagedCustomers.map((customer) => (
-                        <tr key={customer.id}>
-                          <td className="py-2 px-4">{customer.name}</td>
-                          <td className="py-2 px-4 text-center">{customer.callCount}</td>
-                          <td className="py-2 px-4 text-right">
-                            {customer.lastInteractionDate 
-                              ? new Date(customer.lastInteractionDate).toLocaleDateString() 
-                              : 'Never'}
-                          </td>
-                          <td className={`py-2 px-4 text-right ${
-                            customer.daysSinceLastInteraction === null ? 'text-gray-400' :
-                            customer.daysSinceLastInteraction < 30 ? 'text-emerald-600' :
-                            customer.daysSinceLastInteraction < 90 ? 'text-amber-600' :
-                            'text-red-600'
-                          }`}>
-                            {customer.daysSinceLastInteraction === null ? 'N/A' : customer.daysSinceLastInteraction}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="h-[200px] flex items-center justify-center">
-                  <p className="text-muted-foreground">No customer engagement data available.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        {/* Order Quality Tab */}
-        <TabsContent value="order-quality" className="mt-4 grid gap-4 md:grid-cols-2">
-          <Card className="col-span-2">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Order Error Rate Trends</CardTitle>
-                  <CardDescription>
-                    Order quality metrics over time
-                  </CardDescription>
-                </div>
-                <Select value={timeRange} onValueChange={setTimeRange}>
-                  <SelectTrigger className="w-28">
-                    <SelectValue placeholder="Time Range" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="30">30 Days</SelectItem>
-                    <SelectItem value="90">90 Days</SelectItem>
-                    <SelectItem value="180">180 Days</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px]">
-                {isLoadingOrderQuality ? (
-                  <div className="h-full flex items-center justify-center">
-                    <p className="text-muted-foreground">Loading order quality data...</p>
+        {/* Customer Engagement Tab */}
+        {activeTab === "customer-engagement" && customerEngagement && (
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <Card className="col-span-2">
+              <CardHeader>
+                <CardTitle>Customer Engagement Summary</CardTitle>
+                <CardDescription>
+                  Overview of customer interaction metrics
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="rounded-lg bg-blue-50 p-4 border border-blue-200">
+                    <p className="text-blue-600 text-sm font-medium">Total Customers</p>
+                    <p className="text-3xl font-bold text-blue-800">
+                      {customerEngagement.totalCustomers}
+                    </p>
                   </div>
-                ) : orderQualitySummary?.trending && orderQualitySummary.trending.length > 0 ? (
+                  <div className="rounded-lg bg-purple-50 p-4 border border-purple-200">
+                    <p className="text-purple-600 text-sm font-medium">Total Interactions</p>
+                    <p className="text-3xl font-bold text-purple-800">
+                      {customerEngagement.totalInteractions}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-teal-50 p-4 border border-teal-200">
+                    <p className="text-teal-600 text-sm font-medium">Avg. Calls Per Customer</p>
+                    <p className="text-3xl font-bold text-teal-800">
+                      {customerEngagement.avgCallsPerCustomer.toFixed(1)}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Customer Engagement Segments</CardTitle>
+                <CardDescription>
+                  Breakdown of customer interaction frequency
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={customerEngagement.engagementSegments}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={100}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {customerEngagement.engagementSegments.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Top Engaged Customers</CardTitle>
+                <CardDescription>
+                  Customers with highest interaction frequency
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Call Count</TableHead>
+                        <TableHead>Last Interaction</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {customerEngagement.topEngagedCustomers.map((customer) => (
+                        <TableRow key={customer.id}>
+                          <TableCell>{customer.name}</TableCell>
+                          <TableCell>{customer.callCount}</TableCell>
+                          <TableCell>
+                            {customer.lastInteractionDate 
+                              ? new Date(customer.lastInteractionDate).toLocaleDateString()
+                              : 'N/A'}
+                            {customer.daysSinceLastInteraction !== null && (
+                              <Badge className="ml-2" variant="outline">
+                                {customer.daysSinceLastInteraction} days ago
+                              </Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Order Quality Tab */}
+        {activeTab === "order-quality" && orderQualitySummary && (
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <Card className="col-span-2">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Order Error Rate Trend</CardTitle>
+                    <CardDescription>
+                      Error rate over time
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[400px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
                       data={orderQualitySummary.trending}
                       margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey="date" 
-                        tickFormatter={(value) => {
-                          const date = new Date(value);
-                          return `${date.getMonth() + 1}/${date.getDate()}`;
-                        }}
-                      />
+                      <XAxis dataKey="date" />
                       <YAxis 
-                        tickFormatter={(value) => `${value}%`}
+                        tickFormatter={(value) => `${(value * 100).toFixed(1)}%`}
                       />
                       <Tooltip 
-                        formatter={(value) => [`${Number(value).toFixed(2)}%`, 'Error Rate']}
-                        labelFormatter={(value) => {
-                          const date = new Date(value);
-                          return date.toLocaleDateString();
-                        }}
+                        formatter={(value) => [`${(Number(value) * 100).toFixed(1)}%`, 'Error Rate']}
                       />
                       <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey="errorRate"
+                      <Line 
+                        type="monotone" 
+                        dataKey="errorRate" 
+                        stroke="#ef4444" 
                         name="Error Rate"
-                        stroke="#ef4444"
-                        strokeWidth={2}
+                        dot={{ r: 4 }}
                         activeDot={{ r: 8 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
-                ) : (
-                  <div className="h-full flex items-center justify-center">
-                    <p className="text-muted-foreground">No order quality data available for the selected period.</p>
+                </div>
+              </CardContent>
+              <CardFooter className="border-t pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 w-full">
+                  <div className="rounded-lg bg-red-50 p-4 border border-red-200">
+                    <p className="text-red-600 text-sm font-medium">Error Rate</p>
+                    <p className="text-2xl font-bold text-red-800">
+                      {(orderQualitySummary.errorRate * 100).toFixed(1)}%
+                    </p>
                   </div>
-                )}
-              </div>
-            </CardContent>
-            <CardFooter className="border-t pt-4">
-              <div className="grid grid-cols-4 gap-4 w-full">
-                <div className="rounded-lg bg-blue-50 p-4 border border-blue-200">
-                  <p className="text-blue-600 text-sm font-medium">Shipped Orders</p>
-                  <p className="text-2xl font-bold text-blue-800">
-                    {orderQualitySummary?.totalShippedOrders || 0}
-                  </p>
+                  <div className="rounded-lg bg-amber-50 p-4 border border-amber-200">
+                    <p className="text-amber-600 text-sm font-medium">Total Errors</p>
+                    <p className="text-2xl font-bold text-amber-800">
+                      {orderQualitySummary.totalErrors}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-emerald-50 p-4 border border-emerald-200">
+                    <p className="text-emerald-600 text-sm font-medium">Resolution Rate</p>
+                    <p className="text-2xl font-bold text-emerald-800">
+                      {(orderQualitySummary.resolutionRate * 100).toFixed(1)}%
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-blue-50 p-4 border border-blue-200">
+                    <p className="text-blue-600 text-sm font-medium">Avg. Resolution Time</p>
+                    <p className="text-2xl font-bold text-blue-800">
+                      {orderQualitySummary.avgResolutionTimeInDays.toFixed(1)} days
+                    </p>
+                  </div>
                 </div>
-                <div className="rounded-lg bg-red-50 p-4 border border-red-200">
-                  <p className="text-red-600 text-sm font-medium">Total Errors</p>
-                  <p className="text-2xl font-bold text-red-800">
-                    {orderQualitySummary?.totalErrorsInPeriod || 0}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-amber-50 p-4 border border-amber-200">
-                  <p className="text-amber-600 text-sm font-medium">Error Rate</p>
-                  <p className="text-2xl font-bold text-amber-800">
-                    {orderQualitySummary?.errorRate.toFixed(2) || '0.00'}%
-                  </p>
-                </div>
-                <div className="rounded-lg bg-emerald-50 p-4 border border-emerald-200">
-                  <p className="text-emerald-600 text-sm font-medium">Resolution Rate</p>
-                  <p className="text-2xl font-bold text-emerald-800">
-                    {orderQualitySummary?.resolutionRate.toFixed(1) || '0.0'}%
-                  </p>
-                </div>
-              </div>
-            </CardFooter>
-          </Card>
+              </CardFooter>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Error Types Distribution</CardTitle>
-              <CardDescription>
-                Breakdown of errors by category
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                {isLoadingOrderQuality ? (
-                  <div className="h-full flex items-center justify-center">
-                    <p className="text-muted-foreground">Loading error data...</p>
-                  </div>
-                ) : orderQualitySummary?.errorsByType && orderQualitySummary.errorsByType.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Errors by Type</CardTitle>
+                <CardDescription>
+                  Breakdown of error types
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -1633,251 +1580,184 @@ const Reports = () => {
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>
-                ) : (
-                  <div className="h-full flex items-center justify-center">
-                    <p className="text-muted-foreground">No error type data available.</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Error Resolution Metrics</CardTitle>
-              <CardDescription>
-                Key performance indicators for error resolution
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="bg-slate-50 p-6 rounded-lg">
-                  <h3 className="text-lg font-medium mb-4">Error Resolution Time</h3>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-muted-foreground">Average Days to Resolve:</span>
-                    <span className="text-lg font-bold">
-                      {orderQualitySummary?.avgResolutionTimeInDays 
-                        ? orderQualitySummary.avgResolutionTimeInDays.toFixed(1) + ' days'
-                        : 'N/A'}
-                    </span>
-                  </div>
-                  <div className="mt-6">
-                    <h4 className="text-sm font-medium mb-2">Status of Reported Errors</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-white p-4 rounded border">
-                        <p className="text-emerald-600 text-sm font-medium">Resolved</p>
-                        <p className="text-2xl font-bold text-emerald-800">
-                          {orderQualitySummary?.resolvedErrorsCount || 0}
-                        </p>
-                      </div>
-                      <div className="bg-white p-4 rounded border">
-                        <p className="text-red-600 text-sm font-medium">Unresolved</p>
-                        <p className="text-2xl font-bold text-red-800">
-                          {orderQualitySummary?.unresolvedErrorsCount || 0}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Root Cause Analysis</CardTitle>
+                <CardDescription>
+                  Common causes of order errors
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      layout="vertical"
+                      data={Object.entries(orderQualitySummary.rootCauseAnalysis)
+                        .map(([name, value]) => ({ name, value }))}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" />
+                      <YAxis type="category" dataKey="name" width={150} />
+                      <Tooltip />
+                      <Bar dataKey="value" fill="#f97316" name="Count">
+                        {Object.entries(orderQualitySummary.rootCauseAnalysis)
+                          .map(([name, value], index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-                {orderQualitySummary?.rootCauseAnalysis && Object.keys(orderQualitySummary.rootCauseAnalysis).length > 0 && (
-                  <div className="bg-slate-50 p-6 rounded-lg">
-                    <h3 className="text-lg font-medium mb-4">Common Root Causes</h3>
-                    <div className="space-y-2">
-                      {Object.entries(orderQualitySummary.rootCauseAnalysis)
-                        .sort((a, b) => b[1] - a[1])
-                        .slice(0, 3)
-                        .map(([cause, count], index) => (
-                          <div key={index} className="flex justify-between items-center">
-                            <span className="text-sm truncate max-w-[70%]">{cause}</span>
-                            <span className="text-sm font-medium">{count} issues</span>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Predictions Tab */}
-        <TabsContent value="predictions" className="mt-4 grid gap-4 md:grid-cols-2">
-          <Card className="col-span-2">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Inventory Prediction Overview</CardTitle>
-                  <CardDescription>
-                    Products requiring reorder and predicted stockout dates
-                  </CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <Select defaultValue="moving_average" onValueChange={(method) => {
-                    if (window.confirm(`Generate new predictions using ${method} method?`)) {
-                      fetch(`/api/inventory-predictions/generate?method=${method}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }
-                      }).then(() => {
-                        window.location.reload();
-                      });
-                    }
-                  }}>
-                    <SelectTrigger className="w-44">
-                      <SelectValue placeholder="Prediction Method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="moving_average">Moving Average</SelectItem>
-                      <SelectItem value="linear_regression">Linear Regression</SelectItem>
-                      <SelectItem value="seasonal_adjustment">Seasonal Adjustment</SelectItem>
-                      <SelectItem value="weighted_average">Weighted Average</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button variant="outline" onClick={() => {
-                    window.location.reload();
-                  }}>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Refresh
+        {activeTab === "predictions" && (
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <Card className="col-span-2">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Products Requiring Reorder</CardTitle>
+                    <CardDescription>
+                      Items predicted to require reordering
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => window.location.href = '/inventory-predictions'}
+                    className="gap-2"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Generate New Predictions
                   </Button>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Current Stock</TableHead>
-                      <TableHead>Predicted Demand</TableHead>
-                      <TableHead>Stockout Date</TableHead>
-                      <TableHead>Recommended Reorder Date</TableHead>
-                      <TableHead>Recommended Quantity</TableHead>
-                      <TableHead>Confidence</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {productsRequiringReorder.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
-                          No products requiring reorder at this time
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      productsRequiringReorder.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell className="font-medium">{item.productName}</TableCell>
-                          <TableCell>
-                            <Badge variant={item.currentStock === 0 ? "destructive" : item.currentStock < 10 ? "outline" : "default"}>
-                              {item.currentStock}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{item.predictedDemand} units</TableCell>
-                          <TableCell>
-                            {item.predictedStockoutDate ? 
-                              new Date(item.predictedStockoutDate).toLocaleDateString() : 'N/A'}
-                          </TableCell>
-                          <TableCell>
-                            {item.recommendedReorderDate ? 
-                              new Date(item.recommendedReorderDate).toLocaleDateString() : 'ASAP'}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="bg-blue-50">
-                              {item.recommendedQuantity || 'N/A'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={
-                                item.accuracy === 'high' ? 'default' :
-                                item.accuracy === 'medium' ? 'outline' : 'destructive'
-                              }
-                              className={
-                                item.accuracy === 'high' ? 'bg-green-100 text-green-800 hover:bg-green-200' :
-                                item.accuracy === 'medium' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' : ''
-                              }
-                            >
-                              {item.confidenceLevel}% ({item.accuracy})
-                            </Badge>
-                          </TableCell>
+              </CardHeader>
+              <CardContent>
+                {isLoadingPredictions ? (
+                  <div className="py-6 text-center">Loading prediction data...</div>
+                ) : isReorderError ? (
+                  <div className="py-6 text-center text-red-500">
+                    Error loading prediction data: {reorderError?.toString()}
+                  </div>
+                ) : productsRequiringReorder.length === 0 ? (
+                  <div className="py-6 text-center">No products currently require reordering</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Product</TableHead>
+                          <TableHead>Current Stock</TableHead>
+                          <TableHead>Predicted Demand</TableHead>
+                          <TableHead>Recom. Quantity</TableHead>
+                          <TableHead>Recom. Date</TableHead>
+                          <TableHead>Confidence</TableHead>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+                      </TableHeader>
+                      <TableBody>
+                        {productsRequiringReorder.slice(0, 10).map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">{item.productName}</TableCell>
+                            <TableCell>{item.currentStock}</TableCell>
+                            <TableCell>{item.predictedDemand}</TableCell>
+                            <TableCell>{item.recommendedQuantity}</TableCell>
+                            <TableCell>
+                              {item.recommendedReorderDate ? 
+                                new Date(item.recommendedReorderDate).toLocaleDateString() : 
+                                'ASAP'
+                              }
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  item.accuracy === 'high' ? 'success' : 
+                                  item.accuracy === 'medium' ? 'default' : 
+                                  'destructive'
+                                }
+                              >
+                                {item.accuracy.charAt(0).toUpperCase() + item.accuracy.slice(1)}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Prediction Methods Distribution</CardTitle>
-              <CardDescription>
-                Breakdown of prediction methods used
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={predictionMethodsDistribution}
-                      dataKey="count"
-                      nameKey="method"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      fill="#82ca9d"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+            <Card>
+              <CardHeader>
+                <CardTitle>Prediction Methods</CardTitle>
+                <CardDescription>
+                  Distribution of prediction algorithms used
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={predictionMethodsDistribution}
+                        dataKey="count"
+                        nameKey="method"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={100}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {predictionMethodsDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value, name, props) => [value, props.payload.method]} />
+                      <Legend formatter={(value, entry) => entry.payload.method} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Prediction Accuracy</CardTitle>
+                <CardDescription>
+                  Distribution of confidence levels
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={predictionAccuracyDistribution}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                     >
-                      {predictionMethodsDistribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [value, 'Count']} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Prediction Accuracy</CardTitle>
-              <CardDescription>
-                Confidence level distribution
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={predictionAccuracyDistribution}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => [value, 'Count']} />
-                    <Legend />
-                    <Bar dataKey="count" fill="#3b82f6">
-                      {predictionAccuracyDistribution.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={
-                            entry.name === 'High' ? '#4ade80' : 
-                            entry.name === 'Medium' ? '#fbbf24' : '#ef4444'
-                          } 
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="count" name="Count">
+                        <Cell fill="#4ade80" />  {/* High */}
+                        <Cell fill="#fbbf24" />  {/* Medium */}
+                        <Cell fill="#ef4444" />  {/* Low */}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
