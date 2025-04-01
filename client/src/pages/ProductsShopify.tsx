@@ -986,7 +986,7 @@ const Products = () => {
                               
                               {product.barcode && (
                                 <div className="flex items-center text-sm text-slate-500">
-                                  <BarcodeGenerator value={product.barcode} width={12} height={12} className="mr-1" />
+                                  <i className="fas fa-barcode mr-1 text-slate-400"></i>
                                   <span className="font-mono text-xs">{product.barcode}</span>
                                 </div>
                               )}
