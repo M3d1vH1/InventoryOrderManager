@@ -41,9 +41,9 @@ function transformCallLog(callLog: CallLog | undefined): any {
     callDate: callLog.callDate || new Date(),
     duration: callLog.duration || 0,
     notes: callLog.notes || '',
-    followupDate: callLog.followupDate,
-    createdAt: callLog.createdAt,
-    updatedAt: callLog.updatedAt
+    followupDate: callLog.followupDate || null,
+    createdAt: callLog.createdAt || new Date(),
+    updatedAt: callLog.updatedAt || new Date()
   };
   
   return transformed;

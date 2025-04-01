@@ -904,7 +904,7 @@ const Products = () => {
                                   product.imagePath :
                                   `/${product.imagePath}`}
                               alt={product.name}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-contain"
                               onError={(e) => {
                                 (e.target as HTMLImageElement).src = '/placeholder-image.svg';
                               }}
