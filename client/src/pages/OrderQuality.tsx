@@ -778,12 +778,12 @@ export default function OrderQuality() {
         <div className="mt-4 md:mt-0 flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => refetchQuality()}>
             <RefreshCw className="h-4 w-4 mr-2" />
-            {t('common.refresh')}
+            Ανανέωση
           </Button>
           
           <Button onClick={() => setIsCreateDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            {t('orderQuality.createNew')}
+            Νέο Ζήτημα Ποιότητας
           </Button>
         </div>
       </div>
