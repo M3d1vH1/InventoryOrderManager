@@ -19,6 +19,7 @@ interface Order {
   status: 'pending' | 'picked' | 'shipped' | 'cancelled';
   notes?: string;
   items?: OrderItem[];
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
 }
 
 const getStatusBadgeClass = (status: string) => {
@@ -30,6 +31,21 @@ const getStatusBadgeClass = (status: string) => {
     case 'shipped':
       return 'bg-green-100 text-green-800';
     case 'cancelled':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-slate-100 text-slate-800';
+  }
+};
+
+const getPriorityBadgeClass = (priority?: string) => {
+  switch (priority) {
+    case 'low':
+      return 'bg-slate-100 text-slate-800';
+    case 'medium':
+      return 'bg-blue-100 text-blue-800';
+    case 'high':
+      return 'bg-amber-100 text-amber-800';
+    case 'urgent':
       return 'bg-red-100 text-red-800';
     default:
       return 'bg-slate-100 text-slate-800';
@@ -50,6 +66,7 @@ const RecentOrders = () => {
           <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded"></div></td>
           <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded"></div></td>
           <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-16"></div></td>
+          <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-16"></div></td>
           <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-8"></div></td>
           <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-12"></div></td>
         </tr>
@@ -59,7 +76,7 @@ const RecentOrders = () => {
     if (!orders || orders.length === 0) {
       return (
         <tr>
-          <td colSpan={6} className="py-6 text-center text-slate-500">
+          <td colSpan={7} className="py-6 text-center text-slate-500">
             {t('orders.noOrdersFound')}
           </td>
         </tr>
@@ -75,6 +92,13 @@ const RecentOrders = () => {
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(order.status)}`}>
             {t(`orders.status.${order.status}`)}
           </span>
+        </td>
+        <td className="py-3 px-4">
+          {order.priority && 
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityBadgeClass(order.priority)}`}>
+              {t(`orders.priority.${order.priority}`)}
+            </span>
+          }
         </td>
         <td className="py-3 px-4">{order.items?.length || 0}</td>
         <td className="py-3 px-4">
@@ -107,6 +131,7 @@ const RecentOrders = () => {
               <th className="py-3 px-4 text-left font-medium">{t('orders.columns.customer')}</th>
               <th className="py-3 px-4 text-left font-medium">{t('orders.columns.date')}</th>
               <th className="py-3 px-4 text-left font-medium">{t('orders.columns.status')}</th>
+              <th className="py-3 px-4 text-left font-medium">{t('orders.columns.priority')}</th>
               <th className="py-3 px-4 text-left font-medium">{t('orders.columns.items')}</th>
               <th className="py-3 px-4 text-left font-medium">{t('orders.columns.actions')}</th>
             </tr>
