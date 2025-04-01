@@ -698,8 +698,8 @@ const Products = () => {
                           </div>
                           
                           <div className="bg-slate-50 rounded-md p-2 flex flex-col items-center">
-                            <span className="text-xs text-slate-500 mb-1">{t('products.columns.minStock')}</span>
-                            <span className="font-semibold text-slate-700">{product.minStockLevel}</span>
+                            <span className="text-xs text-slate-500 mb-1">{t('products.columns.unitsPerBox')}</span>
+                            <span className="font-semibold text-slate-700">{product.unitsPerBox || '-'}</span>
                           </div>
                         </div>
                         
@@ -733,17 +733,19 @@ const Products = () => {
                           </div>
                           
                           <div className="flex justify-end mt-2">
-                            <button 
-                              className="text-red-500 hover:text-red-600 text-xs flex items-center"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteProduct(product.id);
-                              }}
-                              title={t('products.deleteProduct')}
-                            >
-                              <Trash2 className="h-3 w-3 mr-1" />
-                              {t('common.delete')}
-                            </button>
+                            {user?.role === 'admin' && (
+                              <button 
+                                className="text-red-500 hover:text-red-600 text-xs flex items-center"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteProduct(product.id);
+                                }}
+                                title={t('products.deleteProduct')}
+                              >
+                                <Trash2 className="h-3 w-3 mr-1" />
+                                {t('common.delete')}
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -759,7 +761,7 @@ const Products = () => {
                         <th className="text-left py-3 px-4 font-semibold">{t('products.columns.product')}</th>
                         <th className="text-left py-3 px-4 font-semibold">{t('products.columns.sku')}</th>
                         <th className="text-center py-3 px-4 font-semibold">{t('products.columns.stock')}</th>
-                        <th className="text-center py-3 px-4 font-semibold">{t('products.columns.minStock')}</th>
+                        <th className="text-center py-3 px-4 font-semibold">{t('products.columns.unitsPerBox')}</th>
                         <th className="text-left py-3 px-4 font-semibold">{t('products.columns.location')}</th>
                         <th className="text-right py-3 px-4 font-semibold">{t('common.actions')}</th>
                       </tr>
@@ -835,7 +837,7 @@ const Products = () => {
                               </span>
                             </div>
                           </td>
-                          <td className="py-4 px-4 text-center text-slate-700 font-medium">{product.minStockLevel}</td>
+                          <td className="py-4 px-4 text-center text-slate-700 font-medium">{product.unitsPerBox || '-'}</td>
                           <td className="py-4 px-4">
                             {product.location ? (
                               <div className="flex items-center text-slate-700">
@@ -861,18 +863,20 @@ const Products = () => {
                                 <Edit size={14} className="text-slate-600" />
                               </Button>
                               
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteProduct(product.id);
-                                }}
-                                title={t('products.deleteProduct')}
-                              >
-                                <Trash2 size={14} />
-                              </Button>
+                              {user?.role === 'admin' && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteProduct(product.id);
+                                  }}
+                                  title={t('products.deleteProduct')}
+                                >
+                                  <Trash2 size={14} />
+                                </Button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -950,18 +954,20 @@ const Products = () => {
                                   <Edit size={14} className="text-slate-600" />
                                 </Button>
                                 
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-8 w-8 p-0 rounded-full text-red-500 hover:text-red-600 hover:bg-red-50"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteProduct(product.id);
-                                  }}
-                                  title={t('products.deleteProduct')}
-                                >
-                                  <Trash2 size={14} />
-                                </Button>
+                                {user?.role === 'admin' && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-8 w-8 p-0 rounded-full text-red-500 hover:text-red-600 hover:bg-red-50"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteProduct(product.id);
+                                    }}
+                                    title={t('products.deleteProduct')}
+                                  >
+                                    <Trash2 size={14} />
+                                  </Button>
+                                )}
                               </div>
                             </div>
                             
@@ -1021,21 +1027,13 @@ const Products = () => {
                           </div>
                           
                           <div className="flex flex-col items-center text-center">
-                            <div className="text-xs text-slate-500 mb-1">{t('products.columns.minStock')}</div>
+                            <div className="text-xs text-slate-500 mb-1">{t('products.columns.unitsPerBox')}</div>
                             <div className="font-medium text-slate-700">
-                              {product.minStockLevel}
+                              {product.unitsPerBox || '-'}
                             </div>
                           </div>
                           
-                          {product.unitsPerBox && product.unitsPerBox > 0 && (
-                            <div className="flex flex-col items-center text-center">
-                              <div className="text-xs text-slate-500 mb-1">{t('products.columns.unitsPerBox')}</div>
-                              <div className="font-medium text-slate-700 flex items-center">
-                                <Layers className="h-3.5 w-3.5 mr-1 text-slate-400" />
-                                {product.unitsPerBox}
-                              </div>
-                            </div>
-                          )}
+                          {/* minStockLevel section removed as it was replaced by unitsPerBox */}
                         </div>
                       </div>
                     </div>
@@ -1813,12 +1811,29 @@ const Products = () => {
               </Tabs>
               
               <div className="flex justify-between mt-6">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setIsDetailsDialogOpen(false)}
-                >
-                  {t('common.close')}
-                </Button>
+                <div className="flex space-x-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsDetailsDialogOpen(false)}
+                  >
+                    {t('common.close')}
+                  </Button>
+                  
+                  {user?.role === 'admin' && (
+                    <Button
+                      variant="outline"
+                      className="text-red-500 border-red-300 hover:bg-red-50 hover:text-red-600"
+                      onClick={() => {
+                        setIsDetailsDialogOpen(false);
+                        handleDeleteProduct(viewingProduct.id);
+                      }}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {t('common.delete')}
+                    </Button>
+                  )}
+                </div>
+                
                 <Button
                   onClick={() => {
                     setIsDetailsDialogOpen(false);
