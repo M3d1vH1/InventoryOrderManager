@@ -188,6 +188,7 @@
       "customer": "Customer",
       "date": "Date",
       "status": "Status",
+      "priority": "Priority",
       "items": "Items",
       "actions": "Actions"
     },
