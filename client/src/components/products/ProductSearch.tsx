@@ -31,7 +31,17 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
   const modalRef = useRef<HTMLDivElement>(null);
   
   const { data: products, isLoading, refetch } = useQuery<Product[]>({
-    queryKey: ['/api/products', searchTerm, category, stockStatus],
+    queryKey: ['/api/products/search', searchTerm, category, stockStatus],
+    queryFn: async () => {
+      const searchParams = new URLSearchParams();
+      if (searchTerm) searchParams.append('query', searchTerm);
+      if (category && category !== 'all') searchParams.append('category', category);
+      if (stockStatus && stockStatus !== 'all') searchParams.append('stockStatus', stockStatus);
+      
+      const response = await fetch(`/api/products/search?${searchParams.toString()}`);
+      if (!response.ok) throw new Error('Failed to search products');
+      return response.json();
+    },
     enabled: isOpen,
   });
 
@@ -105,7 +115,12 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
                 placeholder="Search by product name or SKU"
                 className="pl-10 h-12 text-base product-search-input"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  if (e.target.value.length === 0) {
+                    setTimeout(() => refetch(), 100);
+                  }
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleSearch();
                   if (e.key === 'Escape') onClose();
@@ -122,7 +137,13 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
           <div className="flex flex-wrap items-center mt-4 gap-3">
             <div className="flex items-center">
               <span className="text-base font-medium text-slate-600 mr-3">Category:</span>
-              <Select value={category} onValueChange={setCategory}>
+              <Select 
+                value={category} 
+                onValueChange={(value) => {
+                  setCategory(value);
+                  setTimeout(() => refetch(), 100);
+                }}
+              >
                 <SelectTrigger className="w-48 h-12 text-base">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
@@ -134,7 +155,13 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
             </div>
             <div className="flex items-center">
               <span className="text-base font-medium text-slate-600 mr-3">Stock:</span>
-              <Select value={stockStatus} onValueChange={setStockStatus}>
+              <Select 
+                value={stockStatus} 
+                onValueChange={(value) => {
+                  setStockStatus(value);
+                  setTimeout(() => refetch(), 100);
+                }}
+              >
                 <SelectTrigger className="w-48 h-12 text-base">
                   <SelectValue placeholder="All Stock Status" />
                 </SelectTrigger>

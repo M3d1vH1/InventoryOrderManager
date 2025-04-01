@@ -164,6 +164,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  app.get('/api/products/search', async (req, res) => {
+    try {
+      const query = req.query.query as string;
+      const category = req.query.category as string;
+      const stockStatus = req.query.stockStatus as string;
+      
+      const products = await storage.searchProducts(query, category, stockStatus);
+      res.json(products);
+    } catch (error: any) {
+      console.error('Product search error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.get('/api/products/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);

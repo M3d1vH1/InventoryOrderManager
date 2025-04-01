@@ -79,26 +79,30 @@ const Header = () => {
         
         {/* Responsive actions section */}
         <div className="flex items-center gap-2 md:gap-4">
-          {/* Buttons for larger screens */}
+          {/* Buttons for larger screens with responsive text */}
           <div className="hidden md:flex items-center gap-2">
             <Button
               variant="default"
               size="sm"
               onClick={() => setShowOrderForm(true)}
-              className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
+              className="flex items-center gap-1 bg-green-600 hover:bg-green-700 whitespace-nowrap"
             >
-              <PlusCircle className="h-4 w-4" />
-              <span>{t('orders.createNew')}</span>
+              <PlusCircle className="h-4 w-4 flex-shrink-0" />
+              <span className="md:hidden lg:inline xl:inline">{t('orders.new')}</span>
+              <span className="hidden md:inline lg:hidden xl:hidden truncate max-w-[60px]">{t('orders.new')}</span>
+              <span className="hidden lg:inline xl:inline">{t('orders.createNew')}</span>
             </Button>
             
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowCallLogForm(true)}
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 whitespace-nowrap"
             >
-              <PhoneCall className="h-4 w-4" />
-              <span>{t('callLogs.addNewCall')}</span>
+              <PhoneCall className="h-4 w-4 flex-shrink-0" />
+              <span className="md:hidden lg:inline xl:inline">{t('callLogs.new')}</span>
+              <span className="hidden md:inline lg:hidden xl:hidden truncate max-w-[60px]">{t('callLogs.new')}</span>
+              <span className="hidden lg:inline xl:inline">{t('callLogs.addNewCall')}</span>
             </Button>
           </div>
           
