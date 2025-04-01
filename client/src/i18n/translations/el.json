@@ -632,6 +632,8 @@
     "qualityNotes": "Σημειώσεις",
     "orderInfo": "Πληροφορίες Παραγγελίας",
     "tabs": {
+      "generalInfo": "Γενικές Πληροφορίες",
+      "affectedProducts": "Επηρεαζόμενα Προϊόντα",
       "orderRelated": "Σχετικό με Παραγγελία",
       "standalone": "Αυτόνομη Ποιότητα"
     },
