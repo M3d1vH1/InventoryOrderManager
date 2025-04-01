@@ -478,8 +478,8 @@ const Products = () => {
       <div className="bg-white rounded-lg shadow mb-6">
         <div className="p-5 border-b border-slate-200 flex justify-between items-center">
           <div>
-            <h1 className="font-semibold text-2xl">Products</h1>
-            <p className="text-slate-500 mt-1">Manage your inventory and track stock levels</p>
+            <h1 className="font-semibold text-2xl">{t('products.title')}</h1>
+            <p className="text-slate-500 mt-1">{t('products.manage')}</p>
           </div>
           <div className="flex gap-2">
             {/* Categories management button removed as part of simplification */}
@@ -490,7 +490,7 @@ const Products = () => {
               }}
               className="bg-green-600 hover:bg-green-700 py-2 px-4 h-auto"
             >
-              <Plus className="mr-2 h-4 w-4" /> Add product
+              <Plus className="mr-2 h-4 w-4" /> {t('products.addProduct')}
             </Button>
           </div>
         </div>
@@ -504,7 +504,7 @@ const Products = () => {
                   <i className="fas fa-search text-slate-400"></i>
                 </span>
                 <Input
-                  placeholder="Search products..."
+                  placeholder={t('products.searchProducts')}
                   className="pl-10 h-10 bg-white"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -514,13 +514,13 @@ const Products = () => {
                 {/* Category filter dropdown removed as part of simplification */}
                 <Select value={stockFilter} onValueChange={setStockFilter}>
                   <SelectTrigger className="w-full md:w-48 h-10 bg-white">
-                    <SelectValue placeholder="Filter by stock" />
+                    <SelectValue placeholder={t('products.filterByStock')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Stock Levels</SelectItem>
-                    <SelectItem value="in">In Stock</SelectItem>
-                    <SelectItem value="low">Low Stock</SelectItem>
-                    <SelectItem value="out">Out of Stock</SelectItem>
+                    <SelectItem value="all">{t('products.stockFilterAll')}</SelectItem>
+                    <SelectItem value="in">{t('products.stockFilterIn')}</SelectItem>
+                    <SelectItem value="low">{t('products.stockFilterLow')}</SelectItem>
+                    <SelectItem value="out">{t('products.stockFilterOut')}</SelectItem>
                   </SelectContent>
                 </Select>
                 
@@ -531,10 +531,10 @@ const Products = () => {
                     onValueChange={(value) => setTagFilter(value)}
                   >
                     <SelectTrigger className="w-full md:w-48 h-10 bg-white">
-                      <SelectValue placeholder="Filter by tag" />
+                      <SelectValue placeholder={t('products.filterByTag')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all_tags">All Tags</SelectItem>
+                      <SelectItem value="all_tags">{t('products.tagFilterAll')}</SelectItem>
                       {allTags.map(tag => (
                         <SelectItem key={tag} value={tag}>{tag}</SelectItem>
                       ))}
@@ -553,9 +553,9 @@ const Products = () => {
                     {viewMode === "table" && <Table className="mr-2 h-4 w-4" />}
                     {viewMode === "list" && <List className="mr-2 h-4 w-4" />}
                     <span>
-                      {viewMode === "grid" && "Grid View"}
-                      {viewMode === "table" && "Table View"}
-                      {viewMode === "list" && "List View"}
+                      {viewMode === "grid" && t('products.gridView')}
+                      {viewMode === "table" && t('products.tableView')}
+                      {viewMode === "list" && t('products.listView')}
                     </span>
                     <ChevronDown className="ml-2 h-4 w-4" />
                   </Button>
@@ -563,15 +563,15 @@ const Products = () => {
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => setViewMode("grid")}>
                     <LayoutGrid className="mr-2 h-4 w-4" />
-                    <span>Grid View</span>
+                    <span>{t('products.gridView')}</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setViewMode("table")}>
                     <Table className="mr-2 h-4 w-4" />
-                    <span>Table View</span>
+                    <span>{t('products.tableView')}</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setViewMode("list")}>
                     <List className="mr-2 h-4 w-4" />
-                    <span>List View</span>
+                    <span>{t('products.listView')}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -585,18 +585,18 @@ const Products = () => {
             <div className="flex items-center justify-center py-10">
               <div className="text-center">
                 <i className="fas fa-spinner fa-spin text-2xl text-slate-400 mb-2"></i>
-                <p className="text-slate-600">Loading products...</p>
+                <p className="text-slate-600">{t('products.loading')}</p>
               </div>
             </div>
           ) : filteredProducts?.length === 0 ? (
             <div className="flex items-center justify-center py-10">
               <div className="text-center">
                 <Package size={48} className="mx-auto text-slate-300 mb-3" />
-                <h3 className="text-lg font-medium mb-1">No products found</h3>
+                <h3 className="text-lg font-medium mb-1">{t('products.noProductsFound')}</h3>
                 <p className="text-slate-500">
                   {searchTerm || stockFilter !== "all" || tagFilter !== "all_tags" 
-                    ? "Try clearing your filters or creating a new product." 
-                    : "Get started by creating your first product."}
+                    ? t('products.tryClearingFilters') 
+                    : t('products.getStartedCreating')}
                 </p>
                 {(searchTerm || stockFilter !== "all" || tagFilter !== "all_tags") && (
                   <Button 
@@ -608,7 +608,7 @@ const Products = () => {
                       setTagFilter("all_tags");
                     }}
                   >
-                    Clear all filters
+                    {t('products.clearAllFilters')}
                   </Button>
                 )}
               </div>
@@ -667,29 +667,29 @@ const Products = () => {
                                 : 'bg-green-100 text-green-800'
                           }`}>
                             {product.currentStock === 0 
-                              ? 'Out of stock' 
+                              ? t('products.outOfStock')
                               : product.currentStock <= product.minStockLevel
-                                ? 'Low stock'
-                                : 'In stock'
+                                ? t('products.lowStock')
+                                : t('products.inStock')
                             }
                           </span>
                         </div>
                         
                         <div className="grid grid-cols-2 gap-2 mb-3 text-sm">
                           <div>
-                            <p className="text-slate-500">SKU</p>
+                            <p className="text-slate-500">{t('products.columns.sku')}</p>
                             <p className="text-slate-700 font-medium">{product.sku}</p>
                           </div>
                           <div>
-                            <p className="text-slate-500">Units/Box</p>
-                            <p className="text-slate-700 font-medium">{product.unitsPerBox || 'Not specified'}</p>
+                            <p className="text-slate-500">{t('products.columns.unitsPerBox')}</p>
+                            <p className="text-slate-700 font-medium">{product.unitsPerBox || t('products.notSpecified')}</p>
                           </div>
                           <div>
-                            <p className="text-slate-500">Min Stock</p>
+                            <p className="text-slate-500">{t('products.columns.minStock')}</p>
                             <p className="text-slate-700 font-medium">{product.minStockLevel}</p>
                           </div>
                           <div>
-                            <p className="text-slate-500">Current Stock</p>
+                            <p className="text-slate-500">{t('products.columns.currentStock')}</p>
                             <p className={`font-medium ${getStockStatusClass(product.currentStock, product.minStockLevel)}`}>
                               {product.currentStock}
                             </p>
@@ -707,11 +707,11 @@ const Products = () => {
                                   </Badge>
                                 ))}
                                 {product.tags.length > 2 && (
-                                  <span className="text-xs text-slate-500">+{product.tags.length - 2} more</span>
+                                  <span className="text-xs text-slate-500">+{product.tags.length - 2} {t('products.more')}</span>
                                 )}
                               </div>
                             ) : (
-                              <span className="text-xs text-slate-500">No tags</span>
+                              <span className="text-xs text-slate-500">{t('products.noTags')}</span>
                             )}
                           </div>
                           
@@ -721,9 +721,9 @@ const Products = () => {
                               e.stopPropagation();
                               handleDeleteProduct(product.id);
                             }}
-                            title="Delete Product"
+                            title={t('products.deleteProduct')}
                           >
-                            <i className="fas fa-trash mr-1"></i> Delete
+                            <i className="fas fa-trash mr-1"></i> {t('common.delete')}
                           </button>
                         </div>
                       </div>
@@ -736,12 +736,12 @@ const Products = () => {
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="bg-slate-100 text-slate-600 text-sm">
-                        <th className="text-left py-3 px-4 font-medium">Product</th>
-                        <th className="text-left py-3 px-4 font-medium">SKU</th>
-                        <th className="text-left py-3 px-4 font-medium">Stock</th>
-                        <th className="text-left py-3 px-4 font-medium">Min Stock</th>
-                        <th className="text-left py-3 px-4 font-medium">Location</th>
-                        <th className="text-right py-3 px-4 font-medium">Actions</th>
+                        <th className="text-left py-3 px-4 font-medium">{t('products.columns.product')}</th>
+                        <th className="text-left py-3 px-4 font-medium">{t('products.columns.sku')}</th>
+                        <th className="text-left py-3 px-4 font-medium">{t('products.columns.stock')}</th>
+                        <th className="text-left py-3 px-4 font-medium">{t('products.columns.minStock')}</th>
+                        <th className="text-left py-3 px-4 font-medium">{t('products.columns.location')}</th>
+                        <th className="text-right py-3 px-4 font-medium">{t('common.actions')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -863,7 +863,7 @@ const Products = () => {
                         <div className="flex-grow">
                           <h3 className="font-medium text-lg text-slate-900">{product.name}</h3>
                           <div className="flex items-center gap-3 mt-1">
-                            <span className="text-sm text-slate-500">SKU: <span className="font-medium text-slate-700">{product.sku}</span></span>
+                            <span className="text-sm text-slate-500">{t('products.columns.sku')}: <span className="font-medium text-slate-700">{product.sku}</span></span>
                             {product.location && (
                               <span className="text-sm text-slate-500 flex items-center">
                                 <MapPin size={12} className="mr-1" /> 
@@ -885,7 +885,7 @@ const Products = () => {
                         
                         <div className="flex items-center gap-4 md:justify-end">
                           <div className="text-center">
-                            <div className="text-xs text-slate-500 mb-1">Current Stock</div>
+                            <div className="text-xs text-slate-500 mb-1">{t('products.columns.currentStock')}</div>
                             <div className={`font-medium text-sm px-2 py-1 rounded-full ${
                               product.currentStock === 0 
                                 ? 'bg-red-100 text-red-800' 
@@ -898,7 +898,7 @@ const Products = () => {
                           </div>
                           
                           <div className="text-center">
-                            <div className="text-xs text-slate-500 mb-1">Min Level</div>
+                            <div className="text-xs text-slate-500 mb-1">{t('products.columns.minStock')}</div>
                             <div className="font-medium text-sm bg-slate-100 px-2 py-1 rounded-full text-slate-800">
                               {product.minStockLevel}
                             </div>
@@ -938,14 +938,14 @@ const Products = () => {
               {/* Pagination */}
               <div className="mt-6 border-t border-slate-200 pt-5 text-sm flex items-center justify-between">
                 <span className="text-slate-600">
-                  Showing {filteredProducts ? filteredProducts.length : 0} of {products?.length || 0} products
+                  {t('products.showingProducts', { showing: filteredProducts ? filteredProducts.length : 0, total: products?.length || 0 })}
                 </span>
                 <div className="flex items-center space-x-2">
                   <button className="px-3 py-1 rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50" disabled>
-                    <i className="fas fa-chevron-left mr-1"></i> Previous
+                    <i className="fas fa-chevron-left mr-1"></i> {t('common.previous')}
                   </button>
                   <button className="px-3 py-1 rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50" disabled>
-                    Next <i className="fas fa-chevron-right ml-1"></i>
+                    {t('common.next')} <i className="fas fa-chevron-right ml-1"></i>
                   </button>
                 </div>
               </div>
@@ -1142,8 +1142,8 @@ const Products = () => {
             {/* Main content area */}
             <div className="w-2/3 max-h-[80vh] overflow-y-auto">
               <DialogHeader className="p-6 pb-2">
-                <DialogTitle className="text-xl">{editingProduct ? "Edit Product" : "Add New Product"}</DialogTitle>
-                <DialogDescription>Fill in the product details below.</DialogDescription>
+                <DialogTitle className="text-xl">{editingProduct ? t('products.editProduct') : t('products.addNewProduct')}</DialogTitle>
+                <DialogDescription>{t('products.fillProductDetails')}</DialogDescription>
               </DialogHeader>
               
               <Form {...form}>
@@ -1154,7 +1154,7 @@ const Products = () => {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Product Name</FormLabel>
+                          <FormLabel>{t('products.productName')}</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -1168,7 +1168,7 @@ const Products = () => {
                       name="sku"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>SKU</FormLabel>
+                          <FormLabel>{t('products.columns.sku')}</FormLabel>
                           <FormControl>
                             <Input 
                               {...field} 
@@ -1194,7 +1194,7 @@ const Products = () => {
                     name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Description</FormLabel>
+                        <FormLabel>{t('products.description')}</FormLabel>
                         <FormControl>
                           <Textarea {...field} />
                         </FormControl>
@@ -1209,7 +1209,7 @@ const Products = () => {
                       name="barcode"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Barcode</FormLabel>
+                          <FormLabel>{t('products.columns.barcode')}</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -1223,9 +1223,9 @@ const Products = () => {
                       name="location"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Storage Location</FormLabel>
+                          <FormLabel>{t('products.columns.location')}</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="e.g., Aisle 5, Bin B3" />
+                            <Input {...field} placeholder={t('products.locationPlaceholder')} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -1239,7 +1239,7 @@ const Products = () => {
                       name="minStockLevel"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Minimum Stock Level</FormLabel>
+                          <FormLabel>{t('products.columns.minStock')}</FormLabel>
                           <FormControl>
                             <Input type="number" min="0" {...field} />
                           </FormControl>
@@ -1253,7 +1253,7 @@ const Products = () => {
                       name="currentStock"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Current Stock</FormLabel>
+                          <FormLabel>{t('products.columns.currentStock')}</FormLabel>
                           <FormControl>
                             <Input type="number" min="0" {...field} />
                           </FormControl>
@@ -1269,7 +1269,7 @@ const Products = () => {
                       name="unitsPerBox"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Units Per Box</FormLabel>
+                          <FormLabel>{t('products.columns.unitsPerBox')}</FormLabel>
                           <FormControl>
                             <Input type="number" min="0" {...field} />
                           </FormControl>
@@ -1285,13 +1285,13 @@ const Products = () => {
                       name="tags"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Tags</FormLabel>
+                          <FormLabel>{t('products.columns.tags')}</FormLabel>
                           <FormDescription>
-                            Enter comma-separated tags to categorize this product
+                            {t('products.enterTags')}
                           </FormDescription>
                           <FormControl>
                             <Input 
-                              placeholder="e.g. fragile, electronics, discount"
+                              placeholder={t('products.tagsPlaceholder')}
                               value={field.value?.join(', ') || ''}
                               onChange={(e) => {
                                 const tagsInput = e.target.value;
@@ -1316,15 +1316,15 @@ const Products = () => {
                       variant="outline" 
                       onClick={() => setIsDialogOpen(false)}
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </Button>
                     <Button 
                       type="submit"
                       disabled={createProductMutation.isPending || updateProductMutation.isPending}
                     >
                       {(createProductMutation.isPending || updateProductMutation.isPending) 
-                        ? "Saving..." 
-                        : editingProduct ? "Update Product" : "Add Product"
+                        ? t('common.saving') 
+                        : editingProduct ? t('products.updateProduct') : t('products.addProduct')
                       }
                     </Button>
                   </DialogFooter>
@@ -1349,15 +1349,15 @@ const Products = () => {
                 <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="info">
                     <Info className="mr-2 h-4 w-4" />
-                    Information
+                    {t('products.tabs.information')}
                   </TabsTrigger>
                   <TabsTrigger value="tags">
                     <Tag className="mr-2 h-4 w-4" />
-                    Tags
+                    {t('products.tabs.tags')}
                   </TabsTrigger>
                   <TabsTrigger value="inventory">
                     <Box className="mr-2 h-4 w-4" />
-                    Inventory
+                    {t('products.tabs.inventory')}
                   </TabsTrigger>
                   <TabsTrigger value="inventoryChanges">
                     <svg
@@ -1408,7 +1408,7 @@ const Products = () => {
                     <div className={viewingProduct.imagePath ? "md:w-2/3" : "w-full"}>
                       <Card>
                         <CardHeader>
-                          <CardTitle className="text-xl">Product Details</CardTitle>
+                          <CardTitle className="text-xl">{t('products.productDetails')}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1417,13 +1417,13 @@ const Products = () => {
                               <div>
                                 <h3 className="text-sm font-medium text-slate-500 flex items-center">
                                   <MapPin className="mr-1 h-4 w-4" />
-                                  Location
+                                  {t('products.columns.location')}
                                 </h3>
                                 <p>{viewingProduct.location}</p>
                               </div>
                             )}
                             <div>
-                              <h3 className="text-sm font-medium text-slate-500">Tags</h3>
+                              <h3 className="text-sm font-medium text-slate-500">{t('products.columns.tags')}</h3>
                               <div className="mt-1">
                                 {viewingProduct.tags && viewingProduct.tags.length > 0 ? (
                                   <div className="flex flex-wrap gap-1">
@@ -1438,7 +1438,7 @@ const Products = () => {
                                     ))}
                                   </div>
                                 ) : (
-                                  <p>No tags</p>
+                                  <p>{t('products.noTags')}</p>
                                 )}
                               </div>
                             </div>
@@ -1446,7 +1446,7 @@ const Products = () => {
                               <div>
                                 <h3 className="text-sm font-medium text-slate-500 flex items-center">
                                   <Layers className="mr-1 h-4 w-4" />
-                                  Units Per Box
+                                  {t('products.columns.unitsPerBox')}
                                 </h3>
                                 <p>{viewingProduct.unitsPerBox}</p>
                               </div>
@@ -1455,7 +1455,7 @@ const Products = () => {
                           
                           {viewingProduct.description && (
                             <div>
-                              <h3 className="text-sm font-medium text-slate-500">Description</h3>
+                              <h3 className="text-sm font-medium text-slate-500">{t('products.description')}</h3>
                               <p className="text-slate-700 whitespace-pre-line">{viewingProduct.description}</p>
                             </div>
                           )}
@@ -1470,8 +1470,8 @@ const Products = () => {
                 <TabsContent value="tags" className="mt-4">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Product Tags</CardTitle>
-                      <CardDescription>View and manage product categorization tags</CardDescription>
+                      <CardTitle>{t('products.productTags')}</CardTitle>
+                      <CardDescription>{t('products.viewAndManageTags')}</CardDescription>
                     </CardHeader>
                     <CardContent>
                       {viewingProduct.tags && viewingProduct.tags.length > 0 ? (
@@ -1491,16 +1491,16 @@ const Products = () => {
                             ))}
                           </div>
                           <div className="bg-slate-50 p-4 rounded-md border border-slate-200">
-                            <h3 className="text-sm font-medium text-slate-700 mb-2">About Product Tags</h3>
+                            <h3 className="text-sm font-medium text-slate-700 mb-2">{t('products.aboutTags')}</h3>
                             <p className="text-sm text-slate-600">
-                              Tags help categorize products and make them easier to find. They are also used for filtering and organizing inventory reports.
+                              {t('products.tagsDescription')}
                             </p>
                           </div>
                         </div>
                       ) : (
                         <div className="text-center py-10">
                           <Tag className="h-12 w-12 text-slate-300 mb-2" />
-                          <p className="text-slate-500">No tags have been added to this product.</p>
+                          <p className="text-slate-500">{t('products.noTagsAdded')}</p>
                           <Button 
                             className="mt-4"
                             variant="outline"
@@ -1510,7 +1510,7 @@ const Products = () => {
                             }}
                           >
                             <Tag className="h-4 w-4 mr-2" />
-                            Add Tags
+                            {t('products.addTags')}
                           </Button>
                         </div>
                       )}
@@ -1524,7 +1524,7 @@ const Products = () => {
                         }}
                       >
                         <Edit className="h-4 w-4 mr-2" />
-                        Edit Tags
+                        {t('products.editTags')}
                       </Button>
                     </CardFooter>
                   </Card>
@@ -1533,32 +1533,32 @@ const Products = () => {
                 <TabsContent value="inventory" className="mt-4">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Inventory Status</CardTitle>
+                      <CardTitle>{t('inventory.status')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-4">
                           <div>
-                            <h3 className="text-sm font-medium text-slate-500">Current Stock</h3>
+                            <h3 className="text-sm font-medium text-slate-500">{t('products.columns.currentStock')}</h3>
                             <p className={`text-xl font-semibold ${getStockStatusClass(viewingProduct.currentStock, viewingProduct.minStockLevel)}`}>
-                              {viewingProduct.currentStock} units
+                              {viewingProduct.currentStock} {t('common.units')}
                             </p>
                           </div>
                           
                           <div>
-                            <h3 className="text-sm font-medium text-slate-500">Minimum Stock Level</h3>
-                            <p className="text-xl font-semibold">{viewingProduct.minStockLevel} units</p>
+                            <h3 className="text-sm font-medium text-slate-500">{t('products.columns.minStock')}</h3>
+                            <p className="text-xl font-semibold">{viewingProduct.minStockLevel} {t('common.units')}</p>
                           </div>
                           
                           {viewingProduct.unitsPerBox && viewingProduct.unitsPerBox > 0 && (
                             <div>
-                              <h3 className="text-sm font-medium text-slate-500">Box Count</h3>
+                              <h3 className="text-sm font-medium text-slate-500">{t('products.boxCount')}</h3>
                               <p className="text-xl font-semibold">
                                 {Math.floor(viewingProduct.currentStock / viewingProduct.unitsPerBox)}
-                                <span className="text-sm font-normal text-slate-500"> boxes</span>
+                                <span className="text-sm font-normal text-slate-500"> {t('common.boxes')}</span>
                                 {viewingProduct.currentStock % viewingProduct.unitsPerBox > 0 && (
                                   <span className="text-sm font-normal text-slate-500">
-                                    {" + "}{viewingProduct.currentStock % viewingProduct.unitsPerBox} units
+                                    {" + "}{viewingProduct.currentStock % viewingProduct.unitsPerBox} {t('common.units')}
                                   </span>
                                 )}
                               </p>
@@ -1583,10 +1583,10 @@ const Products = () => {
                                     : "text-green-700"
                               }`}>
                                 {viewingProduct.currentStock === 0
-                                  ? "Out of Stock"
+                                  ? t('inventory.outOfStock')
                                   : viewingProduct.currentStock <= viewingProduct.minStockLevel
-                                    ? "Low Stock"
-                                    : "In Stock"
+                                    ? t('inventory.lowStock')
+                                    : t('inventory.inStock')
                                 }
                               </span>
                               <p className={`text-sm mt-1 ${
@@ -1597,10 +1597,10 @@ const Products = () => {
                                     : "text-green-600"
                               }`}>
                                 {viewingProduct.currentStock === 0
-                                  ? "Restock needed immediately"
+                                  ? t('inventory.restockNeeded')
                                   : viewingProduct.currentStock <= viewingProduct.minStockLevel
-                                    ? `${viewingProduct.minStockLevel - viewingProduct.currentStock} more units needed to reach minimum stock level`
-                                    : `${viewingProduct.currentStock - viewingProduct.minStockLevel} units above minimum stock level`
+                                    ? t('inventory.moreUnitsNeeded', { count: viewingProduct.minStockLevel - viewingProduct.currentStock })
+                                    : t('inventory.unitsAboveMinimum', { count: viewingProduct.currentStock - viewingProduct.minStockLevel })
                                 }
                               </p>
                             </div>
@@ -1615,7 +1615,7 @@ const Products = () => {
                               }}
                             >
                               <Edit className="mr-2 h-4 w-4" />
-                              Update Stock
+                              {t('inventory.updateStock')}
                             </Button>
                           </div>
                         </div>
@@ -1636,7 +1636,7 @@ const Products = () => {
                   variant="outline" 
                   onClick={() => setIsDetailsDialogOpen(false)}
                 >
-                  Close
+                  {t('common.close')}
                 </Button>
                 <Button
                   onClick={() => {
@@ -1645,7 +1645,7 @@ const Products = () => {
                   }}
                 >
                   <Edit className="mr-2 h-4 w-4" />
-                  Edit Product
+                  {t('products.editProduct')}
                 </Button>
               </div>
             </>
