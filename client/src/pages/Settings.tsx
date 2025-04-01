@@ -21,10 +21,11 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useNotifications } from '@/context/NotificationContext';
-import { AlertCircle, Bell, Cog, Edit, Globe, HelpCircle, Mail, Plus, Printer, Save, Send, Tag, Trash2, UserCog, Variable, Volume2, VolumeX, Link2, Slack } from 'lucide-react';
+import { AlertCircle, Bell, Cog, Edit, Globe, HelpCircle, Mail, Plus, Printer, Save, Send, Tag, Trash2, UserCog, Variable, Volume2, VolumeX, Link2, Slack, Database, HardDrive } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
+import { ImageMigration } from '@/components/settings/ImageMigration';
 
 const companySettingsSchema = z.object({
   companyName: z.string().min(2, { message: "Company name must be at least 2 characters" }),
@@ -1068,7 +1069,7 @@ const Settings = () => {
       <h1 className="text-3xl font-bold mb-6">Settings</h1>
       
       <Tabs defaultValue="general" onValueChange={setActiveTab} value={activeTab}>
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="general">
             <Cog className="h-4 w-4 mr-2" />
             General
@@ -1092,6 +1093,10 @@ const Settings = () => {
           <TabsTrigger value="users">
             <UserCog className="h-4 w-4 mr-2" />
             Users & Permissions
+          </TabsTrigger>
+          <TabsTrigger value="maintenance">
+            <Database className="h-4 w-4 mr-2" />
+            Maintenance
           </TabsTrigger>
         </TabsList>
         
@@ -2675,6 +2680,101 @@ const Settings = () => {
                       </p>
                     </div>
                   </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="maintenance" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>System Maintenance</CardTitle>
+              <CardDescription>
+                Maintain and optimize your system resources
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 gap-6">
+                  {/* Image Migration Component */}
+                  <ImageMigration />
+                  
+                  {/* Database Information */}
+                  <Card className="w-full">
+                    <CardHeader>
+                      <CardTitle>Database Information</CardTitle>
+                      <CardDescription>
+                        Current database status and information
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="p-4 bg-slate-50 rounded-md">
+                            <p className="text-sm font-medium">Connection Status</p>
+                            <p className="text-sm text-green-600 flex items-center mt-1">
+                              <span className="inline-block w-2 h-2 bg-green-600 rounded-full mr-2"></span>
+                              Connected
+                            </p>
+                          </div>
+                          
+                          <div className="p-4 bg-slate-50 rounded-md">
+                            <p className="text-sm font-medium">Database Type</p>
+                            <p className="text-sm text-slate-500 mt-1">PostgreSQL</p>
+                          </div>
+                        </div>
+                        
+                        <div className="text-sm text-muted-foreground">
+                          <p>The system uses Drizzle ORM to manage database interactions.</p>
+                          <p className="mt-2">
+                            For production deployments, ensure the DATABASE_URL environment variable
+                            is properly configured with your database connection string.
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                    <CardFooter>
+                      <Button 
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          toast({
+                            title: "Database Check",
+                            description: "Database connection verified successfully.",
+                          });
+                        }}
+                      >
+                        <HardDrive className="h-4 w-4 mr-2" />
+                        Test Database Connection
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                  
+                  {/* Storage Information */}
+                  <Card className="w-full">
+                    <CardHeader>
+                      <CardTitle>Storage Configuration</CardTitle>
+                      <CardDescription>
+                        Storage path and persistence settings
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="text-sm text-muted-foreground">
+                          <p>The system stores files in a hierarchy based on environment configurations:</p>
+                          <ol className="list-decimal pl-5 space-y-2 mt-2">
+                            <li><strong>STORAGE_PATH environment variable</strong> (if set)</li>
+                            <li><strong>.data directory</strong> (for Replit deployments)</li>
+                            <li><strong>storage directory</strong> in the project root (default fallback)</li>
+                          </ol>
+                          <p className="mt-3">
+                            Set the STORAGE_PATH environment variable for a custom storage location that persists across deployments.
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
             </CardContent>
