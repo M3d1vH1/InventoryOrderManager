@@ -442,10 +442,10 @@ const Reports = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
-            <Card className={`cursor-pointer border-2 transition-all hover:shadow-md ${
+            <Card className={`border-2 transition-all hover:shadow-md ${
               ['inventory', 'tags', 'predictions'].includes(activeTab) 
                 ? 'border-primary' : 'border-transparent'
-            }`} onClick={() => setActiveTab('inventory')}>
+            }`}>
               <CardHeader className="p-4 pb-2">
                 <CardTitle className="text-lg">Inventory Reports</CardTitle>
               </CardHeader>
@@ -479,10 +479,10 @@ const Reports = () => {
               </CardContent>
             </Card>
 
-            <Card className={`cursor-pointer border-2 transition-all hover:shadow-md ${
+            <Card className={`border-2 transition-all hover:shadow-md ${
               ['orders', 'dispatch-schedule', 'shipping-delays', 'fulfillment-stats', 'efficiency'].includes(activeTab) 
                 ? 'border-primary' : 'border-transparent'
-            }`} onClick={() => setActiveTab('orders')}>
+            }`}>
               <CardHeader className="p-4 pb-2">
                 <CardTitle className="text-lg">Order Reports</CardTitle>
               </CardHeader>
@@ -532,10 +532,10 @@ const Reports = () => {
               </CardContent>
             </Card>
 
-            <Card className={`cursor-pointer border-2 transition-all hover:shadow-md ${
+            <Card className={`border-2 transition-all hover:shadow-md ${
               ['call-logs', 'customer-engagement', 'order-quality'].includes(activeTab) 
                 ? 'border-primary' : 'border-transparent'
-            }`} onClick={() => setActiveTab('call-logs')}>
+            }`}>
               <CardHeader className="p-4 pb-2">
                 <CardTitle className="text-lg">Call Center Reports</CardTitle>
               </CardHeader>
@@ -1223,10 +1223,15 @@ const Reports = () => {
                             <Badge 
                               variant={
                                 item.avgTimeMinutes < pickingEfficiency.averagePickingTimeMinutes * 0.8
-                                  ? "success"
+                                  ? "outline"
                                   : item.avgTimeMinutes > pickingEfficiency.averagePickingTimeMinutes * 1.2
                                   ? "destructive"
                                   : "default"
+                              }
+                              className={
+                                item.avgTimeMinutes < pickingEfficiency.averagePickingTimeMinutes * 0.8
+                                  ? "bg-green-100 text-green-800 hover:bg-green-200"
+                                  : ""
                               }
                             >
                               {
@@ -1678,9 +1683,13 @@ const Reports = () => {
                             <TableCell>
                               <Badge
                                 variant={
-                                  item.accuracy === 'high' ? 'success' : 
+                                  item.accuracy === 'high' ? 'outline' : 
                                   item.accuracy === 'medium' ? 'default' : 
                                   'destructive'
+                                }
+                                className={
+                                  item.accuracy === 'high' ? 'bg-green-100 text-green-800 hover:bg-green-200' : 
+                                  ''
                                 }
                               >
                                 {item.accuracy.charAt(0).toUpperCase() + item.accuracy.slice(1)}
@@ -1719,8 +1728,8 @@ const Reports = () => {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value, name, props) => [value, props.payload.method]} />
-                      <Legend formatter={(value, entry) => entry.payload.method} />
+                      <Tooltip formatter={(value, name, props) => [value, name]} />
+                      <Legend />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
