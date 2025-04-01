@@ -26,7 +26,7 @@ import {
   AreaChart,
   Area,
 } from "recharts";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -452,9 +452,30 @@ const Reports = () => {
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 <div className="flex flex-wrap gap-2">
-                  <TabsTrigger value="inventory" className="flex-shrink-0 text-sm">Overview</TabsTrigger>
-                  <TabsTrigger value="tags" className="flex-shrink-0 text-sm">Tags Analysis</TabsTrigger>
-                  <TabsTrigger value="predictions" className="flex-shrink-0 text-sm">Stock Predictions</TabsTrigger>
+                  <Button 
+                    size="sm" 
+                    variant={activeTab === "inventory" ? "default" : "outline"} 
+                    className="text-sm" 
+                    onClick={() => setActiveTab("inventory")}
+                  >
+                    Overview
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant={activeTab === "tags" ? "default" : "outline"} 
+                    className="text-sm" 
+                    onClick={() => setActiveTab("tags")}
+                  >
+                    Tags Analysis
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant={activeTab === "predictions" ? "default" : "outline"} 
+                    className="text-sm" 
+                    onClick={() => setActiveTab("predictions")}
+                  >
+                    Stock Predictions
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -468,11 +489,46 @@ const Reports = () => {
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 <div className="flex flex-wrap gap-2">
-                  <TabsTrigger value="orders" className="flex-shrink-0 text-sm">Overview</TabsTrigger>
-                  <TabsTrigger value="efficiency" className="flex-shrink-0 text-sm">Efficiency</TabsTrigger>
-                  <TabsTrigger value="dispatch-schedule" className="flex-shrink-0 text-sm">Dispatch</TabsTrigger>
-                  <TabsTrigger value="shipping-delays" className="flex-shrink-0 text-sm">Delays</TabsTrigger>
-                  <TabsTrigger value="fulfillment-stats" className="flex-shrink-0 text-sm">Fulfillment</TabsTrigger>
+                  <Button 
+                    size="sm" 
+                    variant={activeTab === "orders" ? "default" : "outline"} 
+                    className="text-sm" 
+                    onClick={() => setActiveTab("orders")}
+                  >
+                    Overview
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant={activeTab === "efficiency" ? "default" : "outline"} 
+                    className="text-sm" 
+                    onClick={() => setActiveTab("efficiency")}
+                  >
+                    Efficiency
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant={activeTab === "dispatch-schedule" ? "default" : "outline"} 
+                    className="text-sm" 
+                    onClick={() => setActiveTab("dispatch-schedule")}
+                  >
+                    Dispatch
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant={activeTab === "shipping-delays" ? "default" : "outline"} 
+                    className="text-sm" 
+                    onClick={() => setActiveTab("shipping-delays")}
+                  >
+                    Delays
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant={activeTab === "fulfillment-stats" ? "default" : "outline"} 
+                    className="text-sm" 
+                    onClick={() => setActiveTab("fulfillment-stats")}
+                  >
+                    Fulfillment
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -486,9 +542,30 @@ const Reports = () => {
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 <div className="flex flex-wrap gap-2">
-                  <TabsTrigger value="call-logs" className="flex-shrink-0 text-sm">Call Logs</TabsTrigger>
-                  <TabsTrigger value="customer-engagement" className="flex-shrink-0 text-sm">Engagement</TabsTrigger>
-                  <TabsTrigger value="order-quality" className="flex-shrink-0 text-sm">Quality Issues</TabsTrigger>
+                  <Button 
+                    size="sm" 
+                    variant={activeTab === "call-logs" ? "default" : "outline"} 
+                    className="text-sm" 
+                    onClick={() => setActiveTab("call-logs")}
+                  >
+                    Call Logs
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant={activeTab === "customer-engagement" ? "default" : "outline"} 
+                    className="text-sm" 
+                    onClick={() => setActiveTab("customer-engagement")}
+                  >
+                    Engagement
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant={activeTab === "order-quality" ? "default" : "outline"} 
+                    className="text-sm" 
+                    onClick={() => setActiveTab("order-quality")}
+                  >
+                    Quality Issues
+                  </Button>
                 </div>
               </CardContent>
             </Card>
