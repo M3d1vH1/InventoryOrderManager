@@ -63,10 +63,7 @@
     "errorLoadingData": "Σφάλμα κατά τη φόρτωση δεδομένων. Προσπαθήστε ξανά αργότερα.",
     "errorOccurred": "Παρουσιάστηκε ένα σφάλμα. Παρακαλώ προσπαθήστε ξανά.",
     "select": "Επιλογή",
-    "noResults": "Δεν βρέθηκαν αποτελέσματα",
-    "filter": "Φιλτράρισμα",
-    "all": "Όλα",
-    "backToOrders": "Επιστροφή στις Παραγγελίες"
+    "noResults": "Δεν βρέθηκαν αποτελέσματα"
   },
   "categories": {
     "title": "Κατηγορίες Προϊόντων",
@@ -501,7 +498,6 @@
     "pendingAuthorization": "Εκκρεμούν Εξουσιοδότηση",
     "noUnshippedItems": "Δεν υπάρχουν μη απεσταλμένα είδη.",
     "noItemsPendingAuthorization": "Δεν υπάρχουν είδη που εκκρεμούν εξουσιοδότηση.",
-    "noAuthorizedItems": "Δεν υπάρχουν εξουσιοδοτημένα είδη",
     "orderNumber": "Αριθμός Παραγγελίας",
     "customerName": "Πελάτης",
     "productId": "Κωδικός Προϊόντος",
@@ -521,25 +517,9 @@
     "authorizationProcess": "Διαδικασία Εξουσιοδότησης",
     "authorizationProcessDescription": "Πριν συμπεριληφθούν σε νέα παραγγελία, τα μη απεσταλμένα είδη πρέπει να εξουσιοδοτηθούν από διαχειριστή ή προϊστάμενο. Αυτό εξασφαλίζει ότι όλα τα είδη έχουν εγκριθεί κατάλληλα.",
     "managersResponsibility": "Ευθύνη Διαχειριστών",
-    "managersResponsibilityDescription": "Ως διαχειριστής ή προϊστάμενος, είναι ευθύνη σας να ελέγχετε και να εξουσιοδοτείτε τα μη απεσταλμένα είδη. Μια παραγγελία δεν μπορεί να σημειωθεί ως απεσταλμένη εάν περιέχει μη εξουσιοδοτημένα είδη.",
-    "unshippedItemsRequireAuthorization": "Μη Απεσταλμένα Είδη Απαιτούν Εξουσιοδότηση",
-    "unshippedItemsRequireAuthorizationMessage": "{{count}} μη απεσταλμένα είδη από την παραγγελία {{orderNumber}} απαιτούν εξουσιοδότηση από διαχειριστή.",
-    "unshippedItemsAuthorized": "Μη Απεσταλμένα Είδη Εξουσιοδοτήθηκαν",
-    "unshippedItemsAuthorizedMessage": "{{count}} μη απεσταλμένα είδη έχουν εξουσιοδοτηθεί για αποστολή"
+    "managersResponsibilityDescription": "Ως διαχειριστής ή προϊστάμενος, είναι ευθύνη σας να ελέγχετε και να εξουσιοδοτείτε τα μη απεσταλμένα είδη. Μια παραγγελία δεν μπορεί να σημειωθεί ως απεσταλμένη εάν περιέχει μη εξουσιοδοτημένα είδη."
   },
   "notifications": {
-    "title": "Ειδοποιήσεις",
-    "markAsRead": "Σήμανση ως αναγνωσμένο",
-    "markAllAsRead": "Σήμανση όλων ως αναγνωσμένα",
-    "noNotifications": "Δεν υπάρχουν ειδοποιήσεις",
-    "newOrder": "Νέα Παραγγελία",
-    "newOrderMessage": "Παραγγελία {{orderNumber}} δημιουργήθηκε από {{customerName}}",
-    "orderStatusChange": "Αλλαγή Κατάστασης Παραγγελίας",
-    "orderStatusChangeMessage": "Παραγγελία {{orderNumber}} άλλαξε από {{oldStatus}} σε {{newStatus}}",
-    "lowStock": "Χαμηλό Απόθεμα",
-    "lowStockMessage": "Το προϊόν {{productName}} έχει χαμηλό απόθεμα ({{currentStock}} απομένουν)",
-    "callReminder": "Υπενθύμιση Κλήσης",
-    "callReminderMessage": "Προγραμματισμένη κλήση με {{customerName}} σε {{timeUntil}}",
     "unshippedItemsRequireAuthorization": "Μη Απεσταλμένα Είδη Απαιτούν Εξουσιοδότηση",
     "unshippedItemsRequireAuthorizationMessage": "{{count}} μη απεσταλμένα είδη από την παραγγελία {{orderNumber}} απαιτούν εξουσιοδότηση από διαχειριστή.",
     "unshippedItemsAuthorized": "Μη Απεσταλμένα Είδη Εξουσιοδοτήθηκαν",
