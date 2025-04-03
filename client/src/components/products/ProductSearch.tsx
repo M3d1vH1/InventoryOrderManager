@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Box, QrCode, MapPin, Tag } from "lucide-react";
+import { Box, QrCode, MapPin, Tag, Plus, Ban, Search, X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 interface Product {
@@ -126,14 +126,14 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
             className="flex items-center justify-center p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 min-h-[44px] min-w-[44px]"
             aria-label="Close"
           >
-            <i className="fas fa-times text-lg"></i>
+            <X className="h-5 w-5" />
           </button>
         </div>
         <div className="p-4 border-b border-slate-200">
           <div className="flex items-center">
             <div className="relative flex-1">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                <i className="fas fa-search text-slate-400 text-lg"></i>
+                <Search className="h-5 w-5 text-slate-400" />
               </span>
               <Input
                 placeholder="Search by product name or SKU"
@@ -155,7 +155,7 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
               onClick={handleSearch} 
               className="ml-3 h-12 px-5 text-base"
             >
-              <i className="fas fa-search mr-2"></i> Search
+              <Search className="h-4 w-4 mr-2" /> Search
             </Button>
           </div>
           <div className="flex flex-wrap items-center mt-4 gap-3">
@@ -220,14 +220,16 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
           {isLoading ? (
             <div className="py-10 text-center">
               <div className="inline-flex flex-col items-center justify-center">
-                <i className="fas fa-spinner fa-spin text-4xl text-slate-400 mb-4"></i>
+                <div className="animate-spin text-4xl text-slate-400 mb-4 flex items-center justify-center">
+                  <Loader2 className="h-10 w-10" />
+                </div>
                 <span className="text-slate-500 text-lg">Loading products...</span>
               </div>
             </div>
           ) : products?.length === 0 ? (
             <div className="py-10 text-center">
               <div className="inline-flex flex-col items-center justify-center">
-                <i className="fas fa-search text-4xl text-slate-300 mb-4"></i>
+                <Search className="h-14 w-14 text-slate-300 mb-4" />
                 <span className="text-slate-500 text-lg">No products found matching your criteria</span>
                 <p className="text-slate-400 mt-2">Try adjusting your search terms or filters</p>
               </div>
@@ -255,8 +257,8 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
                         disabled={product.currentStock === 0}
                       >
                         {product.currentStock === 0 ? 
-                          <i className="fas fa-ban text-red-500 text-lg"></i> : 
-                          <i className="fas fa-plus text-lg"></i>
+                          <Ban className="h-5 w-5 text-red-500" /> : 
+                          <Plus className="h-5 w-5" />
                         }
                       </Button>
                     </td>
@@ -326,7 +328,10 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
           <span className="text-base text-slate-600">
             {isLoading ? (
               <div className="flex items-center">
-                <i className="fas fa-spinner fa-spin mr-2"></i> Loading products...
+                <div className="animate-spin mr-2">
+                  <Loader2 className="h-4 w-4" />
+                </div>
+                Loading products...
               </div>
             ) : products ? (
               `Showing ${products.length} products`
@@ -340,19 +345,19 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
               className="h-10 px-4"
               onClick={onClose}
             >
-              <i className="fas fa-times mr-2"></i> Close
+              <X className="h-4 w-4 mr-2" /> Close
             </Button>
             <button 
               className="flex items-center justify-center h-10 px-4 rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 text-base" 
               disabled
             >
-              <i className="fas fa-chevron-left mr-2"></i> Previous
+              <ChevronLeft className="h-4 w-4 mr-2" /> Previous
             </button>
             <button 
               className="flex items-center justify-center h-10 px-4 rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 text-base" 
               disabled
             >
-              Next <i className="fas fa-chevron-right ml-2"></i>
+              Next <ChevronRight className="h-4 w-4 ml-2" />
             </button>
           </div>
         </div>
