@@ -150,6 +150,7 @@
       "area": "Περιοχή / Περιφέρεια",
       "areaPlaceholder": "Περιοχή πελάτη (προαιρετικό)",
       "orderDate": "Ημερομηνία Παραγγελίας",
+      "estimatedShippingDate": "Εκτιμώμενη Ημερομηνία Αποστολής",
       "priority": "Προτεραιότητα",
       "selectPriority": "Επιλέξτε προτεραιότητα",
       "priorities": {

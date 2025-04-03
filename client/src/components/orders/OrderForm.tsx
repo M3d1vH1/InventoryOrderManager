@@ -703,11 +703,11 @@ const OrderForm = ({
                 name="area"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-base font-medium">Area / Region</FormLabel>
+                    <FormLabel className="text-base font-medium">{t('orders.form.area')}</FormLabel>
                     <FormControl>
                       <Input 
                         {...field} 
-                        placeholder="Customer area or region (optional)" 
+                        placeholder={t('orders.form.areaPlaceholder')}
                         className="h-12 text-base" 
                       />
                     </FormControl>
@@ -739,7 +739,7 @@ const OrderForm = ({
                 name="estimatedShippingDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-base font-medium">Estimated Shipping Date</FormLabel>
+                    <FormLabel className="text-base font-medium">{t('orders.form.estimatedShippingDate')}</FormLabel>
                     <FormControl>
                       <Input 
                         type="date" 

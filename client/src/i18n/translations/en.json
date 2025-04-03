@@ -130,6 +130,7 @@
       "area": "Area / Region",
       "areaPlaceholder": "Customer area or region (optional)",
       "orderDate": "Order Date",
+      "estimatedShippingDate": "Estimated Shipping Date",
       "priority": "Priority",
       "selectPriority": "Select priority",
       "priorities": {
