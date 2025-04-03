@@ -171,6 +171,7 @@ export const orders = pgTable("orders", {
   actualShippingDate: timestamp("actual_shipping_date"), // When the order was actually shipped
   status: orderStatusEnum("status").notNull().default('pending'),
   priority: orderPriorityEnum("priority").default('medium'), // Add priority field with default value
+  area: text("area"), // Customer area/region for delivery
   notes: text("notes"),
   hasShippingDocument: boolean("has_shipping_document").notNull().default(false),
   isPartialFulfillment: boolean("is_partial_fulfillment").notNull().default(false),
@@ -187,6 +188,7 @@ export const insertOrderSchema = createInsertSchema(orders)
   .extend({
     customerName: z.string().min(2),
     notes: z.string().optional(),
+    area: z.string().optional(),
     orderDate: z.string().optional().transform(val => val ? new Date(val) : new Date()),
     estimatedShippingDate: z.string().min(1, { message: "Estimated shipping date is required" })
       .transform(val => new Date(val)),

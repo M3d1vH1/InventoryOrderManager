@@ -54,6 +54,7 @@ interface OrderFormProps {
     id?: number;
     orderNumber?: string;
     customerName: string;
+    area?: string;
     orderDate: string;
     estimatedShippingDate?: string;
     notes?: string;
@@ -74,6 +75,7 @@ interface OrderFormProps {
 // Extended schema based on backend schema
 const orderFormSchema = z.object({
   customerName: z.string().min(2, { message: "Please select a customer" }),
+  area: z.string().optional(),
   notes: z.string().optional(),
   // Add these fields but we'll handle them separately from the API request
   orderDate: z.string().min(1, { message: "Order date is required" }),
@@ -198,6 +200,7 @@ const OrderForm = ({
     resolver: zodResolver(orderFormSchema),
     defaultValues: {
       customerName: initialData?.customerName || "",
+      area: initialData?.area || "",
       orderDate: initialData?.orderDate || format(new Date(), "yyyy-MM-dd"),
       estimatedShippingDate: initialData?.estimatedShippingDate || format(new Date(new Date().setDate(new Date().getDate() + 5)), "yyyy-MM-dd"),
       priority: initialData?.priority || 'medium',
@@ -368,6 +371,7 @@ const OrderForm = ({
         method: 'POST',
         body: JSON.stringify({
           customerName: values.customerName,
+          area: values.area,
           notes: values.notes,
           items: itemsToSend, // Use our directly mapped items from state
           estimatedShippingDate: values.estimatedShippingDate,
@@ -432,6 +436,7 @@ const OrderForm = ({
         method: 'PATCH',
         body: JSON.stringify({
           customerName: values.customerName,
+          area: values.area,
           notes: values.notes,
           items: itemsToSend, // Use our directly mapped items from state
           estimatedShippingDate: values.estimatedShippingDate,
@@ -618,6 +623,24 @@ const OrderForm = ({
                         </Command>
                       </FormControl>
                     </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="area"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base font-medium">Area / Region</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        placeholder="Customer area or region (optional)" 
+                        className="h-12 text-base" 
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

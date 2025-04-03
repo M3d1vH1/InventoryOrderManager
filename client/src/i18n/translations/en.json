@@ -125,6 +125,8 @@
       "noCustomersFound": "No customers found",
       "addCustomer": "Add New Customer",
       "createCustomer": "Create Customer",
+      "area": "Area / Region",
+      "areaPlaceholder": "Customer area or region (optional)",
       "orderDate": "Order Date",
       "priority": "Priority",
       "selectPriority": "Select priority",

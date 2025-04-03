@@ -135,10 +135,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/products', async (req, res) => {
     try {
       const query = req.query.q as string || '';
-      const category = req.query.category as string;
+      const tag = req.query.tag as string;
       const stockStatus = req.query.stockStatus as string;
       
-      const products = await storage.searchProducts(query, category, stockStatus);
+      const products = await storage.searchProducts(query, tag, stockStatus);
       res.json(products);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -2580,6 +2580,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderDate: new Date(),
         status: 'pending' as const,
         notes: 'Test order created via debug API',
+        area: 'Test Area', // Add area field
         hasShippingDocument: false,
         isPartialFulfillment: false,
         partialFulfillmentApproved: false,

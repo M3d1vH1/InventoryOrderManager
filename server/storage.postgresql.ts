@@ -409,9 +409,10 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async searchProducts(query: string, category?: string, stockStatus?: string): Promise<Product[]> {
+  async searchProducts(query: string, tag?: string, stockStatus?: string): Promise<Product[]> {
     try {
       let conditions = [];
+      let productsWithTags = [];
       
       // Add search condition if query provided using case-insensitive ILIKE for better Unicode support
       if (query) {
@@ -422,9 +423,6 @@ export class DatabaseStorage implements IStorage {
           )
         );
       }
-      
-      // Note: Category filtering has been removed as part of the simplified system
-      // The category parameter is retained for backward compatibility but is ignored
       
       // Add stock status filter if provided
       if (stockStatus) {
@@ -446,15 +444,35 @@ export class DatabaseStorage implements IStorage {
         }
       }
       
-      // Execute query with conditions
+      // First, get the products based on the conditions
+      let result;
       if (conditions.length > 0) {
-        return await this.db
+        result = await this.db
           .select()
           .from(products)
           .where(and(...conditions));
       } else {
-        return await this.getAllProducts();
+        result = await this.getAllProducts();
       }
+      
+      // If no tag filter, just return the products
+      if (!tag || tag === 'all') {
+        return result;
+      }
+      
+      // Otherwise, filter by tag
+      // First get all product-tag relations
+      const productTagRelations = await this.db
+        .select()
+        .from(productTags)
+        .innerJoin(tags, eq(productTags.tagId, tags.id))
+        .where(eq(tags.name, tag));
+      
+      // Create a set of product IDs that have the specified tag
+      const taggedProductIds = new Set(productTagRelations.map(pt => pt.productTags.productId));
+      
+      // Filter the results to only include products with the specified tag
+      return result.filter(product => taggedProductIds.has(product.id));
     } catch (error) {
       console.error('Error searching products:', error);
       return [];
