@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Box, QrCode, MapPin } from "lucide-react";
+import { Box, QrCode, MapPin, Tag } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Product {
   id: number;
@@ -16,6 +17,13 @@ interface Product {
   location?: string;
   imagePath?: string;
   unitsPerBox?: number;
+  tags?: string[];
+}
+
+interface Tag {
+  id: number;
+  name: string;
+  color?: string;
 }
 
 interface ProductSearchProps {
@@ -25,18 +33,34 @@ interface ProductSearchProps {
 }
 
 const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps) => {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
-  const [category, setCategory] = useState("all");
+  const [selectedTag, setSelectedTag] = useState("all");
   const [stockStatus, setStockStatus] = useState("all");
   const modalRef = useRef<HTMLDivElement>(null);
   
+  // Fetch all tags
+  const { data: tags } = useQuery<Tag[]>({
+    queryKey: ['/api/tags'],
+    queryFn: async () => {
+      const response = await fetch('/api/tags');
+      if (!response.ok) throw new Error('Failed to fetch tags');
+      return response.json();
+    },
+    enabled: isOpen,
+  });
+  
   const { data: products, isLoading, refetch } = useQuery<Product[]>({
-    queryKey: ['/api/products', searchTerm, category, stockStatus],
+    queryKey: ['/api/products', searchTerm, selectedTag, stockStatus],
     queryFn: async () => {
       const searchParams = new URLSearchParams();
       if (searchTerm) searchParams.append('q', searchTerm);
-      if (category && category !== 'all') searchParams.append('category', category);
       if (stockStatus && stockStatus !== 'all') searchParams.append('stockStatus', stockStatus);
+      
+      // Now we use tag filter instead of category
+      if (selectedTag && selectedTag !== 'all') {
+        searchParams.append('tag', selectedTag);
+      }
       
       const response = await fetch(`/api/products?${searchParams.toString()}`);
       if (!response.ok) throw new Error('Failed to search products');
@@ -136,25 +160,42 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
           </div>
           <div className="flex flex-wrap items-center mt-4 gap-3">
             <div className="flex items-center">
-              <span className="text-base font-medium text-slate-600 mr-3">Category:</span>
+              <span className="text-base font-medium text-slate-600 mr-3">
+                <Tag className="h-4 w-4 inline-block mr-1" /> 
+                {t('products.search.tag')}:
+              </span>
               <Select 
-                value={category} 
+                value={selectedTag} 
                 onValueChange={(value) => {
-                  setCategory(value);
+                  setSelectedTag(value);
                   setTimeout(() => refetch(), 100);
                 }}
               >
                 <SelectTrigger className="w-48 h-12 text-base">
-                  <SelectValue placeholder="All Categories" />
+                  <SelectValue placeholder={t('products.search.allTags')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all" className="h-10 text-base">All Categories</SelectItem>
-                  <SelectItem value="default" className="h-10 text-base">Default Category</SelectItem>
+                  <SelectItem value="all" className="h-10 text-base">{t('products.search.allTags')}</SelectItem>
+                  {tags?.map(tag => (
+                    <SelectItem key={tag.id} value={tag.name} className="h-10 text-base">
+                      <div className="flex items-center">
+                        {tag.color ? (
+                          <span 
+                            className="h-3 w-3 rounded-full mr-2" 
+                            style={{ backgroundColor: tag.color }}
+                          />
+                        ) : (
+                          <Tag className="h-4 w-4 mr-2 text-slate-400" />
+                        )}
+                        {tag.name}
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="flex items-center">
-              <span className="text-base font-medium text-slate-600 mr-3">Stock:</span>
+              <span className="text-base font-medium text-slate-600 mr-3">{t('products.search.stock')}:</span>
               <Select 
                 value={stockStatus} 
                 onValueChange={(value) => {
@@ -163,13 +204,13 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
                 }}
               >
                 <SelectTrigger className="w-48 h-12 text-base">
-                  <SelectValue placeholder="All Stock Status" />
+                  <SelectValue placeholder={t('products.search.allStockStatus')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all" className="h-10 text-base">All Stock Status</SelectItem>
-                  <SelectItem value="in-stock" className="h-10 text-base">In Stock</SelectItem>
-                  <SelectItem value="low-stock" className="h-10 text-base">Low Stock</SelectItem>
-                  <SelectItem value="out-stock" className="h-10 text-base">Out of Stock</SelectItem>
+                  <SelectItem value="all" className="h-10 text-base">{t('products.search.allStockStatus')}</SelectItem>
+                  <SelectItem value="in-stock" className="h-10 text-base">{t('products.search.inStock')}</SelectItem>
+                  <SelectItem value="low-stock" className="h-10 text-base">{t('products.search.lowStock')}</SelectItem>
+                  <SelectItem value="out-stock" className="h-10 text-base">{t('products.search.outOfStock')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -195,11 +236,11 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-500 uppercase tracking-wider">Product</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-500 uppercase tracking-wider">SKU</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-500 uppercase tracking-wider">Category</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-500 uppercase tracking-wider">Stock</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-500 uppercase tracking-wider">{t('products.search.product')}</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-500 uppercase tracking-wider">{t('products.search.sku')}</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-500 uppercase tracking-wider">{t('products.search.tags')}</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-500 uppercase tracking-wider">{t('products.search.stock')}</th>
+                  <th className="px-4 py-3 text-right text-sm font-medium text-slate-500 uppercase tracking-wider">{t('products.search.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -232,8 +273,22 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
                     <td className="px-4 py-5 whitespace-nowrap text-base text-slate-500">
                       {product.sku}
                     </td>
-                    <td className="px-4 py-5 whitespace-nowrap text-base text-slate-500">
-                      {product.category}
+                    <td className="px-4 py-5 whitespace-nowrap text-base">
+                      <div className="flex flex-wrap gap-1">
+                        {product.tags && product.tags.length > 0 ? (
+                          product.tags.map((tag, idx) => (
+                            <span 
+                              key={idx}
+                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800"
+                            >
+                              <Tag className="h-3 w-3 mr-1 text-slate-500" />
+                              {tag}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-slate-400">{t('products.search.noTags')}</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-5 whitespace-nowrap">
                       <div className={`text-base font-medium ${getStockStatusClass(product.currentStock, product.minStockLevel)}`}>
