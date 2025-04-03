@@ -222,6 +222,41 @@ const OrderForm = ({
       })));
     }
   }, [initialData]);
+  
+  // Function to fetch and set the area from a customer's previous orders
+  const fetchCustomerAreaFromPreviousOrders = async (customerName: string) => {
+    try {
+      // Get all orders for this customer
+      const response = await fetch(`/api/orders/customer/${encodeURIComponent(customerName)}`);
+      
+      if (!response.ok) {
+        console.warn(`Failed to fetch previous orders for customer ${customerName}`);
+        return;
+      }
+      
+      const orders = await response.json();
+      
+      // If there are previous orders with area information, use the most recent one
+      const ordersWithArea = orders.filter((order: any) => order.area && order.area.trim() !== '');
+      
+      if (ordersWithArea.length > 0) {
+        // Sort by date descending to get the most recent order first
+        ordersWithArea.sort((a: any, b: any) => 
+          new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
+        );
+        
+        const mostRecentArea = ordersWithArea[0].area;
+        
+        // Set the area in the form
+        if (mostRecentArea && form.getValues('area') === '') {
+          form.setValue('area', mostRecentArea);
+          console.log(`Set area to ${mostRecentArea} from customer's most recent order`);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching customer area from previous orders:', error);
+    }
+  };
 
   // Define a state for unshipped items warning
   const [unshippedItemsWarning, setUnshippedItemsWarning] = useState<{
@@ -321,6 +356,9 @@ const OrderForm = ({
       checkForUnshippedItems();
       fetchPreviousProducts();
       fetchUnshippedProducts();
+      
+      // Fetch and set area from previous orders
+      fetchCustomerAreaFromPreviousOrders(customerName);
     } else {
       setPreviousProducts([]);
       setUnshippedProducts([]);
@@ -514,6 +552,7 @@ const OrderForm = ({
 
   const updateQuantity = (index: number, quantity: number) => {
     const newItems = [...orderItems];
+    // Set the quantity directly without forcing a minimum value
     newItems[index].quantity = quantity;
     setOrderItems(newItems);
   };
@@ -612,6 +651,16 @@ const OrderForm = ({
                                       className="h-10 text-base"
                                       onSelect={(value) => {
                                         field.onChange(value);
+                                        
+                                        // Get the matched customer to retrieve area info from previous orders
+                                        const selectedCustomer = customers?.find(c => 
+                                          c.name.toLowerCase() === value.toLowerCase()
+                                        );
+                                        
+                                        // If we have a matched customer, look for their previous orders to get area info
+                                        if (selectedCustomer) {
+                                          fetchCustomerAreaFromPreviousOrders(value);
+                                        }
                                       }}
                                     >
                                       {customer.name}
@@ -934,9 +983,12 @@ const OrderForm = ({
                             <td className="py-4 px-4">
                               <Input
                                 type="number"
-                                min="1"
                                 value={item.quantity}
-                                onChange={(e) => updateQuantity(index, parseInt(e.target.value) || 1)}
+                                onChange={(e) => {
+                                  // Allow empty value or any number
+                                  const newValue = e.target.value === '' ? 0 : parseInt(e.target.value);
+                                  updateQuantity(index, newValue);
+                                }}
                                 className={`w-full h-12 text-base ${item.quantity > (item.product?.currentStock || 0) ? 'border-amber-400' : ''}`}
                               />
                             </td>

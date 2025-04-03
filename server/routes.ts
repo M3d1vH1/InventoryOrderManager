@@ -1434,6 +1434,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Add endpoint to get orders by customer name directly (for persistence of area information)
+  app.get('/api/orders/customer/:customerName', async (req, res) => {
+    try {
+      const { customerName } = req.params;
+      
+      if (!customerName) {
+        return res.status(400).json({ message: 'Customer name is required' });
+      }
+      
+      const orders = await storage.getOrdersByCustomer(customerName);
+      res.json(orders);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
   // Add endpoint to get previous products for a customer
   app.get('/api/customers/:customerName/previous-products', async (req, res) => {
     try {
