@@ -771,25 +771,25 @@ const OrderForm = ({
                         <SelectItem value="low">
                           <div className="flex items-center">
                             <span className="h-2 w-2 rounded-full bg-slate-400 mr-2"></span>
-                            {t('orders.priorities.low')}
+                            {t('orders.form.priorities.low')}
                           </div>
                         </SelectItem>
                         <SelectItem value="medium">
                           <div className="flex items-center">
                             <span className="h-2 w-2 rounded-full bg-blue-500 mr-2"></span>
-                            {t('orders.priorities.medium')}
+                            {t('orders.form.priorities.medium')}
                           </div>
                         </SelectItem>
                         <SelectItem value="high">
                           <div className="flex items-center">
                             <span className="h-2 w-2 rounded-full bg-orange-500 mr-2"></span>
-                            {t('orders.priorities.high')}
+                            {t('orders.form.priorities.high')}
                           </div>
                         </SelectItem>
                         <SelectItem value="urgent">
                           <div className="flex items-center">
                             <span className="h-2 w-2 rounded-full bg-red-500 mr-2"></span>
-                            {t('orders.priorities.urgent')}
+                            {t('orders.form.priorities.urgent')}
                           </div>
                         </SelectItem>
                       </SelectContent>
