@@ -945,36 +945,36 @@ const OrderForm = ({
                     {previousProducts.slice(0, 6).map((product) => (
                       <div 
                         key={product.id}
-                        className="bg-white border border-slate-200 rounded-md p-3 hover:border-primary cursor-pointer transition-colors"
-                        onClick={() => addProduct(product)}
+                        className="bg-white border border-slate-200 rounded-md p-3 hover:border-primary transition-colors relative"
                       >
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="font-medium text-sm">{product.name}</div>
-                            <div className="text-xs text-slate-500">SKU: {product.sku}</div>
-                          </div>
-                          <div className="text-xs bg-slate-100 px-2 py-1 rounded-full">
-                            {product.orderCount > 1 
-                              ? `Ordered ${product.orderCount} times` 
-                              : "Ordered once"}
-                          </div>
-                        </div>
-                        <div className="flex justify-between mt-2 text-xs">
-                          <span>
-                            Stock: <span className={`font-medium ${
-                              (product.currentStock || 0) <= (product.minStockLevel || 0) 
-                                ? 'text-red-600' 
-                                : 'text-green-600'
-                            }`}>{product.currentStock || 0}</span>
-                          </span>
+                        <div className="flex items-start">
                           <Button 
-                            type="button" 
-                            size="sm" 
-                            variant="ghost" 
-                            className="h-6 px-2 py-0 text-xs hover:bg-primary hover:text-white"
+                            type="button"
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8 rounded-full mr-3 flex-shrink-0 text-primary hover:bg-primary hover:text-white border-primary shadow-sm"
+                            onClick={() => addProduct(product)}
                           >
-                            <i className="fas fa-plus text-xs mr-1"></i> Add
+                            <i className="fas fa-plus"></i>
                           </Button>
+                          <div className="flex-1">
+                            <div className="font-medium text-sm">{product.name}</div>
+                            <div className="text-xs text-slate-500 mb-1">SKU: {product.sku}</div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs">
+                                Stock: <span className={`font-medium ${
+                                  (product.currentStock || 0) <= (product.minStockLevel || 0) 
+                                    ? 'text-red-600' 
+                                    : 'text-green-600'
+                                }`}>{product.currentStock || 0}</span>
+                              </span>
+                              <div className="text-xs bg-slate-100 px-2 py-1 rounded-full">
+                                {product.orderCount > 1 
+                                  ? `Ordered ${product.orderCount} times` 
+                                  : "Ordered once"}
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ))}

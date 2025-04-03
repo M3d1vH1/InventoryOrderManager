@@ -236,16 +236,30 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
+                  <th className="px-4 py-3 text-center text-sm font-medium text-slate-500 uppercase tracking-wider w-16">{t('products.search.actions')}</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-slate-500 uppercase tracking-wider">{t('products.search.product')}</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-slate-500 uppercase tracking-wider">{t('products.search.sku')}</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-slate-500 uppercase tracking-wider">{t('products.search.tags')}</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-slate-500 uppercase tracking-wider">{t('products.search.stock')}</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-slate-500 uppercase tracking-wider">{t('products.search.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {products?.map((product) => (
                   <tr key={product.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-5 whitespace-nowrap text-center">
+                      <Button
+                        onClick={() => onSelectProduct(product)}
+                        variant="outline"
+                        size="icon"
+                        className="h-12 w-12 rounded-full text-primary hover:bg-primary hover:text-white border-primary shadow-sm mx-auto"
+                        disabled={product.currentStock === 0}
+                      >
+                        {product.currentStock === 0 ? 
+                          <i className="fas fa-ban text-red-500 text-lg"></i> : 
+                          <i className="fas fa-plus text-lg"></i>
+                        }
+                      </Button>
+                    </td>
                     <td className="px-4 py-5 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="h-12 w-12 flex-shrink-0 rounded bg-slate-100 flex items-center justify-center">
@@ -301,19 +315,6 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
                           {product.location}
                         </div>
                       )}
-                    </td>
-                    <td className="px-4 py-5 whitespace-nowrap text-right">
-                      <Button
-                        onClick={() => onSelectProduct(product)}
-                        className="h-10 min-w-[120px] text-base"
-                        disabled={product.currentStock === 0}
-                      >
-                        {product.currentStock === 0 ? 
-                          <i className="fas fa-ban mr-2"></i> : 
-                          <i className="fas fa-plus mr-2"></i>
-                        }
-                        {product.currentStock === 0 ? "Out of Stock" : "Select"}
-                      </Button>
                     </td>
                   </tr>
                 ))}
