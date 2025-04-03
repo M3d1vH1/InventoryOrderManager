@@ -944,6 +944,14 @@ export class MemStorage implements IStorage {
       .filter(item => item.orderId === orderId);
   }
   
+  async deleteOrderItemsByOrderId(orderId: number): Promise<boolean> {
+    const orderItems = await this.getOrderItems(orderId);
+    for (const item of orderItems) {
+      this.orderItems.delete(item.id);
+    }
+    return true;
+  }
+  
   async addOrderItem(insertOrderItem: InsertOrderItem): Promise<OrderItem> {
     const id = this.orderItemIdCounter++;
     const orderItem: OrderItem = { ...insertOrderItem, id };

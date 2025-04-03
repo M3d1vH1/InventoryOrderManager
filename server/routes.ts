@@ -2,7 +2,8 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from 'zod';
-import { insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCustomerSchema, insertUserSchema, insertCategorySchema, insertTagSchema, type Product } from "@shared/schema";
+import { insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCustomerSchema, insertUserSchema, insertCategorySchema, insertTagSchema, type Product, orderItems } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import { isAuthenticated, hasRole } from "./auth";
 import { hashPassword } from "./auth";
 import { UploadedFile } from "express-fileupload";
@@ -755,18 +756,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/orders/:id', isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const orderData = insertOrderSchema.partial().parse(req.body);
+      // Extract items array from request data
+      const { items, ...orderDataRaw } = req.body;
+      
+      // Validate order data
+      const orderData = insertOrderSchema.partial().parse(orderDataRaw);
       const userId = (req.user as any)?.id || 1; // Default to admin user if somehow not authenticated
       
-      // Pass the validated orderData and userId separately
+      // 1. Pass the validated orderData and userId separately to update the order itself
       const updatedOrder = await storage.updateOrder(id, orderData, userId);
       
       if (!updatedOrder) {
         return res.status(404).json({ message: 'Order not found' });
       }
       
+      // 2. Handle updating order items if they were provided
+      if (items && Array.isArray(items)) {
+        console.log(`Updating ${items.length} items for order #${id}`);
+        
+        // First retrieve current order items
+        const existingItems = await storage.getOrderItems(id);
+        
+        // Delete existing order items - we'll recreate them
+        await storage.deleteOrderItemsByOrderId(id);
+        
+        // Add new items
+        for (const item of items) {
+          await storage.addOrderItem({
+            orderId: id,
+            productId: item.productId,
+            quantity: item.quantity
+          });
+        }
+        
+        // Add changelog entry for items update
+        await storage.addOrderChangelog({
+          orderId: id,
+          userId: userId,
+          action: 'update',
+          changes: { items: items },
+          previousValues: { items: existingItems },
+          notes: "Order items updated"
+        });
+        
+        console.log(`Successfully updated ${items.length} items for order #${id}`);
+      }
+      
       res.json(updatedOrder);
     } catch (error: any) {
+      console.error("Error updating order:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Validation error', errors: error.errors });
       }
