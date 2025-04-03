@@ -327,10 +327,19 @@ const OrderForm = ({
 
   useEffect(() => {
     // Update form items field when orderItems changes
-    form.setValue('items', orderItems.map(item => ({
+    console.log("orderItems changed, updating form items", orderItems);
+    const formattedItems = orderItems.map(item => ({
       productId: item.productId,
       quantity: item.quantity
-    })));
+    }));
+    console.log("Setting form items value to:", formattedItems);
+    form.setValue('items', formattedItems);
+    
+    // Verify that the items are set correctly
+    setTimeout(() => {
+      const currentItems = form.getValues('items');
+      console.log("Current form items after update:", currentItems);
+    }, 100);
   }, [orderItems, form]);
 
   const createOrderMutation = useMutation({
@@ -340,6 +349,19 @@ const OrderForm = ({
         throw new Error("You must be logged in to create an order");
       }
 
+      // Log the items again right before sending
+      console.log("Items being sent in API request:", values.items);
+      console.log("orderItems length before sending:", orderItems.length);
+      
+      // Make sure we're sending all the items from our orderItems state
+      // Create a copy of the form values but replace items with our orderItems state
+      const itemsToSend = orderItems.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity
+      }));
+      
+      console.log("Final items to send:", itemsToSend);
+
       // Send only the data that the server expects
       return apiRequest({
         url: '/api/orders',
@@ -347,7 +369,7 @@ const OrderForm = ({
         body: JSON.stringify({
           customerName: values.customerName,
           notes: values.notes,
-          items: values.items,
+          items: itemsToSend, // Use our directly mapped items from state
           estimatedShippingDate: values.estimatedShippingDate,
           priority: values.priority,
           createdById: user.id
@@ -391,6 +413,19 @@ const OrderForm = ({
         throw new Error("You must be logged in to update an order");
       }
       
+      // Log the items again right before sending
+      console.log("Items being sent in update API request:", values.items);
+      console.log("orderItems length before sending update:", orderItems.length);
+      
+      // Make sure we're sending all the items from our orderItems state
+      // Create a copy of the form values but replace items with our orderItems state
+      const itemsToSend = orderItems.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity
+      }));
+      
+      console.log("Final items to send in update:", itemsToSend);
+      
       // Send only the data that the server expects
       return apiRequest({
         url: `/api/orders/${id}`,
@@ -398,7 +433,7 @@ const OrderForm = ({
         body: JSON.stringify({
           customerName: values.customerName,
           notes: values.notes,
-          items: values.items,
+          items: itemsToSend, // Use our directly mapped items from state
           estimatedShippingDate: values.estimatedShippingDate,
           priority: values.priority,
           updatedById: user.id
@@ -436,9 +471,13 @@ const OrderForm = ({
   const onSubmit = (values: OrderFormValues) => {
     if (isEditMode && initialData?.id) {
       console.log("Updating order:", initialData.id, values);
+      console.log("Order items being submitted:", values.items);
+      console.log("Current orderItems state:", orderItems);
       updateOrderMutation.mutate({ id: initialData.id, values });
     } else {
       console.log("Creating order:", values);
+      console.log("Order items being submitted:", values.items);
+      console.log("Current orderItems state:", orderItems);
       createOrderMutation.mutate(values);
     }
   };
