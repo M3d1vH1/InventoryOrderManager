@@ -1469,6 +1469,7 @@ const OrderForm = ({
         </DialogContent>
       </Dialog>
     </div>
+    </div>
   );
 };
 
