@@ -1071,15 +1071,20 @@ const OrderForm = ({
                   <i className="fas fa-times mr-2"></i> {t('common.cancel')}
                 </Button>
               ) : (
-                <Link href="/orders">
-                  <Button 
-                    type="button" 
-                    variant="outline"
-                    className="h-12 text-base px-6"
-                  >
-                    <i className="fas fa-arrow-left mr-2"></i> {t('orders.form.backToOrders')}
-                  </Button>
-                </Link>
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  className="h-12 text-base px-6"
+                  onClick={() => {
+                    // Clear the form state
+                    form.reset();
+                    setOrderItems([]);
+                    // Navigate to orders page
+                    window.location.href = "/orders";
+                  }}
+                >
+                  <i className="fas fa-arrow-left mr-2"></i> {t('orders.form.backToOrders')}
+                </Button>
               )}
               <Button 
                 type="submit" 
