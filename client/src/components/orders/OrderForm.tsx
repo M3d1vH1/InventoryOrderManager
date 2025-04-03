@@ -83,7 +83,7 @@ const orderFormSchema = z.object({
   priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
   items: z.array(z.object({ 
     productId: z.number(), 
-    quantity: z.number().min(1) 
+    quantity: z.number() // Allow any number, including zero, to permit users to enter quantity manually
   })).min(1, { message: "At least one product is required" })
 });
 
@@ -538,7 +538,7 @@ const OrderForm = ({
     setOrderItems([...orderItems, { 
       productId: product.id, 
       product,
-      quantity: 1 
+      quantity: 0 // Start with empty (zero) quantity instead of defaulting to 1
     }]);
     
     setIsProductSearchOpen(false);
@@ -983,12 +983,13 @@ const OrderForm = ({
                             <td className="py-4 px-4">
                               <Input
                                 type="number"
-                                value={item.quantity}
+                                value={item.quantity === 0 ? '' : item.quantity}
                                 onChange={(e) => {
                                   // Allow empty value or any number
                                   const newValue = e.target.value === '' ? 0 : parseInt(e.target.value);
                                   updateQuantity(index, newValue);
                                 }}
+                                placeholder="Qty"
                                 className={`w-full h-12 text-base ${item.quantity > (item.product?.currentStock || 0) ? 'border-amber-400' : ''}`}
                               />
                             </td>
