@@ -455,6 +455,11 @@ const OrderForm = ({
         throw new Error("You must be logged in to update an order");
       }
       
+      // Show confirmation prompt before proceeding with the update
+      if (!confirm(t('orders.form.confirmUpdate'))) {
+        throw new Error("Order update cancelled by user");
+      }
+      
       // Log the items again right before sending
       console.log("Items being sent in update API request:", values.items);
       console.log("orderItems length before sending update:", orderItems.length);
@@ -490,18 +495,34 @@ const OrderForm = ({
       toast({
         title: "Order updated",
         description: "Order has been updated successfully.",
+        variant: "success",
       });
+      
       // Refresh queries
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       queryClient.invalidateQueries({ queryKey: ['/api/orders', initialData?.id] });
       queryClient.invalidateQueries({ queryKey: ['/api/orders/recent'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      
+      // Clear form and state
+      form.reset();
+      setOrderItems([]);
+      
+      // Navigate back to orders list after successful update
+      window.location.href = "/orders";
+      
       // Call onSuccess callback if provided
       if (onSuccess) {
         onSuccess();
       }
     },
     onError: (error) => {
+      // Check if it's a user cancellation
+      if (error.message === "Order update cancelled by user") {
+        // Silently handle cancellation, don't show an error toast
+        return;
+      }
+      
       console.error("Order update error:", error);
       toast({
         title: "Error updating order",

@@ -97,6 +97,8 @@
     "new": "New Order",
     "hideForm": "Hide Form",
     "quickCreate": "Quickly create a new customer order",
+    "newOrderHeader": "New Order",
+    "newOrderFromMenu": "Create New Order",
     "createOrder": "Create Order",
     "noOrdersFound": "No orders found",
     "tryClearingFilters": "Try clearing filters",
@@ -178,7 +180,8 @@
       "customerDetailsInstructions": "Please enter customer details below",
       "partialFulfillment": "Partial fulfillment",
       "partialFulfillmentTitle": "Partial Fulfillment Available",
-      "partialFulfillmentDescription": "When ordering more than available stock, the system will ship what's available and create backorder items for the rest."
+      "partialFulfillmentDescription": "When ordering more than available stock, the system will ship what's available and create backorder items for the rest.",
+      "confirmUpdate": "Are you sure you want to update this order? Changes cannot be undone."
     },
     "details": {
       "customer": "Customer",
@@ -191,7 +194,11 @@
       "sku": "SKU",
       "quantity": "Quantity",
       "location": "Location",
-      "changeHistory": "Change History"
+      "changeHistory": "Change History",
+      "changeHistoryTitle": "Order Change History",
+      "changeHistoryDescription": "Track all changes to this order",
+      "noChangesAvailable": "No change history available for this order",
+      "failedToLoadHistory": "Failed to load order history. Please try again later."
     },
     "columns": {
       "orderId": "Order ID",
