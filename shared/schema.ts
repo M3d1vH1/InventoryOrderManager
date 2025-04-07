@@ -210,7 +210,7 @@ export const orderItems = pgTable("order_items", {
 export const insertOrderItemSchema = createInsertSchema(orderItems)
   .omit({ id: true })
   .extend({
-    quantity: z.number().min(1),
+    quantity: z.number().min(0), // Changed from min(1) to min(0) to allow zero-quantity orders
   });
 
 export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
@@ -331,7 +331,7 @@ export const insertUnshippedItemSchema = createInsertSchema(unshippedItems)
   .extend({
     orderId: z.number(),
     productId: z.number(),
-    quantity: z.number().min(1),
+    quantity: z.number().min(0), // Changed from min(1) to min(0) to allow zero-quantity unshipped items
     customerName: z.string(),
     customerId: z.string().optional(),
     originalOrderNumber: z.string(),

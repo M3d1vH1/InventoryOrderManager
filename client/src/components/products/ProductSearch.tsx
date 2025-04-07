@@ -254,10 +254,9 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
                         variant="outline"
                         size="icon"
                         className="h-12 w-12 rounded-full text-primary hover:bg-primary hover:text-white border-primary shadow-sm mx-auto"
-                        disabled={product.currentStock === 0}
                       >
                         {product.currentStock === 0 ? 
-                          <Ban className="h-5 w-5 text-red-500" /> : 
+                          <Plus className="h-5 w-5 text-amber-500" /> : 
                           <Plus className="h-5 w-5" />
                         }
                       </Button>
