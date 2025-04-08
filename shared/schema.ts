@@ -997,7 +997,11 @@ export const productionRecipes = pgTable("production_recipes", {
   id: serial("id").primaryKey(),
   productId: integer("product_id").references(() => products.id).notNull(),
   name: text("name").notNull(),
+  sku: text("sku").notNull(),
   description: text("description"),
+  yield: numeric("yield").notNull().default("1"),
+  yieldUnit: text("yield_unit").notNull().default("liter"),
+  status: text("status").notNull().default("active"),
   isDefault: boolean("is_default").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -1006,9 +1010,13 @@ export const productionRecipes = pgTable("production_recipes", {
 export const insertProductionRecipeSchema = createInsertSchema(productionRecipes)
   .omit({ id: true, createdAt: true, updatedAt: true })
   .extend({
-    productId: z.number(),
+    productId: z.number().min(1, { message: "Product is required" }),
     name: z.string().min(1, { message: "Recipe name is required" }),
+    sku: z.string().min(1, { message: "Recipe SKU is required" }),
     description: z.string().optional(),
+    yield: z.number().min(0.1, { message: "Yield must be greater than 0" }),
+    yieldUnit: z.enum(["liter", "kg", "piece"], { message: "Valid unit is required" }),
+    status: z.enum(["draft", "active", "discontinued"], { message: "Valid status is required" }),
     isDefault: z.boolean().default(true),
   });
 

@@ -287,6 +287,8 @@ export interface IStorage {
   addRecipeIngredient(ingredient: InsertRecipeIngredient): Promise<RecipeIngredient>;
   updateRecipeIngredient(id: number, ingredient: Partial<InsertRecipeIngredient>): Promise<RecipeIngredient | undefined>;
   removeRecipeIngredient(id: number): Promise<boolean>;
+  getRecipesByProductId(productId: number): Promise<ProductionRecipe[]>;
+  updateProductInventory(productId: number, quantityChange: number, reference: string): Promise<boolean>;
 
   // Production Batch methods
   getProductionBatch(id: number): Promise<ProductionBatch | undefined>;

@@ -14,9 +14,11 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, Plus, Trash } from 'lucide-react';
+import { AlertCircle, Plus, Trash, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 
 interface RecipeFormProps {
   open: boolean;
@@ -28,8 +30,7 @@ const recipeSchema = z.object({
   name: z.string().min(2, 'production.recipeNameRequired'),
   sku: z.string().min(2, 'production.recipeSkuRequired'),
   description: z.string().optional(),
-  productSku: z.string().min(2, 'production.productSkuRequired'),
-  productName: z.string().min(2, 'production.productNameRequired'),
+  productId: z.number().or(z.string().transform(val => parseInt(val, 10))).min(1, 'production.productRequired'),
   yield: z.number().min(1, 'production.yieldRequired'),
   yieldUnit: z.string().min(1, 'production.yieldUnitRequired'),
   status: z.string().min(1, 'production.statusRequired')
@@ -57,6 +58,15 @@ export default function RecipeForm({ open, onOpenChange, editingRecipe }: Recipe
     }
   });
 
+  // Fetch products for product selection
+  const { data: products } = useQuery({
+    queryKey: ['/api/products'],
+    queryFn: async () => {
+      const response = await apiRequest('/api/products');
+      return response as any[];
+    }
+  });
+
   // Initialize form with default values
   const form = useForm({
     resolver: zodResolver(recipeSchema),
@@ -64,8 +74,7 @@ export default function RecipeForm({ open, onOpenChange, editingRecipe }: Recipe
       name: editingRecipe?.name || '',
       sku: editingRecipe?.sku || '',
       description: editingRecipe?.description || '',
-      productSku: editingRecipe?.productSku || '',
-      productName: editingRecipe?.productName || '',
+      productId: editingRecipe?.productId || '',
       yield: editingRecipe?.yield || 1,
       yieldUnit: editingRecipe?.yieldUnit || 'liter',
       status: editingRecipe?.status || 'active'
@@ -265,30 +274,30 @@ export default function RecipeForm({ open, onOpenChange, editingRecipe }: Recipe
                 )}
               />
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <FormField
                   control={form.control}
-                  name="productSku"
+                  name="productId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('production.productSku')}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t('production.productSkuPlaceholder')} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="productName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('production.productName')}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t('production.productNamePlaceholder')} {...field} />
-                      </FormControl>
+                      <FormLabel>{t('production.product')}</FormLabel>
+                      <Select 
+                        value={field.value ? field.value.toString() : ""}
+                        onValueChange={(value) => field.onChange(parseInt(value))}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('production.selectProduct')} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {products?.map((product: any) => (
+                            <SelectItem key={product.id} value={product.id.toString()}>
+                              {product.name} ({product.sku})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

@@ -3674,6 +3674,59 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
+  
+  async getRecipesByProductId(productId: number): Promise<ProductionRecipe[]> {
+    try {
+      const recipes = await this.db.select()
+        .from(productionRecipes)
+        .where(eq(productionRecipes.productId, productId));
+      
+      return recipes;
+    } catch (error) {
+      console.error(`Error getting recipes for product ${productId}:`, error);
+      return [];
+    }
+  }
+  
+  async updateProductInventory(productId: number, quantityChange: number, reference: string): Promise<boolean> {
+    try {
+      // First get the current product
+      const products = await this.db.select()
+        .from(productsTable)
+        .where(eq(productsTable.id, productId));
+      
+      if (products.length === 0) {
+        console.error(`Product with ID ${productId} not found`);
+        return false;
+      }
+      
+      const product = products[0];
+      const newQuantity = product.currentStock + quantityChange;
+      
+      // Update the product inventory
+      await this.db.update(productsTable)
+        .set({ 
+          currentStock: newQuantity,
+          lastStockUpdate: new Date()
+        })
+        .where(eq(productsTable.id, productId));
+      
+      // Log the inventory change
+      await this.db.insert(inventoryChanges).values({
+        productId,
+        quantity: String(quantityChange), // Convert to string as required by schema
+        changeType: 'production',
+        changeDate: new Date(),
+        changedById: null, // This could be updated to include the user ID if available
+        notes: `Inventory change from production process: ${reference}`
+      });
+      
+      return true;
+    } catch (error) {
+      console.error(`Error updating inventory for product ${productId}:`, error);
+      return false;
+    }
+  }
 
   // Production Batch methods
   async getProductionBatch(id: number): Promise<ProductionBatch | undefined> {
