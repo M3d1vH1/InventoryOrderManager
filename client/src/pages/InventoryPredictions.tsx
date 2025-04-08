@@ -217,12 +217,11 @@ const InventoryPredictions: React.FC = () => {
   // Mutations
   const generatePredictionsMutation = useMutation({
     mutationFn: async (method: string) => {
-      const response = await fetch('/api/inventory-predictions/generate', {
+      const response = await fetch(`/api/inventory-predictions/generate?method=${method}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ method }),
       });
       if (!response.ok) {
         throw new Error('Failed to generate predictions');
