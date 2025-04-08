@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, UseQueryOptions } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useSidebar } from '@/context/SidebarContext';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -22,7 +22,20 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { el } from 'date-fns/locale';
+import { 
+  Phone, 
+  PhoneOutgoing, 
+  PhoneMissed, 
+  CalendarClock, 
+  Eye, 
+  Edit, 
+  Bell, 
+  Plus,
+  RefreshCw,
+  Tag
+} from 'lucide-react';
 import CallLogForm from '@/components/call-logs/CallLogForm';
+import CallLogDetail from '@/components/call-logs/CallLogDetail';
 
 type CallLog = {
   id: number;
@@ -51,6 +64,8 @@ const CallLogs: React.FC = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [selectedCallLog, setSelectedCallLog] = useState<CallLog | null>(null);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
+  const [detailView, setDetailView] = useState(false);
+  const [selectedCallId, setSelectedCallId] = useState<number | null>(null);
   
   React.useEffect(() => {
     setCurrentPage(t('callLogs.title'));
@@ -176,10 +191,13 @@ const CallLogs: React.FC = () => {
   };
 
   const handleViewCallClick = (call: CallLog) => {
-    // In the future, this could open a read-only view
-    setSelectedCallLog(call);
-    setFormMode('edit');
-    setFormOpen(true);
+    setDetailView(true);
+    setSelectedCallId(call.id);
+  };
+  
+  const handleBackFromDetail = () => {
+    setDetailView(false);
+    setSelectedCallId(null);
   };
 
   if (isLoading) {
@@ -244,7 +262,7 @@ const CallLogs: React.FC = () => {
               className="mt-4"
               onClick={() => window.location.reload()}
             >
-              <i className="fas fa-redo mr-2"></i>
+              <RefreshCw className="mr-2 h-4 w-4" />
               {t('common.refresh')}
             </Button>
           </CardContent>
@@ -253,6 +271,11 @@ const CallLogs: React.FC = () => {
     );
   }
 
+  // If we're in detail view mode, show the call log detail component
+  if (detailView && selectedCallId) {
+    return <CallLogDetail callId={selectedCallId} onBack={handleBackFromDetail} />;
+  }
+  
   return (
     <>
       <div className="space-y-4">
@@ -261,7 +284,7 @@ const CallLogs: React.FC = () => {
           description={t('callLogs.pageDescription')}
           actions={
             <Button onClick={handleNewCallClick}>
-              <i className="fas fa-plus mr-2"></i>
+              <Plus className="mr-2 h-4 w-4" />
               {t('callLogs.addNewCall')}
             </Button>
           }
@@ -295,7 +318,7 @@ const CallLogs: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <Button onClick={handleNewCallClick}>
-                    <i className="fas fa-plus mr-2"></i>
+                    <Plus className="mr-2 h-4 w-4" />
                     {t('callLogs.addNewCall')}
                   </Button>
                 </CardContent>
@@ -331,7 +354,18 @@ const CallLogs: React.FC = () => {
                             variant="outline" 
                             className={getCallTypeColor(call.callType)}
                           >
-                            {t(`callLogs.form.callTypes.${call.callType}`)}
+                            <span className="flex items-center">
+                              {call.callType === 'inbound' ? (
+                                <Phone className="mr-1 h-3 w-3" />
+                              ) : call.callType === 'outbound' ? (
+                                <PhoneOutgoing className="mr-1 h-3 w-3" />
+                              ) : call.callType === 'missed' ? (
+                                <PhoneMissed className="mr-1 h-3 w-3" />
+                              ) : (
+                                <CalendarClock className="mr-1 h-3 w-3" />
+                              )}
+                              {t(`callLogs.form.callTypes.${call.callType}`)}
+                            </span>
                           </Badge>
                         </td>
                         <td className="py-3 px-4">
@@ -339,16 +373,21 @@ const CallLogs: React.FC = () => {
                             variant="outline" 
                             className={getPriorityColor(call.priority)}
                           >
-                            {t(`callLogs.form.priorities.${call.priority}`)}
+                            <span className="flex items-center">
+                              <Tag className="mr-1 h-3 w-3" />
+                              {t(`callLogs.form.priorities.${call.priority}`)}
+                            </span>
                           </Badge>
                         </td>
                         <td className="py-3 px-4">
                           {call.needsFollowup && call.followupDate ? (
-                            <div className="whitespace-nowrap text-amber-600">
+                            <div className="whitespace-nowrap text-amber-600 flex items-center">
+                              <Bell className="mr-1 h-3 w-3" />
                               {formatDate(call.followupDate)}
                             </div>
                           ) : call.needsFollowup ? (
-                            <div className="text-amber-600">
+                            <div className="text-amber-600 flex items-center">
+                              <Bell className="mr-1 h-3 w-3" />
                               {t('callLogs.needsFollowup')}
                             </div>
                           ) : (
@@ -363,7 +402,7 @@ const CallLogs: React.FC = () => {
                               onClick={() => handleViewCallClick(call)}
                               title={t('callLogs.viewCall')}
                             >
-                              <i className="fas fa-eye"></i>
+                              <Eye className="h-4 w-4" />
                             </Button>
                             <Button 
                               variant="ghost" 
@@ -371,7 +410,7 @@ const CallLogs: React.FC = () => {
                               onClick={() => handleEditCallClick(call)}
                               title={t('callLogs.editCall')}
                             >
-                              <i className="fas fa-edit"></i>
+                              <Edit className="h-4 w-4" />
                             </Button>
                           </div>
                         </td>
