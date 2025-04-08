@@ -101,7 +101,7 @@ export default function Production() {
   const [filterCategory, setFilterCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showTutorial, setShowTutorial] = useState(false);
-  const [helpSection, setHelpSection] = useState('overview');
+  const [helpSection, setHelpSection] = useState<TutorialSections>('overview');
 
   const toggleFlowDirection = () => {
     setFlowDirection(flowDirection === 'vertical' ? 'horizontal' : 'vertical');
@@ -140,7 +140,9 @@ export default function Production() {
   ];
 
   // For production workflow tutorial
-  const tutorials = {
+  type TutorialSections = 'overview' | 'materials' | 'recipes' | 'batches' | 'orders' | 'workflow';
+  
+  const tutorials: Record<TutorialSections, { title: string; content: string }> = {
     overview: {
       title: t('production.tutorialOverviewTitle') || 'Production Module Overview',
       content: t('production.tutorialOverviewContent') || 'This module helps you manage the entire production process from raw materials to finished products. Use the visual workflow to navigate between different production stages.'
