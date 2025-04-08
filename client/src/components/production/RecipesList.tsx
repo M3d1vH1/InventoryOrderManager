@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   Card, 
@@ -25,124 +25,74 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Search, Plus, Eye, Edit, Clipboard, ClipboardCopy } from 'lucide-react';
+import { Search, Plus, Eye, Edit, Clipboard, ClipboardCopy, ArrowLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Link } from 'wouter';
 
-// Mock data for demonstration
-const mockRecipes = [
-  {
-    id: 1,
-    name: 'Premium Extra Virgin Olive Oil 750ml',
-    sku: 'RECIPE-EVOO-750',
-    description: 'Premium quality extra virgin olive oil in 750ml glass bottles',
-    productSku: 'PROD-EVOO-750',
-    productName: 'Premium EVOO 750ml',
-    yield: 950, // Expected production units from the recipe
-    yieldUnit: 'bottle',
-    createdAt: new Date('2024-02-15').toISOString(),
-    updatedAt: new Date('2024-03-01').toISOString(),
-    createdBy: 'Administrator',
-    status: 'active',
-    ingredients: [
-      { id: 1, materialId: 1, materialName: 'Extra Virgin Olive Oil', quantity: 750, unit: 'liter' },
-      { id: 2, materialId: 2, materialName: 'Clear Glass Bottle 750ml', quantity: 1000, unit: 'piece' },
-      { id: 3, materialId: 3, materialName: 'Premium Cork Cap', quantity: 1000, unit: 'piece' },
-      { id: 4, materialId: 4, materialName: 'Premium Label Design A', quantity: 1000, unit: 'piece' }
-    ],
-    steps: [
-      { id: 1, order: 1, description: 'Prepare bottling machine and clean all equipment' },
-      { id: 2, order: 2, description: 'Load olive oil into the filler tank' },
-      { id: 3, order: 3, description: 'Set up bottles on the conveyor belt' },
-      { id: 4, order: 4, description: 'Start bottling process, ensuring each bottle is filled to 750ml' },
-      { id: 5, order: 5, description: 'Install cork caps on each bottle' },
-      { id: 6, order: 6, description: 'Apply labels to each bottle' },
-      { id: 7, order: 7, description: 'Inspect final product for quality assurance' },
-      { id: 8, order: 8, description: 'Package bottles in appropriate boxes for storage' }
-    ]
-  },
-  {
-    id: 2,
-    name: 'Organic Extra Virgin Olive Oil 500ml',
-    sku: 'RECIPE-ORG-500',
-    description: 'Organic certified extra virgin olive oil in 500ml glass bottles',
-    productSku: 'PROD-ORG-500',
-    productName: 'Organic EVOO 500ml',
-    yield: 960, // Expected production units from the recipe
-    yieldUnit: 'bottle',
-    createdAt: new Date('2024-02-18').toISOString(),
-    updatedAt: new Date('2024-03-05').toISOString(),
-    createdBy: 'Administrator',
-    status: 'active',
-    ingredients: [
-      { id: 5, materialId: 1, materialName: 'Extra Virgin Olive Oil', quantity: 500, unit: 'liter' },
-      { id: 6, materialId: 6, materialName: 'Clear Glass Bottle 500ml', quantity: 1000, unit: 'piece' },
-      { id: 7, materialId: 3, materialName: 'Premium Cork Cap', quantity: 1000, unit: 'piece' },
-      { id: 8, materialId: 7, materialName: 'Organic Label Design', quantity: 1000, unit: 'piece' }
-    ],
-    steps: [
-      { id: 9, order: 1, description: 'Prepare bottling machine and clean all equipment' },
-      { id: 10, order: 2, description: 'Load organic olive oil into the filler tank' },
-      { id: 11, order: 3, description: 'Set up 500ml bottles on the conveyor belt' },
-      { id: 12, order: 4, description: 'Start bottling process, ensuring each bottle is filled to 500ml' },
-      { id: 13, order: 5, description: 'Install cork caps on each bottle' },
-      { id: 14, order: 6, description: 'Apply organic certification labels to each bottle' },
-      { id: 15, order: 7, description: 'Inspect final product for quality assurance' },
-      { id: 16, order: 8, description: 'Package bottles in appropriate boxes for storage' }
-    ]
-  },
-  {
-    id: 3,
-    name: 'Gift Box 3x250ml Collection',
-    sku: 'RECIPE-GIFT-3X250',
-    description: 'Premium gift box with 3 varieties of olive oil in 250ml bottles',
-    productSku: 'PROD-GIFT-3X250',
-    productName: 'Gift Box Collection',
-    yield: 450, // Expected production units from the recipe
-    yieldUnit: 'box',
-    createdAt: new Date('2024-02-20').toISOString(),
-    updatedAt: new Date('2024-03-10').toISOString(),
-    createdBy: 'Administrator',
-    status: 'draft',
-    ingredients: [
-      { id: 9, materialId: 1, materialName: 'Extra Virgin Olive Oil', quantity: 250, unit: 'liter' },
-      { id: 10, materialId: 8, materialName: 'Lemon Infused Olive Oil', quantity: 250, unit: 'liter' },
-      { id: 11, materialId: 9, materialName: 'Herb Infused Olive Oil', quantity: 250, unit: 'liter' },
-      { id: 12, materialId: 10, materialName: 'Clear Glass Bottle 250ml', quantity: 1500, unit: 'piece' },
-      { id: 13, materialId: 11, materialName: 'Small Cork Cap', quantity: 1500, unit: 'piece' },
-      { id: 14, materialId: 12, materialName: 'Classic Label 250ml', quantity: 500, unit: 'piece' },
-      { id: 15, materialId: 13, materialName: 'Lemon Label 250ml', quantity: 500, unit: 'piece' },
-      { id: 16, materialId: 14, materialName: 'Herb Label 250ml', quantity: 500, unit: 'piece' },
-      { id: 17, materialId: 5, materialName: 'Gift Box for 3 Bottles', quantity: 500, unit: 'piece' }
-    ],
-    steps: [
-      { id: 17, order: 1, description: 'Prepare bottling machine and clean all equipment' },
-      { id: 18, order: 2, description: 'Bottle 250ml of classic olive oil' },
-      { id: 19, order: 3, description: 'Clean equipment thoroughly before changing oil type' },
-      { id: 20, order: 4, description: 'Bottle 250ml of lemon infused olive oil' },
-      { id: 21, order: 5, description: 'Clean equipment thoroughly before changing oil type' },
-      { id: 22, order: 6, description: 'Bottle 250ml of herb infused olive oil' },
-      { id: 23, order: 7, description: 'Apply appropriate labels to each bottle type' },
-      { id: 24, order: 8, description: 'Assemble gift boxes with one bottle of each type' },
-      { id: 25, order: 9, description: 'Add promotional material and sealing sticker to each box' },
-      { id: 26, order: 10, description: 'Inspect final product for quality assurance' }
-    ]
-  }
-];
+interface RecipeIngredient {
+  id: number;
+  materialId: number;
+  materialName: string;
+  quantity: number;
+  unit: string;
+  notes?: string;
+}
+
+interface Recipe {
+  id: number;
+  name: string;
+  sku: string;
+  description: string;
+  productSku: string;
+  productName: string;
+  yield: number;
+  yieldUnit: string;
+  createdAt: string;
+  updatedAt: string;
+  createdById: number;
+  createdBy?: string;
+  status: string;
+  ingredients: RecipeIngredient[];
+  steps?: any[];
+}
 
 export default function RecipesList() {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
-  const [recipes, setRecipes] = useState(mockRecipes);
-  const [selectedRecipe, setSelectedRecipe] = useState<any>(null);
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('ingredients');
   
-  const filteredRecipes = searchTerm 
+  // Fetch recipes from API
+  const { data: recipes, isLoading, error } = useQuery({
+    queryKey: ['/api/production/recipes'],
+    queryFn: async () => {
+      const response = await apiRequest('/api/production/recipes');
+      return response as Recipe[];
+    }
+  });
+  
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: t('errors.fetchFailed'),
+        description: t('production.errorFetchingRecipes'),
+        variant: 'destructive',
+      });
+    }
+  }, [error, t, toast]);
+
+  const filteredRecipes = searchTerm && recipes
     ? recipes.filter(recipe => 
         recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         recipe.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        recipe.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        recipe.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         recipe.description.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : recipes;
@@ -175,8 +125,17 @@ export default function RecipesList() {
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>{t('production.recipesList')}</CardTitle>
-            <CardDescription>{t('production.recipesDescription')}</CardDescription>
+            <div className="flex items-center gap-2">
+              <Link to="/production">
+                <Button variant="outline" size="icon" className="h-8 w-8">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <div>
+                <CardTitle>{t('production.recipesList')}</CardTitle>
+                <CardDescription>{t('production.recipesDescription')}</CardDescription>
+              </div>
+            </div>
           </div>
           <Button>
             <Plus className="mr-2 h-4 w-4" /> {t('production.addRecipe')}
@@ -195,64 +154,73 @@ export default function RecipesList() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[15%]">{t('products.sku')}</TableHead>
-                <TableHead className="w-[25%]">{t('production.recipeName')}</TableHead>
-                <TableHead className="w-[20%]">{t('production.product')}</TableHead>
-                <TableHead className="w-[15%]">{t('production.yield')}</TableHead>
-                <TableHead className="w-[10%]">{t('production.status')}</TableHead>
-                <TableHead className="text-right w-[15%]">{t('actions')}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredRecipes.length > 0 ? (
-                filteredRecipes.map((recipe) => (
-                  <TableRow key={recipe.id}>
-                    <TableCell className="font-medium">{recipe.sku}</TableCell>
-                    <TableCell>{recipe.name}</TableCell>
-                    <TableCell>{recipe.productName}</TableCell>
-                    <TableCell>
-                      {recipe.yield} {t(`production.units.${recipe.yieldUnit}`)}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(recipe.status)}</TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleViewRecipe(recipe)}
-                        className="mr-1"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="mr-1"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                      >
-                        <ClipboardCopy className="h-4 w-4" />
-                      </Button>
+        {isLoading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </div>
+        ) : (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[15%]">{t('products.sku')}</TableHead>
+                  <TableHead className="w-[25%]">{t('production.recipeName')}</TableHead>
+                  <TableHead className="w-[20%]">{t('production.product')}</TableHead>
+                  <TableHead className="w-[15%]">{t('production.yield')}</TableHead>
+                  <TableHead className="w-[10%]">{t('production.status')}</TableHead>
+                  <TableHead className="text-right w-[15%]">{t('actions')}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredRecipes && filteredRecipes.length > 0 ? (
+                  filteredRecipes.map((recipe) => (
+                    <TableRow key={recipe.id}>
+                      <TableCell className="font-medium">{recipe.sku}</TableCell>
+                      <TableCell>{recipe.name}</TableCell>
+                      <TableCell>{recipe.productName}</TableCell>
+                      <TableCell>
+                        {recipe.yield} {t(`production.units.${recipe.yieldUnit}`)}
+                      </TableCell>
+                      <TableCell>{getStatusBadge(recipe.status)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewRecipe(recipe)}
+                          className="mr-1"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mr-1"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                        >
+                          <ClipboardCopy className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
+                      {searchTerm ? t('production.noRecipesFound') : t('production.noRecipesYet')}
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
-                    {searchTerm ? t('production.noRecipesFound') : t('production.noRecipesYet')}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
         
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-[700px]">
@@ -282,14 +250,22 @@ export default function RecipesList() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {selectedRecipe.ingredients.map((ingredient: any) => (
-                          <TableRow key={ingredient.id}>
-                            <TableCell>{ingredient.materialName}</TableCell>
-                            <TableCell>
-                              {ingredient.quantity} {t(`production.units.${ingredient.unit}`)}
+                        {selectedRecipe.ingredients && selectedRecipe.ingredients.length > 0 ? (
+                          selectedRecipe.ingredients.map((ingredient: RecipeIngredient) => (
+                            <TableRow key={ingredient.id}>
+                              <TableCell>{ingredient.materialName}</TableCell>
+                              <TableCell>
+                                {ingredient.quantity} {t(`production.units.${ingredient.unit}`)}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={2} className="text-center py-4 text-muted-foreground">
+                              {t('production.noIngredientsFound')}
                             </TableCell>
                           </TableRow>
-                        ))}
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -305,12 +281,20 @@ export default function RecipesList() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {selectedRecipe.steps.map((step: any) => (
-                          <TableRow key={step.id}>
-                            <TableCell className="font-medium">{step.order}</TableCell>
-                            <TableCell>{step.description}</TableCell>
+                        {selectedRecipe.steps && selectedRecipe.steps.length > 0 ? (
+                          selectedRecipe.steps.map((step: any) => (
+                            <TableRow key={step.id}>
+                              <TableCell className="font-medium">{step.order}</TableCell>
+                              <TableCell>{step.description}</TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={2} className="text-center py-4 text-muted-foreground">
+                              {t('production.noStepsFound')}
+                            </TableCell>
                           </TableRow>
-                        ))}
+                        )}
                       </TableBody>
                     </Table>
                   </div>
