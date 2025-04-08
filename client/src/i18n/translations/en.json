@@ -1095,6 +1095,7 @@
     "projectedStock": "Projected Stock",
     "noDataAvailable": "No forecast data available",
     "predictionsSummary": "Predictions Summary",
-    "history": "Inventory History"
+    "history": "Inventory History",
+    "noHistoryAvailable": "No inventory history available"
   }
 }
