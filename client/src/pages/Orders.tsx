@@ -11,7 +11,7 @@ import {
   Eye, Edit, ClipboardCheck, 
   Truck, CheckSquare, AlertTriangle,
   Upload, FileText, FilePlus, FileInput, X,
-  Trash2, Mail, Printer
+  Trash2, Mail, Printer, ShoppingCart
 } from "lucide-react";
 import { OrderChangelog } from "@/components/orders/OrderChangelog";
 
@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -127,6 +128,9 @@ const Orders = () => {
   const [location, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -290,7 +294,11 @@ const Orders = () => {
     
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     
-    return matchesSearch && matchesStatus;
+    const matchesPriority = priorityFilter === "all" || 
+      (order.priority === priorityFilter) || 
+      (!order.priority && priorityFilter === "none");
+    
+    return matchesSearch && matchesStatus && matchesPriority;
   });
 
   // Fetch specific order details with product details
@@ -754,6 +762,53 @@ A 1
           </div>
         )}
 
+        {/* Status filter tabs */}
+        <div className="border-b border-slate-200">
+          <div className="flex flex-wrap">
+            <Button 
+              variant={statusFilter === "all" ? "default" : "ghost"} 
+              className="rounded-none border-b-2 border-transparent px-4 py-2 text-sm font-medium transition-all hover:border-primary/50"
+              style={{ borderBottomColor: statusFilter === "all" ? "var(--primary)" : "transparent" }}
+              onClick={() => setStatusFilter("all")}
+            >
+              {t('orders.allStatuses')} {orders ? ` (${orders.length})` : ''}
+            </Button>
+            <Button 
+              variant={statusFilter === "pending" ? "default" : "ghost"} 
+              className="rounded-none border-b-2 border-transparent px-4 py-2 text-sm font-medium transition-all hover:border-primary/50"
+              style={{ borderBottomColor: statusFilter === "pending" ? "var(--primary)" : "transparent" }}
+              onClick={() => setStatusFilter("pending")}
+            >
+              {t('orders.statusValues.pending')} {orders ? ` (${orders.filter(o => o.status === "pending").length})` : ''}
+            </Button>
+            <Button 
+              variant={statusFilter === "picked" ? "default" : "ghost"} 
+              className="rounded-none border-b-2 border-transparent px-4 py-2 text-sm font-medium transition-all hover:border-primary/50"
+              style={{ borderBottomColor: statusFilter === "picked" ? "var(--primary)" : "transparent" }}
+              onClick={() => setStatusFilter("picked")}
+            >
+              {t('orders.statusValues.picked')} {orders ? ` (${orders.filter(o => o.status === "picked").length})` : ''}
+            </Button>
+            <Button 
+              variant={statusFilter === "shipped" ? "default" : "ghost"} 
+              className="rounded-none border-b-2 border-transparent px-4 py-2 text-sm font-medium transition-all hover:border-primary/50"
+              style={{ borderBottomColor: statusFilter === "shipped" ? "var(--primary)" : "transparent" }}
+              onClick={() => setStatusFilter("shipped")}
+            >
+              {t('orders.statusValues.shipped')} {orders ? ` (${orders.filter(o => o.status === "shipped").length})` : ''}
+            </Button>
+            <Button 
+              variant={statusFilter === "cancelled" ? "default" : "ghost"} 
+              className="rounded-none border-b-2 border-transparent px-4 py-2 text-sm font-medium transition-all hover:border-primary/50"
+              style={{ borderBottomColor: statusFilter === "cancelled" ? "var(--primary)" : "transparent" }}
+              onClick={() => setStatusFilter("cancelled")}
+            >
+              {t('orders.statusValues.cancelled')} {orders ? ` (${orders.filter(o => o.status === "cancelled").length})` : ''}
+            </Button>
+          </div>
+        </div>
+
+        {/* Advanced filters and search */}
         <div className="p-4 flex flex-col md:flex-row gap-4 justify-between">
           <div className="flex flex-col md:flex-row gap-2 flex-1">
             <div className="relative w-full md:w-64">
@@ -777,18 +832,58 @@ A 1
                 </Button>
               )}
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            
+            {/* Priority filter dropdown */}
+            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
               <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder={t('orders.filterByStatus')} />
+                <SelectValue placeholder={t('orders.filterByPriority')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t('orders.allStatuses')}</SelectItem>
-                <SelectItem value="pending">{t('orders.statusValues.pending')}</SelectItem>
-                <SelectItem value="picked">{t('orders.statusValues.picked')}</SelectItem>
-                <SelectItem value="shipped">{t('orders.statusValues.shipped')}</SelectItem>
-                <SelectItem value="cancelled">{t('orders.statusValues.cancelled')}</SelectItem>
+                <SelectItem value="all">{t('orders.allPriorities')}</SelectItem>
+                <SelectItem value="urgent">{t('orders.priorityValues.urgent')}</SelectItem>
+                <SelectItem value="high">{t('orders.priorityValues.high')}</SelectItem>
+                <SelectItem value="medium">{t('orders.priorityValues.medium')}</SelectItem>
+                <SelectItem value="low">{t('orders.priorityValues.low')}</SelectItem>
+                <SelectItem value="none">{t('orders.priorityValues.none')}</SelectItem>
               </SelectContent>
             </Select>
+            
+            {/* Batch action buttons */}
+            {selectedOrders.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-slate-500">
+                  {selectedOrders.length} selected
+                </span>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    // Implement batch status change
+                    toast({
+                      title: "Batch update",
+                      description: `Update ${selectedOrders.length} orders at once`,
+                    });
+                  }}
+                >
+                  <i className="fas fa-edit mr-1"></i> Batch Update
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="text-red-500 hover:text-red-700"
+                  onClick={() => {
+                    // Implement batch delete
+                    toast({
+                      title: "Batch delete",
+                      description: `${selectedOrders.length} orders will be deleted`,
+                      variant: "destructive",
+                    });
+                  }}
+                >
+                  <i className="fas fa-trash mr-1"></i> Delete
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -796,6 +891,19 @@ A 1
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[50px]">
+                  <Checkbox 
+                    checked={selectAll}
+                    onCheckedChange={(checked) => {
+                      setSelectAll(!!checked);
+                      if (checked && filteredOrders) {
+                        setSelectedOrders(filteredOrders.map(o => o.id));
+                      } else {
+                        setSelectedOrders([]);
+                      }
+                    }}
+                  />
+                </TableHead>
                 <TableHead>{t('orders.columns.orderId')}</TableHead>
                 <TableHead>{t('orders.columns.customer')}</TableHead>
                 <TableHead>{t('orders.columns.date')}</TableHead>
@@ -808,44 +916,81 @@ A 1
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
+                  <TableCell colSpan={8} className="text-center py-8">
                     {t('orders.loadingOrders')}
                   </TableCell>
                 </TableRow>
               ) : filteredOrders?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
+                  <TableCell colSpan={8} className="text-center py-8">
                     {t('orders.noOrdersFound')} {searchTerm || statusFilter ? t('orders.tryClearingFilters') : ""}
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredOrders?.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>{order.orderNumber}</TableCell>
+                  <TableRow 
+                    key={order.id} 
+                    className={selectedOrders.includes(order.id) ? "bg-slate-50" : ""}
+                    data-state={order.status}
+                  >
+                    <TableCell>
+                      <Checkbox 
+                        checked={selectedOrders.includes(order.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedOrders(prev => [...prev, order.id]);
+                          } else {
+                            setSelectedOrders(prev => prev.filter(id => id !== order.id));
+                            setSelectAll(false);
+                          }
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium">{order.orderNumber}</span>
+                    </TableCell>
                     <TableCell>{order.customerName}</TableCell>
                     <TableCell>{format(new Date(order.orderDate), "MMM dd, yyyy")}</TableCell>
                     <TableCell>
-                      <Select 
-                        value={order.status} 
-                        onValueChange={(value) => handleStatusChange(order.id, value)}
-                      >
-                        <SelectTrigger className={`w-32 h-7 px-2 py-0 rounded-full text-xs font-medium ${getStatusBadgeClass(order.status)}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">{t('orders.statusValues.pending')}</SelectItem>
-                          <SelectItem value="picked">{t('orders.statusValues.picked')}</SelectItem>
-                          <SelectItem value="shipped">{t('orders.statusValues.shipped')}</SelectItem>
-                          <SelectItem value="cancelled">{t('orders.statusValues.cancelled')}</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="flex items-center">
+                        <div className={`w-2 h-2 rounded-full mr-2 ${
+                          order.status === 'pending' ? 'bg-amber-500' :
+                          order.status === 'picked' ? 'bg-blue-500' :
+                          order.status === 'shipped' ? 'bg-green-500' :
+                          'bg-slate-400'
+                        }`}></div>
+                      
+                        <Select 
+                          value={order.status} 
+                          onValueChange={(value) => handleStatusChange(order.id, value)}
+                        >
+                          <SelectTrigger className={`w-32 h-7 px-2 py-0 rounded-full text-xs font-medium ${getStatusBadgeClass(order.status)}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">{t('orders.statusValues.pending')}</SelectItem>
+                            <SelectItem value="picked">{t('orders.statusValues.picked')}</SelectItem>
+                            <SelectItem value="shipped">{t('orders.statusValues.shipped')}</SelectItem>
+                            <SelectItem value="cancelled">{t('orders.statusValues.cancelled')}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </TableCell>
                     <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityBadgeClass(order.priority)}`}>
-                        {t(`orders.form.priorities.${order.priority || 'medium'}`)}
+                      {order.priority ? (
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityBadgeClass(order.priority)}`}>
+                          {t(`orders.form.priorities.${order.priority}`)}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 text-xs">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center">
+                        <ShoppingCart className="h-3 w-3 mr-1 text-slate-400" /> 
+                        {order.items?.length || 0}
                       </span>
                     </TableCell>
-                    <TableCell>{order.items?.length || 0}</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
                         <button 
