@@ -136,6 +136,9 @@
       "areaPlaceholder": "Customer area or region (optional)",
       "orderDate": "Order Date",
       "estimatedShippingDate": "Estimated Shipping Date",
+      "shippingCompany": "Shipping Company",
+      "shippingCompanyPlaceholder": "Enter shipping company name",
+      "shippingCompanyDescription": "The customer's preferred shipping company",
       "priority": "Priority",
       "selectPriority": "Select priority",
       "priorities": {

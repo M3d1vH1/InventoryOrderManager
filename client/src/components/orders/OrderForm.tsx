@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -33,6 +34,9 @@ import { PackageOpen, AlertTriangle, ShoppingCart, Plus, Trash2, ArrowLeft, X, L
 interface Customer {
   id: number;
   name: string;
+  preferredShippingCompany?: string;
+  customShippingCompany?: string;
+  shippingCompany?: string;
 }
 
 interface Product {
@@ -58,6 +62,7 @@ interface OrderFormProps {
     orderDate: string;
     estimatedShippingDate?: string;
     notes?: string;
+    shippingCompany?: string;
     status?: 'pending' | 'picked' | 'shipped' | 'cancelled';
     priority?: 'low' | 'medium' | 'high' | 'urgent';
     items?: {
@@ -77,6 +82,7 @@ const orderFormSchema = z.object({
   customerName: z.string().min(2, { message: "Please select a customer" }),
   area: z.string().optional(),
   notes: z.string().optional(),
+  shippingCompany: z.string().optional(),
   // Add these fields but we'll handle them separately from the API request
   orderDate: z.string().min(1, { message: "Order date is required" }),
   estimatedShippingDate: z.string().min(1, { message: "Estimated shipping date is required" }),
@@ -205,6 +211,7 @@ const OrderForm = ({
       estimatedShippingDate: initialData?.estimatedShippingDate || format(new Date(new Date().setDate(new Date().getDate() + 5)), "yyyy-MM-dd"),
       priority: initialData?.priority || 'medium',
       notes: initialData?.notes || "",
+      shippingCompany: initialData?.shippingCompany || "",
       items: initialData?.items?.map(item => ({
         productId: item.productId,
         quantity: item.quantity
@@ -255,6 +262,29 @@ const OrderForm = ({
       }
     } catch (error) {
       console.error('Error fetching customer area from previous orders:', error);
+    }
+  };
+  
+  // Function to set shipping company from customer data
+  const setShippingCompanyFromCustomer = (customer: Customer) => {
+    let shippingCompany = '';
+    
+    // Use preferred shipping company if available
+    if (customer.preferredShippingCompany) {
+      shippingCompany = customer.preferredShippingCompany;
+    } 
+    // Use custom shipping company if available
+    else if (customer.customShippingCompany) {
+      shippingCompany = customer.customShippingCompany;
+    }
+    // Otherwise use the regular shipping company if available
+    else if (customer.shippingCompany) {
+      shippingCompany = customer.shippingCompany;
+    }
+    
+    if (shippingCompany) {
+      form.setValue('shippingCompany', shippingCompany);
+      console.log(`Set shipping company to ${shippingCompany} from customer data`);
     }
   };
 
@@ -359,6 +389,9 @@ const OrderForm = ({
       
       // Fetch and set area from previous orders
       fetchCustomerAreaFromPreviousOrders(customerName);
+      
+      // Set shipping company from customer data
+      setShippingCompanyFromCustomer(matchedCustomer);
     } else {
       setPreviousProducts([]);
       setUnshippedProducts([]);
@@ -414,6 +447,7 @@ const OrderForm = ({
           items: itemsToSend, // Use our directly mapped items from state
           estimatedShippingDate: values.estimatedShippingDate,
           priority: values.priority,
+          shippingCompany: values.shippingCompany,
           createdById: user.id
         }),
         headers: {
@@ -484,6 +518,7 @@ const OrderForm = ({
           items: itemsToSend, // Use our directly mapped items from state
           estimatedShippingDate: values.estimatedShippingDate,
           priority: values.priority,
+          shippingCompany: values.shippingCompany,
           updatedById: user.id
         }),
         headers: {
@@ -495,7 +530,7 @@ const OrderForm = ({
       toast({
         title: "Order updated",
         description: "Order has been updated successfully.",
-        variant: "success",
+        variant: "default",
       });
       
       // Refresh queries
@@ -681,6 +716,9 @@ const OrderForm = ({
                                         // If we have a matched customer, look for their previous orders to get area info
                                         if (selectedCustomer) {
                                           fetchCustomerAreaFromPreviousOrders(value);
+                                          
+                                          // Set the shipping company from the customer data
+                                          setShippingCompanyFromCustomer(selectedCustomer);
                                         }
                                       }}
                                     >
@@ -747,6 +785,28 @@ const OrderForm = ({
                         {...field} 
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="shippingCompany"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base font-medium">{t('orders.form.shippingCompany')}</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="text" 
+                        className="h-12 text-base"
+                        placeholder={t('orders.form.shippingCompanyPlaceholder')}
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t('orders.form.shippingCompanyDescription')}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -1062,6 +1122,27 @@ const OrderForm = ({
                 </p>
               )}
             </div>
+            
+            <FormField
+              control={form.control}
+              name="shippingCompany"
+              render={({ field }) => (
+                <FormItem className="mb-6">
+                  <FormLabel className="text-base font-medium">{t('orders.form.shippingCompany') || "Shipping Company"}</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      placeholder={t('orders.form.shippingCompanyPlaceholder') || "Enter shipping company name"}
+                      className="h-12 text-base" 
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {t('orders.form.shippingCompanyDescription') || "The customer's preferred shipping company"}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <FormField
               control={form.control}

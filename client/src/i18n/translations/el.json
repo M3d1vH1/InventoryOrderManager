@@ -155,6 +155,9 @@
       "areaPlaceholder": "Περιοχή πελάτη (προαιρετικό)",
       "orderDate": "Ημερομηνία Παραγγελίας",
       "estimatedShippingDate": "Εκτιμώμενη Ημερομηνία Αποστολής",
+      "shippingCompany": "Εταιρεία Μεταφοράς",
+      "shippingCompanyPlaceholder": "Εισάγετε όνομα εταιρείας μεταφοράς",
+      "shippingCompanyDescription": "Η προτιμώμενη εταιρεία μεταφοράς του πελάτη",
       "priority": "Προτεραιότητα",
       "selectPriority": "Επιλέξτε προτεραιότητα",
       "priorities": {
