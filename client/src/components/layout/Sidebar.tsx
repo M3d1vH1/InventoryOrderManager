@@ -174,6 +174,20 @@ const Sidebar = () => {
                 </li>
                 
                 <li className="mb-1">
+                  <Link href="/inventory-predictions" onClick={() => setCurrentPage(t('inventoryPredictions.title'))}>
+                    <button 
+                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/inventory-predictions") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                      title={t('inventoryPredictions.title')}
+                    >
+                      <span className="flex items-center w-5 h-5">
+                        <FaChartLine size={16} />
+                      </span>
+                      {isSidebarOpen && <span className="ml-2">{t('inventoryPredictions.title')}</span>}
+                    </button>
+                  </Link>
+                </li>
+                
+                <li className="mb-1">
                   <Link href="/reports" onClick={() => setCurrentPage("Reports")}>
                     <button 
                       className={`flex items-center w-full p-2 text-left rounded ${isActive("/reports") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
