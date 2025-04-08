@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, json, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, json, primaryKey, numeric } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -874,3 +874,284 @@ export const insertSeasonalPatternSchema = createInsertSchema(seasonalPatterns)
 
 export type InsertSeasonalPattern = z.infer<typeof insertSeasonalPatternSchema>;
 export type SeasonalPattern = typeof seasonalPatterns.$inferSelect;
+
+// Production Module Types
+
+// Raw Material Type Enum
+export const materialTypeEnum = pgEnum('material_type', [
+  'liquid',
+  'packaging',
+  'label',
+  'cap',
+  'box',
+  'other'
+]);
+
+// Material Units Enum
+export const materialUnitEnum = pgEnum('material_unit', [
+  'liter',
+  'kg',
+  'piece'
+]);
+
+// Production Status Enum
+export const productionStatusEnum = pgEnum('production_status', [
+  'planned',
+  'in_progress',
+  'completed',
+  'quality_check',
+  'approved',
+  'rejected'
+]);
+
+// Production Order Status Enum
+export const productionOrderStatusEnum = pgEnum('production_order_status', [
+  'planned',
+  'material_check',
+  'in_progress',
+  'completed',
+  'partially_completed',
+  'cancelled'
+]);
+
+// Production Event Type Enum
+export const productionEventEnum = pgEnum('production_event_type', [
+  'start',
+  'pause',
+  'resume',
+  'material_added',
+  'completed',
+  'quality_check',
+  'issue'
+]);
+
+// Raw Materials Schema - Track materials like olive oil, bottles, caps, labels
+export const rawMaterials = pgTable("raw_materials", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  type: materialTypeEnum("type").notNull(),
+  sku: text("sku").notNull().unique(),
+  currentStock: numeric("current_stock").notNull().default("0"),
+  minStockLevel: numeric("min_stock_level").notNull().default("10"),
+  unit: materialUnitEnum("unit").notNull(),
+  unitCost: numeric("unit_cost"),
+  description: text("description"),
+  location: text("location"),
+  supplierId: integer("supplier_id"),
+  lastStockUpdate: timestamp("last_stock_update").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertRawMaterialSchema = createInsertSchema(rawMaterials)
+  .omit({ id: true, createdAt: true, updatedAt: true, lastStockUpdate: true })
+  .extend({
+    name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+    type: z.enum(['liquid', 'packaging', 'label', 'cap', 'box', 'other']),
+    sku: z.string().min(2, { message: "SKU must be at least 2 characters" }),
+    currentStock: z.number().or(z.string().transform(val => Number(val))).default(0),
+    minStockLevel: z.number().or(z.string().transform(val => Number(val))).default(10),
+    unit: z.enum(['liter', 'kg', 'piece']),
+    unitCost: z.number().or(z.string().transform(val => Number(val))).optional(),
+    description: z.string().optional(),
+    location: z.string().optional(),
+    supplierId: z.number().optional(),
+  });
+
+export type InsertRawMaterial = z.infer<typeof insertRawMaterialSchema>;
+export type RawMaterial = typeof rawMaterials.$inferSelect;
+
+// Production Batches Schema - Track batches of olive oil production
+export const productionBatches = pgTable("production_batches", {
+  id: serial("id").primaryKey(),
+  batchNumber: text("batch_number").notNull().unique(),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  status: productionStatusEnum("status").notNull().default('planned'),
+  quantity: numeric("quantity").notNull(),
+  unit: materialUnitEnum("unit").notNull().default('liter'),
+  notes: text("notes"),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertProductionBatchSchema = createInsertSchema(productionBatches)
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    batchNumber: z.string().min(1, { message: "Batch number is required" }),
+    startDate: z.string().min(1).transform(val => new Date(val)),
+    endDate: z.string().optional().transform(val => val ? new Date(val) : undefined),
+    status: z.enum(['planned', 'in_progress', 'completed', 'quality_check', 'approved', 'rejected']).default('planned'),
+    quantity: z.number().or(z.string().transform(val => Number(val))),
+    unit: z.enum(['liter', 'kg', 'piece']).default('liter'),
+    notes: z.string().optional(),
+    createdById: z.number().optional(),
+  });
+
+export type InsertProductionBatch = z.infer<typeof insertProductionBatchSchema>;
+export type ProductionBatch = typeof productionBatches.$inferSelect;
+
+// Production Recipes Schema - Define what raw materials are needed for a product
+export const productionRecipes = pgTable("production_recipes", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").references(() => products.id).notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  isDefault: boolean("is_default").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertProductionRecipeSchema = createInsertSchema(productionRecipes)
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    productId: z.number(),
+    name: z.string().min(1, { message: "Recipe name is required" }),
+    description: z.string().optional(),
+    isDefault: z.boolean().default(true),
+  });
+
+export type InsertProductionRecipe = z.infer<typeof insertProductionRecipeSchema>;
+export type ProductionRecipe = typeof productionRecipes.$inferSelect;
+
+// Recipe Ingredients Schema - The raw materials needed for each recipe
+export const recipeIngredients = pgTable("recipe_ingredients", {
+  id: serial("id").primaryKey(),
+  recipeId: integer("recipe_id").references(() => productionRecipes.id).notNull(),
+  materialId: integer("material_id").references(() => rawMaterials.id).notNull(),
+  quantity: numeric("quantity").notNull(),
+  unit: materialUnitEnum("unit").notNull(),
+  notes: text("notes"),
+});
+
+export const insertRecipeIngredientSchema = createInsertSchema(recipeIngredients)
+  .omit({ id: true })
+  .extend({
+    recipeId: z.number(),
+    materialId: z.number(),
+    quantity: z.number().or(z.string().transform(val => Number(val))),
+    unit: z.enum(['liter', 'kg', 'piece']),
+    notes: z.string().optional(),
+  });
+
+export type InsertRecipeIngredient = z.infer<typeof insertRecipeIngredientSchema>;
+export type RecipeIngredient = typeof recipeIngredients.$inferSelect;
+
+// Production Orders Schema - When we want to produce a batch of final products
+export const productionOrders = pgTable("production_orders", {
+  id: serial("id").primaryKey(),
+  orderNumber: text("order_number").notNull().unique(),
+  productId: integer("product_id").references(() => products.id).notNull(),
+  recipeId: integer("recipe_id").references(() => productionRecipes.id).notNull(),
+  plannedQuantity: integer("planned_quantity").notNull(),
+  actualQuantity: integer("actual_quantity"),
+  status: productionOrderStatusEnum("status").notNull().default('planned'),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  batchId: integer("batch_id").references(() => productionBatches.id),
+  notes: text("notes"),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertProductionOrderSchema = createInsertSchema(productionOrders)
+  .omit({ id: true, orderNumber: true, createdAt: true, updatedAt: true, actualQuantity: true, startDate: true, endDate: true })
+  .extend({
+    productId: z.number(),
+    recipeId: z.number(),
+    plannedQuantity: z.number(),
+    status: z.enum(['planned', 'material_check', 'in_progress', 'completed', 'partially_completed', 'cancelled']).default('planned'),
+    batchId: z.number().optional(),
+    notes: z.string().optional(),
+    createdById: z.number(),
+  });
+
+export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
+export type ProductionOrder = typeof productionOrders.$inferSelect;
+
+// Material Consumption Records Schema - Track actual usage of materials
+export const materialConsumptions = pgTable("material_consumptions", {
+  id: serial("id").primaryKey(),
+  productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
+  materialId: integer("material_id").references(() => rawMaterials.id).notNull(),
+  quantity: numeric("quantity").notNull(),
+  consumedAt: timestamp("consumed_at").defaultNow().notNull(),
+  notes: text("notes"),
+  createdById: integer("created_by_id").references(() => users.id),
+});
+
+export const insertMaterialConsumptionSchema = createInsertSchema(materialConsumptions)
+  .omit({ id: true, consumedAt: true })
+  .extend({
+    productionOrderId: z.number(),
+    materialId: z.number(),
+    quantity: z.number().or(z.string().transform(val => Number(val))),
+    notes: z.string().optional(),
+    createdById: z.number(),
+    consumedAt: z.string().optional().transform(val => val ? new Date(val) : new Date()),
+  });
+
+export type InsertMaterialConsumption = z.infer<typeof insertMaterialConsumptionSchema>;
+export type MaterialConsumption = typeof materialConsumptions.$inferSelect;
+
+// Production Logs Schema - Track events during production
+export const productionLogs = pgTable("production_logs", {
+  id: serial("id").primaryKey(),
+  productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
+  eventType: productionEventEnum("event_type").notNull(),
+  description: text("description").notNull(),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertProductionLogSchema = createInsertSchema(productionLogs)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    productionOrderId: z.number(),
+    eventType: z.enum(['start', 'pause', 'resume', 'material_added', 'completed', 'quality_check', 'issue']),
+    description: z.string().min(1, { message: "Description is required" }),
+    createdById: z.number().optional(),
+  });
+
+export type InsertProductionLog = z.infer<typeof insertProductionLogSchema>;
+export type ProductionLog = typeof productionLogs.$inferSelect;
+
+// Material Inventory Changes Schema - Track changes in raw material inventory
+export const materialInventoryChanges = pgTable("material_inventory_changes", {
+  id: serial("id").primaryKey(),
+  materialId: integer("material_id").references(() => rawMaterials.id).notNull(),
+  changeType: inventoryChangeTypeEnum("change_type").notNull(),
+  previousQuantity: numeric("previous_quantity").notNull(),
+  newQuantity: numeric("new_quantity").notNull(),
+  changeAmount: numeric("change_amount").notNull(),
+  reference: text("reference"),
+  notes: text("notes"),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertMaterialInventoryChangeSchema = createInsertSchema(materialInventoryChanges)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    materialId: z.number(),
+    changeType: z.enum([
+      'manualAdjustment', 
+      'productionConsumption', 
+      'stockReplenishment', 
+      'inventoryCorrection', 
+      'return', 
+      'errorAdjustment', 
+      'other'
+    ]),
+    previousQuantity: z.number().or(z.string().transform(val => Number(val))),
+    newQuantity: z.number().or(z.string().transform(val => Number(val))),
+    changeAmount: z.number().or(z.string().transform(val => Number(val))),
+    reference: z.string().optional(),
+    notes: z.string().optional(),
+    createdById: z.number().optional(),
+  });
+
+export type InsertMaterialInventoryChange = z.infer<typeof insertMaterialInventoryChangeSchema>;
+export type MaterialInventoryChange = typeof materialInventoryChanges.$inferSelect;

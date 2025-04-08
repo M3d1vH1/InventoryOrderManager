@@ -19,6 +19,7 @@ import OrderQuality from "@/pages/OrderQuality";
 import CallLogs from "@/pages/CallLogs";
 import Calendar from "@/pages/Calendar";
 import InventoryPredictions from "@/pages/InventoryPredictions";
+import Production from "@/pages/Production";
 import Login from "@/pages/Login";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
@@ -81,6 +82,7 @@ function AuthenticatedRouter() {
       <Route path="/call-logs" component={CallLogs} />
       <Route path="/calendar" component={Calendar} />
       <Route path="/inventory-predictions" component={InventoryPredictions} />
+      <Route path="/production" component={Production} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>

@@ -227,6 +227,20 @@ const Sidebar = () => {
                 </li>
                 
                 <li className="mb-1">
+                  <Link href="/production" onClick={() => setCurrentPage("Production")}>
+                    <button 
+                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/production") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                      title={t('production.title') || "Production"}
+                    >
+                      <span className="flex items-center w-5 h-5">
+                        <FaBoxes size={16} />
+                      </span>
+                      {isSidebarOpen && <span className="ml-2">{t('production.title') || "Production"}</span>}
+                    </button>
+                  </Link>
+                </li>
+                
+                <li className="mb-1">
                   <div>
                     <button 
                       className={`flex items-center w-full p-2 text-left rounded ${(isActive("/call-logs") || isActive("/calendar") || isActive("/customers")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
