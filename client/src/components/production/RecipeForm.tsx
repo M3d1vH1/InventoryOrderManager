@@ -30,7 +30,7 @@ const recipeSchema = z.object({
   name: z.string().min(2, 'production.recipeNameRequired'),
   sku: z.string().min(2, 'production.recipeSkuRequired'),
   description: z.string().optional(),
-  productId: z.number().or(z.string().transform(val => parseInt(val, 10))).min(1, 'production.productRequired'),
+  productId: z.coerce.number().min(1, 'production.productRequired'),
   yield: z.number().min(1, 'production.yieldRequired'),
   yieldUnit: z.string().min(1, 'production.yieldUnitRequired'),
   status: z.string().min(1, 'production.statusRequired')
