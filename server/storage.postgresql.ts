@@ -24,7 +24,16 @@ import {
   prospectiveCustomers, type ProspectiveCustomer, type InsertProspectiveCustomer,
   inventoryHistory, type InventoryHistory, type InsertInventoryHistory,
   inventoryPredictions, type InventoryPrediction, type InsertInventoryPrediction,
-  seasonalPatterns, type SeasonalPattern, type InsertSeasonalPattern
+  seasonalPatterns, type SeasonalPattern, type InsertSeasonalPattern,
+  // Production module schemas
+  rawMaterials, type RawMaterial, type InsertRawMaterial,
+  productionBatches, type ProductionBatch, type InsertProductionBatch,
+  productionRecipes, type ProductionRecipe, type InsertProductionRecipe,
+  recipeIngredients, type RecipeIngredient, type InsertRecipeIngredient,
+  productionOrders, type ProductionOrder, type InsertProductionOrder,
+  materialConsumptions, type MaterialConsumption, type InsertMaterialConsumption,
+  productionLogs, type ProductionLog, type InsertProductionLog,
+  materialInventoryChanges, type MaterialInventoryChange, type InsertMaterialInventoryChange
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { log } from './vite';
@@ -3221,6 +3230,223 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Raw Materials methods
+  async getRawMaterial(id: number): Promise<RawMaterial | undefined> {
+    try {
+      const results = await this.db
+        .select()
+        .from(rawMaterials)
+        .where(eq(rawMaterials.id, id))
+        .limit(1);
+      
+      return results.length > 0 ? results[0] : undefined;
+    } catch (error) {
+      console.error(`Error getting raw material with ID ${id}:`, error);
+      return undefined;
+    }
+  }
+
+  async getRawMaterialBySku(sku: string): Promise<RawMaterial | undefined> {
+    try {
+      const results = await this.db
+        .select()
+        .from(rawMaterials)
+        .where(eq(rawMaterials.sku, sku))
+        .limit(1);
+      
+      return results.length > 0 ? results[0] : undefined;
+    } catch (error) {
+      console.error(`Error getting raw material with SKU ${sku}:`, error);
+      return undefined;
+    }
+  }
+
+  async getAllRawMaterials(): Promise<RawMaterial[]> {
+    try {
+      const materials = await this.db
+        .select()
+        .from(rawMaterials)
+        .orderBy(rawMaterials.name);
+      
+      return materials;
+    } catch (error) {
+      console.error('Error getting all raw materials:', error);
+      return [];
+    }
+  }
+
+  async createRawMaterial(material: InsertRawMaterial): Promise<RawMaterial> {
+    try {
+      const result = await this.db
+        .insert(rawMaterials)
+        .values({
+          ...material,
+          lastStockUpdate: new Date()
+        })
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error creating raw material:', error);
+      throw error;
+    }
+  }
+
+  async updateRawMaterial(id: number, material: Partial<InsertRawMaterial>): Promise<RawMaterial | undefined> {
+    try {
+      const result = await this.db
+        .update(rawMaterials)
+        .set({
+          ...material,
+          updatedAt: new Date()
+        })
+        .where(eq(rawMaterials.id, id))
+        .returning();
+      
+      return result.length > 0 ? result[0] : undefined;
+    } catch (error) {
+      console.error(`Error updating raw material with ID ${id}:`, error);
+      return undefined;
+    }
+  }
+
+  async deleteRawMaterial(id: number): Promise<boolean> {
+    try {
+      // First check if the material is used in any recipes
+      const recipeIngredientCount = await this.db
+        .select({ count: count() })
+        .from(recipeIngredients)
+        .where(eq(recipeIngredients.materialId, id));
+      
+      if (recipeIngredientCount[0].count > 0) {
+        console.error(`Cannot delete raw material ${id} as it is used in recipes`);
+        return false;
+      }
+      
+      const result = await this.db
+        .delete(rawMaterials)
+        .where(eq(rawMaterials.id, id))
+        .returning({ id: rawMaterials.id });
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error(`Error deleting raw material with ID ${id}:`, error);
+      return false;
+    }
+  }
+
+  async getLowStockRawMaterials(): Promise<RawMaterial[]> {
+    try {
+      return await this.db
+        .select()
+        .from(rawMaterials)
+        .where(
+          and(
+            lt(rawMaterials.currentStock, rawMaterials.minStockLevel),
+            gt(rawMaterials.minStockLevel, 0)
+          )
+        )
+        .orderBy(asc(rawMaterials.currentStock));
+    } catch (error) {
+      console.error('Error getting low stock raw materials:', error);
+      return [];
+    }
+  }
+
+  async searchRawMaterials(query: string, type?: string): Promise<RawMaterial[]> {
+    try {
+      let conditions = [];
+      
+      // Add search condition
+      if (query && query.trim() !== '') {
+        conditions.push(
+          or(
+            ilike(rawMaterials.name, `%${query}%`),
+            ilike(rawMaterials.sku, `%${query}%`),
+            ilike(rawMaterials.description || '', `%${query}%`)
+          )
+        );
+      }
+      
+      // Add material type filter if specified
+      if (type) {
+        conditions.push(eq(rawMaterials.type, type as any));
+      }
+      
+      // Apply conditions if any
+      let queryBuilder = this.db.select().from(rawMaterials);
+      
+      if (conditions.length > 0) {
+        queryBuilder = queryBuilder.where(and(...conditions));
+      }
+      
+      return await queryBuilder.orderBy(rawMaterials.name);
+    } catch (error) {
+      console.error('Error searching raw materials:', error);
+      return [];
+    }
+  }
+
+  async updateRawMaterialStock(id: number, quantityChange: number, notes?: string): Promise<RawMaterial | undefined> {
+    try {
+      const result = await this.db.transaction(async (tx) => {
+        // Get current material data
+        const currentMaterial = await tx
+          .select()
+          .from(rawMaterials)
+          .where(eq(rawMaterials.id, id))
+          .limit(1);
+        
+        if (currentMaterial.length === 0) {
+          return undefined;
+        }
+        
+        const material = currentMaterial[0];
+        const previousQuantity = Number(material.currentStock);
+        const newQuantity = previousQuantity + quantityChange;
+        
+        // Don't allow negative stock
+        if (newQuantity < 0) {
+          throw new Error(`Stock adjustment would result in negative stock for material ${material.name}`);
+        }
+        
+        // Update the material stock
+        const updated = await tx
+          .update(rawMaterials)
+          .set({
+            currentStock: newQuantity,
+            lastStockUpdate: new Date(),
+            updatedAt: new Date()
+          })
+          .where(eq(rawMaterials.id, id))
+          .returning();
+        
+        if (updated.length === 0) {
+          return undefined;
+        }
+        
+        // Record the stock change
+        await tx
+          .insert(materialInventoryChanges)
+          .values({
+            materialId: id,
+            changeType: quantityChange > 0 ? 'stockReplenishment' : 'productionConsumption',
+            previousQuantity,
+            newQuantity,
+            changeAmount: quantityChange,
+            notes: notes || (quantityChange > 0 ? 'Stock replenishment' : 'Production consumption')
+          });
+        
+        return updated[0];
+      });
+      
+      return result;
+    } catch (error) {
+      console.error(`Error updating stock for raw material ${id}:`, error);
+      return undefined;
+    }
+  }
+
   // Production Recipe methods
   async getRecipe(id: number): Promise<ProductionRecipe | undefined> {
     try {
@@ -3726,6 +3952,16 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
+  // Alias for getMaterialConsumptionsByOrder to match the interface
+  async getMaterialConsumptions(orderId: number): Promise<MaterialConsumption[]> {
+    return this.getMaterialConsumptionsByOrder(orderId);
+  }
+  
+  // Alias for deleteMaterialConsumption to match the interface
+  async removeMaterialConsumption(id: number): Promise<boolean> {
+    return this.deleteMaterialConsumption(id);
+  }
+  
   // Production Log methods
   async getProductionLog(id: number): Promise<ProductionLog | undefined> {
     try {
@@ -3788,6 +4024,22 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error(`Error deleting production log ${id}:`, error);
       return false;
+    }
+  }
+  
+  // Alias for getProductionLogsByOrder to match the interface
+  async getProductionLogs(orderId: number): Promise<ProductionLog[]> {
+    return this.getProductionLogsByOrder(orderId);
+  }
+  
+  async getProductionLogsByType(eventType: string): Promise<ProductionLog[]> {
+    try {
+      return await this.db.select().from(productionLogs)
+        .where(eq(productionLogs.eventType, eventType as any))
+        .orderBy(desc(productionLogs.createdAt));
+    } catch (error) {
+      console.error(`Error getting production logs by type ${eventType}:`, error);
+      return [];
     }
   }
 }
