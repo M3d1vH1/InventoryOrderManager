@@ -423,33 +423,29 @@ const InventoryPredictions: React.FC = () => {
   };
   
   // Format date based on locale and check if it's in the past
-  const formatDate = (dateStr: string): { formatted: string; isPast: boolean } => {
-    if (!dateStr) return { formatted: '—', isPast: false };
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '—';
     
     try {
       const date = new Date(dateStr);
       const now = new Date();
-      
-      // Ensure we compare only the date portions (ignoring time)
-      const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      const nowOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      
-      const isPast = dateOnly < nowOnly;
+      const isPast = date < now;
       
       const formattedDate = format(date, 'PP', { locale: i18n.language === 'el' ? el : undefined });
       
       // Return formatted date with past indicator if needed
       return {
-        formatted: isPast 
+        date: formattedDate,
+        isPast,
+        display: isPast 
           ? `${formattedDate} (${t('common.past')})`
-          : formattedDate,
-        isPast
+          : formattedDate
       };
     } catch (e) {
-      console.error('Error formatting date:', e, 'for date string:', dateStr);
       return {
-        formatted: dateStr,
-        isPast: false
+        date: dateStr,
+        isPast: false,
+        display: dateStr
       };
     }
   };
@@ -654,11 +650,7 @@ const InventoryPredictions: React.FC = () => {
                           </TableCell>
                           <TableCell>
                             {prediction.predictedStockoutDate 
-                              ? (
-                                <span className={formatDate(prediction.predictedStockoutDate).isPast ? "text-red-500 font-medium" : ""}>
-                                  {formatDate(prediction.predictedStockoutDate).formatted}
-                                </span>
-                              )
+                              ? formatDate(prediction.predictedStockoutDate)
                               : '—'
                             }
                           </TableCell>
@@ -757,21 +749,13 @@ const InventoryPredictions: React.FC = () => {
                           </TableCell>
                           <TableCell>
                             {prediction.predictedStockoutDate 
-                              ? (
-                                <span className={formatDate(prediction.predictedStockoutDate).isPast ? "text-red-500 font-medium" : ""}>
-                                  {formatDate(prediction.predictedStockoutDate).formatted}
-                                </span>
-                              )
+                              ? formatDate(prediction.predictedStockoutDate)
                               : '—'
                             }
                           </TableCell>
                           <TableCell>
                             {prediction.recommendedReorderDate 
-                              ? (
-                                <span className={formatDate(prediction.recommendedReorderDate).isPast ? "text-red-500 font-medium" : ""}>
-                                  {formatDate(prediction.recommendedReorderDate).formatted}
-                                </span>
-                              )
+                              ? formatDate(prediction.recommendedReorderDate)
                               : '—'
                             }
                           </TableCell>

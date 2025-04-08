@@ -3026,19 +3026,28 @@ export class DatabaseStorage implements IStorage {
       const products = await this.getAllProducts();
       let count = 0;
       
+      const today = new Date();
+      
       for (const product of products) {
         if (product.currentStock <= product.minStockLevel * 1.5) {
           // Calculate a predicted demand based on product's current stock and min level
           const predictedDemand = Math.round(product.minStockLevel * 1.2);
-          const daysUntilStockout = product.currentStock > 0 
-            ? Math.round((product.currentStock / predictedDemand) * 30) 
+          
+          // Ensure we don't divide by zero and get at least 1 day until stockout if stock is positive
+          const daysUntilStockout = product.currentStock > 0
+            ? Math.max(Math.round((product.currentStock / predictedDemand) * 30), 1)
             : 0;
             
-          const predictedStockoutDate = new Date();
-          predictedStockoutDate.setDate(predictedStockoutDate.getDate() + daysUntilStockout);
+          // Ensure stockout date is always in the future (at least tomorrow)
+          const predictedStockoutDate = new Date(today);
+          predictedStockoutDate.setDate(today.getDate() + Math.max(daysUntilStockout, 1));
           
-          const recommendedReorderDate = new Date();
-          recommendedReorderDate.setDate(recommendedReorderDate.getDate() + Math.max(daysUntilStockout - 14, 1));
+          // Always set reorder date in the future - at least today or 14 days before stockout
+          const reorderBuffer = 14; // Buffer days before stockout to reorder
+          const daysUntilReorder = Math.max(daysUntilStockout - reorderBuffer, 0);
+          
+          const recommendedReorderDate = new Date(today);
+          recommendedReorderDate.setDate(today.getDate() + Math.max(daysUntilReorder, 0));
           
           await this.createInventoryPrediction({
             productId: product.id,
