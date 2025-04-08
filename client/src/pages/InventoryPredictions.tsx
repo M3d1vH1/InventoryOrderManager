@@ -422,35 +422,15 @@ const InventoryPredictions: React.FC = () => {
     }
   };
   
-  // Format date based on locale and check if it's in the past
-  const formatDate = (dateStr: string): { formatted: string; isPast: boolean } => {
-    if (!dateStr) return { formatted: '—', isPast: false };
+  // Format date based on locale
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '—';
     
     try {
       const date = new Date(dateStr);
-      const now = new Date();
-      
-      // Ensure we compare only the date portions (ignoring time)
-      const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      const nowOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      
-      const isPast = dateOnly < nowOnly;
-      
-      const formattedDate = format(date, 'PP', { locale: i18n.language === 'el' ? el : undefined });
-      
-      // Return formatted date with past indicator if needed
-      return {
-        formatted: isPast 
-          ? `${formattedDate} (${t('common.past')})`
-          : formattedDate,
-        isPast
-      };
+      return format(date, 'PP', { locale: i18n.language === 'el' ? el : undefined });
     } catch (e) {
-      console.error('Error formatting date:', e, 'for date string:', dateStr);
-      return {
-        formatted: dateStr,
-        isPast: false
-      };
+      return dateStr;
     }
   };
   
@@ -654,11 +634,7 @@ const InventoryPredictions: React.FC = () => {
                           </TableCell>
                           <TableCell>
                             {prediction.predictedStockoutDate 
-                              ? (
-                                <span className={formatDate(prediction.predictedStockoutDate).isPast ? "text-red-500 font-medium" : ""}>
-                                  {formatDate(prediction.predictedStockoutDate).formatted}
-                                </span>
-                              )
+                              ? formatDate(prediction.predictedStockoutDate)
                               : '—'
                             }
                           </TableCell>
@@ -757,21 +733,13 @@ const InventoryPredictions: React.FC = () => {
                           </TableCell>
                           <TableCell>
                             {prediction.predictedStockoutDate 
-                              ? (
-                                <span className={formatDate(prediction.predictedStockoutDate).isPast ? "text-red-500 font-medium" : ""}>
-                                  {formatDate(prediction.predictedStockoutDate).formatted}
-                                </span>
-                              )
+                              ? formatDate(prediction.predictedStockoutDate)
                               : '—'
                             }
                           </TableCell>
                           <TableCell>
                             {prediction.recommendedReorderDate 
-                              ? (
-                                <span className={formatDate(prediction.recommendedReorderDate).isPast ? "text-red-500 font-medium" : ""}>
-                                  {formatDate(prediction.recommendedReorderDate).formatted}
-                                </span>
-                              )
+                              ? formatDate(prediction.recommendedReorderDate)
                               : '—'
                             }
                           </TableCell>
@@ -810,8 +778,8 @@ const InventoryPredictions: React.FC = () => {
                     <div className="flex flex-col gap-4">
                       {Object.entries(
                         predictions.reduce((acc, prediction) => {
-                          // Get the proper method name translation, remove underscores if present
-                          const method = t(`inventoryPredictions.methods.${prediction.predictionMethod.replace(/_/g, '')}`);
+                          // Get the proper method name translation
+                          const method = t(`inventoryPredictions.methods.${prediction.predictionMethod}`);
                           acc[method] = (acc[method] || 0) + 1;
                           return acc;
                         }, {} as Record<string, number>)
