@@ -778,7 +778,8 @@ const InventoryPredictions: React.FC = () => {
                     <div className="flex flex-col gap-4">
                       {Object.entries(
                         predictions.reduce((acc, prediction) => {
-                          const method = t(`inventoryPredictions.methods.${prediction.predictionMethod.replace(/_/g, '')}`);
+                          // Get the proper method name translation
+                          const method = t(`inventoryPredictions.methods.${prediction.predictionMethod}`);
                           acc[method] = (acc[method] || 0) + 1;
                           return acc;
                         }, {} as Record<string, number>)

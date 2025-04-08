@@ -160,31 +160,56 @@ const Sidebar = () => {
                 </li>
 
                 <li className="mb-1">
-                  <Link href="/inventory" onClick={() => setCurrentPage("Inventory")}>
+                  <div>
                     <button 
-                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/inventory") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                      className={`flex items-center w-full p-2 text-left rounded ${(isActive("/inventory") || isActive("/inventory-predictions")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
                       title={t('app.inventory')}
+                      onClick={() => {
+                        if (isSidebarOpen) {
+                          const submenu = document.getElementById('inventory-submenu');
+                          if (submenu) {
+                            submenu.classList.toggle('hidden');
+                          }
+                        } else {
+                          // If sidebar is collapsed, just navigate to inventory
+                          window.location.href = '/inventory';
+                        }
+                      }}
                     >
                       <span className="flex items-center w-5 h-5">
                         <FaWarehouse size={16} />
                       </span>
-                      {isSidebarOpen && <span className="ml-2">{t('app.inventory')}</span>}
+                      {isSidebarOpen && (
+                        <div className="flex justify-between items-center flex-grow">
+                          <span className="ml-2">{t('app.inventory')}</span>
+                          <FaChevronDown size={10} />
+                        </div>
+                      )}
                     </button>
-                  </Link>
-                </li>
-                
-                <li className="mb-1">
-                  <Link href="/inventory-predictions" onClick={() => setCurrentPage(t('inventoryPredictions.title'))}>
-                    <button 
-                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/inventory-predictions") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
-                      title={t('inventoryPredictions.title')}
-                    >
-                      <span className="flex items-center w-5 h-5">
-                        <FaChartLine size={16} />
-                      </span>
-                      {isSidebarOpen && <span className="ml-2">{t('inventoryPredictions.title')}</span>}
-                    </button>
-                  </Link>
+                    
+                    {isSidebarOpen && (
+                      <div id="inventory-submenu" className={`pl-7 mt-1 ${!isActive("/inventory") && !isActive("/inventory-predictions") ? 'hidden' : ''}`}>
+                        <Link href="/inventory" onClick={() => setCurrentPage("Inventory")}>
+                          <button 
+                            className={`flex items-center w-full p-2 text-left rounded ${isActive("/inventory") && !isActive("/inventory-predictions") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
+                            title={t('app.inventory')}
+                          >
+                            <FaBoxes size={12} className="mr-2" />
+                            <span>{t('app.inventory')}</span>
+                          </button>
+                        </Link>
+                        <Link href="/inventory-predictions" onClick={() => setCurrentPage(t('inventoryPredictions.title'))}>
+                          <button 
+                            className={`flex items-center w-full p-2 text-left rounded ${isActive("/inventory-predictions") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
+                            title={t('inventoryPredictions.title')}
+                          >
+                            <FaChartLine size={12} className="mr-2" />
+                            <span>{t('inventoryPredictions.title')}</span>
+                          </button>
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 </li>
                 
                 <li className="mb-1">
