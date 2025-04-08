@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { el } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { useSidebar } from '@/context/SidebarContext';
+import ProductPredictionDashboard from '@/components/inventory/ProductPredictionDashboard';
 
 import {
   Card,
@@ -164,6 +165,7 @@ const InventoryPredictions: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
   const [editingPrediction, setEditingPrediction] = useState<InventoryPrediction | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [selectedProductForDashboard, setSelectedProductForDashboard] = useState<number | null>(null);
   
   // Queries
   const { data: predictions = [], isLoading: isLoadingPredictions, refetch: refetchPredictions } = useQuery<InventoryPrediction[]>({
@@ -461,18 +463,35 @@ const InventoryPredictions: React.FC = () => {
     }
   };
   
+  // Handle view for product prediction dashboard
+  const handleViewProductDashboard = (productId: number) => {
+    setSelectedProductForDashboard(productId);
+  };
+
+  // Handle back from product dashboard
+  const handleBackFromDashboard = () => {
+    setSelectedProductForDashboard(null);
+  };
+
   return (
     <div className="space-y-4">
-      {/* Page Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold mb-1">
-            {t('inventoryPredictions.title')}
-          </h1>
-          <p className="text-muted-foreground">
-            {t('inventoryPredictions.description')}
-          </p>
-        </div>
+      {selectedProductForDashboard ? (
+        <ProductPredictionDashboard 
+          productId={selectedProductForDashboard}
+          onBack={handleBackFromDashboard}
+        />
+      ) : (
+        <>
+          {/* Page Header */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold mb-1">
+                {t('inventoryPredictions.title')}
+              </h1>
+              <p className="text-muted-foreground">
+                {t('inventoryPredictions.description')}
+              </p>
+            </div>
         <div className="flex flex-col sm:flex-row gap-2 mt-4 lg:mt-0">
           <Select value={predictionMethod} onValueChange={setPredictionMethod}>
             <SelectTrigger className="w-full sm:w-auto">
@@ -645,6 +664,14 @@ const InventoryPredictions: React.FC = () => {
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                onClick={() => handleViewProductDashboard(prediction.productId)}
+                                title={t('inventoryPredictions.viewDashboard')}
+                              >
+                                <BarChart3 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => {
                                   setEditingPrediction(prediction);
                                   setIsFormOpen(true);
@@ -713,6 +740,7 @@ const InventoryPredictions: React.FC = () => {
                         <TableHead>{t('inventoryPredictions.stockoutDate')}</TableHead>
                         <TableHead>{t('inventoryPredictions.recommendedReorderDate')}</TableHead>
                         <TableHead className="text-right">{t('inventoryPredictions.recommendedQuantity')}</TableHead>
+                        <TableHead className="text-right">{t('common.actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -747,6 +775,16 @@ const InventoryPredictions: React.FC = () => {
                           </TableCell>
                           <TableCell className="text-right">
                             {prediction.recommendedQuantity || '—'}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleViewProductDashboard(prediction.productId)}
+                              title={t('inventoryPredictions.viewDashboard')}
+                            >
+                              <BarChart3 className="h-4 w-4" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -1247,6 +1285,8 @@ const InventoryPredictions: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </>
+      )}
     </div>
   );
 };

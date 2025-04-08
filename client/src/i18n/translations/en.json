@@ -1087,6 +1087,14 @@
       "high": "High",
       "medium": "Medium",
       "low": "Low"
-    }
+    },
+    "viewDashboard": "View Dashboard",
+    "predictionDetails": "Prediction Details",
+    "sixMonthForecast": "Six Month Forecast",
+    "forecastDescription": "Projected stock levels based on historical data and predicted demand",
+    "projectedStock": "Projected Stock",
+    "noDataAvailable": "No forecast data available",
+    "predictionsSummary": "Predictions Summary",
+    "history": "Inventory History"
   }
 }
