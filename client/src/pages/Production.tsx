@@ -20,7 +20,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { 
   ArrowDownUp, 
-  ArrowRight, 
+  ArrowRight,
+  ArrowLeft, 
   Info, 
   Search, 
   Package, 
@@ -599,6 +600,23 @@ export default function Production() {
       {/* Main tabs content with improved filtering */}
       {activeTab !== 'dashboard' && (
         <div className="space-y-4">
+          <div className="flex items-center mb-4">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setActiveTab('dashboard')}
+              className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              {t('back') || "Back"}
+            </Button>
+            <div className="ml-2 pl-2 border-l">
+              <span className="text-sm text-muted-foreground">
+                {processSteps.find(step => step.id === activeTab)?.name}
+              </span>
+            </div>
+          </div>
+          
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
             <div className="relative flex-1 w-full">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
