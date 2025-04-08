@@ -519,6 +519,10 @@ const InventoryPredictions: React.FC = () => {
             <BarChart4 className="h-4 w-4 mr-2" />
             {t('inventoryPredictions.statistics')}
           </TabsTrigger>
+          <TabsTrigger value="howItWorks">
+            <HelpCircle className="h-4 w-4 mr-2" />
+            {t('inventoryPredictions.howItWorks.title')}
+          </TabsTrigger>
         </TabsList>
         
         {/* Existing Predictions Tab */}
@@ -889,6 +893,97 @@ const InventoryPredictions: React.FC = () => {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+        
+        {/* How It Works Tab */}
+        <TabsContent value="howItWorks" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('inventoryPredictions.howItWorks.title')}</CardTitle>
+              <CardDescription>
+                {t('inventoryPredictions.howItWorks.description')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Moving Average Method */}
+                  <div className="bg-slate-50 p-6 rounded-lg">
+                    <div className="flex items-center mb-3">
+                      <div className="bg-blue-100 p-2 rounded-full mr-3">
+                        <TrendingUp className="h-5 w-5 text-blue-700" />
+                      </div>
+                      <h3 className="text-lg font-medium">
+                        {t('inventoryPredictions.methods.movingAverage')}
+                      </h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {t('inventoryPredictions.howItWorks.movingAverage')}
+                    </p>
+                  </div>
+                  
+                  {/* Linear Regression Method */}
+                  <div className="bg-slate-50 p-6 rounded-lg">
+                    <div className="flex items-center mb-3">
+                      <div className="bg-green-100 p-2 rounded-full mr-3">
+                        <LineChart className="h-5 w-5 text-green-700" />
+                      </div>
+                      <h3 className="text-lg font-medium">
+                        {t('inventoryPredictions.methods.linearRegression')}
+                      </h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {t('inventoryPredictions.howItWorks.linearRegression')}
+                    </p>
+                  </div>
+                  
+                  {/* Seasonal Adjustment Method */}
+                  <div className="bg-slate-50 p-6 rounded-lg">
+                    <div className="flex items-center mb-3">
+                      <div className="bg-amber-100 p-2 rounded-full mr-3">
+                        <Calendar className="h-5 w-5 text-amber-700" />
+                      </div>
+                      <h3 className="text-lg font-medium">
+                        {t('inventoryPredictions.methods.seasonalAdjustment')}
+                      </h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {t('inventoryPredictions.howItWorks.seasonalAdjustment')}
+                    </p>
+                  </div>
+                  
+                  {/* Weighted Average Method */}
+                  <div className="bg-slate-50 p-6 rounded-lg">
+                    <div className="flex items-center mb-3">
+                      <div className="bg-purple-100 p-2 rounded-full mr-3">
+                        <BarChart4 className="h-5 w-5 text-purple-700" />
+                      </div>
+                      <h3 className="text-lg font-medium">
+                        {t('inventoryPredictions.methods.weightedAverage')}
+                      </h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {t('inventoryPredictions.howItWorks.weightedAverage')}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mt-6">
+                  <div className="flex items-start">
+                    <AlertCircle className="h-5 w-5 text-blue-700 mt-0.5 mr-3 flex-shrink-0" />
+                    <div>
+                      <h4 className="text-sm font-medium text-blue-900 mb-1">
+                        {t('common.note')}
+                      </h4>
+                      <p className="text-sm text-blue-700">
+                        {t('inventoryPredictions.generateSuccess')} {t('inventoryPredictions.generateSuccessDescription')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
       

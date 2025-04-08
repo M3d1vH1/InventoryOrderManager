@@ -62,6 +62,11 @@
     "noResults": "No results found",
     "units": "units",
     "boxes": "boxes",
+    "note": "Note",
+    "all": "All",
+    "create": "Create",
+    "edit": "Edit",
+    "notes": "Notes",
     "unauthorizedError": "Authentication Required",
     "pleaseLogin": "Your session has expired. Please log in again."
   },
@@ -1018,6 +1023,7 @@
     "addManually": "Add Manual Prediction",
     "existingPredictions": "Existing Predictions",
     "reorderRequired": "Reorder Required",
+    "reorderRequiredDescription": "Products predicted to need restocking based on demand forecasts",
     "statistics": "Statistics",
     "allPredictions": "All Predictions",
     "filterByProduct": "Filter by product",
@@ -1062,6 +1068,14 @@
     "selectAccuracy": "Select accuracy level",
     "notesPlaceholder": "Add any notes about this prediction...",
     "confidenceDescription": "0-100%",
+    "howItWorks": {
+      "title": "How Inventory Predictions Work",
+      "description": "Our system uses various algorithms to predict future inventory needs based on historical data",
+      "movingAverage": "Calculates the average demand over a specified period to predict future needs",
+      "linearRegression": "Uses trend analysis to project future demand based on historical patterns",
+      "seasonalAdjustment": "Accounts for seasonal variations in product demand throughout the year",
+      "weightedAverage": "Gives more importance to recent data points to better reflect current trends"
+    },
     "methods": {
       "movingAverage": "Moving Average",
       "linearRegression": "Linear Regression",
