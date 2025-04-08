@@ -299,6 +299,9 @@ const Orders = () => {
       (!order.priority && priorityFilter === "none");
     
     return matchesSearch && matchesStatus && matchesPriority;
+  }).sort((a, b) => {
+    // Sort by date, showing the latest first
+    return new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime();
   });
 
   // Fetch specific order details with product details
