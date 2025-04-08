@@ -100,22 +100,36 @@ const generateForecastData = (prediction: Prediction | null, product: Product | 
   if (!prediction || !product) return [];
   
   const data = [];
-  const today = new Date();
-  const dailyRate = prediction.predictedDemand / 30; // Assuming monthly demand
-  let currentStock = product.currentStock;
-  
-  // Generate data for each month
-  for (let i = 0; i < 6; i++) {
-    const month = addMonths(startOfMonth(today), i);
-    const monthDemand = Math.round(prediction.predictedDemand * (i === 0 ? 0.5 : 1)); // Half for current month
-    currentStock = Math.max(0, currentStock - monthDemand);
+  try {
+    const today = new Date();
+    if (isNaN(today.getTime())) {
+      console.error('Invalid date for forecast generation');
+      return [];
+    }
     
-    data.push({
-      month: format(month, 'MMM yyyy'),
-      projectedStock: currentStock,
-      predictedDemand: monthDemand,
-      stockThreshold: product.minStockLevel,
-    });
+    const dailyRate = prediction.predictedDemand / 30; // Assuming monthly demand
+    let currentStock = product.currentStock;
+    
+    // Generate data for each month
+    for (let i = 0; i < 6; i++) {
+      try {
+        const month = addMonths(startOfMonth(today), i);
+        const monthDemand = Math.round(prediction.predictedDemand * (i === 0 ? 0.5 : 1)); // Half for current month
+        currentStock = Math.max(0, currentStock - monthDemand);
+        
+        data.push({
+          month: format(month, 'MMM yyyy'),
+          projectedStock: currentStock,
+          predictedDemand: monthDemand,
+          stockThreshold: product.minStockLevel,
+        });
+      } catch (e) {
+        console.error('Error generating forecast for month', i, e);
+        // Continue with next month
+      }
+    }
+  } catch (e) {
+    console.error('Error in forecast generation:', e);
   }
   
   return data;
@@ -201,11 +215,22 @@ const ProductPredictionDashboard: React.FC<ProductPredictionDashboardProps> = ({
   const forecastData = generateForecastData(latestPrediction, product);
   
   // Prepare inventory history data for chart
-  const inventoryHistoryData = inventoryHistory.map(change => ({
-    date: format(new Date(change.changeDate), 'dd/MM/yyyy'),
-    quantity: change.quantity,
-    type: change.changeType
-  })).slice(0, 20); // Limit to last 20 changes
+  const inventoryHistoryData = inventoryHistory.map(change => {
+    try {
+      return {
+        date: format(new Date(change.changeDate), 'dd/MM/yyyy'),
+        quantity: change.quantity,
+        type: change.changeType
+      };
+    } catch (e) {
+      console.error('Invalid date:', change.changeDate);
+      return {
+        date: 'Invalid Date',
+        quantity: change.quantity,
+        type: change.changeType
+      };
+    }
+  }).slice(0, 20); // Limit to last 20 changes
   
   // Get confidence level color
   const getConfidenceLevelColor = (level: number) => {
@@ -235,9 +260,15 @@ const ProductPredictionDashboard: React.FC<ProductPredictionDashboardProps> = ({
     
     try {
       const date = new Date(dateStr);
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.error('Invalid date format:', dateStr);
+        return '—';
+      }
       return format(date, 'PP', { locale: i18n.language === 'el' ? el : undefined });
     } catch (e) {
-      return dateStr;
+      console.error('Error formatting date:', e);
+      return '—';
     }
   };
   
