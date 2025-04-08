@@ -21,7 +21,15 @@ import {
   prospectiveCustomers, type ProspectiveCustomer, type InsertProspectiveCustomer,
   inventoryHistory, type InventoryHistory, type InsertInventoryHistory,
   inventoryPredictions, type InventoryPrediction, type InsertInventoryPrediction,
-  seasonalPatterns, type SeasonalPattern, type InsertSeasonalPattern
+  seasonalPatterns, type SeasonalPattern, type InsertSeasonalPattern,
+  // Production module imports
+  rawMaterials, type RawMaterial, type InsertRawMaterial,
+  productionBatches, type ProductionBatch, type InsertProductionBatch,
+  productionRecipes, type ProductionRecipe, type InsertProductionRecipe, 
+  recipeIngredients, type RecipeIngredient, type InsertRecipeIngredient,
+  productionOrders, type ProductionOrder, type InsertProductionOrder,
+  materialConsumptions, type MaterialConsumption, type InsertMaterialConsumption,
+  productionLogs, type ProductionLog, type InsertProductionLog
 } from "@shared/schema";
 import { DatabaseStorage, initStorage } from './storage.postgresql';
 import { log } from './vite';
@@ -257,6 +265,56 @@ export interface IStorage {
   updateSeasonalPattern(id: number, pattern: Partial<InsertSeasonalPattern>): Promise<SeasonalPattern | undefined>;
   deleteSeasonalPattern(id: number): Promise<boolean>;
   importSeasonalPatterns(patterns: InsertSeasonalPattern[]): Promise<number>; // Returns count of imported patterns
+  
+  // Raw Materials methods
+  getRawMaterial(id: number): Promise<RawMaterial | undefined>;
+  getRawMaterialBySku(sku: string): Promise<RawMaterial | undefined>;
+  getAllRawMaterials(): Promise<RawMaterial[]>;
+  createRawMaterial(material: InsertRawMaterial): Promise<RawMaterial>;
+  updateRawMaterial(id: number, material: Partial<InsertRawMaterial>): Promise<RawMaterial | undefined>;
+  deleteRawMaterial(id: number): Promise<boolean>;
+  getLowStockRawMaterials(): Promise<RawMaterial[]>;
+  searchRawMaterials(query: string, type?: string): Promise<RawMaterial[]>;
+  updateRawMaterialStock(id: number, quantityChange: number, notes?: string): Promise<RawMaterial | undefined>;
+
+  // Production Recipe methods
+  getRecipe(id: number): Promise<ProductionRecipe | undefined>;
+  getAllRecipes(): Promise<ProductionRecipe[]>;
+  createRecipe(recipe: InsertProductionRecipe): Promise<ProductionRecipe>;
+  updateRecipe(id: number, recipe: Partial<InsertProductionRecipe>): Promise<ProductionRecipe | undefined>;
+  deleteRecipe(id: number): Promise<boolean>;
+  getRecipeIngredients(recipeId: number): Promise<RecipeIngredient[]>;
+  addRecipeIngredient(ingredient: InsertRecipeIngredient): Promise<RecipeIngredient>;
+  updateRecipeIngredient(id: number, ingredient: Partial<InsertRecipeIngredient>): Promise<RecipeIngredient | undefined>;
+  removeRecipeIngredient(id: number): Promise<boolean>;
+
+  // Production Batch methods
+  getProductionBatch(id: number): Promise<ProductionBatch | undefined>;
+  getAllProductionBatches(): Promise<ProductionBatch[]>;
+  getProductionBatchesByStatus(status: string): Promise<ProductionBatch[]>;
+  createProductionBatch(batch: InsertProductionBatch): Promise<ProductionBatch>;
+  updateProductionBatch(id: number, batch: Partial<InsertProductionBatch>): Promise<ProductionBatch | undefined>;
+  updateProductionBatchStatus(id: number, status: string, notes?: string): Promise<ProductionBatch | undefined>;
+  deleteProductionBatch(id: number): Promise<boolean>;
+
+  // Production Order methods
+  getProductionOrder(id: number): Promise<ProductionOrder | undefined>;
+  getAllProductionOrders(): Promise<ProductionOrder[]>;
+  getProductionOrdersByStatus(status: string): Promise<ProductionOrder[]>;
+  getProductionOrdersByBatch(batchId: number): Promise<ProductionOrder[]>;
+  createProductionOrder(order: InsertProductionOrder): Promise<ProductionOrder>;
+  updateProductionOrder(id: number, order: Partial<InsertProductionOrder>): Promise<ProductionOrder | undefined>;
+  updateProductionOrderStatus(id: number, status: string, notes?: string): Promise<ProductionOrder | undefined>;
+  deleteProductionOrder(id: number): Promise<boolean>;
+  getMaterialConsumptions(orderId: number): Promise<MaterialConsumption[]>;
+  addMaterialConsumption(consumption: InsertMaterialConsumption): Promise<MaterialConsumption>;
+  updateMaterialConsumption(id: number, consumption: Partial<InsertMaterialConsumption>): Promise<MaterialConsumption | undefined>;
+  removeMaterialConsumption(id: number): Promise<boolean>;
+
+  // Production Logs methods
+  getProductionLogs(orderId: number): Promise<ProductionLog[]>;
+  addProductionLog(log: InsertProductionLog): Promise<ProductionLog>;
+  getProductionLogsByType(eventType: string): Promise<ProductionLog[]>;
 }
 
 // We're keeping the MemStorage class definition for fallback
