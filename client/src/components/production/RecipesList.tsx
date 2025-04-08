@@ -1,45 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription 
-} from '@/components/ui/card';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'wouter';
+import { apiRequest } from '@/lib/queryClient';
+import { ArrowLeft, Check, ClipboardCopy, Edit, Eye, Info, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { 
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Search, Plus, Eye, Edit, Clipboard, ClipboardCopy, ArrowLeft } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Link } from 'wouter';
 
 interface RecipeIngredient {
   id: number;
+  recipeId: number;
   materialId: number;
-  materialName: string;
+  materialName?: string;
   quantity: number;
-  unit: string;
+  unit: 'liter' | 'kg' | 'piece';
   notes?: string;
 }
 
@@ -64,6 +45,7 @@ interface Recipe {
 export default function RecipesList() {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -88,35 +70,31 @@ export default function RecipesList() {
     }
   }, [error, t, toast]);
 
-  const filteredRecipes = searchTerm && recipes
-    ? recipes.filter(recipe => 
-        recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        recipe.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        recipe.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        recipe.description.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : recipes;
+  // Filter recipes based on search term
+  const filteredRecipes = recipes?.filter(recipe => 
+    recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    recipe.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    recipe.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    recipe.productSku?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const handleViewRecipe = (recipe: any) => {
+  // Handle viewing a recipe
+  const handleViewRecipe = (recipe: Recipe) => {
     setSelectedRecipe(recipe);
     setDialogOpen(true);
     setActiveTab('ingredients');
   };
-
+  
+  // Get status badge with appropriate color
   const getStatusBadge = (status: string) => {
-    const statusColors: Record<string, string> = {
-      'active': 'bg-green-100 text-green-800 border-green-300',
-      'draft': 'bg-yellow-100 text-yellow-800 border-yellow-300',
-      'archived': 'bg-gray-100 text-gray-800 border-gray-300',
-    };
-
+    let variant = 'outline';
+    
+    if (status === 'active') variant = 'success';
+    if (status === 'draft') variant = 'secondary';
+    if (status === 'discontinued') variant = 'destructive';
+    
     return (
-      <Badge
-        variant="outline"
-        className={statusColors[status] || 'bg-gray-100 text-gray-800 border-gray-300'}
-      >
-        {t(`production.recipeStatus.${status}`)}
-      </Badge>
+      <Badge variant={variant as any}>{status}</Badge>
     );
   };
 
@@ -235,9 +213,9 @@ export default function RecipesList() {
             
             {selectedRecipe && (
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid grid-cols-2">
+                <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="ingredients">{t('production.ingredients')}</TabsTrigger>
-                  <TabsTrigger value="steps">{t('production.productionSteps')}</TabsTrigger>
+                  <TabsTrigger value="steps">{t('production.steps')}</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="ingredients" className="mt-4">
@@ -245,17 +223,23 @@ export default function RecipesList() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>{t('production.materialName')}</TableHead>
-                          <TableHead>{t('production.quantity')}</TableHead>
+                          <TableHead className="w-[50%]">{t('production.material')}</TableHead>
+                          <TableHead className="w-[50%]">{t('production.quantity')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {selectedRecipe.ingredients && selectedRecipe.ingredients.length > 0 ? (
-                          selectedRecipe.ingredients.map((ingredient: RecipeIngredient) => (
+                          selectedRecipe.ingredients.map((ingredient) => (
                             <TableRow key={ingredient.id}>
-                              <TableCell>{ingredient.materialName}</TableCell>
+                              <TableCell className="font-medium">{ingredient.materialName}</TableCell>
                               <TableCell>
                                 {ingredient.quantity} {t(`production.units.${ingredient.unit}`)}
+                                {ingredient.notes && (
+                                  <div className="text-xs text-muted-foreground flex items-center mt-1">
+                                    <Info className="h-3 w-3 mr-1" />
+                                    {ingredient.notes}
+                                  </div>
+                                )}
                               </TableCell>
                             </TableRow>
                           ))

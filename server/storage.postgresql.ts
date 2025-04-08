@@ -3220,6 +3220,570 @@ export class DatabaseStorage implements IStorage {
       return 0;
     }
   }
+
+  // Production Recipe methods
+  async getRecipe(id: number): Promise<ProductionRecipe | undefined> {
+    try {
+      const recipes = await this.db.select().from(productionRecipes).where(eq(productionRecipes.id, id));
+      
+      if (recipes.length === 0) {
+        return undefined;
+      }
+      
+      const recipe = recipes[0];
+      
+      // Get the creator name
+      if (recipe.createdById) {
+        const users = await this.db.select({
+          fullName: users.fullName
+        }).from(users).where(eq(users.id, recipe.createdById));
+        
+        if (users.length > 0) {
+          return {
+            ...recipe,
+            createdBy: users[0].fullName
+          };
+        }
+      }
+      
+      return recipe;
+    } catch (error) {
+      console.error(`Error getting recipe ${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  async getAllRecipes(): Promise<ProductionRecipe[]> {
+    try {
+      const recipes = await this.db.select().from(productionRecipes);
+      
+      // Get creator names for all recipes
+      const recipeWithCreators = await Promise.all(recipes.map(async (recipe) => {
+        if (recipe.createdById) {
+          const users = await this.db.select({
+            fullName: users.fullName
+          }).from(users).where(eq(users.id, recipe.createdById));
+          
+          if (users.length > 0) {
+            return {
+              ...recipe,
+              createdBy: users[0].fullName
+            };
+          }
+        }
+        
+        return recipe;
+      }));
+      
+      // For each recipe, fetch ingredients
+      const result = await Promise.all(recipeWithCreators.map(async (recipe) => {
+        const ingredients = await this.getRecipeIngredients(recipe.id);
+        return {
+          ...recipe,
+          ingredients
+        };
+      }));
+      
+      return result;
+    } catch (error) {
+      console.error('Error getting all recipes:', error);
+      return [];
+    }
+  }
+  
+  async createRecipe(recipe: InsertProductionRecipe): Promise<ProductionRecipe> {
+    try {
+      const result = await this.db.insert(productionRecipes).values(recipe).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating recipe:', error);
+      throw error;
+    }
+  }
+  
+  async updateRecipe(id: number, recipe: Partial<InsertProductionRecipe>): Promise<ProductionRecipe | undefined> {
+    try {
+      const result = await this.db.update(productionRecipes)
+        .set(recipe)
+        .where(eq(productionRecipes.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        return undefined;
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error(`Error updating recipe ${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  async deleteRecipe(id: number): Promise<boolean> {
+    try {
+      // First delete all ingredients associated with this recipe
+      await this.db.delete(recipeIngredients).where(eq(recipeIngredients.recipeId, id));
+      
+      // Then delete the recipe
+      const result = await this.db.delete(productionRecipes).where(eq(productionRecipes.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error(`Error deleting recipe ${id}:`, error);
+      return false;
+    }
+  }
+  
+  async getRecipeIngredients(recipeId: number): Promise<RecipeIngredient[]> {
+    try {
+      const ingredients = await this.db.select({
+        id: recipeIngredients.id,
+        recipeId: recipeIngredients.recipeId,
+        materialId: recipeIngredients.materialId,
+        quantity: recipeIngredients.quantity,
+        unit: recipeIngredients.unit,
+        notes: recipeIngredients.notes
+      }).from(recipeIngredients)
+        .where(eq(recipeIngredients.recipeId, recipeId));
+      
+      // For each ingredient, get the material name
+      const ingredientsWithNames = await Promise.all(ingredients.map(async (ingredient) => {
+        const materials = await this.db.select({
+          name: rawMaterials.name
+        }).from(rawMaterials).where(eq(rawMaterials.id, ingredient.materialId));
+        
+        if (materials.length > 0) {
+          return {
+            ...ingredient,
+            materialName: materials[0].name
+          };
+        }
+        
+        return {
+          ...ingredient,
+          materialName: 'Unknown Material'
+        };
+      }));
+      
+      return ingredientsWithNames;
+    } catch (error) {
+      console.error(`Error getting recipe ingredients for recipe ${recipeId}:`, error);
+      return [];
+    }
+  }
+  
+  async addRecipeIngredient(ingredient: InsertRecipeIngredient): Promise<RecipeIngredient> {
+    try {
+      const result = await this.db.insert(recipeIngredients).values(ingredient).returning();
+      const insertedIngredient = result[0];
+      
+      // Get the material name
+      const materials = await this.db.select({
+        name: rawMaterials.name
+      }).from(rawMaterials).where(eq(rawMaterials.id, insertedIngredient.materialId));
+      
+      if (materials.length > 0) {
+        return {
+          ...insertedIngredient,
+          materialName: materials[0].name
+        };
+      }
+      
+      return {
+        ...insertedIngredient,
+        materialName: 'Unknown Material'
+      };
+    } catch (error) {
+      console.error('Error adding recipe ingredient:', error);
+      throw error;
+    }
+  }
+  
+  async updateRecipeIngredient(id: number, ingredient: Partial<InsertRecipeIngredient>): Promise<RecipeIngredient | undefined> {
+    try {
+      const result = await this.db.update(recipeIngredients)
+        .set(ingredient)
+        .where(eq(recipeIngredients.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        return undefined;
+      }
+      
+      const updatedIngredient = result[0];
+      
+      // Get the material name
+      const materials = await this.db.select({
+        name: rawMaterials.name
+      }).from(rawMaterials).where(eq(rawMaterials.id, updatedIngredient.materialId));
+      
+      if (materials.length > 0) {
+        return {
+          ...updatedIngredient,
+          materialName: materials[0].name
+        };
+      }
+      
+      return {
+        ...updatedIngredient,
+        materialName: 'Unknown Material'
+      };
+    } catch (error) {
+      console.error(`Error updating recipe ingredient ${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  async removeRecipeIngredient(id: number): Promise<boolean> {
+    try {
+      const result = await this.db.delete(recipeIngredients).where(eq(recipeIngredients.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error(`Error removing recipe ingredient ${id}:`, error);
+      return false;
+    }
+  }
+
+  // Production Batch methods
+  async getProductionBatch(id: number): Promise<ProductionBatch | undefined> {
+    try {
+      const batches = await this.db.select().from(productionBatches).where(eq(productionBatches.id, id));
+      
+      if (batches.length === 0) {
+        return undefined;
+      }
+      
+      return batches[0];
+    } catch (error) {
+      console.error(`Error getting production batch ${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  async getAllProductionBatches(): Promise<ProductionBatch[]> {
+    try {
+      return await this.db.select().from(productionBatches);
+    } catch (error) {
+      console.error('Error getting all production batches:', error);
+      return [];
+    }
+  }
+  
+  async getProductionBatchesByStatus(status: string): Promise<ProductionBatch[]> {
+    try {
+      return await this.db.select().from(productionBatches).where(eq(productionBatches.status, status as any));
+    } catch (error) {
+      console.error(`Error getting production batches by status ${status}:`, error);
+      return [];
+    }
+  }
+  
+  async createProductionBatch(batch: InsertProductionBatch): Promise<ProductionBatch> {
+    try {
+      const result = await this.db.insert(productionBatches).values(batch).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating production batch:', error);
+      throw error;
+    }
+  }
+  
+  async updateProductionBatch(id: number, batch: Partial<InsertProductionBatch>): Promise<ProductionBatch | undefined> {
+    try {
+      const result = await this.db.update(productionBatches)
+        .set(batch)
+        .where(eq(productionBatches.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        return undefined;
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error(`Error updating production batch ${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  async updateProductionBatchStatus(id: number, status: string, notes?: string): Promise<ProductionBatch | undefined> {
+    try {
+      const updateData: any = {
+        status: status as any,
+        updatedAt: new Date()
+      };
+      
+      if (notes) {
+        updateData.notes = notes;
+      }
+      
+      const result = await this.db.update(productionBatches)
+        .set(updateData)
+        .where(eq(productionBatches.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        return undefined;
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error(`Error updating production batch status ${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  async deleteProductionBatch(id: number): Promise<boolean> {
+    try {
+      const result = await this.db.delete(productionBatches).where(eq(productionBatches.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error(`Error deleting production batch ${id}:`, error);
+      return false;
+    }
+  }
+
+  // Production Order methods
+  async getProductionOrder(id: number): Promise<ProductionOrder | undefined> {
+    try {
+      const orders = await this.db.select().from(productionOrders).where(eq(productionOrders.id, id));
+      
+      if (orders.length === 0) {
+        return undefined;
+      }
+      
+      return orders[0];
+    } catch (error) {
+      console.error(`Error getting production order ${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  async getAllProductionOrders(): Promise<ProductionOrder[]> {
+    try {
+      return await this.db.select().from(productionOrders);
+    } catch (error) {
+      console.error('Error getting all production orders:', error);
+      return [];
+    }
+  }
+  
+  async getProductionOrdersByStatus(status: string): Promise<ProductionOrder[]> {
+    try {
+      return await this.db.select().from(productionOrders).where(eq(productionOrders.status, status as any));
+    } catch (error) {
+      console.error(`Error getting production orders by status ${status}:`, error);
+      return [];
+    }
+  }
+  
+  async getProductionOrdersByBatch(batchId: number): Promise<ProductionOrder[]> {
+    try {
+      return await this.db.select().from(productionOrders).where(eq(productionOrders.batchId, batchId));
+    } catch (error) {
+      console.error(`Error getting production orders by batch ${batchId}:`, error);
+      return [];
+    }
+  }
+  
+  async createProductionOrder(order: InsertProductionOrder): Promise<ProductionOrder> {
+    try {
+      const result = await this.db.insert(productionOrders).values(order).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating production order:', error);
+      throw error;
+    }
+  }
+  
+  async updateProductionOrder(id: number, order: Partial<InsertProductionOrder>): Promise<ProductionOrder | undefined> {
+    try {
+      const result = await this.db.update(productionOrders)
+        .set(order)
+        .where(eq(productionOrders.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        return undefined;
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error(`Error updating production order ${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  async updateProductionOrderStatus(id: number, status: string, notes?: string): Promise<ProductionOrder | undefined> {
+    try {
+      const updateData: any = {
+        status: status as any,
+        updatedAt: new Date()
+      };
+      
+      if (notes) {
+        updateData.notes = notes;
+      }
+      
+      const result = await this.db.update(productionOrders)
+        .set(updateData)
+        .where(eq(productionOrders.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        return undefined;
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error(`Error updating production order status ${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  async deleteProductionOrder(id: number): Promise<boolean> {
+    try {
+      // First delete all material consumptions associated with this order
+      await this.db.delete(materialConsumptions).where(eq(materialConsumptions.productionOrderId, id));
+      
+      // Then delete all production logs associated with this order
+      await this.db.delete(productionLogs).where(eq(productionLogs.productionOrderId, id));
+      
+      // Finally delete the order
+      const result = await this.db.delete(productionOrders).where(eq(productionOrders.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error(`Error deleting production order ${id}:`, error);
+      return false;
+    }
+  }
+  
+  // Material Consumption methods
+  async getMaterialConsumption(id: number): Promise<MaterialConsumption | undefined> {
+    try {
+      const consumptions = await this.db.select().from(materialConsumptions).where(eq(materialConsumptions.id, id));
+      
+      if (consumptions.length === 0) {
+        return undefined;
+      }
+      
+      return consumptions[0];
+    } catch (error) {
+      console.error(`Error getting material consumption ${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  async getMaterialConsumptionsByOrder(orderId: number): Promise<MaterialConsumption[]> {
+    try {
+      return await this.db.select().from(materialConsumptions).where(eq(materialConsumptions.productionOrderId, orderId));
+    } catch (error) {
+      console.error(`Error getting material consumptions by order ${orderId}:`, error);
+      return [];
+    }
+  }
+  
+  async addMaterialConsumption(consumption: InsertMaterialConsumption): Promise<MaterialConsumption> {
+    try {
+      const result = await this.db.insert(materialConsumptions).values(consumption).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error adding material consumption:', error);
+      throw error;
+    }
+  }
+  
+  async updateMaterialConsumption(id: number, consumption: Partial<InsertMaterialConsumption>): Promise<MaterialConsumption | undefined> {
+    try {
+      const result = await this.db.update(materialConsumptions)
+        .set(consumption)
+        .where(eq(materialConsumptions.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        return undefined;
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error(`Error updating material consumption ${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  async deleteMaterialConsumption(id: number): Promise<boolean> {
+    try {
+      const result = await this.db.delete(materialConsumptions).where(eq(materialConsumptions.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error(`Error deleting material consumption ${id}:`, error);
+      return false;
+    }
+  }
+  
+  // Production Log methods
+  async getProductionLog(id: number): Promise<ProductionLog | undefined> {
+    try {
+      const logs = await this.db.select().from(productionLogs).where(eq(productionLogs.id, id));
+      
+      if (logs.length === 0) {
+        return undefined;
+      }
+      
+      return logs[0];
+    } catch (error) {
+      console.error(`Error getting production log ${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  async getProductionLogsByOrder(orderId: number): Promise<ProductionLog[]> {
+    try {
+      return await this.db.select().from(productionLogs)
+        .where(eq(productionLogs.productionOrderId, orderId))
+        .orderBy(desc(productionLogs.createdAt));
+    } catch (error) {
+      console.error(`Error getting production logs by order ${orderId}:`, error);
+      return [];
+    }
+  }
+  
+  async addProductionLog(log: InsertProductionLog): Promise<ProductionLog> {
+    try {
+      const result = await this.db.insert(productionLogs).values(log).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error adding production log:', error);
+      throw error;
+    }
+  }
+  
+  async updateProductionLog(id: number, log: Partial<InsertProductionLog>): Promise<ProductionLog | undefined> {
+    try {
+      const result = await this.db.update(productionLogs)
+        .set(log)
+        .where(eq(productionLogs.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        return undefined;
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error(`Error updating production log ${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  async deleteProductionLog(id: number): Promise<boolean> {
+    try {
+      const result = await this.db.delete(productionLogs).where(eq(productionLogs.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error(`Error deleting production log ${id}:`, error);
+      return false;
+    }
+  }
 }
 
 // This will be initialized when the server starts

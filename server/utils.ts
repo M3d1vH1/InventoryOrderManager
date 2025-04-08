@@ -1,93 +1,121 @@
-import { z } from 'zod';
+// Utility functions for the application
+import { fromZodError } from 'zod-validation-error';
+import { ZodError } from 'zod';
 
 /**
- * Parses Zod validation errors into a more user-friendly format
- * @param error The Zod error object
- * @returns A map of field paths to error messages
+ * Helper function to validate required fields in a request
+ * @param requiredFields Array of field names that are required
+ * @param body Request body object
+ * @returns Object with isValid flag and missingFields array
  */
-export function zodErrorParser(error: z.ZodError) {
-  const errorMap: Record<string, string> = {};
-  for (const issue of error.issues) {
-    const path = issue.path.join(".");
-    errorMap[path || "global"] = issue.message;
-  }
-  return errorMap;
+export function validateRequiredFields(requiredFields: string[], body: Record<string, any>) {
+  const missingFields = requiredFields.filter(field => body[field] === undefined);
+  return {
+    isValid: missingFields.length === 0,
+    missingFields
+  };
 }
 
 /**
- * Calculates the quantity of raw materials needed based on a recipe and batch size
- * @param recipeQuantity The base quantity specified in the recipe
- * @param recipeBatchSize The batch size for which the recipe was defined
- * @param targetBatchSize The desired production batch size
- * @returns The calculated material quantity needed
+ * Parses Zod validation errors into a readable format
+ * @param error ZodError from validation failure
+ * @returns Formatted error message
  */
-export function calculateMaterialQuantity(
-  recipeQuantity: number,
-  recipeBatchSize: number,
-  targetBatchSize: number
-): number {
-  if (recipeBatchSize <= 0) {
-    throw new Error('Recipe batch size must be greater than zero');
-  }
-  return (recipeQuantity / recipeBatchSize) * targetBatchSize;
+export function zodErrorParser(error: ZodError) {
+  return fromZodError(error).message;
 }
 
 /**
- * Formats a date for display or database operations
- * @param date The date to format
- * @param format The output format (ISO or localized)
- * @returns The formatted date string
+ * Formats a date string to a readable format
+ * @param date Date to format
+ * @returns Formatted date string (e.g., "Jan 1, 2023")
  */
-export function formatDate(date: Date, format: 'iso' | 'localized' = 'iso'): string {
-  if (format === 'iso') {
-    return date.toISOString();
-  }
-  return date.toLocaleDateString();
+export function formatDate(date: Date | string | null): string {
+  if (!date) return 'N/A';
+  
+  const d = new Date(date);
+  return d.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
 }
 
 /**
- * Calculates the progress percentage of a production order
- * @param completedSteps Number of completed production steps
- * @param totalSteps Total number of production steps
- * @returns The progress as a percentage
+ * Formats a datetime string to include time
+ * @param date Date to format
+ * @returns Formatted datetime string (e.g., "Jan 1, 2023, 12:00 PM")
  */
-export function calculateProgress(completedSteps: number, totalSteps: number): number {
-  if (totalSteps <= 0) {
-    return 0;
-  }
-  const progress = (completedSteps / totalSteps) * 100;
-  return Math.min(Math.max(progress, 0), 100); // Ensure between 0-100
+export function formatDateTime(date: Date | string | null): string {
+  if (!date) return 'N/A';
+  
+  const d = new Date(date);
+  return d.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 }
 
 /**
- * Validates that a given string is a valid production status
- * @param status The status string to validate
- * @returns Boolean indicating if the status is valid
+ * Generates a random ID string with a prefix
+ * @param prefix Prefix for the ID
+ * @returns Random ID string (e.g., "PROD-123456")
  */
-export function isValidProductionStatus(
-  status: string
-): status is 'planned' | 'material_check' | 'in_progress' | 'completed' | 'partially_completed' | 'cancelled' {
-  return ['planned', 'material_check', 'in_progress', 'completed', 'partially_completed', 'cancelled'].includes(status);
+export function generateRandomId(prefix: string): string {
+  const randomNum = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+  return `${prefix}-${randomNum}`;
 }
 
 /**
- * Validates that a given string is a valid production log event type
- * @param eventType The event type string to validate
- * @returns Boolean indicating if the event type is valid
+ * Calculates the total quantity of materials needed for a recipe and quantity
+ * @param recipeQuantity The quantity of recipe to produce
+ * @param materialQuantity The quantity of material per single recipe
+ * @returns Total quantity of material needed
  */
-export function isValidProductionEventType(
-  eventType: string
-): eventType is 'start' | 'pause' | 'resume' | 'completed' | 'quality_check' | 'material_added' | 'issue' {
-  return ['start', 'pause', 'resume', 'completed', 'quality_check', 'material_added', 'issue'].includes(eventType);
+export function calculateMaterialNeeded(recipeQuantity: number, materialQuantity: number): number {
+  return recipeQuantity * materialQuantity;
 }
 
 /**
- * Validates that a given string is a valid material unit
- * @param unit The unit string to validate
- * @returns Boolean indicating if the unit is valid
+ * Truncates a string to a specified length and adds ellipsis
+ * @param str String to truncate
+ * @param maxLength Maximum length of the string before truncation
+ * @returns Truncated string with ellipsis if necessary
  */
-export function isValidMaterialUnit(
-  unit: string
-): unit is 'liter' | 'kg' | 'piece' {
-  return ['liter', 'kg', 'piece'].includes(unit);
+export function truncateString(str: string, maxLength: number): string {
+  if (!str) return '';
+  if (str.length <= maxLength) return str;
+  return str.slice(0, maxLength) + '...';
+}
+
+/**
+ * Converts a number to a formatted string with a specified number of decimal places
+ * @param value Number to format
+ * @param decimals Number of decimal places
+ * @returns Formatted number string
+ */
+export function formatNumber(value: number, decimals: number = 2): string {
+  if (value === null || value === undefined) return 'N/A';
+  return value.toFixed(decimals);
+}
+
+/**
+ * Formats a status string to title case with spaces
+ * @param status Status string (e.g., "in_progress")
+ * @returns Formatted status string (e.g., "In Progress")
+ */
+export function formatStatus(status: string): string {
+  if (!status) return '';
+  
+  // Replace underscores and hyphens with spaces
+  const withSpaces = status.replace(/[_-]/g, ' ');
+  
+  // Convert to title case
+  return withSpaces
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 }
