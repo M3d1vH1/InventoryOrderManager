@@ -611,7 +611,10 @@ const InventoryPredictions: React.FC = () => {
                         <TableRow key={prediction.id}>
                           <TableCell className="font-medium">{prediction.productName}</TableCell>
                           <TableCell>
-                            {t(`inventoryPredictions.methods.${prediction.predictionMethod.replace(/_/g, '')}`)}
+                            {t(`inventoryPredictions.methods.${prediction.predictionMethod === 'moving_average' ? 'movingAverage' : 
+                                prediction.predictionMethod === 'linear_regression' ? 'linearRegression' : 
+                                prediction.predictionMethod === 'seasonal_adjustment' ? 'seasonalAdjustment' : 
+                                prediction.predictionMethod === 'weighted_average' ? 'weightedAverage' : 'manual'}`)}
                           </TableCell>
                           <TableCell className="text-right">
                             {prediction.predictedDemand}
@@ -778,8 +781,12 @@ const InventoryPredictions: React.FC = () => {
                     <div className="flex flex-col gap-4">
                       {Object.entries(
                         predictions.reduce((acc, prediction) => {
-                          // Get the proper method name translation
-                          const method = t(`inventoryPredictions.methods.${prediction.predictionMethod}`);
+                          // Get the proper method name translation with correct mapping
+                          const methodKey = prediction.predictionMethod === 'moving_average' ? 'movingAverage' : 
+                                            prediction.predictionMethod === 'linear_regression' ? 'linearRegression' : 
+                                            prediction.predictionMethod === 'seasonal_adjustment' ? 'seasonalAdjustment' : 
+                                            prediction.predictionMethod === 'weighted_average' ? 'weightedAverage' : 'manual';
+                          const method = t(`inventoryPredictions.methods.${methodKey}`);
                           acc[method] = (acc[method] || 0) + 1;
                           return acc;
                         }, {} as Record<string, number>)
