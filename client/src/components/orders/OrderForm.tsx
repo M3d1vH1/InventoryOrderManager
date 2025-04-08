@@ -28,7 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { PackageOpen, AlertTriangle, ShoppingCart } from "lucide-react";
+import { PackageOpen, AlertTriangle, ShoppingCart, Plus, Trash2, ArrowLeft, X, Loader2, Check } from "lucide-react";
 
 interface Customer {
   id: number;
@@ -652,7 +652,7 @@ const OrderForm = ({
                                   }}
                                   className="h-10 text-base"
                                 >
-                                  <i className="fas fa-plus mr-2"></i> {t('orders.form.create')} "{field.value}"
+                                  <Plus className="h-4 w-4 mr-2" /> {t('orders.form.create')} "{field.value}"
                                 </Button>
                               </CommandEmpty>
                               <CommandGroup>
@@ -805,11 +805,10 @@ const OrderForm = ({
                 <FormLabel className="text-base font-medium">{t('orders.form.products')}</FormLabel>
                 <Button
                   type="button"
-                  variant="outline"
-                  className="h-12 text-base px-4"
+                  className="h-12 text-base px-4 bg-primary hover:bg-primary/90 text-white"
                   onClick={() => setIsProductSearchOpen(true)}
                 >
-                  <i className="fas fa-plus mr-2"></i> {t('orders.form.addProduct')}
+                  <ShoppingCart className="h-4 w-4 mr-2" /> {t('orders.form.addProduct')}
                 </Button>
               </div>
               
@@ -955,7 +954,7 @@ const OrderForm = ({
                             className="h-8 w-8 rounded-full mr-3 flex-shrink-0 text-primary hover:bg-primary hover:text-white border-primary shadow-sm"
                             onClick={() => addProduct(product)}
                           >
-                            <i className="fas fa-plus"></i>
+                            <Plus className="h-4 w-4" />
                           </Button>
                           <div className="flex-1">
                             <div className="font-medium text-sm">{product.name}</div>
@@ -1035,13 +1034,15 @@ const OrderForm = ({
                               </div>
                             </td>
                             <td className="py-4 px-4">
-                              <button 
+                              <Button 
                                 type="button" 
-                                className="flex items-center justify-center p-2 rounded-full bg-red-100 text-red-500 hover:bg-red-200 hover:text-red-700 min-h-[44px] min-w-[44px]"
+                                size="icon"
+                                variant="outline"
+                                className="flex items-center justify-center p-2 rounded-full bg-red-100 text-red-500 hover:bg-red-200 hover:text-red-700 border-red-200 min-h-[44px] min-w-[44px]"
                                 onClick={() => removeProduct(index)}
                               >
-                                <i className="fas fa-trash text-lg"></i>
-                              </button>
+                                <Trash2 className="h-5 w-5" />
+                              </Button>
                             </td>
                           </tr>
                         ))}
@@ -1089,7 +1090,7 @@ const OrderForm = ({
                   className="h-12 text-base px-6"
                   onClick={onCancel}
                 >
-                  <i className="fas fa-times mr-2"></i> {t('common.cancel')}
+                  <X className="h-4 w-4 mr-2" /> {t('common.cancel')}
                 </Button>
               ) : (
                 <Button 
@@ -1104,7 +1105,7 @@ const OrderForm = ({
                     window.location.href = "/orders";
                   }}
                 >
-                  <i className="fas fa-arrow-left mr-2"></i> {t('orders.form.backToOrders')}
+                  <ArrowLeft className="h-4 w-4 mr-2" /> {t('orders.form.backToOrders')}
                 </Button>
               )}
               <Button 
@@ -1114,11 +1115,11 @@ const OrderForm = ({
               >
                 {createOrderMutation.isPending || updateOrderMutation.isPending ? (
                   <>
-                    <i className="fas fa-spinner fa-spin mr-2"></i> {isEditMode ? t('orders.form.updating') : t('orders.form.creating')}
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> {isEditMode ? t('orders.form.updating') : t('orders.form.creating')}
                   </>
                 ) : (
                   <>
-                    <i className="fas fa-check mr-2"></i> {isEditMode ? t('orders.form.updateOrder') : t('orders.form.createOrder')}
+                    <Check className="h-4 w-4 mr-2" /> {isEditMode ? t('orders.form.updateOrder') : t('orders.form.createOrder')}
                   </>
                 )}
               </Button>
@@ -1344,7 +1345,7 @@ const OrderForm = ({
                   className="h-12 text-base"
                   onClick={() => setIsNewCustomerDialogOpen(false)}
                 >
-                  {t('common.cancel')}
+                  <X className="h-4 w-4 mr-2" /> {t('common.cancel')}
                 </Button>
                 <Button 
                   type="submit" 
@@ -1353,11 +1354,11 @@ const OrderForm = ({
                 >
                   {customerMutation.isPending ? (
                     <>
-                      <i className="fas fa-spinner fa-spin mr-2"></i> {t('customers.form.creating')}
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" /> {t('customers.form.creating')}
                     </>
                   ) : (
                     <>
-                      <i className="fas fa-plus mr-2"></i> {t('customers.form.createCustomer')}
+                      <Plus className="h-4 w-4 mr-2" /> {t('customers.form.createCustomer')}
                     </>
                   )}
                 </Button>
