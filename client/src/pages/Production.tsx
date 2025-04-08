@@ -7,7 +7,14 @@ import {
   TabsTrigger 
 } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ArrowDownUp } from 'lucide-react';
+import { ArrowDownUp, ArrowRight, Info } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import RawMaterialsList from '@/components/production/RawMaterialsList';
 import RecipesList from '@/components/production/RecipesList';
