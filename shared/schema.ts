@@ -125,6 +125,7 @@ export type Product = typeof products.$inferSelect;
 export const orderStatusEnum = pgEnum('order_status', [
   'pending',
   'picked',
+  'partially_shipped',
   'shipped',
   'cancelled'
 ]);
@@ -178,6 +179,7 @@ export const orders = pgTable("orders", {
   partialFulfillmentApproved: boolean("partial_fulfillment_approved").notNull().default(false),
   partialFulfillmentApprovedById: integer("partial_fulfillment_approved_by_id"), // References the user who approved partial fulfillment
   partialFulfillmentApprovedAt: timestamp("partial_fulfillment_approved_at"), // When partial fulfillment was approved
+  percentage_shipped: integer("percentage_shipped").default(0), // Percentage of items that have been shipped
   createdById: integer("created_by_id").notNull(), // References the user who created this order
   updatedById: integer("updated_by_id"), // Last user who updated this order
   lastUpdated: timestamp("last_updated"), // When the order was last updated
@@ -205,6 +207,9 @@ export const orderItems = pgTable("order_items", {
   orderId: integer("order_id").notNull(),
   productId: integer("product_id").notNull(),
   quantity: integer("quantity").notNull(),
+  shipped_quantity: integer("shipped_quantity").default(0),
+  shipping_status: text("shipping_status").default('pending'),
+  hasQualityIssues: boolean("has_quality_issues").default(false),
 });
 
 export const insertOrderItemSchema = createInsertSchema(orderItems)

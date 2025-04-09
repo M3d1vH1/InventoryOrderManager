@@ -114,14 +114,17 @@ export interface IStorage {
   getAllOrders(): Promise<Order[]>;
   getRecentOrders(limit: number): Promise<Order[]>;
   getOrdersByCustomer(customerName: string): Promise<Order[]>;
+  getPartiallyShippedOrders(): Promise<Order[]>;
+  completeOrderShipment(orderId: number): Promise<boolean>;
   createOrder(order: InsertOrder): Promise<Order>;
-  updateOrderStatus(id: number, status: 'pending' | 'picked' | 'shipped' | 'cancelled', documentInfo?: {documentPath: string, documentType: string, notes?: string}, updatedById?: number): Promise<Order | undefined>;
+  updateOrderStatus(id: number, status: 'pending' | 'picked' | 'partially_shipped' | 'shipped' | 'cancelled', documentInfo?: {documentPath: string, documentType: string, notes?: string}, updatedById?: number): Promise<Order | undefined>;
   updateOrder(id: number, orderData: Partial<InsertOrder>, updatedById?: number): Promise<Order | undefined>;
   deleteOrder(id: number): Promise<boolean>;
   
   // Order Item methods
   getOrderItems(orderId: number): Promise<OrderItem[]>;
   addOrderItem(orderItem: InsertOrderItem): Promise<OrderItem>;
+  deleteOrderItemsByOrderId(orderId: number): Promise<boolean>;
   
   // Shipping Document methods
   getShippingDocument(orderId: number): Promise<ShippingDocument | undefined>;
@@ -802,6 +805,59 @@ export class MemStorage implements IStorage {
       .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
   }
   
+  async getPartiallyShippedOrders(): Promise<Order[]> {
+    return Array.from(this.orders.values())
+      .filter(order => order.status === 'partially_shipped')
+      .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
+  }
+  
+  async completeOrderShipment(orderId: number): Promise<boolean> {
+    const order = this.orders.get(orderId);
+    if (!order) return false;
+    
+    // Update the order to shipped status
+    const updatedOrder = { 
+      ...order, 
+      status: 'shipped' as const, 
+      percentage_shipped: 100,
+      actualShippingDate: new Date(),
+      lastUpdated: new Date() 
+    };
+    this.orders.set(orderId, updatedOrder);
+    
+    // Get unshipped items for this order
+    const unshippedItemsArray = Array.from(this.unshippedItems.values())
+      .filter(item => item.orderId === orderId && !item.shipped);
+    
+    // Mark unshipped items as shipped
+    if (unshippedItemsArray.length > 0) {
+      for (const item of unshippedItemsArray) {
+        const updatedItem = {
+          ...item,
+          shipped: true,
+          shippedAt: new Date(),
+          shippedInOrderId: orderId
+        };
+        this.unshippedItems.set(item.id, updatedItem);
+      }
+    }
+    
+    // Add to order changelog
+    this.addOrderChangelog({
+      orderId,
+      userId: 1, // Default to admin
+      action: 'status_change',
+      changes: { 
+        status: 'shipped',
+        previousStatus: 'partially_shipped',
+        completedShipment: true 
+      },
+      notes: 'Order marked as fully shipped'
+    });
+    
+    return true;
+  }
+  
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
     const id = this.orderIdCounter++;
     const orderNumber = `ORD-${String(id).padStart(4, '0')}`;
@@ -814,8 +870,10 @@ export class MemStorage implements IStorage {
       status: insertOrder.status || 'pending',
       notes: insertOrder.notes || null,
       hasShippingDocument: false,
+      percentage_shipped: 0,
+      actualShippingDate: null,
       updatedById: null,
-      lastUpdated: null
+      lastUpdated: new Date()
     };
     
     this.orders.set(id, order);
@@ -835,7 +893,7 @@ export class MemStorage implements IStorage {
   
   async updateOrderStatus(
     id: number, 
-    status: 'pending' | 'picked' | 'shipped' | 'cancelled',
+    status: 'pending' | 'picked' | 'partially_shipped' | 'shipped' | 'cancelled',
     documentInfo?: { documentPath: string, documentType: string, notes?: string },
     updatedById?: number
   ): Promise<Order | undefined> {
@@ -1014,7 +1072,13 @@ export class MemStorage implements IStorage {
   
   async addOrderItem(insertOrderItem: InsertOrderItem): Promise<OrderItem> {
     const id = this.orderItemIdCounter++;
-    const orderItem: OrderItem = { ...insertOrderItem, id };
+    const orderItem: OrderItem = { 
+      ...insertOrderItem, 
+      id,
+      shipped_quantity: insertOrderItem.shipped_quantity || null,
+      shipping_status: insertOrderItem.shipping_status || null,
+      hasQualityIssues: insertOrderItem.hasQualityIssues || null
+    };
     
     // Reduce product stock
     const product = await this.getProduct(orderItem.productId);
@@ -1040,7 +1104,8 @@ export class MemStorage implements IStorage {
       ...document, 
       id,
       uploadDate: new Date(),
-      notes: document.notes || null
+      notes: document.notes || null,
+      trackingNumber: document.trackingNumber || null
     };
     
     this.shippingDocuments.set(id, shippingDocument);
@@ -1113,7 +1178,7 @@ export class MemStorage implements IStorage {
       phone: insertCustomer.phone || null,
       contactPerson: insertCustomer.contactPerson || null,
       preferredShippingCompany: insertCustomer.preferredShippingCompany || null,
-      customShippingCompany: insertCustomer.customShippingCompany || "",
+      customShippingCompany: insertCustomer.customShippingCompany || null,
       notes: insertCustomer.notes || null,
       createdAt: new Date()
     };

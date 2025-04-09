@@ -511,6 +511,65 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
   }
   
+  async getPartiallyShippedOrders(): Promise<Order[]> {
+    try {
+      return await this.db
+        .select()
+        .from(orders)
+        .where(eq(orders.status, 'partially_shipped'))
+        .orderBy(desc(orders.orderDate));
+    } catch (error) {
+      console.error("Error in getPartiallyShippedOrders:", error);
+      throw error;
+    }
+  }
+  
+  async completeOrderShipment(orderId: number): Promise<boolean> {
+    try {
+      // 1. Get the order
+      const order = await this.getOrder(orderId);
+      if (!order) {
+        throw new Error(`Order with ID ${orderId} not found`);
+      }
+      
+      // 2. Update the order status to shipped
+      await this.db.update(orders)
+        .set({ 
+          status: 'shipped',
+          percentage_shipped: 100,
+          actualShippingDate: new Date()
+        })
+        .where(eq(orders.id, orderId));
+      
+      // 3. Get any unshipped items for this order
+      const unshippedItems = await this.getUnshippedItemsByOrder(orderId);
+      
+      // 4. If there are unshipped items, mark them as shipped
+      if (unshippedItems.length > 0) {
+        const unshippedItemIds = unshippedItems.map(item => item.id);
+        await this.markUnshippedItemsAsShipped(unshippedItemIds, orderId);
+      }
+      
+      // 5. Add an entry to the order changelog
+      await this.addOrderChangelog({
+        orderId,
+        userId: 1, // Default to admin user if not specified
+        action: 'status_change',
+        changes: { 
+          status: 'shipped',
+          previousStatus: order.status,
+          completedShipment: true 
+        },
+        notes: 'Order marked as fully shipped'
+      });
+      
+      return true;
+    } catch (error) {
+      console.error(`Error in completeOrderShipment for order ${orderId}:`, error);
+      throw error;
+    }
+  }
+  
   async getOrdersByCustomer(customerName: string): Promise<Order[]> {
     try {
       // Use case-insensitive exact match with the ILIKE operator for better Unicode support

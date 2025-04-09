@@ -573,6 +573,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get partially shipped orders
+  app.get('/api/orders/partially-shipped', async (req, res) => {
+    try {
+      const orders = await storage.getPartiallyShippedOrders();
+      res.json(orders);
+    } catch (error: any) {
+      console.error("Error fetching partially shipped orders:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Complete shipment for partially shipped orders
+  app.post('/api/orders/complete-shipment', async (req, res) => {
+    try {
+      const { orderIds } = req.body;
+      
+      if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+        return res.status(400).json({ message: 'Order IDs are required' });
+      }
+      
+      await Promise.all(orderIds.map(orderId => 
+        storage.completeOrderShipment(orderId)
+      ));
+      
+      res.json({ success: true, message: 'Orders marked as shipped successfully' });
+    } catch (error: any) {
+      console.error("Error completing order shipments:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
   // Search orders by query string or get recent orders if no query
   app.get('/api/orders/search', async (req, res) => {
     try {
@@ -2641,6 +2672,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         partialFulfillmentApproved: false,
         partialFulfillmentApprovedById: null,
         partialFulfillmentApprovedAt: null,
+        percentage_shipped: '0',
         estimatedShippingDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
         actualShippingDate: null,
         priority: 'medium' as const, // Add priority field

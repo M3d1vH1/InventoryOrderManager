@@ -239,6 +239,7 @@
       "shipped": "Shipped",
       "delivered": "Delivered",
       "picked": "Picked",
+      "partially_shipped": "Partially Shipped",
       "cancelled": "Cancelled"
     },
     "uploadDocument": {
@@ -549,6 +550,20 @@
     "notes": "Notes",
     "noUnshippedItems": "No unshipped items found",
     "noItemsPendingAuthorization": "No items pending authorization"
+  },
+  "partiallyShipped": {
+    "title": "Partially Shipped Orders",
+    "description": "Orders where some items have been shipped but others are still pending",
+    "error": "Error loading partially shipped orders",
+    "noOrders": "No partially shipped orders found",
+    "completeShipment": "Complete Shipment",
+    "processingShipment": "Processing Shipment",
+    "processingDescription": "Preparing to ship remaining items",
+    "itemsInOrder": "Items in this order",
+    "shipped": "Shipped",
+    "remaining": "Remaining",
+    "progress": "Progress",
+    "shipRemainingItems": "Ship Remaining Items"
   },
   "orderQuality": {
     "title": "Order Quality Management",
