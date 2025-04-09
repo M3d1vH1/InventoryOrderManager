@@ -921,7 +921,7 @@ const OrderForm = ({
                         }
                       }}
                     >
-                      <PackageOpen className="h-4 w-4 mr-2" /> Add All Unshipped Items
+                      <PackageOpen className="h-4 w-4 mr-2" /> {t('orders.form.addAllUnshippedItems')}
                     </Button>
                   </div>
                   
@@ -936,17 +936,17 @@ const OrderForm = ({
                             <div className="font-medium text-base text-amber-900">{product.name}</div>
                             <div className="text-sm text-amber-800">SKU: {product.sku}</div>
                             <div className="text-sm text-amber-700 mt-1">
-                              From Order: <span className="font-medium">{product.orderNumber}</span>
+                              {t('orders.form.fromOrder')}: <span className="font-medium">{product.orderNumber}</span>
                               <span className="ml-2 text-amber-600">({new Date(product.orderDate).toLocaleDateString()})</span>
                             </div>
                           </div>
                           <Badge variant="outline" className="border-amber-500 text-amber-800 bg-amber-100">
-                            {product.status === 'pending' ? 'Pending' : 'Picked'}
+                            {product.status === 'pending' ? t('orders.form.pending') : t('orders.form.picked')}
                           </Badge>
                         </div>
                         <div className="flex justify-between mt-3 items-center">
                           <span className="text-sm text-amber-800">
-                            Quantity: <span className="font-medium text-base">{product.quantity}</span>
+                            {t('orders.form.quantity')}: <span className="font-medium text-base">{product.quantity}</span>
                           </span>
                           <Button 
                             type="button" 
@@ -985,7 +985,7 @@ const OrderForm = ({
                               }
                             }}
                           >
-                            <PackageOpen className="h-4 w-4 mr-2" /> Add to Order
+                            <PackageOpen className="h-4 w-4 mr-2" /> {t('orders.form.addToOrder')}
                           </Button>
                         </div>
                       </div>
