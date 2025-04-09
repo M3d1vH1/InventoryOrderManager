@@ -98,15 +98,10 @@ const quickStats = {
 export default function Production() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [flowDirection, setFlowDirection] = useState('vertical');
   const [filterCategory, setFilterCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showTutorial, setShowTutorial] = useState(false);
   const [helpSection, setHelpSection] = useState<TutorialSections>('overview');
-
-  const toggleFlowDirection = () => {
-    setFlowDirection(flowDirection === 'vertical' ? 'horizontal' : 'vertical');
-  };
 
   // For production workflow process
   const processSteps = [
@@ -265,26 +260,7 @@ export default function Production() {
             </AlertDialogContent>
           </AlertDialog>
           
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={toggleFlowDirection}
-                >
-                  <ArrowDownUp className="h-4 w-4 mr-2" />
-                  {flowDirection === 'vertical' 
-                    ? t('production.horizontalView') 
-                    : t('production.verticalView')}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{t('production.toggleViewTooltip') || "Switch between vertical and horizontal layout"}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
+
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button>
