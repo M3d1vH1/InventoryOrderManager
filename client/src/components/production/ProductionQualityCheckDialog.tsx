@@ -1,182 +1,181 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { toast } from '@/hooks/use-toast';
-
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormDescription,
-} from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, AlertTriangle, ClipboardCheck, CheckCircle, XCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { format } from 'date-fns';
+
+interface ProductionQualityCheckDialogProps {
+  open: boolean;
+  onClose: () => void;
+  productionOrderId: number;
+  onQualityCheckAdded?: () => void;
+}
+
+type QualityCheckType = 
+  | 'appearance' 
+  | 'odor' 
+  | 'taste' 
+  | 'color' 
+  | 'texture' 
+  | 'ph_level' 
+  | 'viscosity' 
+  | 'weight' 
+  | 'packaging' 
+  | 'labeling' 
+  | 'other';
+
+interface QualityCheck {
+  id: number;
+  productionOrderId: number;
+  checkType: QualityCheckType;
+  passed: boolean;
+  notes: string | null;
+  checkedById: number;
+  checkedAt: Date;
+}
 
 const qualityCheckSchema = z.object({
-  checkType: z.string().min(1, { message: 'Check type is required' }),
+  checkType: z.enum([
+    'appearance', 
+    'odor', 
+    'taste', 
+    'color', 
+    'texture', 
+    'ph_level', 
+    'viscosity', 
+    'weight', 
+    'packaging', 
+    'labeling', 
+    'other'
+  ], {
+    required_error: "Please select a check type",
+  }),
   passed: z.boolean(),
   notes: z.string().optional(),
 });
 
 type QualityCheckFormValues = z.infer<typeof qualityCheckSchema>;
 
-interface ProductionQualityCheckDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  productionOrderId: number | null;
-}
-
-export default function ProductionQualityCheckDialog({
-  open,
-  onOpenChange,
+const ProductionQualityCheckDialog = ({ 
+  open, 
+  onClose, 
   productionOrderId,
-}: ProductionQualityCheckDialogProps) {
+  onQualityCheckAdded 
+}: ProductionQualityCheckDialogProps) => {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const [submitting, setSubmitting] = useState<boolean>(false);
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [qualityChecks, setQualityChecks] = useState<QualityCheck[]>([]);
+  const [fetchingChecks, setFetchingChecks] = useState(false);
+  const [coreChecksCompleted, setCoreChecksCompleted] = useState(false);
 
-  // Get order details
-  const { data: order, isLoading: orderLoading } = useQuery({
-    queryKey: ['/api/production/orders', productionOrderId],
-    enabled: !!productionOrderId && open,
-  });
-
-  // Get previous quality checks
-  const { data: qualityChecks = [], isLoading: checksLoading } = useQuery({
-    queryKey: ['/api/production/orders', productionOrderId, 'quality-checks'],
-    enabled: !!productionOrderId && open,
-  });
-
-  // Form setup
   const form = useForm<QualityCheckFormValues>({
     resolver: zodResolver(qualityCheckSchema),
     defaultValues: {
-      checkType: '',
+      checkType: 'appearance',
       passed: true,
       notes: '',
     },
   });
 
-  // Check types
-  const qualityCheckTypes = [
-    'appearance',
-    'odor',
-    'taste',
-    'color',
-    'texture',
-    'ph_level',
-    'viscosity',
-    'weight',
-    'packaging',
-    'labeling',
-    'other',
-  ];
+  // Core checks are appearance, odor, taste, color
+  const coreCheckTypes = ['appearance', 'odor', 'taste', 'color'];
 
-  // Mutation to save quality check
-  const saveQualityCheckMutation = useMutation({
-    mutationFn: async (values: QualityCheckFormValues) => {
-      return await apiRequest('/api/production/quality-checks', {
+  useEffect(() => {
+    if (open && productionOrderId) {
+      fetchQualityChecks();
+    }
+  }, [open, productionOrderId]);
+
+  const fetchQualityChecks = async () => {
+    if (!productionOrderId) return;
+
+    setFetchingChecks(true);
+    try {
+      const response = await fetch(`/api/production/${productionOrderId}/quality-checks`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch quality checks');
+      }
+
+      const data = await response.json();
+      setQualityChecks(data);
+      
+      // Check if all core checks are completed
+      const completedCoreChecks = coreCheckTypes.filter(coreType => 
+        data.some((check: QualityCheck) => check.checkType === coreType)
+      );
+      
+      setCoreChecksCompleted(completedCoreChecks.length === coreCheckTypes.length);
+
+    } catch (error) {
+      console.error('Error fetching quality checks:', error);
+    } finally {
+      setFetchingChecks(false);
+    }
+  };
+
+  const onSubmit = async (values: QualityCheckFormValues) => {
+    if (!productionOrderId) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/production/${productionOrderId}/quality-checks`, {
         method: 'POST',
-        data: {
-          ...values,
-          productionOrderId,
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify(values),
       });
-    },
-    onSuccess: (data) => {
+
+      if (!response.ok) {
+        throw new Error('Failed to add quality check');
+      }
+
+      form.reset();
       toast({
         title: t('production.qualityCheckAdded'),
         description: t('production.qualityCheckAddedDesc'),
       });
-      
-      // Reset form
-      form.reset({
-        checkType: '',
-        passed: true,
-        notes: '',
-      });
-      
-      // Refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/production/orders', productionOrderId, 'quality-checks'] });
-      
-      // If all checks passed and this is the first set of checks, update order status to approved
-      if (data.allPassed) {
-        apiRequest(`/api/production/orders/${productionOrderId}/status`, {
-          method: 'PATCH',
-          data: { status: 'approved' },
-        }).then(() => {
-          queryClient.invalidateQueries({ queryKey: ['/api/production/orders'] });
-          queryClient.invalidateQueries({ queryKey: ['/api/production/orders', productionOrderId] });
-        });
+
+      fetchQualityChecks();
+
+      if (onQualityCheckAdded) {
+        onQualityCheckAdded();
       }
-      
-      if (data.closed) {
-        // If this completes the quality check process, close the dialog
-        onOpenChange(false);
-      }
-    },
-    onError: (error: any) => {
-      console.error('Error saving quality check:', error);
+    } catch (error) {
+      console.error('Error adding quality check:', error);
       toast({
-        title: t('errorOccurred'),
-        description: error.message || t('production.errorSavingQualityCheck'),
+        title: t('production.errorSavingQualityCheck'),
+        description: error instanceof Error ? error.message : String(error),
         variant: 'destructive',
       });
-    },
-  });
-
-  // Handle form submission
-  const handleSubmit = async (values: QualityCheckFormValues) => {
-    if (!productionOrderId) return;
-    
-    setSubmitting(true);
-    try {
-      await saveQualityCheckMutation.mutateAsync(values);
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
-  // Get used check types to avoid duplicates
-  const usedCheckTypes = qualityChecks.map((check: any) => check.checkType);
-  const availableCheckTypes = qualityCheckTypes.filter(type => !usedCheckTypes.includes(type));
-
-  // Check if all required checks are completed
-  const coreChecksCompleted = ['appearance', 'odor', 'taste', 'color'].every(checkType => 
-    usedCheckTypes.includes(checkType)
-  );
-
-  const isLoading = orderLoading || checksLoading;
+  const hasCompletedCheckOfType = (type: QualityCheckType) => {
+    return qualityChecks.some(check => check.checkType === type);
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) onClose();
+    }}>
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>{t('production.qualityCheck')}</DialogTitle>
           <DialogDescription>
@@ -184,149 +183,160 @@ export default function ProductionQualityCheckDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {isLoading ? (
-          <div className="flex justify-center items-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-6">
-            {qualityChecks.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium mb-2">{t('production.completedChecks')}</h4>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {qualityChecks.map((check: any) => (
-                    <div 
-                      key={check.id} 
-                      className={`px-3 py-1.5 rounded-md text-sm flex items-center gap-1.5 ${
-                        check.passed 
-                          ? 'bg-green-100 text-green-800 border border-green-200' 
-                          : 'bg-red-100 text-red-800 border border-red-200'
-                      }`}
-                    >
-                      {check.passed ? (
-                        <CheckCircle className="h-3.5 w-3.5" />
-                      ) : (
-                        <XCircle className="h-3.5 w-3.5" />
-                      )}
-                      {t(`production.checkTypes.${check.checkType}`)}
+        <div className="grid grid-cols-1 gap-4 mb-4">
+          {coreChecksCompleted ? (
+            <Alert className="bg-green-50 text-green-800 border-green-200">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertTitle>{t('production.coreChecksCompleted')}</AlertTitle>
+              <AlertDescription>
+                {t('production.coreChecksCompletedDesc')}
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Alert className="bg-amber-50 text-amber-800 border-amber-200">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertTitle>{t('production.requiredChecksRemaining')}</AlertTitle>
+              <AlertDescription>
+                {t('production.requiredChecksRemainingDesc')}
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium">{t('production.completedChecks')}</h3>
+            {qualityChecks.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {t('orderErrors.noErrorsDescription')}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {qualityChecks.map((check) => (
+                  <div 
+                    key={check.id} 
+                    className="p-3 border rounded-md flex items-start justify-between bg-background"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">
+                          {t(`production.checkTypes.${check.checkType}`)}
+                        </span>
+                        {check.passed ? (
+                          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            {t('common.passed')}
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
+                            <XCircle className="w-3 h-3 mr-1" />
+                            {t('common.failed')}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {check.notes || t('common.noNotesAvailable')}
+                      </p>
+                      <div className="text-xs text-muted-foreground flex gap-2">
+                        <span>{format(new Date(check.checkedAt), 'PPp')}</span>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
             )}
-
-            {coreChecksCompleted ? (
-              <>
-                <Alert className="bg-green-50 border-green-200">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <AlertTitle className="text-green-800">{t('production.coreChecksCompleted')}</AlertTitle>
-                  <AlertDescription className="text-green-700">
-                    {t('production.coreChecksCompletedDesc')}
-                  </AlertDescription>
-                </Alert>
-                
-                {!availableCheckTypes.length && (
-                  <Button 
-                    className="w-full" 
-                    onClick={() => onOpenChange(false)}
-                  >
-                    <ClipboardCheck className="mr-2 h-4 w-4" />
-                    {t('production.allChecksCompleted')}
-                  </Button>
-                )}
-              </>
-            ) : (
-              <Alert>
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>{t('production.requiredChecksRemaining')}</AlertTitle>
-                <AlertDescription>
-                  {t('production.requiredChecksRemainingDesc')}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {availableCheckTypes.length > 0 && (
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="checkType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('production.checkType')}</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder={t('production.selectCheckType')} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {availableCheckTypes.map((type) => (
-                              <SelectItem key={type} value={type}>
-                                {t(`production.checkTypes.${type}`)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="passed"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                        <div className="space-y-0.5">
-                          <FormLabel>{t('production.checkPassed')}</FormLabel>
-                          <FormDescription>
-                            {t('production.checkPassedDescription')}
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('notes')}</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder={t('production.qualityCheckNotesPlaceholder')}
-                            rows={3}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                      {t('cancel')}
-                    </Button>
-                    <Button type="submit" disabled={submitting}>
-                      {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      {t('production.recordQualityCheck')}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            )}
           </div>
-        )}
+        </div>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="checkType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('production.checkType')}</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                    disabled={loading}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('production.selectCheckType')} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {(['appearance', 'odor', 'taste', 'color', 'texture', 'ph_level', 
+                        'viscosity', 'weight', 'packaging', 'labeling', 'other'] as const).map((type) => (
+                        <SelectItem 
+                          key={type} 
+                          value={type}
+                          disabled={hasCompletedCheckOfType(type)}
+                        >
+                          {t(`production.checkTypes.${type}`)}
+                          {coreCheckTypes.includes(type) && ' *'}
+                          {hasCompletedCheckOfType(type) && ` (${t('common.completed')})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="passed"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={loading}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>{t('production.checkPassed')}</FormLabel>
+                    <FormDescription>
+                      {t('production.checkPassedDescription')}
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('common.notes')}</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder={t('production.qualityCheckNotesPlaceholder')}
+                      {...field}
+                      disabled={loading}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
+              <Button variant="outline" type="button" onClick={onClose} disabled={loading}>
+                {t('common.cancel')}
+              </Button>
+              <Button type="submit" disabled={loading || fetchingChecks}>
+                {loading ? t('common.saving') : t('production.recordQualityCheck')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
-}
+};
+
+export default ProductionQualityCheckDialog;

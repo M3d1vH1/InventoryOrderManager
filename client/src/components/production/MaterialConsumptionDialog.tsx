@@ -167,21 +167,27 @@ export default function MaterialConsumptionDialog({
     try {
       await apiRequest('/api/production/material-consumption', {
         method: 'POST',
-        data: {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           ...values,
           productionOrderId,
           consumedAt: new Date().toISOString(),
-        },
+        }),
       });
 
       // Also create a log entry for material consumption
       await apiRequest('/api/production/logs', {
         method: 'POST',
-        data: {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           productionOrderId: productionOrderId,
           eventType: 'material_added',
           description: `Material ${values.materialId} consumed: ${values.quantity} units`,
-        },
+        }),
       });
 
       toast({

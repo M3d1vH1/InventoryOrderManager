@@ -124,10 +124,13 @@ export default function ProductionOrderDetails({
     mutationFn: async (status: string) => {
       return await apiRequest(`/api/production/orders/${orderId}/status`, {
         method: 'PATCH',
-        data: { 
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
           status,
           notes: `Status changed to ${status}`
-        }
+        })
       });
     },
     onSuccess: (data, variables) => {
@@ -142,11 +145,14 @@ export default function ProductionOrderDetails({
       
       apiRequest('/api/production/logs', {
         method: 'POST',
-        data: {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           productionOrderId: orderId,
           eventType,
           description: `Production ${eventType}: ${order.productName}`,
-        }
+        })
       });
 
       toast({
@@ -753,7 +759,7 @@ export default function ProductionOrderDetails({
       {/* Quality Check Dialog */}
       <ProductionQualityCheckDialog
         open={qualityCheckDialogOpen}
-        onOpenChange={setQualityCheckDialogOpen}
+        onClose={() => setQualityCheckDialogOpen(false)}
         productionOrderId={orderId}
       />
     </>
