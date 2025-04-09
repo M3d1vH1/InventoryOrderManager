@@ -9,7 +9,8 @@ import {
   insertProductionBatchSchema,
   insertProductionOrderSchema,
   insertMaterialConsumptionSchema,
-  insertProductionLogSchema
+  insertProductionLogSchema,
+  insertProductionQualityCheckSchema
 } from '@shared/schema';
 import { z } from 'zod';
 
@@ -742,6 +743,158 @@ router.post('/orders/:orderId/logs', isAuthenticated, async (req, res) => {
   } catch (error) {
     console.error(`Error adding production log to order ${req.params.orderId}:`, error);
     res.status(500).json({ error: 'Failed to add production log' });
+  }
+});
+
+// Material Consumption endpoints
+router.get('/orders/:orderId/consumed-materials', isAuthenticated, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId);
+    if (isNaN(orderId)) {
+      return res.status(400).json({ error: 'Invalid production order ID format' });
+    }
+    
+    const consumedMaterials = await storage.getConsumedMaterialsByProductionOrder(orderId);
+    res.json(consumedMaterials);
+  } catch (error) {
+    console.error(`Error fetching consumed materials for order ${req.params.orderId}:`, error);
+    res.status(500).json({ error: 'Failed to fetch consumed materials' });
+  }
+});
+
+router.post('/material-consumption', isAuthenticated, async (req, res) => {
+  try {
+    const parsedData = insertMaterialConsumptionSchema.safeParse(req.body);
+    if (!parsedData.success) {
+      return res.status(400).json({ errors: zodErrorParser(parsedData.error) });
+    }
+    
+    // Add the consumption record
+    const consumption = await storage.addMaterialConsumption({
+      ...parsedData.data,
+      createdById: req.user?.id || 1,
+    });
+    
+    // Update raw material stock (reduce it by the consumed amount)
+    await storage.updateRawMaterialStock(
+      parsedData.data.materialId, 
+      -parsedData.data.quantity, 
+      `Consumed in production order ${parsedData.data.productionOrderId}`
+    );
+    
+    res.status(201).json(consumption);
+  } catch (error) {
+    console.error('Error recording material consumption:', error);
+    res.status(500).json({ error: 'Failed to record material consumption' });
+  }
+});
+
+// Get recipe materials by recipeId
+router.get('/recipes/:id/materials', isAuthenticated, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid recipe ID format' });
+    }
+    
+    const materials = await storage.getRecipeIngredients(id);
+    
+    // Fetch additional details for each material
+    const enrichedMaterials = await Promise.all(
+      materials.map(async (material) => {
+        const rawMaterial = await storage.getRawMaterial(material.materialId);
+        return {
+          ...material,
+          materialName: rawMaterial ? rawMaterial.name : 'Unknown Material',
+          unit: material.unit || rawMaterial?.unit || 'unit'
+        };
+      })
+    );
+    
+    res.json(enrichedMaterials);
+  } catch (error) {
+    console.error(`Error fetching recipe materials for recipe ${req.params.id}:`, error);
+    res.status(500).json({ error: 'Failed to fetch recipe materials' });
+  }
+});
+
+// Quality Check endpoints
+router.get('/orders/:orderId/quality-checks', isAuthenticated, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId);
+    if (isNaN(orderId)) {
+      return res.status(400).json({ error: 'Invalid production order ID format' });
+    }
+    
+    const qualityChecks = await storage.getQualityChecksByProductionOrder(orderId);
+    res.json(qualityChecks);
+  } catch (error) {
+    console.error(`Error fetching quality checks for order ${req.params.orderId}:`, error);
+    res.status(500).json({ error: 'Failed to fetch quality checks' });
+  }
+});
+
+router.post('/quality-checks', isAuthenticated, async (req, res) => {
+  try {
+    const parsedData = insertProductionQualityCheckSchema.safeParse(req.body);
+    if (!parsedData.success) {
+      return res.status(400).json({ errors: zodErrorParser(parsedData.error) });
+    }
+    
+    // Add the quality check
+    const qualityCheck = await storage.addProductionQualityCheck({
+      ...parsedData.data,
+      createdById: req.user?.id || 1,
+    });
+    
+    // Get all quality checks for this order
+    const allChecks = await storage.getQualityChecksByProductionOrder(parsedData.data.productionOrderId);
+    
+    // Determine if all checks have passed
+    const allPassed = allChecks.every(check => check.passed);
+    
+    // If we have completed all required checks
+    const coreCheckTypes = ['appearance', 'odor', 'taste', 'color'];
+    const coreChecksCompleted = coreCheckTypes.every(checkType => 
+      allChecks.some(check => check.checkType === checkType)
+    );
+    
+    // Check if all checks are complete and all passed
+    const completedAllChecks = coreChecksCompleted && allPassed;
+    
+    // Check if all checks are complete but some failed
+    const completedWithFailures = coreChecksCompleted && !allPassed;
+    
+    // If we have completed all checks, update the order status
+    if (completedAllChecks || completedWithFailures) {
+      // Update order status based on quality check results
+      const newStatus = completedAllChecks ? 'approved' : 'rejected';
+      
+      await storage.updateProductionOrderStatus(
+        parsedData.data.productionOrderId, 
+        newStatus,
+        `Quality check completed. Status: ${newStatus}`
+      );
+      
+      // Add a log entry
+      await storage.addProductionLog({
+        productionOrderId: parsedData.data.productionOrderId,
+        eventType: 'quality_check',
+        description: `Quality check completed. Result: ${newStatus}`,
+        createdById: req.user?.id || 1
+      });
+    }
+    
+    // Return the quality check along with status info
+    res.status(201).json({
+      ...qualityCheck,
+      allPassed,
+      coreChecksCompleted,
+      closed: completedAllChecks || completedWithFailures
+    });
+  } catch (error) {
+    console.error('Error recording quality check:', error);
+    res.status(500).json({ error: 'Failed to record quality check' });
   }
 });
 

@@ -29,7 +29,8 @@ import {
   recipeIngredients, type RecipeIngredient, type InsertRecipeIngredient,
   productionOrders, type ProductionOrder, type InsertProductionOrder,
   materialConsumptions, type MaterialConsumption, type InsertMaterialConsumption,
-  productionLogs, type ProductionLog, type InsertProductionLog
+  productionLogs, type ProductionLog, type InsertProductionLog,
+  productionQualityChecks, type ProductionQualityCheck, type InsertProductionQualityCheck
 } from "@shared/schema";
 import { DatabaseStorage, initStorage } from './storage.postgresql';
 import { log } from './vite';
@@ -320,6 +321,14 @@ export interface IStorage {
   getProductionLogs(orderId: number): Promise<ProductionLog[]>;
   addProductionLog(log: InsertProductionLog): Promise<ProductionLog>;
   getProductionLogsByType(eventType: string): Promise<ProductionLog[]>;
+  
+  // Material Consumption methods
+  getConsumedMaterialsByProductionOrder(orderId: number): Promise<MaterialConsumption[]>;
+  addMaterialConsumption(consumption: InsertMaterialConsumption): Promise<MaterialConsumption>;
+  
+  // Quality Check methods
+  getQualityChecksByProductionOrder(orderId: number): Promise<ProductionQualityCheck[]>;
+  addProductionQualityCheck(check: InsertProductionQualityCheck): Promise<ProductionQualityCheck>;
 }
 
 // We're keeping the MemStorage class definition for fallback

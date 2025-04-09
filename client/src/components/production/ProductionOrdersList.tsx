@@ -19,25 +19,11 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose
-} from '@/components/ui/dialog';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from '@/components/ui/tabs';
-import { Search, Plus, FileText, Play, CheckCircle, Pencil, AlertTriangle } from 'lucide-react';
+import { Search, Plus, FileText, Play, CheckCircle, Edit, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import ProductionOrderForm from './ProductionOrderForm';
+import ProductionOrderDetails from './ProductionOrderDetails';
 import { apiRequest } from '@/lib/queryClient';
 import { toast } from '@/hooks/use-toast';
 
@@ -46,19 +32,14 @@ export default function ProductionOrdersList() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState('details');
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [orderFormOpen, setOrderFormOpen] = useState(false);
+  const [selectedOrderForEdit, setSelectedOrderForEdit] = useState<any>(null);
+  const [processing, setProcessing] = useState<boolean>(false);
 
   // Fetch orders from API
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['/api/production/orders'],
-  });
-
-  // Fetch logs for the selected order
-  const { data: logs = [], isLoading: logsLoading } = useQuery({
-    queryKey: ['/api/production/orders', selectedOrder?.id, 'logs'],
-    enabled: !!selectedOrder?.id && detailsDialogOpen,
   });
 
   const filteredOrders = searchTerm 
@@ -71,24 +52,24 @@ export default function ProductionOrdersList() {
     : orders;
 
   const handleAddOrder = () => {
-    setSelectedOrder(null);
+    setSelectedOrderForEdit(null);
     setOrderFormOpen(true);
   };
 
   const handleEditOrder = (order: any) => {
-    setSelectedOrder(order);
+    setSelectedOrderForEdit(order);
     setOrderFormOpen(true);
   };
 
   const handleViewDetails = (order: any) => {
-    setSelectedOrder(order);
+    setSelectedOrderId(order.id);
     setDetailsDialogOpen(true);
-    setActiveTab('details');
   };
 
   const handleStartProduction = async (order: any) => {
-    if (order.status !== 'planned') return;
+    if (order.status !== 'planned' && order.status !== 'material_check') return;
     
+    setProcessing(true);
     try {
       await apiRequest(`/api/production/orders/${order.id}/status`, {
         method: 'PATCH',
@@ -105,7 +86,6 @@ export default function ProductionOrdersList() {
           productionOrderId: order.id,
           eventType: 'start',
           description: `Production started for ${order.productName}`,
-          createdById: 1  // Assuming logged in user id
         }
       });
       
@@ -124,12 +104,15 @@ export default function ProductionOrdersList() {
         description: t('production.errorStartingProduction'),
         variant: 'destructive',
       });
+    } finally {
+      setProcessing(false);
     }
   };
 
   const handleCompleteProduction = async (order: any) => {
     if (order.status !== 'in_progress') return;
     
+    setProcessing(true);
     try {
       await apiRequest(`/api/production/orders/${order.id}/status`, {
         method: 'PATCH',
@@ -146,7 +129,6 @@ export default function ProductionOrdersList() {
           productionOrderId: order.id,
           eventType: 'completed',
           description: `Production completed for ${order.productName}`,
-          createdById: 1  // Assuming logged in user id
         }
       });
       
@@ -165,6 +147,8 @@ export default function ProductionOrdersList() {
         description: t('production.errorCompletingProduction'),
         variant: 'destructive',
       });
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -175,7 +159,10 @@ export default function ProductionOrdersList() {
       'in_progress': 'bg-yellow-100 text-yellow-800 border-yellow-300',
       'completed': 'bg-green-100 text-green-800 border-green-300',
       'partially_completed': 'bg-orange-100 text-orange-800 border-orange-300',
-      'cancelled': 'bg-red-100 text-red-800 border-red-300'
+      'cancelled': 'bg-red-100 text-red-800 border-red-300',
+      'quality_check': 'bg-purple-100 text-purple-800 border-purple-300',
+      'approved': 'bg-emerald-100 text-emerald-800 border-emerald-300',
+      'rejected': 'bg-red-100 text-red-800 border-red-300',
     };
 
     return (
@@ -188,53 +175,17 @@ export default function ProductionOrdersList() {
     );
   };
 
-  const getEventTypeBadge = (eventType: string) => {
-    const eventColors: Record<string, string> = {
-      'start': 'bg-green-100 text-green-800 border-green-300',
-      'pause': 'bg-orange-100 text-orange-800 border-orange-300',
-      'resume': 'bg-blue-100 text-blue-800 border-blue-300',
-      'material_added': 'bg-purple-100 text-purple-800 border-purple-300',
-      'completed': 'bg-emerald-100 text-emerald-800 border-emerald-300',
-      'quality_check': 'bg-cyan-100 text-cyan-800 border-cyan-300',
-      'issue': 'bg-red-100 text-red-800 border-red-300'
-    };
-
-    return (
-      <Badge
-        variant="outline"
-        className={eventColors[eventType] || 'bg-gray-100 text-gray-800 border-gray-300'}
-      >
-        {t(`production.eventTypes.${eventType}`)}
-      </Badge>
-    );
-  };
-
   const calculateProgress = (order: any) => {
-    if (order.status === 'completed') return 100;
+    if (order.status === 'completed' || order.status === 'approved') return 100;
     if (order.status === 'planned') return 0;
-    
-    // If we have logs data, use it for more accurate progress
-    if (order.logs && order.logs.length > 0) {
-      const totalSteps = 5; // Start, material additions (x3), completion
-      const completedSteps = order.logs.length;
-      return Math.min(Math.round((completedSteps / totalSteps) * 100), 95);
-    }
     
     // Default progress based on status
     switch (order.status) {
       case 'material_check': return 20;
       case 'in_progress': return 60;
+      case 'quality_check': return 90;
       case 'partially_completed': return 80;
       default: return 0;
-    }
-  };
-
-  const formatDate = (date: string | null | undefined) => {
-    if (!date) return '—';
-    try {
-      return format(new Date(date), 'PPp');
-    } catch (error) {
-      return '—';
     }
   };
 
@@ -280,7 +231,10 @@ export default function ProductionOrdersList() {
                 {isLoading ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-4">
-                      {t('loading')}...
+                      <div className="flex items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                        {t('loading')}...
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : filteredOrders.length > 0 ? (
@@ -314,13 +268,28 @@ export default function ProductionOrdersList() {
                           {t('production.details')}
                         </Button>
                         
-                        {order.status === 'planned' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mr-2"
+                          onClick={() => handleEditOrder(order)}
+                        >
+                          <Edit className="mr-2 h-4 w-4" />
+                          {t('edit')}
+                        </Button>
+                        
+                        {['planned', 'material_check'].includes(order.status) && (
                           <Button 
                             variant="default" 
                             size="sm"
                             onClick={() => handleStartProduction(order)}
+                            disabled={processing}
                           >
-                            <Play className="mr-2 h-4 w-4" />
+                            {processing ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Play className="mr-2 h-4 w-4" />
+                            )}
                             {t('production.start')}
                           </Button>
                         )}
@@ -330,8 +299,13 @@ export default function ProductionOrdersList() {
                             variant="default" 
                             size="sm"
                             onClick={() => handleCompleteProduction(order)}
+                            disabled={processing}
                           >
-                            <CheckCircle className="mr-2 h-4 w-4" />
+                            {processing ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                            )}
                             {t('production.complete')}
                           </Button>
                         )}
@@ -355,190 +329,18 @@ export default function ProductionOrdersList() {
       <ProductionOrderForm 
         open={orderFormOpen} 
         onOpenChange={setOrderFormOpen} 
-        orderToEdit={selectedOrder} 
+        orderToEdit={selectedOrderForEdit} 
       />
 
-      {/* Production Order Details Dialog */}
-      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
-        <DialogContent className="sm:max-w-[700px]">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedOrder?.orderNumber || ''} - {selectedOrder?.productName || ''}
-            </DialogTitle>
-            <DialogDescription>
-              {t('production.orderDetailsDescription')}
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedOrder && (
-            <Tabs 
-              value={activeTab} 
-              onValueChange={setActiveTab}
-              className="w-full"
-            >
-              <TabsList className="grid grid-cols-2 mb-4">
-                <TabsTrigger value="details">
-                  {t('production.orderDetails')}
-                </TabsTrigger>
-                <TabsTrigger value="logs">
-                  {t('production.productionLogs')}
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="details">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium mb-1">{t('production.product')}</h4>
-                    <p className="text-sm">{selectedOrder.productName || '—'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium mb-1">{t('production.recipe')}</h4>
-                    <p className="text-sm">{selectedOrder.recipeName || '—'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium mb-1">{t('production.batchNumber')}</h4>
-                    <p className="text-sm">{selectedOrder.batchNumber || '—'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium mb-1">{t('production.status')}</h4>
-                    <div className="text-sm">{getStatusBadge(selectedOrder.status)}</div>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium mb-1">{t('production.plannedQuantity')}</h4>
-                    <p className="text-sm">{selectedOrder.plannedQuantity}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium mb-1">{t('production.actualQuantity')}</h4>
-                    <p className="text-sm">{selectedOrder.actualQuantity || '—'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium mb-1">{t('production.startDate')}</h4>
-                    <p className="text-sm">{formatDate(selectedOrder.startDate)}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium mb-1">{t('production.endDate')}</h4>
-                    <p className="text-sm">{formatDate(selectedOrder.endDate)}</p>
-                  </div>
-                </div>
-                
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium mb-1">{t('notes')}</h4>
-                  <p className="text-sm whitespace-pre-wrap">{selectedOrder.notes || '—'}</p>
-                </div>
-                
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium mb-1">{t('production.progress')}</h4>
-                  <Progress 
-                    value={calculateProgress(selectedOrder)} 
-                    className="h-3 w-full mt-1"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1 text-right">
-                    {calculateProgress(selectedOrder)}% {t('production.complete')}
-                  </p>
-                </div>
-
-                {selectedOrder.status === 'planned' && (
-                  <div className="mt-4 flex justify-end">
-                    <Button 
-                      variant="default"
-                      onClick={() => {
-                        handleStartProduction(selectedOrder);
-                        setDetailsDialogOpen(false);
-                      }}
-                    >
-                      <Play className="mr-2 h-4 w-4" />
-                      {t('production.start')}
-                    </Button>
-                  </div>
-                )}
-
-                {selectedOrder.status === 'in_progress' && (
-                  <div className="mt-4 flex justify-end">
-                    <Button 
-                      variant="default"
-                      onClick={() => {
-                        handleCompleteProduction(selectedOrder);
-                        setDetailsDialogOpen(false);
-                      }}
-                    >
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      {t('production.complete')}
-                    </Button>
-                  </div>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="logs">
-                {logsLoading ? (
-                  <div className="text-center py-4">
-                    {t('loading')}...
-                  </div>
-                ) : logs && logs.length > 0 ? (
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>{t('production.eventType')}</TableHead>
-                          <TableHead>{t('production.timestamp')}</TableHead>
-                          <TableHead>{t('production.description')}</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {logs.map((log: any) => (
-                          <TableRow key={log.id}>
-                            <TableCell>{getEventTypeBadge(log.eventType)}</TableCell>
-                            <TableCell>{formatDate(log.createdAt)}</TableCell>
-                            <TableCell>{log.description}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <AlertTriangle className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
-                    <p className="text-muted-foreground">
-                      {t('production.noLogsYet')}
-                    </p>
-                  </div>
-                )}
-
-                {/* Add Log Entry Button */}
-                <div className="mt-6 flex justify-end">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      // TODO: Implement add log functionality
-                      toast({
-                        title: t('notImplemented'),
-                        description: t('production.addLogFeatureComingSoon'),
-                      });
-                    }}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    {t('production.addLogEntry')}
-                  </Button>
-                </div>
-              </TabsContent>
-            </Tabs>
-          )}
-          
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => handleEditOrder(selectedOrder)}
-            >
-              <Pencil className="mr-2 h-4 w-4" />
-              {t('edit')}
-            </Button>
-            <DialogClose asChild>
-              <Button type="button">
-                {t('close')}
-              </Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Production Order Details */}
+      {detailsDialogOpen && (
+        <ProductionOrderDetails
+          open={detailsDialogOpen}
+          onOpenChange={setDetailsDialogOpen}
+          orderId={selectedOrderId}
+          onEdit={handleEditOrder}
+        />
+      )}
     </>
   );
 }

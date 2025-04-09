@@ -33,7 +33,8 @@ import {
   productionOrders, type ProductionOrder, type InsertProductionOrder,
   materialConsumptions, type MaterialConsumption, type InsertMaterialConsumption,
   productionLogs, type ProductionLog, type InsertProductionLog,
-  materialInventoryChanges, type MaterialInventoryChange, type InsertMaterialInventoryChange
+  materialInventoryChanges, type MaterialInventoryChange, type InsertMaterialInventoryChange,
+  productionQualityChecks, type ProductionQualityCheck, type InsertProductionQualityCheck
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { log } from './vite';
@@ -4152,6 +4153,40 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error(`Error getting production logs by type ${eventType}:`, error);
       return [];
+    }
+  }
+  
+  // Alias method for getMaterialConsumptionsByOrder - required by the interface
+  async getConsumedMaterialsByProductionOrder(orderId: number): Promise<MaterialConsumption[]> {
+    try {
+      return await this.db.select().from(materialConsumptions)
+        .where(eq(materialConsumptions.productionOrderId, orderId))
+        .orderBy(desc(materialConsumptions.consumedAt));
+    } catch (error) {
+      console.error(`Error getting consumed materials for production order ${orderId}:`, error);
+      return [];
+    }
+  }
+  
+  // Quality Check methods
+  async getQualityChecksByProductionOrder(orderId: number): Promise<ProductionQualityCheck[]> {
+    try {
+      return await this.db.select().from(productionQualityChecks)
+        .where(eq(productionQualityChecks.productionOrderId, orderId))
+        .orderBy(desc(productionQualityChecks.createdAt));
+    } catch (error) {
+      console.error(`Error getting quality checks for production order ${orderId}:`, error);
+      return [];
+    }
+  }
+  
+  async addProductionQualityCheck(check: InsertProductionQualityCheck): Promise<ProductionQualityCheck> {
+    try {
+      const result = await this.db.insert(productionQualityChecks).values(check).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error adding production quality check:', error);
+      throw error;
     }
   }
 }

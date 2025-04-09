@@ -1145,6 +1145,18 @@ export const materialInventoryChanges = pgTable("material_inventory_changes", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Production Quality Checks
+export const productionQualityChecks = pgTable("production_quality_checks", {
+  id: serial("id").primaryKey(),
+  productionOrderId: integer("production_order_id").notNull().references(() => productionOrders.id, { onDelete: 'cascade' }),
+  checkType: text("check_type").notNull(), // appearance, odor, taste, etc.
+  passed: boolean("passed").notNull().default(false),
+  notes: text("notes"),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertMaterialInventoryChangeSchema = createInsertSchema(materialInventoryChanges)
   .omit({ id: true, createdAt: true })
   .extend({
@@ -1166,5 +1178,21 @@ export const insertMaterialInventoryChangeSchema = createInsertSchema(materialIn
     createdById: z.number().optional(),
   });
 
+export const insertProductionQualityCheckSchema = createInsertSchema(productionQualityChecks)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    productionOrderId: z.number(),
+    checkType: z.string().min(1, { message: "Check type is required" }),
+    passed: z.boolean(),
+    notes: z.string().optional(),
+    createdById: z.number().optional(),
+  });
+
 export type InsertMaterialInventoryChange = z.infer<typeof insertMaterialInventoryChangeSchema>;
 export type MaterialInventoryChange = typeof materialInventoryChanges.$inferSelect;
+export type InsertProductionQualityCheck = z.infer<typeof insertProductionQualityCheckSchema>;
+export type ProductionQualityCheck = typeof productionQualityChecks.$inferSelect;
