@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -137,10 +137,38 @@ const OrderForm = ({
     orderNumber: string;
     orderDate: string;
     status: 'pending' | 'picked' | 'shipped' | 'cancelled';
+    orderId: number;
+  }
+  
+  interface GroupedUnshippedProducts {
+    [orderNumber: string]: {
+      orderNumber: string;
+      orderDate: string;
+      items: UnshippedProduct[];
+    };
   }
   
   const [previousProducts, setPreviousProducts] = useState<ProductWithOrderCount[]>([]);
   const [unshippedProducts, setUnshippedProducts] = useState<UnshippedProduct[]>([]);
+  
+  // Grouped unshipped products by order
+  const groupedUnshippedProducts: GroupedUnshippedProducts = useMemo(() => {
+    const grouped: GroupedUnshippedProducts = {};
+    
+    unshippedProducts.forEach(product => {
+      if (!grouped[product.orderNumber]) {
+        grouped[product.orderNumber] = {
+          orderNumber: product.orderNumber,
+          orderDate: product.orderDate,
+          items: []
+        };
+      }
+      
+      grouped[product.orderNumber].items.push(product);
+    });
+    
+    return grouped;
+  }, [unshippedProducts]);
 
   const { data: customers, isLoading: isLoadingCustomers } = useQuery<Customer[]>({
     queryKey: ['/api/customers'],
@@ -925,68 +953,124 @@ const OrderForm = ({
                     </Button>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {unshippedProducts.map((product) => (
-                      <div 
-                        key={product.id}
-                        className="bg-white border border-amber-200 rounded-md p-3 hover:border-amber-400 transition-colors shadow-sm"
-                      >
-                        <div className="flex items-start justify-between">
+                  <div className="space-y-4">
+                    {/* Display grouped by order */}
+                    {Object.values(groupedUnshippedProducts).map((group) => (
+                      <div key={group.orderNumber} className="border border-amber-200 rounded-md bg-white p-3">
+                        <div className="flex items-center justify-between mb-3 pb-2 border-b border-amber-100">
                           <div>
-                            <div className="font-medium text-base text-amber-900">{product.name}</div>
-                            <div className="text-sm text-amber-800">SKU: {product.sku}</div>
-                            <div className="text-sm text-amber-700 mt-1">
-                              {t('orders.form.fromOrder')}: <span className="font-medium">{product.orderNumber}</span>
-                              <span className="ml-2 text-amber-600">({new Date(product.orderDate).toLocaleDateString()})</span>
-                            </div>
+                            <h4 className="font-medium text-amber-900">
+                              {t('orders.form.fromOrder')}: <span className="font-bold">{group.orderNumber}</span>
+                            </h4>
+                            <p className="text-sm text-amber-700">
+                              {new Date(group.orderDate).toLocaleDateString()} • {group.items.length} {t('orders.form.items')}
+                            </p>
                           </div>
-                          <Badge variant="outline" className="border-amber-500 text-amber-800 bg-amber-100">
-                            {product.status === 'pending' ? t('orders.form.pending') : t('orders.form.picked')}
-                          </Badge>
-                        </div>
-                        <div className="flex justify-between mt-3 items-center">
-                          <span className="text-sm text-amber-800">
-                            {t('orders.form.quantity')}: <span className="font-medium text-base">{product.quantity}</span>
-                          </span>
-                          <Button 
-                            type="button" 
-                            size="sm" 
-                            variant="default" 
-                            className="bg-amber-600 hover:bg-amber-700 h-9"
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="bg-amber-500 hover:bg-amber-600 border-amber-500 hover:border-amber-600 text-white h-9"
                             onClick={() => {
-                              // Check if product already exists in order
-                              const existingItem = orderItems.find(item => item.productId === product.id);
+                              // Add all items from this order group
+                              let newOrderItems = [...orderItems];
+                              let addedCount = 0;
                               
-                              if (existingItem) {
-                                // If it exists, update the quantity to include the unshipped quantity
-                                const updatedItems = orderItems.map(item => 
-                                  item.productId === product.id 
-                                    ? { ...item, quantity: item.quantity + product.quantity }
-                                    : item
-                                );
-                                setOrderItems(updatedItems);
+                              group.items.forEach(product => {
+                                // Check if product already exists in order
+                                const existingItemIndex = newOrderItems.findIndex(item => item.productId === product.id);
                                 
+                                if (existingItemIndex >= 0) {
+                                  // Update existing item quantity
+                                  newOrderItems[existingItemIndex] = {
+                                    ...newOrderItems[existingItemIndex],
+                                    quantity: newOrderItems[existingItemIndex].quantity + product.quantity
+                                  };
+                                } else {
+                                  // Add as new item
+                                  newOrderItems.push({
+                                    productId: product.id,
+                                    product,
+                                    quantity: product.quantity
+                                  });
+                                }
+                                addedCount++;
+                              });
+                              
+                              setOrderItems(newOrderItems);
+                              
+                              if (addedCount > 0) {
                                 toast({
-                                  title: t('orders.form.productQuantityUpdated'),
-                                  description: t('orders.form.unshippedItemAddedToExisting'),
-                                });
-                              } else {
-                                // Otherwise add it as a new item with the unshipped quantity
-                                setOrderItems([...orderItems, { 
-                                  productId: product.id, 
-                                  product,
-                                  quantity: product.quantity 
-                                }]);
-                                
-                                toast({
-                                  title: t('orders.form.productAdded'),
-                                  description: t('orders.form.unshippedItemAddedToOrder'),
+                                  title: t('orders.form.productsAdded'),
+                                  description: `${addedCount} ${t('orders.form.itemsAddedFromOrder', { orderNumber: group.orderNumber })}`,
                                 });
                               }
                             }}
                           >
-                            <PackageOpen className="h-4 w-4 mr-2" /> {t('orders.form.addToOrder')}
+                            <Package className="h-4 w-4 mr-2" /> {t('orders.form.addAllItemsFromOrder')}
                           </Button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {group.items.map((product) => (
+                            <div 
+                              key={product.id}
+                              className="bg-amber-50 border border-amber-200 rounded-md p-3 hover:border-amber-400 transition-colors"
+                            >
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <div className="font-medium text-base text-amber-900">{product.name}</div>
+                                  <div className="text-sm text-amber-800">{t('orders.form.sku')}: {product.sku}</div>
+                                </div>
+                                <Badge variant="outline" className="border-amber-500 text-amber-800 bg-amber-100">
+                                  {product.status === 'pending' ? t('orders.form.pending') : t('orders.form.picked')}
+                                </Badge>
+                              </div>
+                              <div className="flex justify-between mt-3 items-center">
+                                <span className="text-sm text-amber-800">
+                                  {t('orders.form.quantity')}: <span className="font-medium text-base">{product.quantity}</span>
+                                </span>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="bg-amber-500 hover:bg-amber-600 border-amber-500 hover:border-amber-600 text-white h-8 px-2"
+                                  onClick={() => {
+                                    // Check if product already exists in order
+                                    const existingItem = orderItems.find(item => item.productId === product.id);
+                                    
+                                    if (existingItem) {
+                                      // If it exists, update the quantity to include the unshipped quantity
+                                      const updatedItems = orderItems.map(item => 
+                                        item.productId === product.id 
+                                          ? { ...item, quantity: item.quantity + product.quantity }
+                                          : item
+                                      );
+                                      setOrderItems(updatedItems);
+                                      
+                                      toast({
+                                        title: t('orders.form.productQuantityUpdated'),
+                                        description: t('orders.form.unshippedItemAddedToExisting'),
+                                      });
+                                    } else {
+                                      // Otherwise add it as a new item with the unshipped quantity
+                                      setOrderItems([...orderItems, { 
+                                        productId: product.id, 
+                                        product,
+                                        quantity: product.quantity 
+                                      }]);
+                                      
+                                      toast({
+                                        title: t('orders.form.productAdded'),
+                                        description: t('orders.form.unshippedItemAddedToOrder'),
+                                      });
+                                    }
+                                  }}
+                                >
+                                  <Plus className="h-4 w-4 mr-1" /> {t('orders.form.addToOrder')}
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     ))}
@@ -1018,10 +1102,10 @@ const OrderForm = ({
                           </Button>
                           <div className="flex-1">
                             <div className="font-medium text-sm">{product.name}</div>
-                            <div className="text-xs text-slate-500 mb-1">SKU: {product.sku}</div>
+                            <div className="text-xs text-slate-500 mb-1">{t('orders.form.sku')}: {product.sku}</div>
                             <div className="flex items-center justify-between">
                               <span className="text-xs">
-                                Stock: <span className={`font-medium ${
+                                {t('orders.form.stock')}: <span className={`font-medium ${
                                   (product.currentStock || 0) <= (product.minStockLevel || 0) 
                                     ? 'text-red-600' 
                                     : 'text-green-600'
@@ -1029,8 +1113,8 @@ const OrderForm = ({
                               </span>
                               <div className="text-xs bg-slate-100 px-2 py-1 rounded-full">
                                 {product.orderCount > 1 
-                                  ? `Ordered ${product.orderCount} times` 
-                                  : "Ordered once"}
+                                  ? t('orders.form.orderedMultipleTimes', { count: product.orderCount }) 
+                                  : t('orders.form.orderedOnce')}
                               </div>
                             </div>
                           </div>
@@ -1058,7 +1142,7 @@ const OrderForm = ({
                           <tr key={index} className="border-b border-slate-200">
                             <td className="py-4 px-4">
                               <div className="text-base font-medium">{item.product?.name}</div>
-                              <div className="text-sm text-slate-500">SKU: {item.product?.sku}</div>
+                              <div className="text-sm text-slate-500">{t('orders.form.sku')}: {item.product?.sku}</div>
                             </td>
                             <td className="py-4 px-4">
                               <Input
