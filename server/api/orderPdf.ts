@@ -1,7 +1,6 @@
 import express, { Request, Response } from 'express';
 import { isAuthenticated } from '../auth';
 import { generateOrderPDF } from '../services/pdfService';
-import { generateSimpleOrderPDF } from '../services/simplePdfService';
 
 const router = express.Router();
 
