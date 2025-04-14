@@ -5,7 +5,7 @@ import { storage } from '../storage';
 // Margins in points (72 points = 1 inch, A4 = 595.28 x 841.89 points)
 const MARGINS = {
   top: 50,
-  bottom: 50,
+  bottom: 80, // Increased for checkboxes at bottom
   left: 50,
   right: 50
 };
@@ -14,13 +14,17 @@ const PAGE_WIDTH = 595.28;
 const PAGE_HEIGHT = 841.89;
 const TABLE_WIDTH = PAGE_WIDTH - MARGINS.left - MARGINS.right;
 
+// Checkbox size and positioning
+const CHECKBOX_SIZE = 15;
+const CHECKBOX_MARGIN = 5;
+
 // Return a readable stream of the generated PDF
 export async function generateOrderPDF(orderId: number, language: string = 'en'): Promise<Readable> {
   // Create a stream to return the PDF
   const buffers: Buffer[] = [];
   const stream = new Readable();
   
-  // Initialize the PDF document
+  // Initialize the PDF document with proper font encoding for Greek characters
   const doc = new PDFDocument({
     size: 'A4',
     margin: 0,
@@ -28,7 +32,10 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
       Title: `Order #${orderId}`,
       Author: 'Warehouse Management System',
       Subject: 'Order Details'
-    }
+    },
+    // Set default encoding to support international characters including Greek
+    lang: language === 'el' ? 'el-GR' : 'en-US',
+    pdfVersion: '1.7'
   });
   
   // Write to buffers
@@ -76,8 +83,12 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     doc.font('Helvetica-Bold').fontSize(16)
       .text(`${texts.orderForm}: #${orderWithItems.orderNumber}`, MARGINS.left, MARGINS.top, { align: 'center' });
     
+    // Add customer name under the order number
+    doc.font('Helvetica').fontSize(12)
+      .text(`${texts.customer}: ${orderWithItems.customerName}`, MARGINS.left, MARGINS.top + 25, { align: 'center' });
+    
     // Add items table
-    doc.moveDown(2);
+    doc.moveDown(3);
     
     // Table header
     const startY = doc.y;
@@ -135,7 +146,23 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
       // Item data
       doc.fillColor('#000000');
       doc.text(item.sku || '', MARGINS.left + 5, currentY + 10);
-      doc.text(item.name || '', MARGINS.left + columnWidths.sku + 5, currentY + 10);
+      
+      // Handle product name - fix encoding issues by using standard Latin-1 characters where possible
+      // and limit name length to prevent overflow
+      const productName = item.name || '';
+      const maxNameLength = 50; // Maximum characters to display
+      const displayName = productName.length > maxNameLength ? 
+        productName.substring(0, maxNameLength) + '...' : 
+        productName;
+        
+      // Text options for proper rendering
+      const textOptions = {
+        width: columnWidths.name - 10,
+        ellipsis: true,
+        lineBreak: false
+      };
+      
+      doc.text(displayName, MARGINS.left + columnWidths.sku + 5, currentY + 10, textOptions);
       doc.text(item.piecesPerBox?.toString() || '', MARGINS.left + columnWidths.sku + columnWidths.name + 5, currentY + 10);
       doc.text(item.quantity.toString(), MARGINS.left + columnWidths.sku + columnWidths.name + columnWidths.piecesPerBox + 5, currentY + 10);
       
@@ -144,22 +171,51 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
       currentY += rowHeight;
     }
     
-    // Add customer and shipping info at the bottom
-    doc.font('Helvetica-Bold').fontSize(12);
-    doc.text(
-      `${texts.customer}: ${orderWithItems.customerName}`,
-      MARGINS.left,
-      PAGE_HEIGHT - MARGINS.bottom - 30
-    );
+    // Add verification checkboxes at the bottom
+    const checkboxY = PAGE_HEIGHT - MARGINS.bottom - 60;
     
-    // Shipping company - only show if it exists in the order
-    // We need to check it as a potential property since it might be added dynamically
-    const shippingCompany = (orderWithItems as any).shippingCompany;
-    if (shippingCompany) {
+    // Front office checkbox
+    doc.font('Helvetica-Bold').fontSize(10);
+    // Draw checkbox
+    doc.rect(MARGINS.left, checkboxY, CHECKBOX_SIZE, CHECKBOX_SIZE)
+      .lineWidth(1)
+      .stroke();
+    // Label
+    doc.text(texts.frontOfficeVerified, 
+      MARGINS.left + CHECKBOX_SIZE + CHECKBOX_MARGIN, 
+      checkboxY + 3);
+    
+    // Warehouse checkbox
+    const warehouseCheckboxY = checkboxY + CHECKBOX_SIZE + CHECKBOX_MARGIN;
+    // Draw checkbox
+    doc.rect(MARGINS.left, warehouseCheckboxY, CHECKBOX_SIZE, CHECKBOX_SIZE)
+      .lineWidth(1)
+      .stroke();
+    // Label
+    doc.text(texts.warehouseVerified, 
+      MARGINS.left + CHECKBOX_SIZE + CHECKBOX_MARGIN, 
+      warehouseCheckboxY + 3);
+    
+    // Shipping company - check if it exists in the order schema
+    // Try the area field as it's often used to store shipping info
+    let shippingInfo = '';
+    
+    // Try different possible fields in order of likelihood
+    if ((orderWithItems as any).shippingCompany) {
+      shippingInfo = (orderWithItems as any).shippingCompany;
+    } else if (orderWithItems.area) {
+      shippingInfo = orderWithItems.area;
+    }
+    
+    // If we have shipping info, display it on the right side
+    if (shippingInfo) {
+      doc.font('Helvetica-Bold').fontSize(12);
+      const rightAlign = PAGE_WIDTH - MARGINS.right - (MARGINS.left * 2);
       doc.text(
-        `${texts.shippingCompany}: ${shippingCompany}`,
+        `${texts.shippingCompany}: ${shippingInfo}`,
         MARGINS.left,
-        PAGE_HEIGHT - MARGINS.bottom - 10
+        PAGE_HEIGHT - MARGINS.bottom - 10,
+        { width: rightAlign, align: 'left' }
       );
     }
     
@@ -203,7 +259,9 @@ function getTranslatedTexts(language: string): Record<string, any> {
       piecesPerBox: 'Τεμάχια/Κιβώτιο',
       page: 'Σελίδα',
       of: 'από',
-      shippingCompany: 'Εταιρεία Μεταφοράς'
+      shippingCompany: 'Εταιρεία Μεταφοράς',
+      frontOfficeVerified: 'Επαλήθευση από Γραφείο',
+      warehouseVerified: 'Επαλήθευση από Αποθήκη'
     };
   }
   
@@ -217,6 +275,8 @@ function getTranslatedTexts(language: string): Record<string, any> {
     piecesPerBox: 'Pieces/Box',
     page: 'Page',
     of: 'of',
-    shippingCompany: 'Shipping Company'
+    shippingCompany: 'Shipping Company',
+    frontOfficeVerified: 'Front Office Verified',
+    warehouseVerified: 'Warehouse Verified'
   };
 }
