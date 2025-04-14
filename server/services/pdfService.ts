@@ -113,11 +113,11 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     
     // Table rows
     let currentY = startY + 30;
-    const rowHeight = 30;
+    const rowHeight = 24; // Reduced row height
     let rowColor = '#ffffff';
     
-    // Reset font for table content
-    doc.font('Helvetica').fontSize(10);
+    // Reset font for table content with smaller font
+    doc.font('Helvetica').fontSize(8);
     
     for (const item of orderWithItems.items) {
       // Check if we need a new page
@@ -136,7 +136,7 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
         doc.text(texts.quantity, MARGINS.left + columnWidths.sku + columnWidths.name + columnWidths.piecesPerBox + 5, currentY + 10);
         
         currentY += 30;
-        doc.font('Helvetica').fontSize(10);
+        doc.font('Helvetica').fontSize(8);
       }
       
       // Row background
@@ -207,9 +207,41 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
       shippingInfo = orderWithItems.area;
     }
     
+    // Add notes box if there are order notes
+    if (orderWithItems.notes && orderWithItems.notes.trim()) {
+      // Define notes box position and size
+      const notesBoxY = checkboxY;
+      const notesBoxX = PAGE_WIDTH / 2; // Position on right half of page
+      const notesBoxWidth = TABLE_WIDTH / 2 - 10;
+      const notesBoxHeight = CHECKBOX_SIZE * 2 + CHECKBOX_MARGIN;
+      
+      // Draw the notes box
+      doc.rect(notesBoxX, notesBoxY, notesBoxWidth, notesBoxHeight)
+        .lineWidth(1)
+        .stroke();
+        
+      // Add the label
+      doc.font('Helvetica-Bold').fontSize(10);
+      doc.text(texts.notes, notesBoxX + 5, notesBoxY - 15);
+      
+      // Add the notes text with smaller font to fit in box
+      doc.font('Helvetica').fontSize(8);
+      
+      // Format notes text to fit in box
+      const truncatedNotes = orderWithItems.notes.length > 100 ? 
+        orderWithItems.notes.substring(0, 100) + '...' : 
+        orderWithItems.notes;
+      
+      doc.text(truncatedNotes, notesBoxX + 5, notesBoxY + 5, {
+        width: notesBoxWidth - 10,
+        height: notesBoxHeight - 10,
+        ellipsis: true
+      });
+    }
+    
     // If we have shipping info, display it on the right side
     if (shippingInfo) {
-      doc.font('Helvetica-Bold').fontSize(12);
+      doc.font('Helvetica-Bold').fontSize(10);
       const rightAlign = PAGE_WIDTH - MARGINS.right - (MARGINS.left * 2);
       doc.text(
         `${texts.shippingCompany}: ${shippingInfo}`,
@@ -261,7 +293,8 @@ function getTranslatedTexts(language: string): Record<string, any> {
       of: 'από',
       shippingCompany: 'Εταιρεία Μεταφοράς',
       frontOfficeVerified: 'Επαλήθευση από Γραφείο',
-      warehouseVerified: 'Επαλήθευση από Αποθήκη'
+      warehouseVerified: 'Επαλήθευση από Αποθήκη',
+      notes: 'Σημειώσεις'
     };
   }
   
@@ -277,6 +310,7 @@ function getTranslatedTexts(language: string): Record<string, any> {
     of: 'of',
     shippingCompany: 'Shipping Company',
     frontOfficeVerified: 'Front Office Verified',
-    warehouseVerified: 'Warehouse Verified'
+    warehouseVerified: 'Warehouse Verified',
+    notes: 'Notes'
   };
 }
