@@ -24,7 +24,7 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
   const buffers: Buffer[] = [];
   const stream = new Readable();
   
-  // Initialize the PDF document with proper encoding for Greek characters
+  // Initialize the PDF document with UTF-8 encoding for Greek characters
   const doc = new PDFDocument({
     size: 'A4',
     margin: 0,
@@ -33,17 +33,18 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
       Author: 'Warehouse Management System',
       Subject: 'Order Details'
     },
-    // We are explicitly making sure we encode text as UTF-8 for proper Greek character rendering
+    // We are explicitly setting proper encoding for Greek characters
     pdfVersion: '1.7',
     lang: language === 'el' ? 'el-GR' : 'en-US',
     autoFirstPage: true,
     bufferPages: true
   });
   
-  // Register font with proper encoding for Greek characters
-  // Use the standard Helvetica font as it has better support for Greek
-  doc.registerFont('DefaultFont', 'Helvetica');
-  doc.font('DefaultFont');
+  // Set font options to correctly handle Greek characters
+  doc.font('Helvetica');
+  
+  // Set UTF-8 encoding for Greek - achieved by using the standard font settings
+  // PDFKit automatically handles UTF-8 encoding with the default fonts
   
   // Write to buffers
   doc.on('data', buffers.push.bind(buffers));
@@ -62,10 +63,16 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     // Get the order items
     const items = await storage.getOrderItems(orderId);
     
-    // We also need to get the product details for each item
+    // We also need to get the product details for each item, including tags
     const enhancedItems = await Promise.all(items.map(async item => {
       // Fetch product details
       const product = await storage.getProduct(item.productId);
+      
+      // Get product tags - using the array in product.tags or fetch from productTags table
+      let productTags: string[] = [];
+      if (product?.tags && Array.isArray(product.tags)) {
+        productTags = product.tags;
+      }
       
       return {
         ...item,
@@ -73,14 +80,34 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
         name: product?.name || 'Unknown Product',
         sku: product?.sku || '',
         piecesPerBox: product?.unitsPerBox || 0,
-        barcode: product?.barcode || ''
+        barcode: product?.barcode || '',
+        tags: productTags,
+        // If no tags, mark as "Uncategorized"
+        tagGroup: productTags.length > 0 ? productTags[0] : 'Uncategorized'
       };
     }));
+    
+    // Group items by their first tag (or "Uncategorized" if no tags)
+    const groupedItems: {[key: string]: Array<any>} = {};
+    
+    // First sort the items into groups by tag
+    enhancedItems.forEach(item => {
+      const tagGroup = item.tagGroup;
+      if (!groupedItems[tagGroup]) {
+        groupedItems[tagGroup] = [];
+      }
+      groupedItems[tagGroup].push(item);
+    });
+    
+    // Create a sorted array of tag groups for consistent ordering
+    const tagGroups = Object.keys(groupedItems).sort();
     
     // Add the items to the order object
     const orderWithItems = {
       ...order,
-      items: enhancedItems
+      items: enhancedItems,
+      groupedItems,
+      tagGroups
     };
     
     // Add translatable texts
@@ -132,9 +159,13 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     // Reset font for table content with smaller font
     doc.font('Helvetica').fontSize(8);
     
-    for (const item of orderWithItems.items) {
-      // Check if we need a new page
-      if (currentY + rowHeight > PAGE_HEIGHT - MARGINS.bottom - 50) {
+    // Tag group header height
+    const tagHeaderHeight = 25;
+    
+    // Loop through each tag group
+    for (const tagGroup of orderWithItems.tagGroups) {
+      // Check if we need a new page for tag header
+      if (currentY + tagHeaderHeight > PAGE_HEIGHT - MARGINS.bottom - 50) {
         doc.addPage({ size: 'A4', margin: 0 });
         // Reset Y position and redraw header
         currentY = MARGINS.top;
@@ -150,47 +181,103 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
         doc.text(texts.quantity, MARGINS.left + columnWidths.checkbox + columnWidths.sku + columnWidths.name + columnWidths.piecesPerBox + 5, currentY + 10);
         
         currentY += 30;
-        doc.font('Helvetica').fontSize(8);
       }
       
-      // Row background
-      doc.rect(MARGINS.left, currentY, TABLE_WIDTH, rowHeight)
-         .fillAndStroke(rowColor, '#cccccc');
+      // Draw tag group header
+      doc.rect(MARGINS.left, currentY, TABLE_WIDTH, tagHeaderHeight)
+         .fillAndStroke('#e6e6e6', '#cccccc');
       
-      // Add checkbox for this product (smaller size than the main verification boxes)
-      const productCheckboxSize = 10;
-      doc.rect(MARGINS.left + 2, currentY + (rowHeight / 2) - (productCheckboxSize / 2), 
-               productCheckboxSize, productCheckboxSize)
-        .lineWidth(0.5)
-        .stroke();
-      
-      // Item data
+      // Set tag group header font
+      doc.font('Helvetica-Bold').fontSize(10);
       doc.fillColor('#000000');
-      // Adjust SKU position to account for the checkbox
-      doc.text(item.sku || '', MARGINS.left + productCheckboxSize + 7, currentY + 8);
       
-      // Handle product name with UTF-8 encoding for Greek characters
-      // Limit name length to prevent overflow
-      const productName = item.name || '';
-      const maxNameLength = 50; // Maximum characters to display
-      const displayName = productName.length > maxNameLength ? 
-        productName.substring(0, maxNameLength) + '...' : 
-        productName;
+      // Tag group name - handle special case for "Uncategorized"
+      let displayTagName;
+      if (tagGroup === 'Uncategorized') {
+        displayTagName = texts.uncategorized;
+      } else {
+        // For other tag groups, add the category/tag label and capitalize first letter of tag
+        const tagLabel = texts.tag + ': ';
+        displayTagName = tagLabel + tagGroup.charAt(0).toUpperCase() + tagGroup.slice(1);
+      }
+      doc.text(displayTagName, MARGINS.left + 10, currentY + 8);
       
-      // Text options for proper rendering
-      const textOptions = {
-        width: columnWidths.name - 10,
-        ellipsis: true,
-        lineBreak: false
-      };
+      // Move to next row
+      currentY += tagHeaderHeight;
       
-      doc.text(displayName, MARGINS.left + columnWidths.checkbox + columnWidths.sku + 5, currentY + 8, textOptions);
-      doc.text(item.piecesPerBox?.toString() || '', MARGINS.left + columnWidths.checkbox + columnWidths.sku + columnWidths.name + 5, currentY + 8);
-      doc.text(item.quantity.toString(), MARGINS.left + columnWidths.checkbox + columnWidths.sku + columnWidths.name + columnWidths.piecesPerBox + 5, currentY + 8);
+      // Reset font for items
+      doc.font('Helvetica').fontSize(8);
       
-      // Alternate row colors
-      rowColor = rowColor === '#ffffff' ? '#f9f9f9' : '#ffffff';
-      currentY += rowHeight;
+      // Get items for this tag group
+      const itemsInGroup = orderWithItems.groupedItems[tagGroup];
+      
+      // Sort items by name within the group for a more organized display
+      itemsInGroup.sort((a: any, b: any) => a.name.localeCompare(b.name));
+      
+      // Loop through items in this tag group
+      for (const item of itemsInGroup) {
+        // Check if we need a new page
+        if (currentY + rowHeight > PAGE_HEIGHT - MARGINS.bottom - 50) {
+          doc.addPage({ size: 'A4', margin: 0 });
+          // Reset Y position and redraw header
+          currentY = MARGINS.top;
+          doc.font('Helvetica-Bold').fontSize(12);
+          
+          doc.rect(MARGINS.left, currentY, TABLE_WIDTH, 30).fillAndStroke('#f2f2f2', '#cccccc');
+          
+          doc.fillColor('#000000');
+          // Skip space for checkbox in header (same as the first page)
+          doc.text(texts.sku, MARGINS.left + columnWidths.checkbox + 5, currentY + 10);
+          doc.text(texts.product, MARGINS.left + columnWidths.checkbox + columnWidths.sku + 5, currentY + 10);
+          doc.text(texts.piecesPerBox, MARGINS.left + columnWidths.checkbox + columnWidths.sku + columnWidths.name + 5, currentY + 10);
+          doc.text(texts.quantity, MARGINS.left + columnWidths.checkbox + columnWidths.sku + columnWidths.name + columnWidths.piecesPerBox + 5, currentY + 10);
+          
+          currentY += 30;
+          doc.font('Helvetica').fontSize(8);
+        }
+        
+        // Row background
+        doc.rect(MARGINS.left, currentY, TABLE_WIDTH, rowHeight)
+           .fillAndStroke(rowColor, '#cccccc');
+        
+        // Add checkbox for this product (smaller size than the main verification boxes)
+        const productCheckboxSize = 10;
+        doc.rect(MARGINS.left + 2, currentY + (rowHeight / 2) - (productCheckboxSize / 2), 
+                 productCheckboxSize, productCheckboxSize)
+          .lineWidth(0.5)
+          .stroke();
+        
+        // Item data
+        doc.fillColor('#000000');
+        // Adjust SKU position to account for the checkbox
+        doc.text(item.sku || '', MARGINS.left + productCheckboxSize + 7, currentY + 8);
+        
+        // Handle product name with UTF-8 encoding for Greek characters
+        // Limit name length to prevent overflow
+        const productName = item.name || '';
+        const maxNameLength = 50; // Maximum characters to display
+        const displayName = productName.length > maxNameLength ? 
+          productName.substring(0, maxNameLength) + '...' : 
+          productName;
+        
+        // Text options for proper rendering
+        const textOptions = {
+          width: columnWidths.name - 10,
+          ellipsis: true,
+          lineBreak: false
+        };
+        
+        doc.text(displayName, MARGINS.left + columnWidths.checkbox + columnWidths.sku + 5, currentY + 8, textOptions);
+        doc.text(item.piecesPerBox?.toString() || '', MARGINS.left + columnWidths.checkbox + columnWidths.sku + columnWidths.name + 5, currentY + 8);
+        doc.text(item.quantity.toString(), MARGINS.left + columnWidths.checkbox + columnWidths.sku + columnWidths.name + columnWidths.piecesPerBox + 5, currentY + 8);
+        
+        // Alternate row colors
+        rowColor = rowColor === '#ffffff' ? '#f9f9f9' : '#ffffff';
+        currentY += rowHeight;
+      }
+      
+      // Add small spacing between tag groups
+      currentY += 5;
     }
     
     // Add verification checkboxes at the bottom
@@ -316,7 +403,10 @@ function getTranslatedTexts(language: string): Record<string, any> {
       shippingCompany: 'Εταιρεία Μεταφοράς',
       frontOfficeVerified: 'Επαλήθευση από Γραφείο',
       warehouseVerified: 'Επαλήθευση από Αποθήκη',
-      notes: 'Σημειώσεις'
+      notes: 'Σημειώσεις',
+      category: 'Κατηγορία',
+      tag: 'Ετικέτα',
+      uncategorized: 'Χωρίς Κατηγορία'
     };
   }
   
@@ -333,6 +423,9 @@ function getTranslatedTexts(language: string): Record<string, any> {
     shippingCompany: 'Shipping Company',
     frontOfficeVerified: 'Front Office Verified',
     warehouseVerified: 'Warehouse Verified',
-    notes: 'Notes'
+    notes: 'Notes',
+    category: 'Category',
+    tag: 'Tag',
+    uncategorized: 'Uncategorized'
   };
 }
