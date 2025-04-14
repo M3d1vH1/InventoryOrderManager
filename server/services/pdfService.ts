@@ -20,10 +20,10 @@ const CHECKBOX_SIZE = 20; // Increased from 15 to 20
 const CHECKBOX_MARGIN = 5;
 const PRODUCT_CHECKBOX_SIZE = 15; // Size for product checkboxes
 
-// Use Times-Roman as it has better UTF-8 support including Greek
+// Use PDF standard fonts - Courier has better support for extended character sets
 const FONTS = {
-  REGULAR: 'Times-Roman',
-  BOLD: 'Times-Bold'
+  REGULAR: 'Courier',
+  BOLD: 'Courier-Bold'
 };
 
 // Return a readable stream of the generated PDF
@@ -48,7 +48,7 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     bufferPages: true
   });
   
-  // Set default font to Times-Roman which has better Greek character support
+  // Set default font to Courier which has better support for extended character sets
   doc.font(FONTS.REGULAR);
   
   // Write to buffers
