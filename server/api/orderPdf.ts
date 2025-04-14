@@ -78,10 +78,10 @@ router.get('/simple/:orderId', async (req: Request, res: Response) => {
 });
 
 /**
- * Route to access the original PDF generator (keeping for backward compatibility)
- * GET /api/order-pdf/original/:orderId
+ * Route to access the simplified PDF generator (keeping for testing purposes)
+ * GET /api/order-pdf/simplified/:orderId
  */
-router.get('/original/:orderId', isAuthenticated, async (req: Request, res: Response) => {
+router.get('/simplified/:orderId', isAuthenticated, async (req: Request, res: Response) => {
   try {
     const orderId = parseInt(req.params.orderId);
     if (isNaN(orderId)) {
@@ -91,26 +91,26 @@ router.get('/original/:orderId', isAuthenticated, async (req: Request, res: Resp
     // Get preferred language from query params, defaulting to Greek
     const language = req.query.lang as string || 'el';
     
-    // Generate the PDF with the original service
-    const pdfStream = await generateOrderPDF(orderId, language);
+    // Generate the PDF with the simplified service
+    const pdfStream = await generateSimpleOrderPDF(orderId, language);
     
     // Set response headers for PDF download
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=order-${orderId}.pdf`);
+    res.setHeader('Content-Disposition', `attachment; filename=simple-order-${orderId}.pdf`);
     
     // Send PDF data
     pdfStream.pipe(res);
   } catch (error: any) {
-    console.error('Error generating order PDF:', error);
+    console.error('Error generating simplified PDF:', error);
     res.status(500).json({
-      message: 'Error generating PDF',
+      message: 'Error generating simplified PDF',
       error: error.message
     });
   }
 });
 
 /**
- * Generate a PDF for an order (now using the simplified service for better Greek support)
+ * Generate a PDF for an order (back to using the original service)
  * GET /api/order-pdf/:orderId
  */
 router.get('/:orderId', isAuthenticated, async (req: Request, res: Response) => {
@@ -123,8 +123,8 @@ router.get('/:orderId', isAuthenticated, async (req: Request, res: Response) => 
     // Get preferred language from query params, defaulting to Greek
     const language = req.query.lang as string || 'el';
     
-    // Generate the PDF with the simplified service that has better Greek support
-    const pdfStream = await generateSimpleOrderPDF(orderId, language);
+    // Generate the PDF with the original service
+    const pdfStream = await generateOrderPDF(orderId, language);
     
     // Set response headers for PDF download
     res.setHeader('Content-Type', 'application/pdf');
