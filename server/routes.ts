@@ -3280,6 +3280,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Test endpoint for order PDF without authentication
+  app.get('/test-order-pdf/:id', async (req: Request, res: Response) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      if (isNaN(orderId)) {
+        return res.status(400).json({ message: 'Invalid order ID' });
+      }
+      
+      // Get preferred language from query params, defaulting to Greek
+      const language = req.query.lang as string || 'el';
+      
+      // Generate the PDF using Puppeteer for better Unicode (Greek) character support
+      const pdfStream = await generateOrderPDF(orderId, language);
+      
+      // Set response headers for PDF download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=order-${orderId}.pdf`);
+      
+      // Send PDF data
+      pdfStream.pipe(res);
+    } catch (error: any) {
+      console.error('Error generating order PDF:', error);
+      res.status(500).json({
+        message: 'Error generating PDF',
+        error: error.message
+      });
+    }
+  });
+  
   // Inventory Prediction Routes
   app.get('/api/inventory-predictions', isAuthenticated, getInventoryPredictions);
   app.get('/api/inventory-predictions/reorder-required', isAuthenticated, getProductsRequiringReorder);
