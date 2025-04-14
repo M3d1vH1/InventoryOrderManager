@@ -1,6 +1,6 @@
 import PDFDocument from 'pdfkit';
 import { Readable } from 'stream';
-import { getOrderWithItems } from '../api/utils';
+import { storage } from '../storage';
 
 // Margins in points (72 points = 1 inch, A4 = 595.28 x 841.89 points)
 const MARGINS = {

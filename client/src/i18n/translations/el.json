@@ -625,6 +625,8 @@
       "shipOrder": "Αποστολή Παραγγελίας",
       "uploadDocument": "Μεταφόρτωση Εγγράφου",
       "viewDocument": "Προβολή Εγγράφου",
+      "printOrder": "Εκτύπωση PDF Παραγγελίας",
+      "printLabels": "Εκτύπωση Ετικετών",
       "delete": "Διαγραφή Παραγγελίας"
     },
     "details": {

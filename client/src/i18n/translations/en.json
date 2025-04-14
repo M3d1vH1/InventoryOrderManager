@@ -231,6 +231,8 @@
       "shipOrder": "Ship Order",
       "uploadDocument": "Upload Document",
       "viewDocument": "View Document",
+      "printOrder": "Print Order PDF",
+      "printLabels": "Print Labels",
       "delete": "Delete Order"
     },
     "status": {
