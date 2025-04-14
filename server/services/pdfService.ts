@@ -15,8 +15,9 @@ const PAGE_HEIGHT = 841.89;
 const TABLE_WIDTH = PAGE_WIDTH - MARGINS.left - MARGINS.right;
 
 // Checkbox size and positioning
-const CHECKBOX_SIZE = 15;
+const CHECKBOX_SIZE = 20; // Increased from 15 to 20
 const CHECKBOX_MARGIN = 5;
+const PRODUCT_CHECKBOX_SIZE = 15; // Size for product checkboxes
 
 // Return a readable stream of the generated PDF
 export async function generateOrderPDF(orderId: number, language: string = 'en'): Promise<Readable> {
@@ -40,11 +41,10 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     bufferPages: true
   });
   
-  // Set font options to correctly handle Greek characters
-  doc.font('Helvetica');
-  
-  // Set UTF-8 encoding for Greek - achieved by using the standard font settings
-  // PDFKit automatically handles UTF-8 encoding with the default fonts
+  // Set font for Greek characters - need to use standard font which supports Greek
+  // For Greek we need fonts that support the character set
+  const fontPath = language === 'el' ? 'Helvetica' : 'Helvetica';
+  doc.font(fontPath);
   
   // Write to buffers
   doc.on('data', buffers.push.bind(buffers));
@@ -128,9 +128,8 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     const startY = doc.y;
     doc.font('Helvetica-Bold').fontSize(12);
     
-    // Define checkbox size for each row
-    const productCheckboxSize = 10;
-    const checkboxColumnWidth = productCheckboxSize + 10; // Checkbox width plus margin
+    // Define checkbox size for each row - using the constant defined at the top
+    const checkboxColumnWidth = PRODUCT_CHECKBOX_SIZE + 10; // Checkbox width plus margin
     
     const columnWidths = {
       checkbox: checkboxColumnWidth,
@@ -240,17 +239,16 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
         doc.rect(MARGINS.left, currentY, TABLE_WIDTH, rowHeight)
            .fillAndStroke(rowColor, '#cccccc');
         
-        // Add checkbox for this product (smaller size than the main verification boxes)
-        const productCheckboxSize = 10;
-        doc.rect(MARGINS.left + 2, currentY + (rowHeight / 2) - (productCheckboxSize / 2), 
-                 productCheckboxSize, productCheckboxSize)
+        // Add checkbox for this product (using the constant defined at the top)
+        doc.rect(MARGINS.left + 2, currentY + (rowHeight / 2) - (PRODUCT_CHECKBOX_SIZE / 2), 
+                 PRODUCT_CHECKBOX_SIZE, PRODUCT_CHECKBOX_SIZE)
           .lineWidth(0.5)
           .stroke();
         
         // Item data
         doc.fillColor('#000000');
         // Adjust SKU position to account for the checkbox
-        doc.text(item.sku || '', MARGINS.left + productCheckboxSize + 7, currentY + 8);
+        doc.text(item.sku || '', MARGINS.left + PRODUCT_CHECKBOX_SIZE + 7, currentY + 8);
         
         // Handle product name with UTF-8 encoding for Greek characters
         // Limit name length to prevent overflow

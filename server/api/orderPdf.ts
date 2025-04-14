@@ -23,8 +23,8 @@ router.get('/:orderId', isAuthenticated, async (req: Request, res: Response) => 
       return res.status(400).json({ message: 'Invalid order ID' });
     }
     
-    // Get preferred language from query params, defaulting to English
-    const language = req.query.lang as string || 'en';
+    // Get preferred language from query params, defaulting to Greek
+    const language = req.query.lang as string || 'el';
     
     // Generate the PDF
     const pdfStream = await generateOrderPDF(orderId, language);
