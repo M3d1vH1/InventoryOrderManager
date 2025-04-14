@@ -2922,6 +2922,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Production module routes
   app.use('/api/production', isAuthenticated, productionRouter);
+  app.use('/api/order-pdf', orderPdfRouter);
   
   // Inventory Prediction Routes
   app.get('/api/inventory-predictions', isAuthenticated, getInventoryPredictions);

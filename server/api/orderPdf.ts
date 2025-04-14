@@ -1,7 +1,6 @@
-import { Request, Response } from 'express';
-import { generateOrderPDF } from '../services/pdfService';
+import express, { Request, Response } from 'express';
 import { isAuthenticated } from '../auth';
-import express from 'express';
+import { generateOrderPDF } from '../services/pdfService';
 
 const router = express.Router();
 
@@ -12,26 +11,28 @@ const router = express.Router();
 router.get('/:orderId', isAuthenticated, async (req: Request, res: Response) => {
   try {
     const orderId = parseInt(req.params.orderId);
-    
     if (isNaN(orderId)) {
       return res.status(400).json({ message: 'Invalid order ID' });
     }
     
-    // Get the language from the query parameter or default to 'en'
-    const language = req.query.lang === 'el' ? 'el' : 'en';
+    // Get preferred language from query params, defaulting to English
+    const language = req.query.lang as string || 'en';
     
     // Generate the PDF
     const pdfStream = await generateOrderPDF(orderId, language);
     
-    // Set headers for PDF
+    // Set response headers for PDF download
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="order-${orderId}.pdf"`);
+    res.setHeader('Content-Disposition', `attachment; filename=order-${orderId}.pdf`);
     
-    // Pipe the PDF to the response
+    // Send PDF data
     pdfStream.pipe(res);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error generating order PDF:', error);
-    res.status(500).json({ message: 'Error generating PDF', error: error.message });
+    res.status(500).json({
+      message: 'Error generating PDF',
+      error: error.message
+    });
   }
 });
 
