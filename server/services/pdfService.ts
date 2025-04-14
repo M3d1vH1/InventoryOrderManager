@@ -193,7 +193,7 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
          .fillAndStroke('#e6e6e6', '#cccccc');
       
       // Set tag group header font
-      doc.font('Helvetica-Bold').fontSize(10);
+      doc.font(FONTS.BOLD).fontSize(10);
       doc.fillColor('#000000');
       
       // Tag group name - handle special case for "Uncategorized"
@@ -211,7 +211,7 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
       currentY += tagHeaderHeight;
       
       // Reset font for items
-      doc.font('Helvetica').fontSize(8);
+      doc.font(FONTS.REGULAR).fontSize(8);
       
       // Get items for this tag group
       const itemsInGroup = orderWithItems.groupedItems[tagGroup];
@@ -238,7 +238,7 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
           doc.text(texts.quantity, MARGINS.left + columnWidths.checkbox + columnWidths.sku + columnWidths.name + columnWidths.piecesPerBox + 5, currentY + 10);
           
           currentY += 30;
-          doc.font('Helvetica').fontSize(8);
+          doc.font(FONTS.REGULAR).fontSize(8);
         }
         
         // Row background
@@ -288,7 +288,7 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     const checkboxY = PAGE_HEIGHT - MARGINS.bottom - 60;
     
     // Front office checkbox
-    doc.font('Helvetica-Bold').fontSize(10);
+    doc.font(FONTS.BOLD).fontSize(10);
     // Draw checkbox
     doc.rect(MARGINS.left, checkboxY, CHECKBOX_SIZE, CHECKBOX_SIZE)
       .lineWidth(1)
@@ -334,11 +334,11 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
         .stroke();
         
       // Add the label
-      doc.font('Helvetica-Bold').fontSize(10);
+      doc.font(FONTS.BOLD).fontSize(10);
       doc.text(texts.notes, notesBoxX + 5, notesBoxY - 15);
       
       // Add the notes text with smaller font to fit in box
-      doc.font('Helvetica').fontSize(8);
+      doc.font(FONTS.REGULAR).fontSize(8);
       
       // Format notes text to fit in box
       const truncatedNotes = orderWithItems.notes.length > 100 ? 
@@ -354,7 +354,7 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     
     // If we have shipping info, display it on the right side
     if (shippingInfo) {
-      doc.font('Helvetica-Bold').fontSize(10);
+      doc.font(FONTS.BOLD).fontSize(10);
       const rightAlign = PAGE_WIDTH - MARGINS.right - (MARGINS.left * 2);
       doc.text(
         `${texts.shippingCompany}: ${shippingInfo}`,
@@ -368,7 +368,7 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     const totalPages = doc.bufferedPageRange().count;
     for (let i = 0; i < totalPages; i++) {
       doc.switchToPage(i);
-      doc.font('Helvetica').fontSize(10).text(
+      doc.font(FONTS.REGULAR).fontSize(10).text(
         `${texts.page} ${i + 1} ${texts.of} ${totalPages}`,
         MARGINS.left,
         PAGE_HEIGHT - MARGINS.bottom / 2,
@@ -382,9 +382,9 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
   } catch (error: any) {
     console.error('Error generating PDF:', error);
     // Handle errors by returning a simple error PDF
-    doc.font('Helvetica-Bold').fontSize(16)
+    doc.font(FONTS.BOLD).fontSize(16)
       .text('Error generating PDF', MARGINS.left, MARGINS.top + 100, { align: 'center' });
-    doc.font('Helvetica').fontSize(12)
+    doc.font(FONTS.REGULAR).fontSize(12)
       .text(`Error: ${error.message}`, MARGINS.left, MARGINS.top + 150, { align: 'center' });
     doc.end();
     return stream;
