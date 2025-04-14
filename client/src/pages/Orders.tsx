@@ -734,6 +734,23 @@ A 1
     setOrderToDelete(order);
     setShowDeleteConfirmDialog(true);
   };
+  
+  // Handle printing order PDF
+  const handlePrintOrderPdf = (orderId: number) => {
+    try {
+      // Get language preference from i18n
+      const language = localStorage.getItem('i18nextLng') || 'en';
+      
+      // Open PDF in a new window
+      window.open(`/api/order-pdf/${orderId}?lang=${language}`, '_blank');
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to generate order PDF',
+        variant: "destructive",
+      });
+    }
+  };
 
   // Confirm order deletion
   const confirmDeleteOrder = () => {
@@ -1040,6 +1057,15 @@ A 1
                           </button>
                         )}
                         
+                        {/* Print order PDF button */}
+                        <button
+                          onClick={() => handlePrintOrderPdf(order.id)}
+                          className="text-slate-600 hover:text-green-600 p-1 rounded-full hover:bg-slate-100" 
+                          title={t('orders.actions.printOrder') || 'Print Order PDF'}
+                        >
+                          <FileOutput className="h-4 w-4" />
+                        </button>
+                        
                         {/* Delete button - only visible for admin users */}
                         {hasPermission(['admin']) && (
                           <button
@@ -1273,6 +1299,16 @@ A 1
                           <span>{t('orders.actions.viewDocument')}</span>
                         </Button>
                       )}
+                      
+                      {/* Print order PDF button */}
+                      <Button
+                        onClick={() => handlePrintOrderPdf(orderDetails.id)}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        <FileOutput className="h-4 w-4" />
+                        <span>{t('orders.actions.printOrder') || 'Print Order PDF'}</span>
+                      </Button>
                       
                       {/* Print label button - for picked or shipped orders */}
                       {(orderDetails.status === 'picked' || orderDetails.status === 'shipped') && (
