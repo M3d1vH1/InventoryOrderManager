@@ -651,19 +651,146 @@ const OrderForm = ({
     setOrderItems(newItems);
   };
 
+  // Calculate order summary for the sticky panel
+  const orderSummary = useMemo(() => {
+    return {
+      totalItems: orderItems.length,
+      totalQuantity: orderItems.reduce((sum, item) => sum + item.quantity, 0),
+      itemsWithLowStock: orderItems.filter(item => 
+        item.quantity > (item.product?.currentStock || 0)
+      ).length
+    };
+  }, [orderItems]);
+  
+  // Group products by category (for product selection section)
+  const productCategories = useMemo(() => {
+    const categories: Record<string, ProductWithOrderCount[]> = {
+      'frequent': []
+    };
+    
+    // Sort previous products by order count (most ordered first)
+    const sortedProducts = [...previousProducts].sort((a, b) => 
+      (b.orderCount || 0) - (a.orderCount || 0)
+    );
+    
+    // Take top N most frequently ordered for the "frequent" category
+    categories['frequent'] = sortedProducts.slice(0, 8);
+    
+    // Group remaining by some property (using first character as example)
+    previousProducts.forEach(product => {
+      const firstChar = product.name.charAt(0).toUpperCase();
+      if (!categories[firstChar]) {
+        categories[firstChar] = [];
+      }
+      if (!categories['frequent'].some(p => p.id === product.id)) {
+        categories[firstChar].push(product);
+      }
+    });
+    
+    return categories;
+  }, [previousProducts]);
+  
   return (
     <div className="bg-white rounded-lg shadow">
-      <div className="p-4 border-b border-slate-200">
-        <h2 className="font-semibold text-lg">
+      <div className="p-4 border-b border-slate-200 flex justify-between items-center">
+        <h2 className="font-semibold text-lg flex items-center space-x-2">
           {isEditMode 
-            ? `${t('orders.editOrder')}${initialData?.orderNumber ? ` ${initialData.orderNumber}` : ''}` 
-            : t('orders.form.createNewOrder')}
+            ? <span className="flex items-center">
+                <Clipboard className="h-5 w-5 mr-2 text-slate-600" />
+                {`${t('orders.editOrder')}${initialData?.orderNumber ? ` ${initialData.orderNumber}` : ''}`}
+              </span>
+            : <span className="flex items-center">
+                <PackageOpen className="h-5 w-5 mr-2 text-slate-600" />
+                {t('orders.form.createNewOrder')}
+              </span>
+          }
         </h2>
+        
+        {/* Tab navigation */}
+        <Tabs defaultValue="customer" onValueChange={setActiveTab} value={activeTab} className="w-auto">
+          <TabsList className="grid grid-cols-3 w-[400px]">
+            <TabsTrigger value="customer" className="flex items-center space-x-1">
+              <PackageOpen className="h-4 w-4" />
+              <span>{t('orders.form.customerInfo')}</span>
+            </TabsTrigger>
+            <TabsTrigger value="products" className="flex items-center space-x-1">
+              <ShoppingCart className="h-4 w-4" />
+              <span>{t('orders.form.products')}</span>
+            </TabsTrigger>
+            <TabsTrigger value="review" className="flex items-center space-x-1">
+              <Clipboard className="h-4 w-4" />
+              <span>{t('orders.form.review')}</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
+      
+      {/* Order summary sticky panel */}
+      <div className="fixed top-24 right-6 w-64 bg-white rounded-lg shadow-lg border border-slate-200 z-10">
+        <div className="p-3 border-b border-slate-200 bg-slate-50 rounded-t-lg">
+          <h3 className="font-medium text-slate-800 flex items-center">
+            <ShoppingCart className="h-4 w-4 mr-2 text-slate-600" />
+            {t('orders.form.orderSummary')}
+          </h3>
+        </div>
+        <div className="p-3">
+          <div className="text-sm text-slate-600 flex justify-between mb-1">
+            <span>{t('orders.form.totalItems')}:</span>
+            <span className="font-medium text-slate-800">{orderSummary.totalItems}</span>
+          </div>
+          <div className="text-sm text-slate-600 flex justify-between mb-1">
+            <span>{t('orders.form.totalQuantity')}:</span>
+            <span className="font-medium text-slate-800">{orderSummary.totalQuantity}</span>
+          </div>
+          {orderSummary.itemsWithLowStock > 0 && (
+            <div className="text-sm text-amber-600 flex justify-between mt-2 pt-2 border-t border-slate-100">
+              <span>{t('orders.form.lowStockItems')}:</span>
+              <span className="font-medium">{orderSummary.itemsWithLowStock}</span>
+            </div>
+          )}
+          
+          {orderItems.length > 0 && (
+            <div className="mt-3 max-h-40 overflow-y-auto border-t border-slate-100 pt-2">
+              {orderItems.slice(0, 5).map((item, index) => (
+                <div key={`summary-${index}`} className="text-xs py-1 flex justify-between">
+                  <span className="truncate mr-2" style={{ maxWidth: '150px' }}>
+                    {item.product?.name || `Product #${item.productId}`}
+                  </span>
+                  <span className={`${
+                    item.quantity > (item.product?.currentStock || 0) 
+                      ? 'text-amber-600 font-medium' 
+                      : 'text-slate-600'
+                  }`}>
+                    {item.quantity}x
+                  </span>
+                </div>
+              ))}
+              {orderItems.length > 5 && (
+                <div className="text-xs text-slate-500 italic mt-1">
+                  +{orderItems.length - 5} {t('orders.form.moreItems')}
+                </div>
+              )}
+            </div>
+          )}
+          
+          <div className="mt-3 pt-2 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              className="w-full"
+              onClick={() => setActiveTab('review')}
+            >
+              {t('orders.form.reviewOrder')}
+            </Button>
+          </div>
+        </div>
+      </div>
+      
       <div className="p-4">
         {/* Customer has unshipped items warning - shown when customer is selected */}
         {unshippedItemsWarning && unshippedItemsWarning.hasUnshippedItems && (
-          <div className="mb-4 bg-orange-50 border border-orange-200 rounded-lg p-3 shadow-sm">
+          <div className="mb-4 bg-orange-50 border-l-4 border-orange-400 rounded-lg p-3 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center text-orange-800 text-sm">
                 <AlertTriangle className="h-4 w-4 mr-2 text-orange-500 flex-shrink-0" />
@@ -696,7 +823,7 @@ const OrderForm = ({
       
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div style={{ marginRight: '280px' }}>
               <FormField
                 control={form.control}
                 name="customerName"
