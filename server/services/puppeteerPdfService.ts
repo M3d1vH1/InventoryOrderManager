@@ -166,9 +166,13 @@ async function generateOrderHTML(orderWithItems: any, texts: Record<string, stri
   
   // First try to get shipping company info from the customer record
   const customer = await storage.getCustomerByName(orderWithItems.customerName);
-  if (customer && customer.shippingCompany) {
-    shippingInfo = customer.shippingCompany;
+  if (customer && customer.customShippingCompany) {
+    shippingInfo = customer.customShippingCompany;
   } 
+  // Try preferred shipping company if available
+  else if (customer && customer.preferredShippingCompany) {
+    shippingInfo = customer.preferredShippingCompany;
+  }
   // Fall back to order data if available (supporting legacy data)
   else if ((orderWithItems as any).shippingCompany) {
     shippingInfo = (orderWithItems as any).shippingCompany;

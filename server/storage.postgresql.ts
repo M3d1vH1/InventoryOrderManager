@@ -887,6 +887,11 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
   
+  async getCustomerByName(name: string): Promise<Customer | undefined> {
+    const result = await this.db.select().from(customers).where(eq(customers.name, name));
+    return result[0];
+  }
+  
   async getAllCustomers(): Promise<Customer[]> {
     return await this.db.select().from(customers);
   }
