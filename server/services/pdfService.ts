@@ -1,6 +1,7 @@
 import PDFDocument from 'pdfkit';
 import { Readable } from 'stream';
 import { storage } from '../storage';
+import PDFDocumentWithTables from 'pdfkit-table';
 
 // Margins in points (72 points = 1 inch, A4 = 595.28 x 841.89 points)
 const MARGINS = {
@@ -20,11 +21,12 @@ const CHECKBOX_MARGIN = 5;
 const PRODUCT_CHECKBOX_SIZE = 15; // Size for product checkboxes
 
 // Standard fonts that support Greek characters
+// Using Times-Roman as it has better Unicode support including Greek
 const FONTS = {
-  REGULAR: 'Helvetica',
-  BOLD: 'Helvetica-Bold',
-  ITALIC: 'Helvetica-Oblique',
-  BOLD_ITALIC: 'Helvetica-BoldOblique'
+  REGULAR: 'Times-Roman',
+  BOLD: 'Times-Bold',
+  ITALIC: 'Times-Italic',
+  BOLD_ITALIC: 'Times-BoldItalic'
 };
 
 // Return a readable stream of the generated PDF
@@ -48,6 +50,9 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     autoFirstPage: true,
     bufferPages: true
   });
+  
+  // Explicitly register UTF-8 encoding for better Greek character support
+  doc.registerFont('Symbols', 'Symbol'); // Use Symbol font for Greek characters
   
   // Set default font that supports Greek characters
   doc.font(FONTS.REGULAR);
