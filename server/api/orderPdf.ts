@@ -13,6 +13,38 @@ router.get('/test', (req: Request, res: Response) => {
 });
 
 /**
+ * Test route to generate a sample PDF with known orderId for testing Greek characters
+ * GET /api/order-pdf/test-greek/:orderId
+ */
+router.get('/test-greek/:orderId', async (req: Request, res: Response) => {
+  try {
+    const orderId = parseInt(req.params.orderId);
+    if (isNaN(orderId)) {
+      return res.status(400).json({ message: 'Invalid order ID' });
+    }
+    
+    // Force Greek language for this test
+    const language = 'el';
+    
+    // Generate the PDF with Greek language
+    const pdfStream = await generateOrderPDF(orderId, language);
+    
+    // Set response headers for PDF download
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=greek-test-order-${orderId}.pdf`);
+    
+    // Send PDF data
+    pdfStream.pipe(res);
+  } catch (error: any) {
+    console.error('Error generating test Greek PDF:', error);
+    res.status(500).json({
+      message: 'Error generating test Greek PDF',
+      error: error.message
+    });
+  }
+});
+
+/**
  * Generate a PDF for an order
  * GET /api/order-pdf/:orderId
  */
