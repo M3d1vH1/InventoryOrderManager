@@ -24,7 +24,7 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
   const buffers: Buffer[] = [];
   const stream = new Readable();
   
-  // Initialize the PDF document with proper font encoding for Greek characters
+  // Initialize the PDF document with proper encoding for Greek characters
   const doc = new PDFDocument({
     size: 'A4',
     margin: 0,
@@ -33,10 +33,17 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
       Author: 'Warehouse Management System',
       Subject: 'Order Details'
     },
-    // Set default encoding to support international characters including Greek
+    // We are explicitly making sure we encode text as UTF-8 for proper Greek character rendering
+    pdfVersion: '1.7',
     lang: language === 'el' ? 'el-GR' : 'en-US',
-    pdfVersion: '1.7'
+    autoFirstPage: true,
+    bufferPages: true
   });
+  
+  // Register font with proper encoding for Greek characters
+  // Use the standard Helvetica font as it has better support for Greek
+  doc.registerFont('DefaultFont', 'Helvetica');
+  doc.font('DefaultFont');
   
   // Write to buffers
   doc.on('data', buffers.push.bind(buffers));
@@ -94,8 +101,13 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     const startY = doc.y;
     doc.font('Helvetica-Bold').fontSize(12);
     
+    // Define checkbox size for each row
+    const productCheckboxSize = 10;
+    const checkboxColumnWidth = productCheckboxSize + 10; // Checkbox width plus margin
+    
     const columnWidths = {
-      sku: TABLE_WIDTH * 0.2,
+      checkbox: checkboxColumnWidth,
+      sku: TABLE_WIDTH * 0.15,
       name: TABLE_WIDTH * 0.5,
       piecesPerBox: TABLE_WIDTH * 0.15,
       quantity: TABLE_WIDTH * 0.15
@@ -106,10 +118,11 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     
     // Header text
     doc.fillColor('#000000');
-    doc.text(texts.sku, MARGINS.left + 5, startY + 10);
-    doc.text(texts.product, MARGINS.left + columnWidths.sku + 5, startY + 10);
-    doc.text(texts.piecesPerBox, MARGINS.left + columnWidths.sku + columnWidths.name + 5, startY + 10);
-    doc.text(texts.quantity, MARGINS.left + columnWidths.sku + columnWidths.name + columnWidths.piecesPerBox + 5, startY + 10);
+    // Skip space for checkbox in header
+    doc.text(texts.sku, MARGINS.left + columnWidths.checkbox + 5, startY + 10);
+    doc.text(texts.product, MARGINS.left + columnWidths.checkbox + columnWidths.sku + 5, startY + 10);
+    doc.text(texts.piecesPerBox, MARGINS.left + columnWidths.checkbox + columnWidths.sku + columnWidths.name + 5, startY + 10);
+    doc.text(texts.quantity, MARGINS.left + columnWidths.checkbox + columnWidths.sku + columnWidths.name + columnWidths.piecesPerBox + 5, startY + 10);
     
     // Table rows
     let currentY = startY + 30;
@@ -130,10 +143,11 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
         doc.rect(MARGINS.left, currentY, TABLE_WIDTH, 30).fillAndStroke('#f2f2f2', '#cccccc');
         
         doc.fillColor('#000000');
-        doc.text(texts.sku, MARGINS.left + 5, currentY + 10);
-        doc.text(texts.product, MARGINS.left + columnWidths.sku + 5, currentY + 10);
-        doc.text(texts.piecesPerBox, MARGINS.left + columnWidths.sku + columnWidths.name + 5, currentY + 10);
-        doc.text(texts.quantity, MARGINS.left + columnWidths.sku + columnWidths.name + columnWidths.piecesPerBox + 5, currentY + 10);
+        // Skip space for checkbox in header (same as the first page)
+        doc.text(texts.sku, MARGINS.left + columnWidths.checkbox + 5, currentY + 10);
+        doc.text(texts.product, MARGINS.left + columnWidths.checkbox + columnWidths.sku + 5, currentY + 10);
+        doc.text(texts.piecesPerBox, MARGINS.left + columnWidths.checkbox + columnWidths.sku + columnWidths.name + 5, currentY + 10);
+        doc.text(texts.quantity, MARGINS.left + columnWidths.checkbox + columnWidths.sku + columnWidths.name + columnWidths.piecesPerBox + 5, currentY + 10);
         
         currentY += 30;
         doc.font('Helvetica').fontSize(8);
@@ -143,18 +157,26 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
       doc.rect(MARGINS.left, currentY, TABLE_WIDTH, rowHeight)
          .fillAndStroke(rowColor, '#cccccc');
       
+      // Add checkbox for this product (smaller size than the main verification boxes)
+      const productCheckboxSize = 10;
+      doc.rect(MARGINS.left + 2, currentY + (rowHeight / 2) - (productCheckboxSize / 2), 
+               productCheckboxSize, productCheckboxSize)
+        .lineWidth(0.5)
+        .stroke();
+      
       // Item data
       doc.fillColor('#000000');
-      doc.text(item.sku || '', MARGINS.left + 5, currentY + 10);
+      // Adjust SKU position to account for the checkbox
+      doc.text(item.sku || '', MARGINS.left + productCheckboxSize + 7, currentY + 8);
       
-      // Handle product name - fix encoding issues by using standard Latin-1 characters where possible
-      // and limit name length to prevent overflow
+      // Handle product name with UTF-8 encoding for Greek characters
+      // Limit name length to prevent overflow
       const productName = item.name || '';
       const maxNameLength = 50; // Maximum characters to display
       const displayName = productName.length > maxNameLength ? 
         productName.substring(0, maxNameLength) + '...' : 
         productName;
-        
+      
       // Text options for proper rendering
       const textOptions = {
         width: columnWidths.name - 10,
@@ -162,9 +184,9 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
         lineBreak: false
       };
       
-      doc.text(displayName, MARGINS.left + columnWidths.sku + 5, currentY + 10, textOptions);
-      doc.text(item.piecesPerBox?.toString() || '', MARGINS.left + columnWidths.sku + columnWidths.name + 5, currentY + 10);
-      doc.text(item.quantity.toString(), MARGINS.left + columnWidths.sku + columnWidths.name + columnWidths.piecesPerBox + 5, currentY + 10);
+      doc.text(displayName, MARGINS.left + columnWidths.checkbox + columnWidths.sku + 5, currentY + 8, textOptions);
+      doc.text(item.piecesPerBox?.toString() || '', MARGINS.left + columnWidths.checkbox + columnWidths.sku + columnWidths.name + 5, currentY + 8);
+      doc.text(item.quantity.toString(), MARGINS.left + columnWidths.checkbox + columnWidths.sku + columnWidths.name + columnWidths.piecesPerBox + 5, currentY + 8);
       
       // Alternate row colors
       rowColor = rowColor === '#ffffff' ? '#f9f9f9' : '#ffffff';
