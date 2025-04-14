@@ -2,6 +2,8 @@ import PDFDocument from 'pdfkit';
 import { Readable } from 'stream';
 import { storage } from '../storage';
 import PDFDocumentWithTables from 'pdfkit-table';
+import fs from 'fs';
+import path from 'path';
 
 // Margins in points (72 points = 1 inch, A4 = 595.28 x 841.89 points)
 const MARGINS = {
@@ -20,13 +22,16 @@ const CHECKBOX_SIZE = 20; // Increased from 15 to 20
 const CHECKBOX_MARGIN = 5;
 const PRODUCT_CHECKBOX_SIZE = 15; // Size for product checkboxes
 
-// Standard fonts that support Greek characters
-// Using Times-Roman as it has better Unicode support including Greek
+// Define font paths (using DejaVu fonts with full Unicode support including Greek)
+const FONT_PATHS = {
+  REGULAR: path.join(process.cwd(), 'public/fonts/DejaVuSans.ttf'),
+  BOLD: path.join(process.cwd(), 'public/fonts/DejaVuSans-Bold.ttf')
+};
+
+// Font names for references after registration
 const FONTS = {
-  REGULAR: 'Times-Roman',
-  BOLD: 'Times-Bold',
-  ITALIC: 'Times-Italic',
-  BOLD_ITALIC: 'Times-BoldItalic'
+  REGULAR: 'DejaVuSans',
+  BOLD: 'DejaVuSans-Bold'
 };
 
 // Return a readable stream of the generated PDF
@@ -51,10 +56,28 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     bufferPages: true
   });
   
-  // Explicitly register UTF-8 encoding for better Greek character support
-  doc.registerFont('Symbols', 'Symbol'); // Use Symbol font for Greek characters
+  // Register Unicode fonts with explicit font paths for complete Greek character support
+  try {
+    // Register regular font
+    if (fs.existsSync(FONT_PATHS.REGULAR)) {
+      doc.registerFont(FONTS.REGULAR, FONT_PATHS.REGULAR);
+      console.log('Regular font registered successfully');
+    } else {
+      console.error(`Font file not found: ${FONT_PATHS.REGULAR}`);
+    }
+    
+    // Register bold font
+    if (fs.existsSync(FONT_PATHS.BOLD)) {
+      doc.registerFont(FONTS.BOLD, FONT_PATHS.BOLD);
+      console.log('Bold font registered successfully');
+    } else {
+      console.error(`Font file not found: ${FONT_PATHS.BOLD}`);
+    }
+  } catch (error) {
+    console.error('Error registering fonts:', error);
+  }
   
-  // Set default font that supports Greek characters
+  // Set default font with full Unicode support including Greek
   doc.font(FONTS.REGULAR);
   
   // Write to buffers
