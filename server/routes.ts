@@ -17,6 +17,7 @@ import { getEmailSettings, updateEmailSettings, testEmailConnection, getEmailTem
 import { getCompanySettings, updateCompanySettings, getNotificationSettings, updateNotificationSettings, testSlackWebhook, testSlackNotification, testSlackTemplate } from "./api/settings";
 import { getOrderErrors, getOrderQuality, createOrderError, updateOrderError, resolveOrderError, adjustInventoryForError, getErrorStats } from "./api/orderErrors";
 import { getInventoryChanges, getInventoryChange, addInventoryChange, getRecentInventoryChanges, getInventoryChangesByType } from "./api/inventoryChanges";
+import orderPdfRouter from "./api/orderPdf";
 import {
   getInventoryPredictions,
   getInventoryPrediction,
