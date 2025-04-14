@@ -2,8 +2,6 @@ import PDFDocument from 'pdfkit';
 import { Readable } from 'stream';
 import { storage } from '../storage';
 import PDFDocumentWithTables from 'pdfkit-table';
-import fs from 'fs';
-import path from 'path';
 
 // Margins in points (72 points = 1 inch, A4 = 595.28 x 841.89 points)
 const MARGINS = {
@@ -22,16 +20,10 @@ const CHECKBOX_SIZE = 20; // Increased from 15 to 20
 const CHECKBOX_MARGIN = 5;
 const PRODUCT_CHECKBOX_SIZE = 15; // Size for product checkboxes
 
-// Define font paths (using DejaVu fonts with full Unicode support including Greek)
-const FONT_PATHS = {
-  REGULAR: path.join(process.cwd(), 'public/fonts/DejaVuSans.ttf'),
-  BOLD: path.join(process.cwd(), 'public/fonts/DejaVuSans-Bold.ttf')
-};
-
-// Font names for references after registration
+// Using built-in fonts with better Unicode support
 const FONTS = {
-  REGULAR: 'DejaVuSans',
-  BOLD: 'DejaVuSans-Bold'
+  REGULAR: 'Helvetica',
+  BOLD: 'Helvetica-Bold'
 };
 
 // Return a readable stream of the generated PDF
@@ -56,28 +48,7 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     bufferPages: true
   });
   
-  // Register Unicode fonts with explicit font paths for complete Greek character support
-  try {
-    // Register regular font
-    if (fs.existsSync(FONT_PATHS.REGULAR)) {
-      doc.registerFont(FONTS.REGULAR, FONT_PATHS.REGULAR);
-      console.log('Regular font registered successfully');
-    } else {
-      console.error(`Font file not found: ${FONT_PATHS.REGULAR}`);
-    }
-    
-    // Register bold font
-    if (fs.existsSync(FONT_PATHS.BOLD)) {
-      doc.registerFont(FONTS.BOLD, FONT_PATHS.BOLD);
-      console.log('Bold font registered successfully');
-    } else {
-      console.error(`Font file not found: ${FONT_PATHS.BOLD}`);
-    }
-  } catch (error) {
-    console.error('Error registering fonts:', error);
-  }
-  
-  // Set default font with full Unicode support including Greek
+  // Set default font with proper encoding for Greek characters
   doc.font(FONTS.REGULAR);
   
   // Write to buffers
@@ -288,9 +259,20 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
         // Limit name length to prevent overflow
         const productName = item.name || '';
         const maxNameLength = 50; // Maximum characters to display
-        const displayName = productName.length > maxNameLength ? 
-          productName.substring(0, maxNameLength) + '...' : 
-          productName;
+        
+        // Convert Greek characters to normalized form for better encoding
+        let normalizedName = '';
+        try {
+          // Try to normalize Unicode characters
+          normalizedName = productName.normalize('NFC');
+        } catch (e) {
+          console.error('Error normalizing product name:', e);
+          normalizedName = productName;
+        }
+        
+        const displayName = normalizedName.length > maxNameLength ? 
+          normalizedName.substring(0, maxNameLength) + '...' : 
+          normalizedName;
         
         // Text options for proper rendering
         const textOptions = {
@@ -423,7 +405,8 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
 function getTranslatedTexts(language: string): Record<string, any> {
   // Add translations for PDF labels
   if (language === 'el') {
-    return {
+    // Create the translation object
+    const translations = {
       orderForm: 'Φόρμα Παραγγελίας',
       customer: 'Πελάτης',
       sku: 'Κωδικός SKU',
@@ -440,6 +423,19 @@ function getTranslatedTexts(language: string): Record<string, any> {
       tag: 'Ετικέτα',
       uncategorized: 'Χωρίς Κατηγορία'
     };
+    
+    // Normalize all Greek strings for better encoding
+    const normalizedTranslations: Record<string, string> = {};
+    for (const [key, value] of Object.entries(translations)) {
+      try {
+        normalizedTranslations[key] = value.normalize('NFC');
+      } catch (e) {
+        console.error(`Error normalizing translation for ${key}:`, e);
+        normalizedTranslations[key] = value;
+      }
+    }
+    
+    return normalizedTranslations;
   }
   
   // Default to English
