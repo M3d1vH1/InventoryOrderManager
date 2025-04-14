@@ -2925,8 +2925,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/production', isAuthenticated, productionRouter);
   app.use('/api/order-pdf', orderPdfRouter);
   
-  // Orders PDF generation - alternative route format (bypass auth for testing)
-  app.get('/api/orders/:id/pdf', async (req: Request, res: Response) => {
+  // Orders PDF generation - alternative route format
+  app.get('/api/orders/:id/pdf', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const orderId = parseInt(req.params.id);
       if (isNaN(orderId)) {
@@ -3066,9 +3066,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get shipping info if available
       let shippingInfo = '';
-      if ((order as any).shippingCompany) {
+      
+      // First try to get shipping company info from the customer record
+      const customer = await storage.getCustomerByName(order.customerName);
+      if (customer && customer.shippingCompany) {
+        shippingInfo = customer.shippingCompany;
+      } 
+      // Fall back to order data if available (supporting legacy data)
+      else if ((order as any).shippingCompany) {
         shippingInfo = (order as any).shippingCompany;
-      } else if (order.area) {
+      }
+      // Last fallback to area information
+      else if (order.area) {
         shippingInfo = order.area;
       }
       
