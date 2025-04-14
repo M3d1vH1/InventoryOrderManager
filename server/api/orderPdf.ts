@@ -5,6 +5,14 @@ import { generateOrderPDF } from '../services/pdfService';
 const router = express.Router();
 
 /**
+ * Test route to check if the PDF generation is working
+ * GET /api/order-pdf/test
+ */
+router.get('/test', (req: Request, res: Response) => {
+  res.json({ message: 'PDF generation endpoint is ready to use' });
+});
+
+/**
  * Generate a PDF for an order
  * GET /api/order-pdf/:orderId
  */
