@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
@@ -616,8 +616,9 @@ const OrderForm = ({
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div style={{ marginRight: '280px' }} className="px-6">
-            <TabsContent value="customer" className="mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {activeTab === "customer" && (
+              <div className="mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
                   name="customerName"
@@ -853,10 +854,12 @@ const OrderForm = ({
                   </Button>
                 </div>
               </div>
-            </TabsContent>
+              </div>
+            )}
             
             {/* Products Tab Content */}
-            <TabsContent value="products" className="mt-4">
+            {activeTab === "products" && (
+              <div className="mt-4">
               <div className="space-y-6">
                 {/* Category filters */}
                 <div className="mb-6">
@@ -1027,10 +1030,12 @@ const OrderForm = ({
                   </Button>
                 </div>
               </div>
-            </TabsContent>
+              </div>
+            )}
             
             {/* Review Tab Content */}
-            <TabsContent value="review" className="mt-4">
+            {activeTab === "review" && (
+              <div className="mt-4">
               <div className="space-y-6">
                 <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-6 bg-slate-50 p-4 rounded-lg">
                   <div>
@@ -1239,7 +1244,8 @@ const OrderForm = ({
                   </Button>
                 </div>
               </div>
-            </TabsContent>
+              </div>
+            )}
           </div>
         </form>
       </Form>
