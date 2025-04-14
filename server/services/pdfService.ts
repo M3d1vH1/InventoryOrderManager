@@ -19,6 +19,14 @@ const CHECKBOX_SIZE = 20; // Increased from 15 to 20
 const CHECKBOX_MARGIN = 5;
 const PRODUCT_CHECKBOX_SIZE = 15; // Size for product checkboxes
 
+// Standard fonts that support Greek characters
+const FONTS = {
+  REGULAR: 'Helvetica',
+  BOLD: 'Helvetica-Bold',
+  ITALIC: 'Helvetica-Oblique',
+  BOLD_ITALIC: 'Helvetica-BoldOblique'
+};
+
 // Return a readable stream of the generated PDF
 export async function generateOrderPDF(orderId: number, language: string = 'en'): Promise<Readable> {
   // Create a stream to return the PDF
@@ -41,10 +49,8 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     bufferPages: true
   });
   
-  // Set font for Greek characters - need to use standard font which supports Greek
-  // For Greek we need fonts that support the character set
-  const fontPath = language === 'el' ? 'Helvetica' : 'Helvetica';
-  doc.font(fontPath);
+  // Set default font that supports Greek characters
+  doc.font(FONTS.REGULAR);
   
   // Write to buffers
   doc.on('data', buffers.push.bind(buffers));
@@ -114,11 +120,11 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     const texts = getTranslatedTexts(language);
     
     // Add title
-    doc.font('Helvetica-Bold').fontSize(16)
+    doc.font(FONTS.BOLD).fontSize(16)
       .text(`${texts.orderForm}: #${orderWithItems.orderNumber}`, MARGINS.left, MARGINS.top, { align: 'center' });
     
     // Add customer name under the order number
-    doc.font('Helvetica').fontSize(12)
+    doc.font(FONTS.REGULAR).fontSize(12)
       .text(`${texts.customer}: ${orderWithItems.customerName}`, MARGINS.left, MARGINS.top + 25, { align: 'center' });
     
     // Add items table
@@ -126,7 +132,7 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     
     // Table header
     const startY = doc.y;
-    doc.font('Helvetica-Bold').fontSize(12);
+    doc.font(FONTS.BOLD).fontSize(12);
     
     // Define checkbox size for each row - using the constant defined at the top
     const checkboxColumnWidth = PRODUCT_CHECKBOX_SIZE + 10; // Checkbox width plus margin
@@ -156,7 +162,7 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     let rowColor = '#ffffff';
     
     // Reset font for table content with smaller font
-    doc.font('Helvetica').fontSize(8);
+    doc.font(FONTS.REGULAR).fontSize(8);
     
     // Tag group header height
     const tagHeaderHeight = 25;
@@ -168,7 +174,7 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
         doc.addPage({ size: 'A4', margin: 0 });
         // Reset Y position and redraw header
         currentY = MARGINS.top;
-        doc.font('Helvetica-Bold').fontSize(12);
+        doc.font(FONTS.BOLD).fontSize(12);
         
         doc.rect(MARGINS.left, currentY, TABLE_WIDTH, 30).fillAndStroke('#f2f2f2', '#cccccc');
         
@@ -220,7 +226,7 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
           doc.addPage({ size: 'A4', margin: 0 });
           // Reset Y position and redraw header
           currentY = MARGINS.top;
-          doc.font('Helvetica-Bold').fontSize(12);
+          doc.font(FONTS.BOLD).fontSize(12);
           
           doc.rect(MARGINS.left, currentY, TABLE_WIDTH, 30).fillAndStroke('#f2f2f2', '#cccccc');
           
