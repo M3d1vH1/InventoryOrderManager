@@ -211,7 +211,29 @@ async function generateOrderHTML(orderWithItems: any, texts: Record<string, stri
         }
         .subtitle {
           font-size: 14px;
+          margin-bottom: 10px;
+        }
+        .priority {
+          font-size: 14px;
           margin-bottom: 20px;
+        }
+        .priority-value {
+          padding: 2px 8px;
+          border-radius: 4px;
+          display: inline-block;
+          font-weight: bold;
+        }
+        .high {
+          background-color: #ffdddd;
+          color: #cc0000;
+        }
+        .medium {
+          background-color: #ffffcc;
+          color: #666600;
+        }
+        .low {
+          background-color: #ddffdd;
+          color: #006600;
         }
         table {
           width: 100%;
@@ -393,7 +415,8 @@ function getTranslatedTexts(language: string): Record<string, string> {
       notes: 'Σημειώσεις',
       category: 'Κατηγορία',
       tag: 'Ετικέτα',
-      uncategorized: 'Χωρίς Κατηγορία'
+      uncategorized: 'Χωρίς Κατηγορία',
+      priority: 'Προτεραιότητα'
     };
   }
   
@@ -413,6 +436,7 @@ function getTranslatedTexts(language: string): Record<string, string> {
     notes: 'Notes',
     category: 'Category',
     tag: 'Tag',
-    uncategorized: 'Uncategorized'
+    uncategorized: 'Uncategorized',
+    priority: 'Priority'
   };
 }
