@@ -20,10 +20,10 @@ const CHECKBOX_SIZE = 20; // Increased from 15 to 20
 const CHECKBOX_MARGIN = 5;
 const PRODUCT_CHECKBOX_SIZE = 15; // Size for product checkboxes
 
-// Using built-in fonts with better Unicode support
+// Use Times-Roman as it has better UTF-8 support including Greek
 const FONTS = {
-  REGULAR: 'Helvetica',
-  BOLD: 'Helvetica-Bold'
+  REGULAR: 'Times-Roman',
+  BOLD: 'Times-Bold'
 };
 
 // Return a readable stream of the generated PDF
@@ -32,7 +32,7 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
   const buffers: Buffer[] = [];
   const stream = new Readable();
   
-  // Initialize the PDF document with UTF-8 encoding for Greek characters
+  // Initialize the PDF document with improved settings for Greek character support
   const doc = new PDFDocument({
     size: 'A4',
     margin: 0,
@@ -41,14 +41,14 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
       Author: 'Warehouse Management System',
       Subject: 'Order Details'
     },
-    // We are explicitly setting proper encoding for Greek characters
+    // Set PDF version and language
     pdfVersion: '1.7',
     lang: language === 'el' ? 'el-GR' : 'en-US',
     autoFirstPage: true,
     bufferPages: true
   });
   
-  // Set default font with proper encoding for Greek characters
+  // Set default font to Times-Roman which has better Greek character support
   doc.font(FONTS.REGULAR);
   
   // Write to buffers
@@ -255,24 +255,15 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
         // Adjust SKU position to account for the checkbox
         doc.text(item.sku || '', MARGINS.left + PRODUCT_CHECKBOX_SIZE + 7, currentY + 8);
         
-        // Handle product name with UTF-8 encoding for Greek characters
+        // Handle product name with proper encoding
         // Limit name length to prevent overflow
         const productName = item.name || '';
         const maxNameLength = 50; // Maximum characters to display
         
-        // Convert Greek characters to normalized form for better encoding
-        let normalizedName = '';
-        try {
-          // Try to normalize Unicode characters
-          normalizedName = productName.normalize('NFC');
-        } catch (e) {
-          console.error('Error normalizing product name:', e);
-          normalizedName = productName;
-        }
-        
-        const displayName = normalizedName.length > maxNameLength ? 
-          normalizedName.substring(0, maxNameLength) + '...' : 
-          normalizedName;
+        // Keep the original name, just limit length if needed
+        const displayName = productName.length > maxNameLength ? 
+          productName.substring(0, maxNameLength) + '...' : 
+          productName;
         
         // Text options for proper rendering
         const textOptions = {
@@ -401,12 +392,14 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
   }
 }
 
+
+
 // Translation helper
 function getTranslatedTexts(language: string): Record<string, any> {
   // Add translations for PDF labels
   if (language === 'el') {
-    // Create the translation object
-    const translations = {
+    // Return Greek translations
+    return {
       orderForm: 'Φόρμα Παραγγελίας',
       customer: 'Πελάτης',
       sku: 'Κωδικός SKU',
@@ -423,19 +416,6 @@ function getTranslatedTexts(language: string): Record<string, any> {
       tag: 'Ετικέτα',
       uncategorized: 'Χωρίς Κατηγορία'
     };
-    
-    // Normalize all Greek strings for better encoding
-    const normalizedTranslations: Record<string, string> = {};
-    for (const [key, value] of Object.entries(translations)) {
-      try {
-        normalizedTranslations[key] = value.normalize('NFC');
-      } catch (e) {
-        console.error(`Error normalizing translation for ${key}:`, e);
-        normalizedTranslations[key] = value;
-      }
-    }
-    
-    return normalizedTranslations;
   }
   
   // Default to English
