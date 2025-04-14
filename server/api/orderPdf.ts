@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import { isAuthenticated } from '../auth';
-import { generateOrderPDF } from '../services/pdfService';
+import { generateOrderPDF as generatePDFKitOrderPDF } from '../services/pdfService';
+import { generateOrderPDF } from '../services/puppeteerPdfService';
 
 const router = express.Router();
 
@@ -26,7 +27,7 @@ router.get('/test-greek/:orderId', async (req: Request, res: Response) => {
     // Force Greek language for this test
     const language = 'el';
     
-    // Generate the PDF with Greek language
+    // Generate the PDF with Greek language using Puppeteer for better Unicode support
     const pdfStream = await generateOrderPDF(orderId, language);
     
     // Set response headers for PDF download
@@ -58,7 +59,7 @@ router.get('/:orderId', isAuthenticated, async (req: Request, res: Response) => 
     // Get preferred language from query params, defaulting to Greek
     const language = req.query.lang as string || 'el';
     
-    // Generate the PDF
+    // Generate the PDF using Puppeteer for better Unicode (Greek) character support
     const pdfStream = await generateOrderPDF(orderId, language);
     
     // Set response headers for PDF download

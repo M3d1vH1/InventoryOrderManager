@@ -87,6 +87,7 @@
     "pdfkit": "^0.16.0",
     "pdfkit-table": "^0.1.99",
     "pg": "^8.14.1",
+    "puppeteer": "^24.6.1",
     "react": "^18.3.1",
     "react-barcode-reader": "^0.0.2",
     "react-big-calendar": "^1.18.0",
