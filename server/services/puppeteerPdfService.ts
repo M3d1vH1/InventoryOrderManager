@@ -65,7 +65,7 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     const texts = getTranslatedTexts(language);
     
     // Generate HTML content
-    const htmlContent = generateOrderHTML(orderWithItems, texts);
+    const htmlContent = await generateOrderHTML(orderWithItems, texts);
     
     // Launch a browser instance using system-installed Chromium
     const browser = await puppeteer.launch({
@@ -160,12 +160,21 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
 }
 
 // Function to generate HTML content for the order
-function generateOrderHTML(orderWithItems: any, texts: Record<string, string>): string {
+async function generateOrderHTML(orderWithItems: any, texts: Record<string, string>): Promise<string> {
   // Get shipping info if available
   let shippingInfo = '';
-  if ((orderWithItems as any).shippingCompany) {
+  
+  // First try to get shipping company info from the customer record
+  const customer = await storage.getCustomerByName(orderWithItems.customerName);
+  if (customer && customer.shippingCompany) {
+    shippingInfo = customer.shippingCompany;
+  } 
+  // Fall back to order data if available (supporting legacy data)
+  else if ((orderWithItems as any).shippingCompany) {
     shippingInfo = (orderWithItems as any).shippingCompany;
-  } else if (orderWithItems.area) {
+  }
+  // Last fallback to area information
+  else if (orderWithItems.area) {
     shippingInfo = orderWithItems.area;
   }
   

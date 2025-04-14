@@ -140,6 +140,7 @@ export interface IStorage {
   // Customer methods
   getCustomer(id: number): Promise<Customer | undefined>;
   getCustomerByVatNumber(vatNumber: string): Promise<Customer | undefined>;
+  getCustomerByName(name: string): Promise<Customer | undefined>;
   getAllCustomers(): Promise<Customer[]>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: number, customer: Partial<InsertCustomer>): Promise<Customer | undefined>;
