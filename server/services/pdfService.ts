@@ -40,17 +40,41 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
   
   try {
     // Get the order data
-    const order = await getOrderWithItems(orderId);
+    const order = await storage.getOrder(orderId);
     if (!order) {
       throw new Error(`Order #${orderId} not found`);
     }
+    
+    // Get the order items
+    const items = await storage.getOrderItems(orderId);
+    
+    // We also need to get the product details for each item
+    const enhancedItems = await Promise.all(items.map(async item => {
+      // Fetch product details
+      const product = await storage.getProduct(item.productId);
+      
+      return {
+        ...item,
+        // Add product details to each item
+        name: product?.name || 'Unknown Product',
+        sku: product?.sku || '',
+        piecesPerBox: product?.unitsPerBox || 0,
+        barcode: product?.barcode || ''
+      };
+    }));
+    
+    // Add the items to the order object
+    const orderWithItems = {
+      ...order,
+      items: enhancedItems
+    };
     
     // Add translatable texts
     const texts = getTranslatedTexts(language);
     
     // Add title
     doc.font('Helvetica-Bold').fontSize(16)
-      .text(`${texts.orderForm}: #${order.orderNumber}`, MARGINS.left, MARGINS.top, { align: 'center' });
+      .text(`${texts.orderForm}: #${orderWithItems.orderNumber}`, MARGINS.left, MARGINS.top, { align: 'center' });
     
     // Add items table
     doc.moveDown(2);
@@ -84,7 +108,7 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     // Reset font for table content
     doc.font('Helvetica').fontSize(10);
     
-    for (const item of order.items) {
+    for (const item of orderWithItems.items) {
       // Check if we need a new page
       if (currentY + rowHeight > PAGE_HEIGHT - MARGINS.bottom - 50) {
         doc.addPage({ size: 'A4', margin: 0 });
@@ -123,15 +147,17 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     // Add customer and shipping info at the bottom
     doc.font('Helvetica-Bold').fontSize(12);
     doc.text(
-      `${texts.customer}: ${order.customerName}`,
+      `${texts.customer}: ${orderWithItems.customerName}`,
       MARGINS.left,
       PAGE_HEIGHT - MARGINS.bottom - 30
     );
     
-    // Shipping company
-    if (order.shippingCompany) {
+    // Shipping company - only show if it exists in the order
+    // We need to check it as a potential property since it might be added dynamically
+    const shippingCompany = (orderWithItems as any).shippingCompany;
+    if (shippingCompany) {
       doc.text(
-        `${texts.shippingCompany}: ${order.shippingCompany}`,
+        `${texts.shippingCompany}: ${shippingCompany}`,
         MARGINS.left,
         PAGE_HEIGHT - MARGINS.bottom - 10
       );
