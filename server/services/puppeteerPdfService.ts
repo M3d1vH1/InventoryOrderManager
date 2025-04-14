@@ -289,6 +289,7 @@ async function generateOrderHTML(orderWithItems: any, texts: Record<string, stri
       <div class="header">
         <div class="title">${texts.orderForm}: #${orderWithItems.orderNumber}</div>
         <div class="subtitle">${texts.customer}: ${orderWithItems.customerName}</div>
+        <div class="priority">${texts.priority}: <span class="priority-value ${orderWithItems.priority || 'medium'}">${(orderWithItems.priority || 'medium').toUpperCase()}</span></div>
       </div>
       
       <!-- Iterate through each tag group -->
