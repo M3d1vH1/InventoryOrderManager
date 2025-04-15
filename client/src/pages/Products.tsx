@@ -830,14 +830,14 @@ export default function Products() {
                       <div className="aspect-square relative bg-muted/50">
                         {product.imagePath ? (
                           <img
-                            key={`product-img-${product.id}-${Date.now()}`} 
+                            key={`product-img-${product.id}`} 
                             src={product.imagePath.startsWith('/') ? product.imagePath : `/${product.imagePath}`}
                             alt={product.name}
                             className="object-cover w-full h-full"
                             onError={(e) => {
                               console.error("Error loading product image:", product.imagePath);
                               // Try our placeholder SVG
-                              (e.target as HTMLImageElement).src = '/placeholder-image.svg';
+                              (e.target as HTMLImageElement).src = '/placeholder-image-new.svg';
                               
                               // Add a second error handler in case SVG fails too
                               (e.target as HTMLImageElement).onerror = () => {
