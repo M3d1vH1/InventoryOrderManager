@@ -32,6 +32,7 @@ import {
 import { BarcodeScanner } from "@components/barcode/BarcodeScanner";
 import { BarcodeGenerator } from "@components/barcode/BarcodeGenerator";
 import { InventoryChangeHistory } from "../components/inventory/InventoryChangeHistory";
+import { ProductImage } from "../components/products/ProductImage";
 
 // Interface for a Product
 interface Product {
@@ -979,21 +980,11 @@ export default function Products() {
                     <Card key={product.id} className="overflow-hidden">
                       <div className="flex items-center p-4">
                         <div className="w-16 h-16 bg-muted/50 rounded-md mr-4 flex-shrink-0 overflow-hidden">
-                          {product.imagePath ? (
-                            <img
-                              src={product.imagePath.startsWith('/') ? product.imagePath : `/${product.imagePath}`}
-                              alt={product.name}
-                              className="object-cover w-full h-full"
-                              onError={(e) => {
-                                console.error("Error loading product image:", product.imagePath);
-                                (e.target as HTMLImageElement).src = '/placeholder-image.svg';
-                              }}
-                            />
-                          ) : (
-                            <div className="flex items-center justify-center h-full">
-                              <Box className="h-8 w-8 text-muted-foreground" />
-                            </div>
-                          )}
+                          <ProductImage 
+                            imagePath={product.imagePath}
+                            productName={product.name}
+                            className="w-full h-full"
+                          />
                         </div>
                         
                         <div className="flex-grow">
@@ -1312,16 +1303,10 @@ export default function Products() {
                       </div>
                     ) : form.getValues('imagePath') && !imageFile ? (
                       <div className="relative w-full h-full">
-                        <img 
-                          src={form.getValues('imagePath').startsWith('http') 
-                            ? form.getValues('imagePath') 
-                            : `/${form.getValues('imagePath').replace(/^\/+/, '')}`} 
-                          alt="Current" 
+                        <ProductImage 
+                          imagePath={form.getValues('imagePath')}
+                          productName={form.getValues('name') || 'Product'}
                           className="object-contain w-full h-full"
-                          onError={(e) => {
-                            console.error("Error loading product image in form:", form.getValues('imagePath'));
-                            (e.target as HTMLImageElement).src = '/placeholder-image.svg';
-                          }}
                         />
                         <div className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm p-2 text-xs text-center">
                           {t('products.currentImage')}
@@ -1375,23 +1360,11 @@ export default function Products() {
               <TabsContent value="details">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="aspect-square relative rounded-md overflow-hidden bg-muted/50">
-                    {viewingProduct.imagePath ? (
-                      <img
-                        src={viewingProduct.imagePath.startsWith('http') 
-                          ? viewingProduct.imagePath 
-                          : `/${viewingProduct.imagePath.replace(/^\/+/, '')}`}
-                        alt={viewingProduct.name}
-                        className="object-contain w-full h-full"
-                        onError={(e) => {
-                          console.error("Error loading product image:", viewingProduct.imagePath);
-                          (e.target as HTMLImageElement).src = '/placeholder-image.svg';
-                        }}
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <Box className="h-16 w-16 text-muted-foreground" />
-                      </div>
-                    )}
+                    <ProductImage 
+                      imagePath={viewingProduct.imagePath}
+                      productName={viewingProduct.name}
+                      className="w-full h-full"
+                    />
                     
                     {/* Tags overlay */}
                     {viewingProduct.tags && viewingProduct.tags.length > 0 && (

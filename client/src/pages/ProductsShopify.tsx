@@ -10,6 +10,7 @@ import { z } from "zod";
 import { useTranslation } from "react-i18next";
 import { BarcodeGenerator } from "@/components/barcode";
 import { InventoryChangeHistory } from "@/components/inventory/InventoryChangeHistory";
+import { ProductImage } from "@/components/products/ProductImage";
 import { 
   MapPin, 
   Package, 
