@@ -526,6 +526,9 @@
       "shippingCompany": "Εταιρεία Αποστολής",
       "shippingCompanyPlaceholder": "Εισάγετε όνομα εταιρείας αποστολής",
       "shippingCompanyDescription": "Προτιμώμενη εταιρεία αποστολής του πελάτη",
+      "billingCompany": "Εταιρεία Τιμολόγησης",
+      "billingCompanyPlaceholder": "Εισάγετε όνομα εταιρείας τιμολόγησης",
+      "billingCompanyDescription": "Η εταιρεία που θα τιμολογηθεί",
       "priority": "Προτεραιότητα",
       "selectPriority": "Επιλογή προτεραιότητας",
       "priorities": {

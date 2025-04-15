@@ -139,6 +139,9 @@
       "shippingCompany": "Shipping Company",
       "shippingCompanyPlaceholder": "Enter shipping company name",
       "shippingCompanyDescription": "The customer's preferred shipping company",
+      "billingCompany": "Billing Company",
+      "billingCompanyPlaceholder": "Enter billing company name",
+      "billingCompanyDescription": "The company that will be invoiced",
       "priority": "Priority",
       "selectPriority": "Select priority",
       "priorities": {
