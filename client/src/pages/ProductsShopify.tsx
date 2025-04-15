@@ -629,25 +629,11 @@ const Products = () => {
                       onClick={() => handleViewProduct(product)}
                     >
                       <div className="aspect-[3/2] bg-slate-50 relative flex items-center justify-center overflow-hidden">
-                        {product.imagePath ? (
-                          <img 
-                            src={product.imagePath.startsWith('http') ? 
-                                product.imagePath : 
-                                product.imagePath.startsWith('/') ?
-                                product.imagePath :
-                                `/${product.imagePath}`}
-                            alt={product.name}
-                            className="w-4/5 h-4/5 object-contain transform group-hover:scale-105 transition-transform duration-300"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/placeholder-image.svg';
-                            }}
-                          />
-                        ) : (
-                          <div className="flex flex-col items-center justify-center text-slate-300 w-full h-full">
-                            <Package size={48} />
-                            <span className="mt-2 text-sm text-slate-400">{t('products.noImage')}</span>
-                          </div>
-                        )}
+                        <ProductImage
+                          imagePath={product.imagePath}
+                          productName={product.name}
+                          className="w-4/5 h-4/5 object-contain transform group-hover:scale-105 transition-transform duration-300"
+                        />
                         
                         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                           <button 
