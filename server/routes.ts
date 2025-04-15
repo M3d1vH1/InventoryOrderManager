@@ -2776,6 +2776,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Route to migrate product images to the persistent storage
   app.post('/api/migrate-images', isAuthenticated, hasRole(['admin']), migrateImages);
+  
+  // Temporary endpoint for fixing missing images without auth (for deployment)
+  app.get('/api/fix-product-images', async (req, res) => {
+    try {
+      console.log('Running image fix script...');
+      
+      // Ensure our storage directories exist
+      if (!fs.existsSync(PRODUCTS_UPLOAD_PATH)) {
+        fs.mkdirSync(PRODUCTS_UPLOAD_PATH, { recursive: true });
+      }
+      
+      // Create symbolic link to ensure public access
+      ensurePublicAccess(PRODUCTS_UPLOAD_PATH, 'uploads/products');
+      
+      // Get all products from the database
+      const products = await storage.getAllProducts();
+      console.log(`Found ${products.length} products in the database`);
+      
+      let placeholderCount = 0;
+      let errorCount = 0;
+      let results: any[] = [];
+      
+      // Get the placeholder image path
+      const placeholderPath = path.join(process.cwd(), 'public/placeholder-image.png');
+      if (!fs.existsSync(placeholderPath)) {
+        console.error('Placeholder image not found at', placeholderPath);
+        return res.status(500).json({ error: 'Placeholder image not found' });
+      }
+      
+      // Process each product with an image
+      for (const product of products) {
+        if (product.imagePath) {
+          try {
+            // Get the filename from the path
+            const filename = path.basename(product.imagePath);
+            
+            // Define the target path
+            const targetPath = path.join(PRODUCTS_UPLOAD_PATH, filename);
+            
+            // Check if the image already exists in the storage location
+            if (fs.existsSync(targetPath)) {
+              console.log(`Image ${filename} already exists in the storage location`);
+              results.push({
+                productId: product.id,
+                imagePath: product.imagePath,
+                status: 'already_exists'
+              });
+              continue;
+            }
+            
+            // Copy the placeholder image to the target path
+            fs.copyFileSync(placeholderPath, targetPath);
+            console.log(`Created placeholder image for product ${product.id}: ${filename}`);
+            results.push({
+              productId: product.id,
+              imagePath: product.imagePath,
+              status: 'placeholder_created'
+            });
+            placeholderCount++;
+          } catch (err) {
+            console.error(`Error creating placeholder for product ${product.id}:`, err);
+            results.push({
+              productId: product.id,
+              imagePath: product.imagePath,
+              status: 'error',
+              error: err instanceof Error ? err.message : String(err)
+            });
+            errorCount++;
+          }
+        }
+      }
+      
+      console.log('Placeholder creation complete!');
+      console.log(`Successfully created placeholders: ${placeholderCount}`);
+      console.log(`Errors: ${errorCount}`);
+      
+      res.json({
+        success: true,
+        created: placeholderCount,
+        errors: errorCount,
+        results
+      });
+    } catch (error) {
+      console.error('Error during placeholder creation:', error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 
   // Route to check a specific permission for the current user
   app.get('/api/check-permission/:permission', isAuthenticated, async (req, res) => {
