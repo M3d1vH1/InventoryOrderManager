@@ -32,8 +32,7 @@ export function ProductImage({ imagePath, productName, className = '' }: Product
       alt={productName}
       className={`object-cover ${className}`}
       onError={(e) => {
-        console.error(`Error loading product image: ${formattedPath}`);
-        // Try the placeholder SVG first
+        // Silently handle the error without logging to console
         const img = e.target as HTMLImageElement;
         img.src = '/placeholder-image.svg';
         
