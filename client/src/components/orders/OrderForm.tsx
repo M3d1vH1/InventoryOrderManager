@@ -67,6 +67,7 @@ interface OrderFormProps {
     estimatedShippingDate?: string;
     notes?: string;
     shippingCompany?: string;
+    billingCompany?: string;
     status?: 'pending' | 'picked' | 'shipped' | 'cancelled';
     priority?: 'low' | 'medium' | 'high' | 'urgent';
     items?: {
@@ -305,7 +306,7 @@ const OrderForm = ({
     }
   };
   
-  // Function to set shipping company from customer data
+  // Function to set shipping company and billing company from customer data
   const setShippingCompanyFromCustomer = (customer: Customer) => {
     let shippingCompany = '';
     
@@ -313,10 +314,6 @@ const OrderForm = ({
     if (customer.preferredShippingCompany) {
       shippingCompany = customer.preferredShippingCompany;
     } 
-    // Use billing company if available
-    else if (customer.billingCompany) {
-      shippingCompany = customer.billingCompany;
-    }
     // Otherwise use the regular shipping company if available
     else if (customer.shippingCompany) {
       shippingCompany = customer.shippingCompany;
@@ -325,6 +322,12 @@ const OrderForm = ({
     if (shippingCompany) {
       form.setValue('shippingCompany', shippingCompany);
       console.log(`Set shipping company to ${shippingCompany} from customer data`);
+    }
+    
+    // Set billing company if available in customer data
+    if (customer.billingCompany) {
+      form.setValue('billingCompany', customer.billingCompany);
+      console.log(`Set billing company to ${customer.billingCompany} from customer data`);
     }
   };
 
@@ -488,6 +491,7 @@ const OrderForm = ({
           estimatedShippingDate: values.estimatedShippingDate,
           priority: values.priority,
           shippingCompany: values.shippingCompany,
+          billingCompany: values.billingCompany,
           createdById: user.id
         }),
         headers: {
@@ -559,6 +563,7 @@ const OrderForm = ({
           estimatedShippingDate: values.estimatedShippingDate,
           priority: values.priority,
           shippingCompany: values.shippingCompany,
+          billingCompany: values.billingCompany,
           updatedById: user.id
         }),
         headers: {
