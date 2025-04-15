@@ -828,23 +828,11 @@ export default function Products() {
                   {sortedProducts.map((product) => (
                     <Card key={product.id} className="overflow-hidden">
                       <div className="aspect-square relative bg-muted/50">
-                        {product.imagePath ? (
-                          <img
-                            key={`product-img-${product.id}`} 
-                            src={product.imagePath.startsWith('/') ? product.imagePath : `/${product.imagePath}`}
-                            alt={product.name}
-                            className="object-cover w-full h-full"
-                            onError={(e) => {
-                              console.error("Error loading product image:", product.imagePath);
-                              // Try our placeholder SVG
-                              (e.target as HTMLImageElement).src = '/placeholder-image.svg';
-                            }}
-                          />
-                        ) : (
-                          <div className="flex items-center justify-center h-full">
-                            <Box className="h-12 w-12 text-muted-foreground" />
-                          </div>
-                        )}
+                        <ProductImage 
+                          imagePath={product.imagePath}
+                          productName={product.name}
+                          className="w-full h-full"
+                        />
                         
                         <div className="absolute top-2 right-2 flex gap-1">
                           <Button 

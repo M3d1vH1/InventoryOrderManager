@@ -117,6 +117,7 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     // Accept images only
     if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+      // @ts-ignore - ignore TypeScript error about passing Error as the first argument
       return cb(new Error('Only image files are allowed!'), false);
     }
     cb(null, true);
@@ -217,7 +218,10 @@ router.get('/fix-image-paths', async (req: Request, res: Response) => {
     });
   } catch (err) {
     console.error('Error fixing image paths:', err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ 
+      success: false, 
+      error: err instanceof Error ? err.message : 'Unknown error occurred' 
+    });
   }
 });
 
@@ -239,11 +243,14 @@ router.post('/upload-product-image/:productId', isAuthenticated, upload.single('
     res.json({
       success: true,
       imagePath,
-      product: await storage.getProductById(productId)
+      product: await storage.getProduct(productId)
     });
   } catch (err) {
     console.error('Error uploading product image:', err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ 
+      success: false, 
+      error: err instanceof Error ? err.message : 'Unknown error occurred' 
+    });
   }
 });
 
