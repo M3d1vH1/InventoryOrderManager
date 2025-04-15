@@ -837,14 +837,7 @@ export default function Products() {
                             onError={(e) => {
                               console.error("Error loading product image:", product.imagePath);
                               // Try our placeholder SVG
-                              (e.target as HTMLImageElement).src = '/placeholder-image-new.svg';
-                              
-                              // Add a second error handler in case SVG fails too
-                              (e.target as HTMLImageElement).onerror = () => {
-                                console.error("Failed to load placeholder SVG too");
-                                // Use an inline data URI as a last resort
-                                (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmMGYwZjAiLz48cGF0aCBkPSJNNzUsNjAgTDEyNSw2MCBMMTI1LDE0MCBMNzUsMTQwIFoiIGZpbGw9IiNlMGUwZTAiLz48cGF0aCBkPSJNNjUsODUgTDg1LDg1IEw4NSwxMTUgTDY1LDExNSBaIiBmaWxsPSIjZDBkMGQwIi8+PHBhdGggZD0iTTExNSw4NSBMMTM1LDg1IEwxMzUsMTE1IEwxMTUsMTE1IFoiIGZpbGw9IiNkMGQwZDAiLz48dGV4dCB4PSIxMDAiIHk9IjE3NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjODg4ODg4Ij5ObyBJbWFnZSBBdmFpbGFibGU8L3RleHQ+PC9zdmc+';
-                              };
+                              (e.target as HTMLImageElement).src = '/placeholder-image.svg';
                             }}
                           />
                         ) : (

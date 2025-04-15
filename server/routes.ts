@@ -18,6 +18,7 @@ import { getCompanySettings, updateCompanySettings, getNotificationSettings, upd
 import { getOrderErrors, getOrderQuality, createOrderError, updateOrderError, resolveOrderError, adjustInventoryForError, getErrorStats } from "./api/orderErrors";
 import { getInventoryChanges, getInventoryChange, addInventoryChange, getRecentInventoryChanges, getInventoryChangesByType } from "./api/inventoryChanges";
 import orderPdfRouter from "./api/orderPdf";
+import imageUploadFixRouter from "./api/imageUploadFix";
 import { generateOrderPDF } from "./services/puppeteerPdfService";
 import {
   getInventoryPredictions,
@@ -3026,6 +3027,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Production module routes
   app.use('/api/production', isAuthenticated, productionRouter);
   app.use('/api/order-pdf', orderPdfRouter);
+  
+  // Image upload and fix routes
+  app.use('/api/image-fix', imageUploadFixRouter);
   
   // Orders PDF generation - alternative route format (public access)
   app.get('/api/orders/:id/pdf', async (req: Request, res: Response) => {
