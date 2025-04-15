@@ -87,6 +87,7 @@ const orderFormSchema = z.object({
   area: z.string().optional(),
   notes: z.string().optional(),
   shippingCompany: z.string().optional(),
+  billingCompany: z.string().optional(),
   // Add these fields but we'll handle them separately from the API request
   orderDate: z.string().min(1, { message: "Order date is required" }),
   estimatedShippingDate: z.string().min(1, { message: "Estimated shipping date is required" }),
@@ -250,6 +251,7 @@ const OrderForm = ({
       priority: initialData?.priority || 'medium',
       notes: initialData?.notes || "",
       shippingCompany: initialData?.shippingCompany || "",
+      billingCompany: initialData?.billingCompany || "",
       items: initialData?.items?.map(item => ({
         productId: item.productId,
         quantity: item.quantity
@@ -1243,19 +1245,19 @@ const OrderForm = ({
             
             <FormField
               control={form.control}
-              name="shippingCompany"
+              name="billingCompany"
               render={({ field }) => (
                 <FormItem className="mb-6">
-                  <FormLabel className="text-base font-medium">{t('orders.form.shippingCompany') || "Shipping Company"}</FormLabel>
+                  <FormLabel className="text-base font-medium">{t('orders.form.billingCompany') || "Billing Company"}</FormLabel>
                   <FormControl>
                     <Input 
                       {...field} 
-                      placeholder={t('orders.form.shippingCompanyPlaceholder') || "Enter shipping company name"}
+                      placeholder={t('orders.form.billingCompanyPlaceholder') || "Enter billing company name"}
                       className="h-12 text-base" 
                     />
                   </FormControl>
                   <FormDescription>
-                    {t('orders.form.shippingCompanyDescription') || "The customer's preferred shipping company"}
+                    {t('orders.form.billingCompanyDescription') || "The company that will be invoiced"}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
