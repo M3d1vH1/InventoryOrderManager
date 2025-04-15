@@ -2925,8 +2925,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/production', isAuthenticated, productionRouter);
   app.use('/api/order-pdf', orderPdfRouter);
   
-  // Orders PDF generation - alternative route format
-  app.get('/api/orders/:id/pdf', isAuthenticated, async (req: Request, res: Response) => {
+  // Orders PDF generation - alternative route format (public access)
+  app.get('/api/orders/:id/pdf', async (req: Request, res: Response) => {
     try {
       const orderId = parseInt(req.params.id);
       if (isNaN(orderId)) {

@@ -46,10 +46,10 @@ router.get('/test-greek/:orderId', async (req: Request, res: Response) => {
 });
 
 /**
- * Generate a PDF for an order
+ * Generate a PDF for an order (public access)
  * GET /api/order-pdf/:orderId
  */
-router.get('/:orderId', isAuthenticated, async (req: Request, res: Response) => {
+router.get('/:orderId', async (req: Request, res: Response) => {
   try {
     const orderId = parseInt(req.params.orderId);
     if (isNaN(orderId)) {
