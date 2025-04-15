@@ -733,10 +733,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add order items if provided
       if (items && Array.isArray(items)) {
         for (const item of items) {
+          // Validate item quantity to prevent negative values
+          if (!item.quantity || item.quantity < 1) {
+            console.log(`Invalid quantity detected for product ${item.productId}: ${item.quantity}, setting to 1`);
+            item.quantity = 1;
+          }
+          
           const orderItem = {
             orderId: order.id,
             productId: item.productId,
-            quantity: item.quantity
+            quantity: Math.max(1, item.quantity) // Ensure minimum quantity is 1
           };
           
           await storage.addOrderItem(orderItem);
@@ -816,10 +822,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Add new items
         for (const item of items) {
+          // Validate item quantity to prevent negative values
+          if (!item.quantity || item.quantity < 1) {
+            console.log(`Invalid quantity detected for product ${item.productId}: ${item.quantity}, setting to 1`);
+            item.quantity = 1;
+          }
+          
           await storage.addOrderItem({
             orderId: id,
             productId: item.productId,
-            quantity: item.quantity
+            quantity: Math.max(1, item.quantity) // Ensure minimum quantity is 1
           });
         }
         
