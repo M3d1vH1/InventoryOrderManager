@@ -1248,26 +1248,7 @@ const OrderForm = ({
               )}
             </div>
             
-            <FormField
-              control={form.control}
-              name="billingCompany"
-              render={({ field }) => (
-                <FormItem className="mb-6">
-                  <FormLabel className="text-base font-medium">{t('orders.form.billingCompany') || "Billing Company"}</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      placeholder={t('orders.form.billingCompanyPlaceholder') || "Enter billing company name"}
-                      className="h-12 text-base" 
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    {t('orders.form.billingCompanyDescription') || "The company that will be invoiced"}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Removed duplicate billingCompany field - already present in customer info tab */}
             
             <FormField
               control={form.control}
