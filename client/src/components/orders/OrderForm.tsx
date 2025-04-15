@@ -646,8 +646,8 @@ const OrderForm = ({
 
   const updateQuantity = (index: number, quantity: number) => {
     const newItems = [...orderItems];
-    // Set the quantity directly without forcing a minimum value
-    newItems[index].quantity = quantity;
+    // Set the quantity with a minimum value of 1 to prevent negative or zero quantities
+    newItems[index].quantity = Math.max(1, quantity);
     setOrderItems(newItems);
   };
 
@@ -1157,10 +1157,12 @@ const OrderForm = ({
                             <td className="py-4 px-4">
                               <Input
                                 type="number"
+                                min="1"
                                 value={item.quantity === 0 ? '' : item.quantity}
                                 onChange={(e) => {
-                                  // Allow empty value or any number
-                                  const newValue = e.target.value === '' ? 0 : parseInt(e.target.value);
+                                  // Allow empty value or positive numbers only
+                                  const parsedValue = parseInt(e.target.value);
+                                  const newValue = e.target.value === '' ? 0 : (isNaN(parsedValue) || parsedValue < 1) ? 1 : parsedValue;
                                   updateQuantity(index, newValue);
                                 }}
                                 placeholder="Qty"

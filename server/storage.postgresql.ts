@@ -586,18 +586,24 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
-    // Generate order number format: ORD-XXXX
-    const allOrders = await this.getAllOrders();
-    const nextId = allOrders.length > 0 ? Math.max(...allOrders.map(o => o.id)) + 1 : 1;
-    const orderNumber = `ORD-${String(nextId).padStart(4, '0')}`;
-    
-    const [order] = await this.db
+    // First create the order without an order number to get the ID
+    const [tempOrder] = await this.db
       .insert(orders)
       .values({
         ...insertOrder,
-        orderNumber,
+        orderNumber: 'TEMP', // Temporary value that will be updated
         orderDate: insertOrder.orderDate || new Date()
       })
+      .returning();
+    
+    // Now that we have the actual ID, update the order with a guaranteed matching order number
+    const orderNumber = `ORD-${String(tempOrder.id).padStart(4, '0')}`;
+    
+    // Update the order with the correct order number
+    const [order] = await this.db
+      .update(orders)
+      .set({ orderNumber })
+      .where(eq(orders.id, tempOrder.id))
       .returning();
     
     // Add changelog entry
