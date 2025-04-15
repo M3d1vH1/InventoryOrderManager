@@ -509,6 +509,7 @@ const Customers = () => {
       Phone: customer.phone || '',
       'Contact Person': customer.contactPerson || '',
       'Shipping Company': formatShippingCompany(customer.shippingCompany),
+      'Billing Company': formatShippingCompany(customer.billingCompany),
       Notes: customer.notes || '',
       'Created': new Date(customer.createdAt).toLocaleDateString()
     }));
@@ -665,6 +666,19 @@ const Customers = () => {
                         )}
                       </div>
                     </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort('billingCompany')}
+                    >
+                      <div className="flex items-center">
+                        Billing Company
+                        {sortBy === 'billingCompany' && (
+                          <span className="ml-1">
+                            {sortOrder === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </div>
+                    </TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -676,6 +690,7 @@ const Customers = () => {
                       <TableCell>{customer.contactPerson || '-'}</TableCell>
                       <TableCell>{customer.country || '-'}</TableCell>
                       <TableCell>{formatShippingCompany(customer.shippingCompany)}</TableCell>
+                      <TableCell>{formatShippingCompany(customer.billingCompany)}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -803,6 +818,24 @@ const Customers = () => {
                       <FormControl>
                         <Input 
                           placeholder="Enter shipping company" 
+                          className="h-12 text-base" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={createForm.control}
+                  name="billingCompany"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Billing Company</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter billing company" 
                           className="h-12 text-base" 
                           {...field} 
                         />
@@ -1026,6 +1059,24 @@ const Customers = () => {
                     </FormItem>
                   )}
                 />
+                
+                <FormField
+                  control={editForm.control}
+                  name="billingCompany"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Billing Company</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter billing company" 
+                          className="h-12 text-base" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
               
               <div className="pt-2">
@@ -1176,6 +1227,11 @@ const Customers = () => {
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground">Shipping Company</h3>
                   <p className="text-base">{formatShippingCompany(customerDetails.shippingCompany)}</p>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground">Billing Company</h3>
+                  <p className="text-base">{formatShippingCompany(customerDetails.billingCompany)}</p>
                 </div>
               </div>
               
