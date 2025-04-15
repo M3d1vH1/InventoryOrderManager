@@ -215,7 +215,7 @@ export const orderItems = pgTable("order_items", {
 export const insertOrderItemSchema = createInsertSchema(orderItems)
   .omit({ id: true })
   .extend({
-    quantity: z.number().min(0), // Changed from min(1) to min(0) to allow zero-quantity orders
+    quantity: z.number().min(1, { message: "Quantity must be at least 1" }), // Enforce positive quantities
   });
 
 export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
