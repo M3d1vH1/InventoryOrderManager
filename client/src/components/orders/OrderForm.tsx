@@ -852,6 +852,28 @@ const OrderForm = ({
               
               <FormField
                 control={form.control}
+                name="billingCompany"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base font-medium">{t('orders.form.billingCompany') || "Billing Company"}</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="text" 
+                        className="h-12 text-base"
+                        placeholder={t('orders.form.billingCompanyPlaceholder') || "Enter billing company name"}
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t('orders.form.billingCompanyDescription') || "The company that will be invoiced"}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
                 name="priority"
                 render={({ field }) => (
                   <FormItem>
