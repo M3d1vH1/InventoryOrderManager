@@ -84,6 +84,7 @@ const customerFormSchema = z.object({
   phone: z.string().optional(),
   contactPerson: z.string().optional(),
   shippingCompany: z.string().optional(),
+  billingCompany: z.string().optional(), // Added billing company field
   notes: z.string().optional(),
 });
 
@@ -102,6 +103,8 @@ interface Customer {
   phone: string | null;
   contactPerson: string | null;
   shippingCompany: string | null;
+  billingCompany: string | null; // Added billing company field
+  preferredShippingCompany: string | null;
   notes: string | null;
   createdAt: Date;
 }
@@ -343,6 +346,7 @@ const Customers = () => {
       phone: '',
       contactPerson: '',
       shippingCompany: '',
+      billingCompany: '',
       notes: '',
     },
   });
@@ -362,6 +366,7 @@ const Customers = () => {
       phone: '',
       contactPerson: '',
       shippingCompany: '',
+      billingCompany: '',
       notes: '',
     },
   });
@@ -395,6 +400,7 @@ const Customers = () => {
       phone: customer.phone || undefined,
       contactPerson: customer.contactPerson || undefined,
       shippingCompany: customer.shippingCompany || undefined,
+      billingCompany: customer.billingCompany || undefined,
       notes: customer.notes || undefined,
     });
     
