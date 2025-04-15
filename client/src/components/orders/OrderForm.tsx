@@ -39,7 +39,7 @@ interface Customer {
   id: number;
   name: string;
   preferredShippingCompany?: string;
-  customShippingCompany?: string;
+  billingCompany?: string; // Changed from customShippingCompany
   shippingCompany?: string;
 }
 
@@ -311,9 +311,9 @@ const OrderForm = ({
     if (customer.preferredShippingCompany) {
       shippingCompany = customer.preferredShippingCompany;
     } 
-    // Use custom shipping company if available
-    else if (customer.customShippingCompany) {
-      shippingCompany = customer.customShippingCompany;
+    // Use billing company if available
+    else if (customer.billingCompany) {
+      shippingCompany = customer.billingCompany;
     }
     // Otherwise use the regular shipping company if available
     else if (customer.shippingCompany) {

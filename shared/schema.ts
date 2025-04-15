@@ -246,7 +246,7 @@ export const customers = pgTable("customers", {
   contactPerson: text("contact_person"),
   shippingCompany: text("shipping_company"),
   preferredShippingCompany: shippingCompanyEnum("preferred_shipping_company"),
-  customShippingCompany: text("custom_shipping_company"),
+  billingCompany: text("custom_shipping_company"), // Renamed from customShippingCompany, keeping DB column name for compatibility
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
@@ -266,7 +266,7 @@ export const insertCustomerSchema = createInsertSchema(customers)
     contactPerson: z.string().optional(),
     shippingCompany: z.string().optional(),
     preferredShippingCompany: z.enum(['dhl', 'fedex', 'ups', 'usps', 'royal_mail', 'other']).optional(),
-    customShippingCompany: z.string().optional(),
+    billingCompany: z.string().optional(), // Field for tracking which company should be invoiced
     notes: z.string().optional(),
   });
 
