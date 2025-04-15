@@ -763,24 +763,11 @@ const Products = () => {
                           <td className="py-4 px-4">
                             <div className="flex items-center gap-3">
                               <div className="w-12 h-12 flex-shrink-0 rounded-md overflow-hidden bg-slate-100 border border-slate-200">
-                                {product.imagePath ? (
-                                  <img 
-                                    src={product.imagePath.startsWith('http') ? 
-                                        product.imagePath : 
-                                        product.imagePath.startsWith('/') ?
-                                        product.imagePath :
-                                        `/${product.imagePath}`}
-                                    alt={product.name}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).src = '/placeholder-image.svg';
-                                    }}
-                                  />
-                                ) : (
-                                  <div className="flex items-center justify-center h-full text-slate-300">
-                                    <Package size={20} />
-                                  </div>
-                                )}
+                                <ProductImage
+                                  imagePath={product.imagePath}
+                                  productName={product.name}
+                                  className="w-full h-full object-cover"
+                                />
                               </div>
                               <div className="min-w-0">
                                 <p className="font-medium text-slate-800 truncate max-w-[200px]">{product.name}</p>
@@ -883,24 +870,11 @@ const Products = () => {
                       <div className="p-5 flex flex-col md:flex-row gap-5">
                         {/* Product image */}
                         <div className="w-full md:w-28 md:h-28 aspect-square flex-shrink-0 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 relative">
-                          {product.imagePath ? (
-                            <img 
-                              src={product.imagePath.startsWith('http') ? 
-                                  product.imagePath : 
-                                  product.imagePath.startsWith('/') ?
-                                  product.imagePath :
-                                  `/${product.imagePath}`}
-                              alt={product.name}
-                              className="w-full h-full object-contain"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = '/placeholder-image.svg';
-                              }}
-                            />
-                          ) : (
-                            <div className="flex items-center justify-center h-full text-slate-300">
-                              <Package size={32} />
-                            </div>
-                          )}
+                          <ProductImage
+                            imagePath={product.imagePath}
+                            productName={product.name}
+                            className="w-full h-full object-contain"
+                          />
                           
                           <div className="absolute top-2 left-2">
                             <span className={`text-xs px-2 py-1 rounded-full font-medium ${
@@ -1118,24 +1092,24 @@ const Products = () => {
                               </div>
                             ) : (imageFile || editingProduct?.imagePath) && !imagePreview ? (
                               <div className="relative w-full h-40 border rounded-md overflow-hidden">
-                                <img 
-                                  src={
-                                    imageFile 
-                                      ? URL.createObjectURL(imageFile) 
-                                      : editingProduct?.imagePath
-                                        ? (editingProduct.imagePath.startsWith('http') 
-                                          ? editingProduct.imagePath 
-                                          : editingProduct.imagePath.startsWith('/') 
-                                            ? editingProduct.imagePath
-                                            : `/${editingProduct.imagePath}`)
-                                        : ''
-                                  }
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).src = '/placeholder-image.svg';
-                                  }}
-                                  alt="Product preview" 
-                                  className="w-full h-full object-cover"
-                                />
+                                {imageFile ? (
+                                  <img 
+                                    src={URL.createObjectURL(imageFile)}
+                                    alt="Product preview" 
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = '/placeholder-image.svg';
+                                    }}
+                                  />
+                                ) : editingProduct?.imagePath ? (
+                                  <ProductImage
+                                    imagePath={editingProduct.imagePath}
+                                    productName={editingProduct?.name || "Product preview"}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <img src="/placeholder-image.svg" alt="Product preview" className="w-full h-full object-cover" />
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -1529,18 +1503,10 @@ const Products = () => {
                       <div className="md:w-1/3">
                         <div className="bg-slate-50 border border-slate-100 rounded-xl overflow-hidden">
                           <div className="relative aspect-square">
-                            <img 
-                              src={viewingProduct.imagePath.startsWith('http') ? 
-                                   viewingProduct.imagePath : 
-                                   viewingProduct.imagePath.startsWith('/') ?
-                                   viewingProduct.imagePath :
-                                   `/${viewingProduct.imagePath}`}
-                              alt={viewingProduct.name}
+                            <ProductImage
+                              imagePath={viewingProduct.imagePath}
+                              productName={viewingProduct.name}
                               className="object-cover w-full h-full"
-                              onError={(e) => {
-                                console.error("Error loading product detail image:", viewingProduct.imagePath);
-                                (e.target as HTMLImageElement).src = '/placeholder-image.svg';
-                              }}
                             />
                           </div>
                         </div>
