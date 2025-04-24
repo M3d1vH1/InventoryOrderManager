@@ -71,8 +71,7 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     const browser = await puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
       headless: true, // Use headless mode
-      // Don't hardcode the path - let puppeteer find the chrome executable
-      // This ensures it works in different environments including production
+      executablePath: '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium', // Use system-installed Chromium
     });
     
     // Create a new page
@@ -110,7 +109,7 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
       const browser = await puppeteer.launch({
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
         headless: true, // Use headless mode
-        // Don't hardcode the path - let puppeteer find the chrome executable
+        executablePath: '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium', // Use system-installed Chromium
       });
       const page = await browser.newPage();
       
