@@ -3175,9 +3175,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // First try to get shipping company info from the customer record
       const customer = await storage.getCustomerByName(order.customerName);
+      
+      // Check for billingCompany (originally customShippingCompany, renamed for UI)
       if (customer && customer.billingCompany) {
         shippingInfo = customer.billingCompany;
       } 
+      // Check for regular shippingCompany - this is what most customers have
+      else if (customer && customer.shippingCompany) {
+        shippingInfo = customer.shippingCompany;
+      }
       // Try preferred shipping company if available
       else if (customer && customer.preferredShippingCompany) {
         shippingInfo = customer.preferredShippingCompany;
