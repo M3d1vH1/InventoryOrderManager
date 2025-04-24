@@ -70,7 +70,7 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     // Launch a browser instance with fallback options for different environments
     const browser = await puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-      headless: "new", // Use new headless mode for better compatibility
+      headless: true, // Use headless mode
       // Don't hardcode the path - let puppeteer find the chrome executable
       // This ensures it works in different environments including production
     });
@@ -109,8 +109,8 @@ export async function generateOrderPDF(orderId: number, language: string = 'en')
     try {
       const browser = await puppeteer.launch({
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-        headless: true,
-        executablePath: '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium'
+        headless: true, // Use headless mode
+        // Don't hardcode the path - let puppeteer find the chrome executable
       });
       const page = await browser.newPage();
       
@@ -167,8 +167,8 @@ async function generateOrderHTML(orderWithItems: any, texts: Record<string, stri
   
   // First try to get shipping company info from the customer record
   const customer = await storage.getCustomerByName(orderWithItems.customerName);
-  if (customer && customer.customShippingCompany) {
-    shippingInfo = customer.customShippingCompany;
+  if (customer && customer.billingCompany) {
+    shippingInfo = customer.billingCompany;
   } 
   // Try preferred shipping company if available
   else if (customer && customer.preferredShippingCompany) {
