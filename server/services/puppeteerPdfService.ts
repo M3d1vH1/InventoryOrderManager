@@ -166,21 +166,35 @@ async function generateOrderHTML(orderWithItems: any, texts: Record<string, stri
   
   // First try to get shipping company info from the customer record
   const customer = await storage.getCustomerByName(orderWithItems.customerName);
+  console.log('Customer data:', JSON.stringify(customer, null, 2));
+  
+  // Check for billingCompany
   if (customer && customer.billingCompany) {
+    console.log('Using billingCompany:', customer.billingCompany);
     shippingInfo = customer.billingCompany;
   } 
+  // Try for custom_shipping_company directly as fallback
+  else if (customer && (customer as any).custom_shipping_company) {
+    console.log('Using custom_shipping_company:', (customer as any).custom_shipping_company);
+    shippingInfo = (customer as any).custom_shipping_company;
+  }
   // Try preferred shipping company if available
   else if (customer && customer.preferredShippingCompany) {
+    console.log('Using preferredShippingCompany:', customer.preferredShippingCompany);
     shippingInfo = customer.preferredShippingCompany;
   }
   // Fall back to order data if available (supporting legacy data)
   else if ((orderWithItems as any).shippingCompany) {
+    console.log('Using order.shippingCompany:', (orderWithItems as any).shippingCompany);
     shippingInfo = (orderWithItems as any).shippingCompany;
   }
   // Last fallback to area information
   else if (orderWithItems.area) {
+    console.log('Using order.area as fallback:', orderWithItems.area);
     shippingInfo = orderWithItems.area;
   }
+  
+  console.log('Final shipping info:', shippingInfo);
   
   // HTML template with CSS for printing
   return `
