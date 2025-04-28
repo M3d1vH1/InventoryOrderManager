@@ -149,10 +149,20 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
     mutationFn: async (data: any) => {
       if (invoice) {
         // Update existing invoice
-        return apiRequest(`PATCH /api/supplier-payments/invoices/${invoice.id}`, data);
+        return apiRequest({
+          url: `/api/supplier-payments/invoices/${invoice.id}`,
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
       } else {
         // Create new invoice
-        return apiRequest('POST /api/supplier-payments/invoices', data);
+        return apiRequest({
+          url: '/api/supplier-payments/invoices',
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
       }
     },
     onSuccess: () => {
@@ -237,7 +247,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
                 name="supplierId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('invoices.supplier')}</FormLabel>
+                    <FormLabel>{t('supplierPayments.invoice.supplier')}</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
                       defaultValue={field.value}
@@ -245,7 +255,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder={t('invoices.selectSupplier')} />
+                          <SelectValue placeholder={t('supplierPayments.invoice.selectSupplier')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -267,7 +277,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
                 name="invoiceDate"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>{t('invoices.invoiceDate')}</FormLabel>
+                    <FormLabel>{t('supplierPayments.invoice.invoiceDate')}</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -281,7 +291,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
                             {field.value ? (
                               format(field.value, "PPP")
                             ) : (
-                              <span>{t('invoices.selectDate')}</span>
+                              <span>{t('supplierPayments.invoice.selectDate')}</span>
                             )}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
@@ -310,7 +320,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
                 name="dueDate"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>{t('invoices.dueDate')}</FormLabel>
+                    <FormLabel>{t('supplierPayments.invoice.dueDate')}</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -324,7 +334,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
                             {field.value ? (
                               format(field.value, "PPP")
                             ) : (
-                              <span>{t('invoices.selectDate')}</span>
+                              <span>{t('supplierPayments.invoice.selectDate')}</span>
                             )}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
@@ -353,13 +363,13 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
                 name="amount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('invoices.amount')}</FormLabel>
+                    <FormLabel>{t('supplierPayments.invoice.amount')}</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
                         min="0" 
                         step="0.01"
-                        placeholder={t('invoices.amountPlaceholder')} 
+                        placeholder={t('supplierPayments.invoice.amountPlaceholder')} 
                         {...field} 
                       />
                     </FormControl>
@@ -374,13 +384,13 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
                 name="paidAmount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('invoices.paidAmount')}</FormLabel>
+                    <FormLabel>{t('supplierPayments.invoice.paidAmount')}</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
                         min="0" 
                         step="0.01"
-                        placeholder={t('invoices.paidAmountPlaceholder')} 
+                        placeholder={t('supplierPayments.invoice.paidAmountPlaceholder')} 
                         {...field} 
                         value={field.value || '0'}
                       />
