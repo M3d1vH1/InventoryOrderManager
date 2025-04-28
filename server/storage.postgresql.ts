@@ -34,7 +34,12 @@ import {
   materialConsumptions, type MaterialConsumption, type InsertMaterialConsumption,
   productionLogs, type ProductionLog, type InsertProductionLog,
   materialInventoryChanges, type MaterialInventoryChange, type InsertMaterialInventoryChange,
-  productionQualityChecks, type ProductionQualityCheck, type InsertProductionQualityCheck
+  productionQualityChecks, type ProductionQualityCheck, type InsertProductionQualityCheck,
+  // Supplier payment tracking schemas
+  suppliers, type Supplier, type InsertSupplier,
+  supplierInvoices, type SupplierInvoice, type InsertSupplierInvoice,
+  supplierPayments, type SupplierPayment, type InsertSupplierPayment,
+  invoiceStatusEnum, paymentMethodEnum
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { log } from './vite';
