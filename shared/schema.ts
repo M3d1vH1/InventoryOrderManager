@@ -1263,6 +1263,7 @@ export const supplierInvoices = pgTable("supplier_invoices", {
   description: text("description"),
   notes: text("notes"),
   attachmentPath: text("attachment_path"),
+  attachment: text("attachment"),
   isRecurring: boolean("is_recurring").default(false),
   recurringCycle: integer("recurring_cycle"), // Days between recurring invoices
   createdAt: timestamp("created_at").notNull().defaultNow(),
