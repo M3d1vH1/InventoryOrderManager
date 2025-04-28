@@ -40,6 +40,7 @@ import callLogsRouter from "./api/callLogs";
 import prospectiveCustomersRouter from "./api/prospectiveCustomers";
 import reportsRouter from "./api/reports";
 import productionRouter from "./api/production";
+import supplierPaymentsRouter from "./api/supplierPayments";
 import { createSlackService } from "./services/notifications/slackService";
 import { printShippingLabel, printBatchShippingLabels, previewShippingLabel, servePreviewImage } from "./api/labelPrinting";
 
