@@ -21,7 +21,8 @@
     "collapseSidebar": "Collapse sidebar",
     "days": "days",
     "callLogs": "Call Logs",
-    "sales": "Sales"
+    "sales": "Sales",
+    "supplierPayments": "Supplier Payments"
   },
   "dashboard": {
     "title": "Dashboard",
