@@ -256,6 +256,7 @@ const CalendarPage: React.FC = () => {
           start: paymentDate,
           end: paymentDate,
           type: 'payment',
+          customerName: payment.supplier_name || t('common.unknown'), // Required field in CalendarEvent type
           supplierName: payment.supplier_name || t('common.unknown'),
           paymentId: payment.id,
           paymentAmount: payment.amount,
@@ -273,6 +274,7 @@ const CalendarPage: React.FC = () => {
             start: callbackDate,
             end: callbackDate,
             type: 'payment',
+            customerName: payment.supplier_name || t('common.unknown'), // Required field in CalendarEvent type
             supplierName: payment.supplier_name || t('common.unknown'),
             paymentId: payment.id,
             callbackRequired: true,
@@ -724,6 +726,23 @@ const CalendarPage: React.FC = () => {
                       tooltipAccessor={(event: any) => {
                         if (event.type === 'call') {
                           return `${event.customerName} - ${event.callDetails || t('calendar.noCallDetails')}`;
+                        } else if (event.type === 'payment') {
+                          if (event.callbackRequired) {
+                            return `${event.supplierName} - ${t('supplierPayments.callbackRequired')}: ${t('common.yes')}`;
+                          }
+                          return `${event.supplierName} - ${t('supplierPayments.amount')}: ${event.paymentAmount?.toFixed(2) || ''}`;
+                        } else if (event.type === 'inventory') {
+                          return `${event.productName} - ${
+                            event.inventoryType === 'restock' ? t('inventory.restock') :
+                            event.inventoryType === 'audit' ? t('inventory.audit') :
+                            t('inventory.adjustment')
+                          }`;
+                        } else if (event.type === 'production') {
+                          return `${event.recipeName} - ${
+                            event.productionStage === 'start' ? t('production.started') :
+                            event.productionStage === 'complete' ? t('production.completed') :
+                            t('production.estimatedCompletion')
+                          } - ${t('production.quantity')}: ${event.productionQuantity || ''}`;
                         }
                         return `${event.customerName} - ${event.orderNumber || ''}`;
                       }}
@@ -767,6 +786,24 @@ const CalendarPage: React.FC = () => {
                             {event.type === 'call' && !event.isFollowUp && (
                               <Badge className="bg-[#F59E0B]">{t('calendar.scheduledCall')}</Badge>
                             )}
+                            {event.type === 'payment' && !event.callbackRequired && (
+                              <Badge className="bg-[#14B8A6]">{t('calendar.payment')}</Badge>
+                            )}
+                            {event.type === 'payment' && event.callbackRequired && (
+                              <Badge className="bg-[#EC4899]">{t('calendar.paymentCallback')}</Badge>
+                            )}
+                            {event.type === 'inventory' && (
+                              <Badge className="bg-[#06B6D4]">{t('calendar.inventory')}</Badge>
+                            )}
+                            {event.type === 'production' && event.productionStage === 'start' && (
+                              <Badge className="bg-[#2563EB]">{t('calendar.productionStart')}</Badge>
+                            )}
+                            {event.type === 'production' && event.productionStage === 'complete' && (
+                              <Badge className="bg-[#16A34A]">{t('calendar.productionComplete')}</Badge>
+                            )}
+                            {event.type === 'production' && event.productionStage === 'estimated' && (
+                              <Badge className="bg-[#7C3AED]">{t('calendar.productionEstimated')}</Badge>
+                            )}
                             <span className="text-sm font-medium">{getRelativeDate(event.start)}</span>
                           </div>
                           <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -786,6 +823,34 @@ const CalendarPage: React.FC = () => {
                             <div className="flex items-start space-x-2 mt-1">
                               <Phone className="h-4 w-4 text-muted-foreground mt-0.5" />
                               <span className="text-sm truncate">{event.callDetails}</span>
+                            </div>
+                          )}
+                          
+                          {/* Payment specific info */}
+                          {event.type === 'payment' && event.paymentAmount && (
+                            <div className="flex items-start space-x-2 mt-1">
+                              <DollarSign className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <span className="text-sm">{event.paymentAmount.toFixed(2)}</span>
+                            </div>
+                          )}
+                          
+                          {/* Inventory specific info */}
+                          {event.type === 'inventory' && event.inventoryType && (
+                            <div className="flex items-start space-x-2 mt-1">
+                              <Package className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <span className="text-sm">
+                                {event.inventoryType === 'restock' && t('inventory.restock')}
+                                {event.inventoryType === 'audit' && t('inventory.audit')}
+                                {event.inventoryType === 'adjustment' && t('inventory.adjustment')}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {/* Production specific info */}
+                          {event.type === 'production' && event.productionQuantity && (
+                            <div className="flex items-start space-x-2 mt-1">
+                              <Factory className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <span className="text-sm">{t('production.quantity')}: {event.productionQuantity}</span>
                             </div>
                           )}
                           <div className="flex items-start space-x-2 mt-1">
@@ -897,23 +962,160 @@ const CalendarPage: React.FC = () => {
                   </div>
                 </>
               )}
+              
+              {/* Payment details */}
+              {selectedEvent?.type === 'payment' && (
+                <>
+                  <Separator />
+                  <div>
+                    <span className="text-sm font-medium">{t('supplierPayments.supplier')}</span>
+                    <p className="text-sm mt-1">{selectedEvent.supplierName}</p>
+                  </div>
+                  
+                  {selectedEvent.paymentAmount && (
+                    <>
+                      <Separator />
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{t('supplierPayments.amount')}</span>
+                        <span className="text-sm">{selectedEvent.paymentAmount.toFixed(2)}</span>
+                      </div>
+                    </>
+                  )}
+                  
+                  {selectedEvent.callbackRequired && (
+                    <>
+                      <Separator />
+                      <div>
+                        <span className="text-sm font-medium">{t('supplierPayments.callbackRequired')}</span>
+                        <p className="text-sm mt-1">{t('common.yes')}</p>
+                        
+                        {selectedEvent.callbackDate && (
+                          <div className="mt-2">
+                            <span className="text-sm font-medium">{t('supplierPayments.callbackDate')}</span>
+                            <p className="text-sm mt-1">
+                              {moment(selectedEvent.callbackDate).format('MMMM Do YYYY')}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {selectedEvent.callbackNotes && (
+                          <div className="mt-2">
+                            <span className="text-sm font-medium">{t('supplierPayments.callbackNotes')}</span>
+                            <p className="text-sm mt-1">{selectedEvent.callbackNotes}</p>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+              
+              {/* Inventory details */}
+              {selectedEvent?.type === 'inventory' && (
+                <>
+                  <Separator />
+                  <div>
+                    <span className="text-sm font-medium">{t('inventory.product')}</span>
+                    <p className="text-sm mt-1">{selectedEvent.productName}</p>
+                  </div>
+                  
+                  <Separator />
+                  <div>
+                    <span className="text-sm font-medium">{t('inventory.eventType')}</span>
+                    <p className="text-sm mt-1">
+                      {selectedEvent.inventoryType === 'restock' && t('inventory.restock')}
+                      {selectedEvent.inventoryType === 'audit' && t('inventory.audit')}
+                      {selectedEvent.inventoryType === 'adjustment' && t('inventory.adjustment')}
+                    </p>
+                  </div>
+                </>
+              )}
+              
+              {/* Production details */}
+              {selectedEvent?.type === 'production' && (
+                <>
+                  <Separator />
+                  <div>
+                    <span className="text-sm font-medium">{t('production.recipe')}</span>
+                    <p className="text-sm mt-1">{selectedEvent.recipeName}</p>
+                  </div>
+                  
+                  {selectedEvent.productionQuantity && (
+                    <>
+                      <Separator />
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{t('production.quantity')}</span>
+                        <span className="text-sm">{selectedEvent.productionQuantity}</span>
+                      </div>
+                    </>
+                  )}
+                  
+                  <Separator />
+                  <div>
+                    <span className="text-sm font-medium">{t('production.stage')}</span>
+                    <p className="text-sm mt-1">
+                      {selectedEvent.productionStage === 'start' && t('production.started')}
+                      {selectedEvent.productionStage === 'complete' && t('production.completed')}
+                      {selectedEvent.productionStage === 'estimated' && t('production.estimatedCompletion')}
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
           
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            {selectedEvent?.type === 'call' && (
-              <Button type="button" onClick={handleViewCall}>
-                {t('calendar.viewCall')}
-              </Button>
-            )}
+            {/* Order related buttons */}
             {(selectedEvent?.type === 'created' || selectedEvent?.type === 'shipped' || selectedEvent?.type === 'estimated') && (
               <Button type="button" onClick={handleViewOrder}>
                 {t('calendar.viewOrder')}
               </Button>
             )}
-            <Button type="button" variant="outline" onClick={handleViewCustomer}>
-              {t('calendar.viewCustomer')}
-            </Button>
+            
+            {/* Call related buttons */}
+            {selectedEvent?.type === 'call' && (
+              <Button type="button" onClick={handleViewCall}>
+                {t('calendar.viewCall')}
+              </Button>
+            )}
+            
+            {/* Payment related buttons */}
+            {selectedEvent?.type === 'payment' && selectedEvent.paymentId && (
+              <Button type="button" onClick={() => {
+                navigate(`/supplier-payments/${selectedEvent.paymentId}`);
+                setIsEventModalOpen(false);
+              }}>
+                {t('supplierPayments.viewPayment')}
+              </Button>
+            )}
+            
+            {/* Inventory related buttons */}
+            {selectedEvent?.type === 'inventory' && selectedEvent.productId && (
+              <Button type="button" onClick={() => {
+                navigate(`/products/${selectedEvent.productId}`);
+                setIsEventModalOpen(false);
+              }}>
+                {t('inventory.viewProduct')}
+              </Button>
+            )}
+            
+            {/* Production related buttons */}
+            {selectedEvent?.type === 'production' && selectedEvent.productionBatchId && (
+              <Button type="button" onClick={() => {
+                navigate(`/production/batches/${selectedEvent.productionBatchId}`);
+                setIsEventModalOpen(false);
+              }}>
+                {t('production.viewBatch')}
+              </Button>
+            )}
+            
+            {/* Common buttons */}
+            {selectedEvent?.type !== 'inventory' && selectedEvent?.type !== 'production' && (
+              <Button type="button" variant="outline" onClick={handleViewCustomer}>
+                {t('calendar.viewCustomer')}
+              </Button>
+            )}
+            
             <DialogClose asChild>
               <Button type="button" variant="secondary">
                 {t('calendar.close')}
