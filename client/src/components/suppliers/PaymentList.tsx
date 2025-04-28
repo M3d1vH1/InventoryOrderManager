@@ -65,12 +65,15 @@ export const PaymentList = () => {
   // Delete payment mutation
   const deletePaymentMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest('DELETE', `/api/supplier-payments/payments/${id}`);
+      return apiRequest({
+        url: `/api/supplier-payments/payments/${id}`,
+        method: 'DELETE'
+      });
     },
     onSuccess: () => {
       toast({
-        title: t('payments.deleted'),
-        description: t('payments.deleteSuccess'),
+        title: t('supplierPayments.payment.deleted'),
+        description: t('supplierPayments.payment.deleteSuccess'),
       });
       queryClient.invalidateQueries({ queryKey: ['/api/supplier-payments/payments'] });
       queryClient.invalidateQueries({ queryKey: ['/api/supplier-payments/invoices'] });
@@ -80,7 +83,7 @@ export const PaymentList = () => {
     onError: (error: any) => {
       toast({
         title: t('common.error'),
-        description: error.message || t('payments.deleteError'),
+        description: error.message || t('supplierPayments.payment.deleteError'),
         variant: 'destructive',
       });
     },
@@ -202,9 +205,9 @@ export const PaymentList = () => {
       <Card className="mb-8">
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>{t('payments.list')}</CardTitle>
+            <CardTitle>{t('supplierPayments.payment.list')}</CardTitle>
             <Button onClick={handleAddClick}>
-              <Plus className="mr-2 h-4 w-4" /> {t('payments.add')}
+              <Plus className="mr-2 h-4 w-4" /> {t('supplierPayments.payment.add')}
             </Button>
           </div>
         </CardHeader>
@@ -213,7 +216,7 @@ export const PaymentList = () => {
             <div className="relative flex-grow">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder={t('payments.search')}
+                placeholder={t('supplierPayments.payment.search')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-8"
@@ -225,10 +228,10 @@ export const PaymentList = () => {
                 onValueChange={setFilterSupplier}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t('payments.filterBySupplier')} />
+                  <SelectValue placeholder={t('supplierPayments.payment.filterBySupplier')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t('payments.allSuppliers')}</SelectItem>
+                  <SelectItem value="all">{t('supplierPayments.payment.allSuppliers')}</SelectItem>
                   {suppliers.map((supplier: any) => (
                     <SelectItem key={supplier.id} value={supplier.id.toString()}>
                       {supplier.name}
@@ -246,12 +249,12 @@ export const PaymentList = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{t('payments.date')}</TableHead>
-                    <TableHead>{t('payments.supplier')}</TableHead>
-                    <TableHead>{t('payments.invoice')}</TableHead>
-                    <TableHead>{t('payments.amount')}</TableHead>
-                    <TableHead>{t('payments.paymentMethod')}</TableHead>
-                    <TableHead>{t('payments.reference')}</TableHead>
+                    <TableHead>{t('supplierPayments.payment.date')}</TableHead>
+                    <TableHead>{t('supplierPayments.payment.supplier')}</TableHead>
+                    <TableHead>{t('supplierPayments.payment.invoice')}</TableHead>
+                    <TableHead>{t('supplierPayments.payment.amount')}</TableHead>
+                    <TableHead>{t('supplierPayments.payment.paymentMethod')}</TableHead>
+                    <TableHead>{t('supplierPayments.payment.reference')}</TableHead>
                     <TableHead className="text-right">{t('common.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -259,7 +262,7 @@ export const PaymentList = () => {
                   {filteredPayments.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-4">
-                        {t('payments.noResults')}
+                        {t('supplierPayments.payment.noResults')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -312,9 +315,9 @@ export const PaymentList = () => {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('payments.confirmDelete')}</DialogTitle>
+            <DialogTitle>{t('supplierPayments.payment.confirmDelete')}</DialogTitle>
             <DialogDescription>
-              {t('payments.deleteWarning')}
+              {t('supplierPayments.payment.deleteWarning')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

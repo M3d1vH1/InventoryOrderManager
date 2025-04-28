@@ -104,12 +104,12 @@ export const InvoiceList = () => {
   };
 
   // Get badge variant based on invoice status
-  const getStatusBadgeVariant = (status: string) => {
+  const getStatusBadgeVariant = (status: string): "default" | "destructive" | "outline" | "secondary" => {
     switch (status) {
       case 'paid':
-        return 'success';
+        return 'secondary'; // instead of success
       case 'partially_paid':
-        return 'warning';
+        return 'default'; // instead of warning
       case 'overdue':
         return 'destructive';
       case 'cancelled':
