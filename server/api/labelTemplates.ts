@@ -314,10 +314,18 @@ ${previewContent}
     const sourceLogo = path.join(process.cwd(), 'attached_assets', 'Frame 40.png');
     const targetLogo = path.join(publicDir, 'shipping-logo.png');
     
-    // Always copy the latest logo for preview
+    // Always copy the latest logo for preview with read permissions for all
     if (fs.existsSync(sourceLogo)) {
       console.log(`Copying logo from ${sourceLogo} to ${targetLogo} for preview`);
       fs.copyFileSync(sourceLogo, targetLogo);
+      
+      // Make sure file has correct permissions for web access
+      try {
+        fs.chmodSync(targetLogo, 0o644);
+        console.log(`Updated permissions for ${targetLogo}`);
+      } catch (error) {
+        console.error(`Error updating permissions: ${error}`);
+      }
     }
     
     const publicPath = path.join(publicDir, previewFilename);

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Embedded Logo Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            text-align: center;
+        }
+        .logo-container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 600px;
+        }
+        .logo {
+            max-width: 200px;
+            max-height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Embedded Logo Test</h1>
+    
+    <div class="logo-container">
+        <h2>Base64 Embedded Logo</h2>
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAkMAAACBCAYAAADDhr4NAAABaWlDQ1BEaXNwbGF5IFAzAAB4nHWQvUvDUBTFT6tS0DqIDh0cMolDi1M/Nl2KQzUgCFUHu0VtbV1EQkluLQ51cXDwH3AQRPwYHJxcFMFBcXES6uDgIIJQuL4baoPc5d57f+e9c4c7QDBQumFmAcAwbZOfTktL5WWp94UQIiETBgCF0nWzzYzK5wqEAZ8IAe9Eowu/caDTH/uDUMr3/RAiNOI5Q7ftDeLbxPmqbXnYIC5pRT1HvEecdD0Pid+I+47vp4m7xKqR7PVxwcPaz9iY4OI/eL3Si+UlqgfEDcO0KIuUK5BnD7FN65TIu0yvWFLIfYFKS6qWsAZXm9QNX8fiXnSrrcUQBB4QkKHCRhZpWLCQQZpixFAksYAM1VYoVfqrtbgTVGm9gSr1esiUU9CaI0yxSYxrG1XUVzWeqU99mTAIiPD6UaFCGmOGsSzzYfHbkOcYN0y6MJ53gNgm0HXrtLRoh8+bQOTZaSlSB6IXgPKd02L0AA1bQNvr/Qc2JGfEIGjNtAAAABhQTFRFAAAA////Z+kJGQAAAAJ0Uk5TAP9bkSK1AAAAoElEQVR4nO3ZQRWCQBRAwVVBJrEJTGISm8DWVEEQEX+CPo858+51L29uUw0WtqoGR2eHk6OzHyeHZ44uDu6aOW+cPdxRm7yg/m8E9ePkxGlsz+3Zo3/7pzTojQn1YkI9e2nQCxPqhQn1woR6YUK9MKFemFAvTKgXJtQLE+qFCfXChHphQr0woV6YUC9MqBcm1AsT6oUJ9cKEemFCPTOhf74IkxB63cR8wAAAAABJRU5ErkJggg==" class="logo" alt="Embedded Logo">
+    </div>
+    
+    <div class="logo-container">
+        <h2>Normal URL Logo</h2>
+        <img src="shipping-logo.png" class="logo" alt="Normal URL Logo">
+    </div>
+    
+    <div class="logo-container">
+        <h2>Logo with Full Path</h2>
+        <img src="/shipping-logo.png" class="logo" alt="Full Path Logo">
+    </div>
+</body>
+</html>
