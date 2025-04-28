@@ -3,7 +3,7 @@ import fs from 'fs';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { storage } from '../storage';
-import { OrderWithItems } from '../../shared/types';
+import { OrderWithItems } from '../api/types';
 
 const execPromise = promisify(exec);
 
@@ -214,11 +214,11 @@ E
       const result = await this.sendToPrinter(filePath);
       
       // Log the printing event
-      await storage.createOrderChangelog({
+      await storage.addOrderChangelog({
         orderId,
         userId: 1, // Default to system user if auth user not available
-        changeType: 'LABEL_PRINTED',
-        details: `Printed shipping label for box ${currentBox}/${boxCount}`
+        action: 'label_printed',
+        notes: `Printed shipping label for box ${currentBox}/${boxCount}`
       });
       
       return result;
