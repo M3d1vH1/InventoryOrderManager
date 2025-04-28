@@ -1,34 +1,20 @@
 import { Request, Response } from 'express';
-import { labelPrinterService } from '../services/labelPrinterService';
 import { storage } from '../storage';
+import { labelPrinterService } from '../services/labelPrinterService';
 import { z } from 'zod';
+import path from 'path';
+import fs from 'fs';
 
-// Validation schema for print label request
+// Validation schema for printing requests
 const printLabelSchema = z.object({
-  orderId: z.number({
-    required_error: 'Order ID is required',
-    invalid_type_error: 'Order ID must be a number'
-  }),
-  boxCount: z.number({
-    required_error: 'Box count is required',
-    invalid_type_error: 'Box count must be a number'
-  }).int().positive(),
-  currentBox: z.number({
-    required_error: 'Current box number is required',
-    invalid_type_error: 'Current box number must be a number'
-  }).int().positive().optional()
+  orderId: z.number(),
+  boxCount: z.number().min(1),
+  currentBox: z.number().min(1)
 });
 
-// Validation schema for print batch labels request
-const printBatchLabelsSchema = z.object({
-  orderId: z.number({
-    required_error: 'Order ID is required',
-    invalid_type_error: 'Order ID must be a number'
-  }),
-  boxCount: z.number({
-    required_error: 'Box count is required',
-    invalid_type_error: 'Box count must be a number'
-  }).int().positive()
+const batchPrintSchema = z.object({
+  orderId: z.number(),
+  boxCount: z.number().min(1)
 });
 
 /**
@@ -36,56 +22,31 @@ const printBatchLabelsSchema = z.object({
  */
 export async function printShippingLabel(req: Request, res: Response) {
   try {
-    // Validate request body
-    const validationResult = printLabelSchema.safeParse(req.body);
+    const { orderId, boxCount, currentBox } = printLabelSchema.parse(req.body);
     
-    if (!validationResult.success) {
-      return res.status(400).json({
-        message: 'Invalid request data',
-        errors: validationResult.error.format()
-      });
-    }
-    
-    const { orderId, boxCount, currentBox = 1 } = validationResult.data;
-    
-    // Check if the order exists
+    // Check if orderId exists
     const order = await storage.getOrder(orderId);
     if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
+      return res.status(404).json({ error: 'Order not found' });
     }
     
-    // Ensure order is in "picked" status or later
-    const validStatuses = ['picked', 'partially_shipped', 'shipped'];
-    if (!validStatuses.includes(order.status)) {
-      return res.status(400).json({ 
-        message: 'Cannot print shipping label for order that is not picked',
-        currentStatus: order.status,
-        requiredStatus: validStatuses.join(' or ')
-      });
+    // Validate that currentBox is not greater than boxCount
+    if (currentBox > boxCount) {
+      return res.status(400).json({ error: 'Current box number cannot exceed total box count' });
     }
     
-    // Print the shipping label
-    const result = await labelPrinterService.printShippingLabel(
-      orderId, 
-      boxCount, 
-      currentBox
-    );
+    // Print the label
+    const result = await labelPrinterService.printShippingLabel(orderId, boxCount, currentBox);
     
-    // Check for errors in the result
-    if (result.startsWith('Error:')) {
-      return res.status(500).json({ message: result });
-    }
-    
-    res.json({ 
-      message: 'Shipping label printed successfully',
-      details: result,
-      orderId,
-      boxCount,
-      currentBox
+    return res.status(200).json({ 
+      success: !result.startsWith('Error:'),
+      message: result 
     });
   } catch (error: any) {
-    console.error('Error printing shipping label:', error);
-    res.status(500).json({ message: error.message });
+    console.error('Error processing print request:', error);
+    return res.status(400).json({ 
+      error: error.message || 'Failed to print shipping label' 
+    });
   }
 }
 
@@ -94,57 +55,26 @@ export async function printShippingLabel(req: Request, res: Response) {
  */
 export async function printBatchShippingLabels(req: Request, res: Response) {
   try {
-    // Validate request body
-    const validationResult = printBatchLabelsSchema.safeParse(req.body);
+    const { orderId, boxCount } = batchPrintSchema.parse(req.body);
     
-    if (!validationResult.success) {
-      return res.status(400).json({
-        message: 'Invalid request data',
-        errors: validationResult.error.format()
-      });
-    }
-    
-    const { orderId, boxCount } = validationResult.data;
-    
-    // Check if the order exists
+    // Check if orderId exists
     const order = await storage.getOrder(orderId);
     if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
+      return res.status(404).json({ error: 'Order not found' });
     }
     
-    // Ensure order is in "picked" status or later
-    const validStatuses = ['picked', 'partially_shipped', 'shipped'];
-    if (!validStatuses.includes(order.status)) {
-      return res.status(400).json({ 
-        message: 'Cannot print shipping labels for order that is not picked',
-        currentStatus: order.status,
-        requiredStatus: validStatuses.join(' or ')
-      });
-    }
-    
-    // Print batch of shipping labels
+    // Print batch of labels
     const results = await labelPrinterService.printBatchLabels(orderId, boxCount);
     
-    // Check if any errors occurred
-    const errors = results.filter(r => r.startsWith('Error:'));
-    
-    if (errors.length > 0) {
-      return res.status(500).json({ 
-        message: 'Some labels failed to print',
-        errors,
-        results
-      });
-    }
-    
-    res.json({ 
-      message: `Successfully printed ${boxCount} shipping labels`,
-      results,
-      orderId,
-      boxCount
+    return res.status(200).json({ 
+      success: true,
+      results
     });
   } catch (error: any) {
-    console.error('Error printing batch shipping labels:', error);
-    res.status(500).json({ message: error.message });
+    console.error('Error processing batch print request:', error);
+    return res.status(400).json({ 
+      error: error.message || 'Failed to print batch of shipping labels' 
+    });
   }
 }
 
@@ -153,45 +83,70 @@ export async function printBatchShippingLabels(req: Request, res: Response) {
  */
 export async function previewShippingLabel(req: Request, res: Response) {
   try {
-    // Validate path parameters
-    const orderId = parseInt(req.params.orderId);
-    if (isNaN(orderId)) {
-      return res.status(400).json({ message: 'Invalid order ID' });
-    }
+    const { orderId, boxCount, currentBox } = printLabelSchema.parse(req.body);
     
-    // Get query parameters with defaults
-    const boxCount = parseInt(req.query.boxCount as string) || 1;
-    const currentBox = parseInt(req.query.currentBox as string) || 1;
-    
-    // Check if the order exists
-    const order = await storage.getOrderWithItems(orderId);
+    // Check if orderId exists
+    const order = await storage.getOrder(orderId);
     if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
+      return res.status(404).json({ error: 'Order not found' });
     }
     
-    // If customer info not embedded, fetch it
-    if (!order.customer && order.customerName) {
-      order.customer = await storage.getCustomerByName(order.customerName);
+    // Validate that currentBox is not greater than boxCount
+    if (currentBox > boxCount) {
+      return res.status(400).json({ error: 'Current box number cannot exceed total box count' });
     }
     
-    // Generate JScript without printing
-    const jScript = labelPrinterService.generateLabelJScript(
-      order, 
-      boxCount, 
-      currentBox
-    );
+    // Generate preview image
+    const previewPath = await labelPrinterService.generatePreview(orderId, boxCount, currentBox);
     
-    // Return the JScript content for preview
-    res.json({ 
-      message: 'Shipping label preview generated',
-      orderId,
-      boxCount,
-      currentBox,
-      jScript,
-      note: 'This is the JScript code that would be sent to the printer'
+    // Create a public URL for the image
+    const filename = path.basename(previewPath);
+    const publicPath = path.join(process.cwd(), 'public', filename);
+    
+    // Copy to public directory for access
+    if (!fs.existsSync(path.dirname(publicPath))) {
+      fs.mkdirSync(path.dirname(publicPath), { recursive: true });
+    }
+    
+    fs.copyFileSync(previewPath, publicPath);
+    
+    // Return the URL to access the preview
+    const previewUrl = `/api/preview-label/${filename}`;
+    
+    return res.status(200).json({ 
+      success: true,
+      previewUrl,
+      message: 'Preview generated successfully'
     });
   } catch (error: any) {
-    console.error('Error generating shipping label preview:', error);
-    res.status(500).json({ message: error.message });
+    console.error('Error generating preview:', error);
+    return res.status(400).json({ 
+      error: error.message || 'Failed to generate label preview' 
+    });
+  }
+}
+
+/**
+ * Serve preview image
+ */
+export async function servePreviewImage(req: Request, res: Response) {
+  try {
+    const { filename } = req.params;
+    
+    // Security check to prevent path traversal
+    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+      return res.status(400).json({ error: 'Invalid filename' });
+    }
+    
+    const filePath = path.join(process.cwd(), 'public', filename);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Preview not found' });
+    }
+    
+    return res.sendFile(filePath);
+  } catch (error: any) {
+    console.error('Error serving preview:', error);
+    return res.status(500).json({ error: 'Failed to serve preview image' });
   }
 }

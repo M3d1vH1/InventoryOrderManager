@@ -3,7 +3,8 @@ import fs from 'fs';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { storage } from '../storage';
-import { OrderWithItems } from '../api/types';
+import { Product } from '../../shared/schema';
+import Canvas from 'canvas';
 
 const execPromise = promisify(exec);
 
@@ -20,6 +21,64 @@ const mmToDots = (mm: number): number => Math.round((mm * PRINTER_DPI) / 25.4);
 // Width and height in dots
 const labelWidthDots = mmToDots(LABEL_WIDTH_MM);
 const labelHeightDots = mmToDots(LABEL_HEIGHT_MM);
+
+// Define OrderWithItems interface
+interface OrderItem {
+  id: number;
+  orderId: number;
+  productId: number;
+  quantity: number;
+  shipped_quantity?: number | null;
+  shipping_status?: string | null;
+  hasQualityIssues?: boolean | null;
+  // These will be fetched from products table
+  name?: string;
+  sku?: string;
+  category?: string | null;
+  tags?: string[] | null;
+  piecesPerBox?: number | null;
+}
+
+interface Customer {
+  id: number;
+  name: string;
+  vatNumber?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  contactPerson?: string | null;
+  shippingCompany?: string | null;
+  preferredShippingCompany?: string | null;
+  billingCompany?: string | null;
+  notes?: string | null;
+  createdAt: Date;
+}
+
+interface OrderWithItems {
+  id: number;
+  orderNumber: string;
+  customerName: string;
+  customerAddress?: string | null;
+  customerCity?: string | null;
+  customerState?: string | null;
+  customerPostalCode?: string | null;
+  customerCountry?: string | null;
+  customerEmail?: string | null;
+  customerPhone?: string | null;
+  customerVat?: string | null;
+  status: string;
+  priority?: string | null;
+  area?: string | null;
+  notes?: string | null;
+  items: OrderItem[];
+  customer?: Customer | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 /**
  * Service for generating and printing shipping labels using CAB EOS1 printer
@@ -150,6 +209,137 @@ E
   }
 
   /**
+   * Generate a visual preview of the shipping label
+   * @param order Order data
+   * @param boxCount Total number of boxes
+   * @param currentBox Current box number
+   * @returns Path to the generated preview image
+   */
+  async generatePreview(orderId: number, boxCount: number, currentBox: number): Promise<string> {
+    try {
+      // Ensure logo is available
+      await this.ensureLogoAvailable();
+      
+      // Get order data
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        throw new Error('Order not found');
+      }
+      
+      // Get order items
+      const orderItems = await storage.getOrderItems(orderId);
+      
+      // Get product details for each item
+      const enhancedItems: OrderItem[] = [];
+      
+      for (const item of orderItems) {
+        const product = await storage.getProduct(item.productId);
+        
+        enhancedItems.push({
+          ...item,
+          name: product?.name || 'Unknown Product',
+          sku: product?.sku || 'N/A',
+          category: product?.category || null
+        });
+      }
+      
+      // Create order with items
+      const orderWithItems: OrderWithItems = {
+        ...order,
+        items: enhancedItems
+      };
+      
+      // Get customer info if available
+      if (order.customerName) {
+        orderWithItems.customer = await storage.getCustomerByName(order.customerName);
+      }
+      
+      // Create a canvas to draw the label preview
+      const canvas = Canvas.createCanvas(labelWidthDots / 2, labelHeightDots / 2); // Scale down for preview
+      const ctx = canvas.getContext('2d');
+      
+      // Draw white background
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw border
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(0, 0, canvas.width, canvas.height);
+      
+      // Try to load and draw logo
+      try {
+        const logo = await Canvas.loadImage(LOGO_PATH);
+        ctx.drawImage(logo, 10, 10, 100, 30);
+      } catch (error) {
+        console.error('Failed to load logo for preview:', error);
+        // Continue without logo
+      }
+      
+      // Get shipping info from customer if available
+      let shippingCompanyInfo = '';
+      const customer = orderWithItems.customer || null;
+      
+      if (customer?.shippingCompany) {
+        shippingCompanyInfo = customer.shippingCompany;
+      } else if (customer?.preferredShippingCompany) {
+        shippingCompanyInfo = customer.preferredShippingCompany;
+      } else if (customer?.billingCompany) {
+        shippingCompanyInfo = customer.billingCompany;
+      } else if ((orderWithItems as any).shippingCompany) {
+        shippingCompanyInfo = (orderWithItems as any).shippingCompany;
+      } else if (orderWithItems.area) {
+        shippingCompanyInfo = orderWithItems.area;
+      }
+      
+      // Draw customer info and other details
+      ctx.fillStyle = 'black';
+      ctx.font = 'bold 15px Arial';
+      ctx.fillText(orderWithItems.customerName || '', 10, 50);
+      
+      ctx.font = '12px Arial';
+      const addressParts = [];
+      if (orderWithItems.customerAddress) addressParts.push(orderWithItems.customerAddress);
+      if (orderWithItems.customerCity) addressParts.push(orderWithItems.customerCity);
+      if (orderWithItems.customerState) addressParts.push(orderWithItems.customerState);
+      if (orderWithItems.customerPostalCode) addressParts.push(orderWithItems.customerPostalCode);
+      
+      const address = addressParts.join(', ');
+      ctx.fillText(address, 10, 70);
+      
+      ctx.fillText(`Τηλέφωνο: ${orderWithItems.customerPhone || ''}`, 10, 90);
+      ctx.fillText(`Μεταφορική: ${shippingCompanyInfo}`, 10, 110);
+      
+      ctx.font = 'bold 16px Arial';
+      ctx.fillText(`Κιβώτιο: ${currentBox} / ${boxCount}`, 10, 140);
+      
+      ctx.font = '12px Arial';
+      ctx.fillText(`Αρ. Παραγγελίας: ${orderWithItems.orderNumber}`, 10, 170);
+      
+      // Save the canvas to a png file
+      const previewDir = path.join(process.cwd(), 'temp');
+      if (!fs.existsSync(previewDir)) {
+        fs.mkdirSync(previewDir, { recursive: true });
+      }
+      
+      const previewPath = path.join(previewDir, `label-preview-${orderId}-${currentBox}-${Date.now()}.png`);
+      const out = fs.createWriteStream(previewPath);
+      const stream = canvas.createPNGStream();
+      
+      await new Promise<void>((resolve, reject) => {
+        stream.pipe(out);
+        out.on('finish', () => resolve());
+        out.on('error', reject);
+      });
+      
+      return previewPath;
+    } catch (error: any) {
+      console.error('Failed to generate label preview:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Send JScript file to printer via USB
    * @param filePath Path to JScript file
    * @returns Success message or error
@@ -193,19 +383,42 @@ E
       // Ensure logo is available
       await this.ensureLogoAvailable();
       
-      // Get order with customer info
-      const order = await storage.getOrderWithItems(orderId);
+      // Get order data
+      const order = await storage.getOrder(orderId);
       if (!order) {
         return 'Error: Order not found';
       }
       
-      // If customer info not embedded, fetch it
-      if (!order.customer && order.customerName) {
-        order.customer = await storage.getCustomerByName(order.customerName);
+      // Get order items
+      const orderItems = await storage.getOrderItems(orderId);
+      
+      // Get product details for each item
+      const enhancedItems: OrderItem[] = [];
+      
+      for (const item of orderItems) {
+        const product = await storage.getProduct(item.productId);
+        
+        enhancedItems.push({
+          ...item,
+          name: product?.name || 'Unknown Product',
+          sku: product?.sku || 'N/A',
+          category: product?.category || null
+        });
+      }
+      
+      // Create order with items
+      const orderWithItems: OrderWithItems = {
+        ...order,
+        items: enhancedItems
+      };
+      
+      // Get customer info if available
+      if (order.customerName) {
+        orderWithItems.customer = await storage.getCustomerByName(order.customerName);
       }
       
       // Generate JScript for label
-      const jScript = this.generateLabelJScript(order, boxCount, currentBox);
+      const jScript = this.generateLabelJScript(orderWithItems, boxCount, currentBox);
       
       // Save to file
       const filePath = await this.saveJScriptToFile(jScript);
