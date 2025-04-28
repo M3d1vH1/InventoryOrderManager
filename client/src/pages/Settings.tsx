@@ -2785,7 +2785,10 @@ const Settings = () => {
   );
 };
 
-// Label Template Editor Component
+// Import the dedicated LabelTemplateEditor component
+import LabelTemplateEditorComponent from '@/components/settings/LabelTemplateEditor';
+
+// Label Template Editor Component (Deprecated - using imported component)
 const LabelTemplateEditor = () => {
   const { toast } = useToast();
   const [selectedTemplate, setSelectedTemplate] = useState('shipping-label');

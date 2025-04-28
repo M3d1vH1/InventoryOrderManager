@@ -1,51 +1,11 @@
 m m
 J
-; CAB EOS1 Shipping Label Template
-; 
-; Available variables:
-; {{orderNumber}} - Order number
-; {{customerName}} - Customer name
-; {{orderDate}} - Order date
-; {{boxNumber}} - Current box number
-; {{totalBoxes}} - Total boxes in shipment
-; {{barcode}} - Order barcode
-; {{companyName}} - Company name
-; {{shippingMethod}} - Shipping method (carrier)
-; {{trackingNumber}} - Tracking number
-; {{customerAddress}} - Complete customer address
-; {{customerCity}} - Customer city
-; {{customerState}} - Customer state/province
-; {{customerPostalCode}} - Customer postal code
-; {{customerCountry}} - Customer country
-; {{weight}} - Package weight
-;
-; Label configuration
-H 100,0,T
 S l1;0,0,68,71,100
-
-; Order information section
-T 25,25,0,3,pt10;Order: {{orderNumber}}
-T 25,50,0,3,pt8;Customer: {{customerName}}
-T 25,75,0,3,pt8;Date: {{orderDate}}
-T 25,100,0,3,pt12;BOX {{boxNumber}} OF {{totalBoxes}}
-
-; Barcode section
-B 25,130,0,EAN13,60,0,3,3;{{barcode}}
-
-; Customer address section
-T 300,25,0,3,pt9;SHIP TO:
-T 300,50,0,3,pt8;{{customerName}}
-T 300,75,0,3,pt8;{{customerAddress}}
-T 300,100,0,3,pt8;{{customerCity}}, {{customerState}} {{customerPostalCode}}
-T 300,125,0,3,pt8;{{customerCountry}}
-
-; Shipping information section
-T 25,220,0,3,pt9;Shipping: {{shippingMethod}}
-T 25,245,0,3,pt9;Tracking: {{trackingNumber}}
-T 25,270,0,3,pt9;Weight: {{weight}}
-
-; Footer with company information
-T 25,320,0,3,pt8;{{companyName}}
-
-; Print one label
+B 10,10,0,EAN13,12,0.5;{orderNumber}
+T 10,25,0,3,1,1;Order #{orderNumber}
+T 10,30,0,3,1,1;{customerName}
+T 10,35,0,3,1,1;{customerAddress}
+T 10,40,0,3,1,1;{customerCity}, {customerPostalCode}
+T 10,45,0,3,1,1;{customerCountry}
+T 10,55,0,3,1,1;Shipping: {shippingCompany}
 A 1
