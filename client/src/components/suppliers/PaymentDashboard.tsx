@@ -127,15 +127,15 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>{t('paymentDashboard.upcomingPayments')}</CardTitle>
+            <CardTitle>{t('supplierPayments.upcomingPayments')}</CardTitle>
             <CardDescription>
-              {t('paymentDashboard.nextPaymentsDue')}
+              {t('supplierPayments.nextPaymentsDue')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {summary.upcomingPayments.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                {t('paymentDashboard.noUpcomingPayments')}
+                {t('supplierPayments.noUpcomingPayments')}
               </p>
             ) : (
               <div className="space-y-4">
@@ -164,15 +164,15 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
 
         <Card>
           <CardHeader>
-            <CardTitle>{t('paymentDashboard.recentPayments')}</CardTitle>
+            <CardTitle>{t('supplierPayments.recentPayments')}</CardTitle>
             <CardDescription>
-              {t('paymentDashboard.lastPaymentsMade')}
+              {t('supplierPayments.lastPaymentsMade')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {summary.recentPayments.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                {t('paymentDashboard.noRecentPayments')}
+                {t('supplierPayments.noRecentPayments')}
               </p>
             ) : (
               <div className="space-y-4">
