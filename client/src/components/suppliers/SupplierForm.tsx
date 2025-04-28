@@ -119,10 +119,10 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
     mutationFn: async (data: SupplierFormValues) => {
       if (supplier) {
         // Update existing supplier
-        return apiRequest('PATCH', `/api/supplier-payments/suppliers/${supplier.id}`, data);
+        return apiRequest('PATCH', `/api/supplier-payments/suppliers/${supplier.id}`, { body: data });
       } else {
         // Create new supplier
-        return apiRequest('POST', '/api/supplier-payments/suppliers', data);
+        return apiRequest('POST', '/api/supplier-payments/suppliers', { body: data });
       }
     },
     onSuccess: () => {
@@ -278,9 +278,9 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                 name="city"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('suppliers.city')}</FormLabel>
+                    <FormLabel>{t('supplierPayments.supplier.city')}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t('suppliers.cityPlaceholder')} {...field} />
+                      <Input placeholder={t('supplierPayments.supplier.city')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -293,9 +293,9 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                 name="state"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('suppliers.state')}</FormLabel>
+                    <FormLabel>{t('supplierPayments.supplier.state')}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t('suppliers.statePlaceholder')} {...field} />
+                      <Input placeholder={t('supplierPayments.supplier.state')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -308,9 +308,9 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                 name="postalCode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('suppliers.postalCode')}</FormLabel>
+                    <FormLabel>{t('supplierPayments.supplier.postalCode')}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t('suppliers.postalCodePlaceholder')} {...field} />
+                      <Input placeholder={t('supplierPayments.supplier.postalCode')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -323,9 +323,9 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                 name="country"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('suppliers.country')}</FormLabel>
+                    <FormLabel>{t('supplierPayments.supplier.country')}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t('suppliers.countryPlaceholder')} {...field} />
+                      <Input placeholder={t('supplierPayments.supplier.country')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
