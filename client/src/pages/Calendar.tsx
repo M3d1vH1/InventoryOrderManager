@@ -140,6 +140,20 @@ const CalendarPage: React.FC = () => {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
+  // Fetch inventory events
+  const { data: inventoryEvents, isLoading: inventoryLoading, isError: inventoryError } = useQuery({
+    queryKey: ['/api/inventory/events'],
+    retry: 1,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  // Fetch production batches
+  const { data: productionBatches, isLoading: productionLoading, isError: productionError } = useQuery({
+    queryKey: ['/api/production/batches'],
+    retry: 1,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
   // Transform orders and call logs to calendar events
   const events: CalendarEvent[] = useMemo(() => {
     const calendarEvents: CalendarEvent[] = [];
@@ -230,8 +244,122 @@ const CalendarPage: React.FC = () => {
       });
     }
     
+    // Add supplier payment events
+    if (payments && Array.isArray(payments)) {
+      payments.forEach((payment: any) => {
+        const paymentDate = new Date(payment.payment_date);
+        
+        // Payment event
+        calendarEvents.push({
+          id: `payment-${payment.id}`,
+          title: `${t('calendar.payment')}: ${payment.supplier_name || t('common.unknown')}`,
+          start: paymentDate,
+          end: paymentDate,
+          type: 'payment',
+          supplierName: payment.supplier_name || t('common.unknown'),
+          paymentId: payment.id,
+          paymentAmount: payment.amount,
+          callbackRequired: payment.callback_required || false,
+          callbackDate: payment.callback_date ? new Date(payment.callback_date) : undefined,
+          callbackNotes: payment.callback_notes || ''
+        });
+        
+        // Add callback event if required
+        if (payment.callback_required && payment.callback_date) {
+          const callbackDate = new Date(payment.callback_date);
+          calendarEvents.push({
+            id: `payment-callback-${payment.id}`,
+            title: `${t('calendar.paymentCallback')}: ${payment.supplier_name || t('common.unknown')}`,
+            start: callbackDate,
+            end: callbackDate,
+            type: 'payment',
+            supplierName: payment.supplier_name || t('common.unknown'),
+            paymentId: payment.id,
+            callbackRequired: true,
+            callbackDate: callbackDate,
+            callbackNotes: payment.callback_notes || ''
+          });
+        }
+      });
+    }
+    
+    // Add inventory events
+    if (inventoryEvents && Array.isArray(inventoryEvents)) {
+      inventoryEvents.forEach((event: any) => {
+        const eventDate = new Date(event.date);
+        
+        calendarEvents.push({
+          id: `inventory-${event.id}`,
+          title: `${t('calendar.inventory')}: ${event.product_name || t('common.unknown')}`,
+          start: eventDate,
+          end: eventDate,
+          type: 'inventory',
+          inventoryType: event.event_type,
+          productId: event.product_id,
+          productName: event.product_name,
+          customerName: event.product_name || t('common.unknown') // Reusing customerName field for consistent rendering
+        });
+      });
+    }
+    
+    // Add production batch events
+    if (productionBatches && Array.isArray(productionBatches)) {
+      productionBatches.forEach((batch: any) => {
+        // Production start date
+        if (batch.start_date) {
+          const startDate = new Date(batch.start_date);
+          calendarEvents.push({
+            id: `production-start-${batch.id}`,
+            title: `${t('calendar.productionStart')}: ${batch.recipe_name || t('common.unknown')}`,
+            start: startDate,
+            end: startDate,
+            type: 'production',
+            productionBatchId: batch.id,
+            productionStage: 'start',
+            recipeName: batch.recipe_name,
+            productionQuantity: batch.quantity,
+            customerName: batch.recipe_name || t('common.unknown') // Reusing customerName field for display
+          });
+        }
+        
+        // Production completion date
+        if (batch.completion_date) {
+          const completionDate = new Date(batch.completion_date);
+          calendarEvents.push({
+            id: `production-complete-${batch.id}`,
+            title: `${t('calendar.productionComplete')}: ${batch.recipe_name || t('common.unknown')}`,
+            start: completionDate,
+            end: completionDate,
+            type: 'production',
+            productionBatchId: batch.id,
+            productionStage: 'complete',
+            recipeName: batch.recipe_name,
+            productionQuantity: batch.quantity,
+            customerName: batch.recipe_name || t('common.unknown') // Reusing customerName field for display
+          });
+        }
+        
+        // Estimated completion date (if not completed yet)
+        if (batch.estimated_completion_date && !batch.completion_date) {
+          const estimatedDate = new Date(batch.estimated_completion_date);
+          calendarEvents.push({
+            id: `production-estimated-${batch.id}`,
+            title: `${t('calendar.productionEstimated')}: ${batch.recipe_name || t('common.unknown')}`,
+            start: estimatedDate,
+            end: estimatedDate,
+            type: 'production',
+            productionBatchId: batch.id,
+            productionStage: 'estimated',
+            recipeName: batch.recipe_name,
+            productionQuantity: batch.quantity,
+            customerName: batch.recipe_name || t('common.unknown') // Reusing customerName field for display
+          });
+        }
+      });
+    }
+    
     return calendarEvents;
-  }, [orders, callLogs, t]);
+  }, [orders, callLogs, payments, invoices, inventoryEvents, productionBatches, t]);
 
   // Filter events based on the selected tab
   const filteredEvents = useMemo(() => {
@@ -392,7 +520,7 @@ const CalendarPage: React.FC = () => {
   };
 
   // Loading state
-  if (ordersLoading || callsLoading || paymentsLoading || invoicesLoading) {
+  if (ordersLoading || callsLoading || paymentsLoading || invoicesLoading || inventoryLoading || productionLoading) {
     return (
       <div className="space-y-4">
         <PageHeader 
@@ -414,7 +542,7 @@ const CalendarPage: React.FC = () => {
   }
 
   // Error state
-  if (ordersError || callsError || paymentsError || invoicesError) {
+  if (ordersError || callsError || paymentsError || invoicesError || inventoryError || productionError) {
     return (
       <div className="space-y-4">
         <PageHeader 
@@ -713,6 +841,24 @@ const CalendarPage: React.FC = () => {
                 )}
                 {selectedEvent?.type === 'call' && !selectedEvent?.isFollowUp && (
                   <Badge className="bg-[#F59E0B]">{t('calendar.scheduledCall')}</Badge>
+                )}
+                {selectedEvent?.type === 'payment' && !selectedEvent?.callbackRequired && (
+                  <Badge className="bg-[#14B8A6]">{t('calendar.payment')}</Badge>
+                )}
+                {selectedEvent?.type === 'payment' && selectedEvent?.callbackRequired && (
+                  <Badge className="bg-[#EC4899]">{t('calendar.paymentCallback')}</Badge>
+                )}
+                {selectedEvent?.type === 'inventory' && (
+                  <Badge className="bg-[#06B6D4]">{t('calendar.inventory')}</Badge>
+                )}
+                {selectedEvent?.type === 'production' && selectedEvent?.productionStage === 'start' && (
+                  <Badge className="bg-[#2563EB]">{t('calendar.productionStart')}</Badge>
+                )}
+                {selectedEvent?.type === 'production' && selectedEvent?.productionStage === 'complete' && (
+                  <Badge className="bg-[#16A34A]">{t('calendar.productionComplete')}</Badge>
+                )}
+                {selectedEvent?.type === 'production' && selectedEvent?.productionStage === 'estimated' && (
+                  <Badge className="bg-[#7C3AED]">{t('calendar.productionEstimated')}</Badge>
                 )}
               </div>
               
