@@ -160,7 +160,7 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>
-            {supplier ? t('common.edit') : t('common.create')}
+            {supplier ? t('supplierPayments.supplier.edit') : t('supplierPayments.supplier.create')}
           </DialogTitle>
         </DialogHeader>
 
@@ -392,7 +392,7 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                 {saveSupplierMutation.isPending && (
                   <Loader className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                {supplier ? t('common.update') : t('common.create')}
+                {supplier ? t('supplierPayments.supplier.update') : t('supplierPayments.supplier.create')}
               </Button>
             </DialogFooter>
           </form>

@@ -207,7 +207,7 @@ export const SupplierList = () => {
               onClick={handleDeleteConfirm}
               disabled={deleteSupplierMutation.isPending}
             >
-              {deleteSupplierMutation.isPending ? t('common.processing') : t('common.delete')}
+              {deleteSupplierMutation.isPending ? t('common.processing') : t('supplierPayments.supplier.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
