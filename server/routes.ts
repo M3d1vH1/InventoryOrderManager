@@ -2626,7 +2626,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.put('/api/label-templates/:templateName', isAuthenticated, hasRole(['admin']), updateLabelTemplate);
   
-  app.post('/api/label-templates/:templateName/preview', isAuthenticated, hasRole(['admin', 'warehouse']), previewLabelTemplate);
+  app.post('/api/label-templates/:templateName/preview', previewLabelTemplate);
   
   // Company settings routes
   app.get('/api/company-settings', isAuthenticated, getCompanySettings);

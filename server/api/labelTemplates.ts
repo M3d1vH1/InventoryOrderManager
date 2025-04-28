@@ -167,10 +167,18 @@ export async function previewLabelTemplate(req: Request, res: Response) {
     };
     
     // Replace variables in the template with sample data
-    let previewContent = content;
-    for (const [key, value] of Object.entries(sampleData)) {
-      const regex = new RegExp(`{${key}}`, 'g');
-      previewContent = previewContent.replace(regex, value);
+    let previewContent = req.body.content || '';
+    console.log('Preview content before variable replacement:', previewContent);
+    
+    if (previewContent) {
+      for (const [key, value] of Object.entries(sampleData)) {
+        const regex = new RegExp(`{${key}}`, 'g');
+        previewContent = previewContent.replace(regex, value);
+      }
+      console.log('Preview content after variable replacement (first 50 chars):', previewContent.substring(0, 50));
+    } else {
+      console.error('Preview content is empty or undefined');
+      return res.status(400).json({ message: 'Template content is empty or invalid' });
     }
     
     // Create HTML preview

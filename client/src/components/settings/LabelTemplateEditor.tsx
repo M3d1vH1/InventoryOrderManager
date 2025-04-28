@@ -167,7 +167,8 @@ const LabelTemplateEditor: React.FC = () => {
   // Generate preview
   const handleGeneratePreview = () => {
     const content = shippingLabelForm.getValues().content;
-    if (!content) {
+    console.log('Generating preview with content:', content);
+    if (!content || content.trim() === '') {
       toast({
         title: "Error",
         description: "Template content is required to generate a preview",
@@ -176,7 +177,17 @@ const LabelTemplateEditor: React.FC = () => {
       return;
     }
     setIsGeneratingPreview(true);
-    previewTemplateMutation.mutate(content);
+    try {
+      previewTemplateMutation.mutate(content);
+    } catch (error) {
+      console.error('Error mutating preview:', error);
+      setIsGeneratingPreview(false);
+      toast({
+        title: "Error",
+        description: "Failed to send preview request",
+        variant: "destructive",
+      });
+    }
   };
   
   // Template selection options
