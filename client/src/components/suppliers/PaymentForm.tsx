@@ -256,7 +256,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={t('payments.selectInvoice')} />
+                        <SelectValue placeholder={t('supplierPayments.payment.selectInvoice')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -292,7 +292,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                           {field.value ? (
                             format(field.value, "PPP")
                           ) : (
-                            <span>{t('payments.selectDate')}</span>
+                            <span>{t('supplierPayments.payment.selectDate')}</span>
                           )}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
@@ -327,7 +327,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                       type="number" 
                       min="0.01" 
                       step="0.01"
-                      placeholder={t('payments.amountPlaceholder')} 
+                      placeholder={t('supplierPayments.payment.amountPlaceholder')} 
                       {...field} 
                     />
                   </FormControl>
@@ -350,7 +350,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={t('payments.selectPaymentMethod')} />
+                        <SelectValue placeholder={t('supplierPayments.payment.selectPaymentMethod')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -372,9 +372,9 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
               name="reference"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('payments.reference')}</FormLabel>
+                  <FormLabel>{t('supplierPayments.payment.reference')}</FormLabel>
                   <FormControl>
-                    <Input placeholder={t('payments.referencePlaceholder')} {...field} />
+                    <Input placeholder={t('supplierPayments.payment.referencePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -387,10 +387,10 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('payments.notes')}</FormLabel>
+                  <FormLabel>{t('supplierPayments.payment.notes')}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder={t('payments.notesPlaceholder')}
+                      placeholder={t('supplierPayments.payment.notesPlaceholder')}
                       className="min-h-[80px]"
                       {...field}
                     />
