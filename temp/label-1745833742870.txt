@@ -1,0 +1,39 @@
+
+m m
+j
+h 300
+O R
+; Initialize label format
+J
+S l1;0,0,1181,827,100
+
+; Set label size
+H 827,0,T,P
+
+; Print logo at the top
+GI 10,10,"shipping-logo.png"
+
+; Customer name (bold)
+T 10,50,0,3,pt15,b:"Μαυρόπουλος Γεώργιος Ιωάννης"
+
+; Customer address
+T 10,80,0,3,pt12:""
+
+; Customer phone
+T 10,110,0,3,pt12:"Τηλέφωνο: "
+
+; Shipping company info (bold)
+T 10,150,0,3,pt12,b:"Μεταφορική: ACS Courier"
+
+; Box count (bold, larger)
+T 10,180,0,3,pt20,b:"Κιβώτιο: 1 / 2"
+
+; Order number reference
+T 10,220,0,3,pt12:"Αρ. Παραγγελίας: ORD-0093"
+
+; Print command
+A 1
+
+; End job
+O
+E
