@@ -209,6 +209,9 @@ const LabelTemplateEditor: React.FC = () => {
     { name: "trackingNumber", description: "Shipping tracking number (if available)" },
     { name: "companyName", description: "Your company name (from settings)" },
     { name: "shippingDate", description: "The shipping date" },
+    { name: "boxNumber", description: "Current box number (from user input)" },
+    { name: "boxCount", description: "Total box count (from user input)" },
+    { name: "boxInfo", description: "Box number formatted as 'X/Y' (from user input)" },
   ];
   
   // Insert a variable at cursor position
