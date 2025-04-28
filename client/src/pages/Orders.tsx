@@ -14,6 +14,7 @@ import {
   Trash2, Mail, Printer, ShoppingCart, FileOutput
 } from "lucide-react";
 import { OrderChangelog } from "@/components/orders/OrderChangelog";
+import LabelPreviewModal from "@/components/shipping/LabelPreviewModal";
 
 import {
   Table,
@@ -500,6 +501,11 @@ const Orders = () => {
   const handleOpenDocumentUpload = (order: Order) => {
     setOrderToShip(order);
     setShowUploadDialog(true);
+  };
+  
+  const handleOpenLabelPrinting = (order: Order) => {
+    setOrderToPrint(order);
+    setShowPrintLabelDialog(true);
   };
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
