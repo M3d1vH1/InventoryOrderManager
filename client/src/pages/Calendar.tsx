@@ -41,20 +41,28 @@ type CalendarEvent = {
   title: string;
   start: Date;
   end: Date;
-  type: 'created' | 'shipped' | 'estimated' | 'call' | 'payment' | 'inventory';
+  type: 'created' | 'shipped' | 'estimated' | 'call' | 'payment' | 'inventory' | 'production';
   orderNumber?: string;
   customerName: string;
   callDetails?: string;
   callId?: number;
   orderId?: number;
   isFollowUp?: boolean;
+  isCallback?: boolean;
   paymentId?: number;
   paymentAmount?: number;
   supplierName?: string;
   invoiceNumber?: string;
+  callbackRequired?: boolean;
+  callbackDate?: Date;
+  callbackNotes?: string;
   inventoryType?: 'restock' | 'audit' | 'adjustment';
   productId?: number;
   productName?: string;
+  productionBatchId?: number;
+  productionStage?: 'start' | 'complete' | 'estimated';
+  recipeName?: string;
+  productionQuantity?: number;
 };
 
 // Order type definition
@@ -236,6 +244,8 @@ const CalendarPage: React.FC = () => {
         return events.filter(event => event.type === 'payment');
       case 'inventory':
         return events.filter(event => event.type === 'inventory');
+      case 'production':
+        return events.filter(event => event.type === 'production');
       case 'all':
       default:
         return events;
@@ -299,7 +309,7 @@ const CalendarPage: React.FC = () => {
         borderLeft = '3px solid #D97706';
       }
     } else if (event.type === 'payment') {
-      if (event.isCallback) {
+      if (event.callbackRequired) {
         backgroundColor = '#EC4899'; // Pink for payment callbacks
         borderLeft = '3px solid #BE185D';
       } else {
@@ -309,6 +319,17 @@ const CalendarPage: React.FC = () => {
     } else if (event.type === 'inventory') {
       backgroundColor = '#06B6D4'; // Cyan for inventory
       borderLeft = '3px solid #0E7490';
+    } else if (event.type === 'production') {
+      if (event.productionStage === 'start') {
+        backgroundColor = '#2563EB'; // Blue for production start
+        borderLeft = '3px solid #1D4ED8';
+      } else if (event.productionStage === 'complete') {
+        backgroundColor = '#16A34A'; // Green for production complete
+        borderLeft = '3px solid #15803D';
+      } else {
+        backgroundColor = '#7C3AED'; // Purple for estimated completion
+        borderLeft = '3px solid #6D28D9';
+      }
     } else {
       backgroundColor = '#6B7280'; // Gray default
     }
@@ -422,12 +443,13 @@ const CalendarPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2">
           <Tabs value={filterView} onValueChange={setFilterView} className="w-full">
-            <TabsList className="grid grid-cols-5 gap-1 w-full mb-4">
+            <TabsList className="grid grid-cols-6 gap-1 w-full mb-4">
               <TabsTrigger value="all" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.allEvents')}</TabsTrigger>
               <TabsTrigger value="orders" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.orders')}</TabsTrigger>
               <TabsTrigger value="calls" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.calls')}</TabsTrigger>
               <TabsTrigger value="payments" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.payments')}</TabsTrigger>
               <TabsTrigger value="inventory" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.inventory')}</TabsTrigger>
+              <TabsTrigger value="production" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.production')}</TabsTrigger>
             </TabsList>
 
             <TabsContent value={filterView} className="space-y-4">
@@ -456,6 +478,13 @@ const CalendarPage: React.FC = () => {
                     )}
                     {(filterView === 'all' || filterView === 'inventory') && (
                       <Badge className="bg-[#06B6D4]">{t('calendar.inventory')}</Badge>
+                    )}
+                    {(filterView === 'all' || filterView === 'production') && (
+                      <>
+                        <Badge className="bg-[#2563EB]">{t('calendar.productionStart')}</Badge>
+                        <Badge className="bg-[#16A34A]">{t('calendar.productionComplete')}</Badge>
+                        <Badge className="bg-[#7C3AED]">{t('calendar.productionEstimated')}</Badge>
+                      </>
                     )}
                   </div>
 
