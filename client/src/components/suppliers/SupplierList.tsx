@@ -193,9 +193,9 @@ export const SupplierList = () => {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('suppliers.confirmDelete')}</DialogTitle>
+            <DialogTitle>{t('supplierPayments.supplier.confirmDelete')}</DialogTitle>
             <DialogDescription>
-              {t('suppliers.deleteWarning', { name: selectedSupplier?.name })}
+              {t('supplierPayments.supplier.deleteWarning', { name: selectedSupplier?.name })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

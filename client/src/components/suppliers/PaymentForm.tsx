@@ -186,16 +186,24 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
     mutationFn: async (data: any) => {
       if (payment) {
         // Update existing payment
-        return apiRequest('PATCH', `/api/supplier-payments/payments/${payment.id}`, data);
+        return apiRequest(`/api/supplier-payments/payments/${payment.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
       } else {
         // Create new payment
-        return apiRequest('POST', '/api/supplier-payments/payments', data);
+        return apiRequest('/api/supplier-payments/payments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
       }
     },
     onSuccess: () => {
       toast({
-        title: payment ? t('payments.updated') : t('payments.created'),
-        description: payment ? t('payments.updateSuccess') : t('payments.createSuccess'),
+        title: payment ? t('supplierPayments.payment.updated') : t('supplierPayments.payment.created'),
+        description: payment ? t('supplierPayments.payment.updateSuccess') : t('supplierPayments.payment.createSuccess'),
       });
       queryClient.invalidateQueries({ queryKey: ['/api/supplier-payments/payments'] });
       queryClient.invalidateQueries({ queryKey: ['/api/supplier-payments/invoices'] });
@@ -205,7 +213,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
     onError: (error: any) => {
       toast({
         title: t('common.error'),
-        description: error.message || t('payments.saveError'),
+        description: error.message || t('supplierPayments.payment.saveError'),
         variant: 'destructive',
       });
     },
@@ -228,7 +236,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {payment ? t('payments.edit') : t('payments.create')}
+            {payment ? t('supplierPayments.payment.edit') : t('supplierPayments.payment.create')}
           </DialogTitle>
         </DialogHeader>
 
@@ -240,7 +248,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
               name="invoiceId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('payments.invoice')}</FormLabel>
+                  <FormLabel>{t('supplierPayments.payment.invoice')}</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
                     defaultValue={field.value}
@@ -270,7 +278,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
               name="paymentDate"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>{t('payments.paymentDate')}</FormLabel>
+                  <FormLabel>{t('supplierPayments.payment.paymentDate')}</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -313,7 +321,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('payments.amount')}</FormLabel>
+                  <FormLabel>{t('supplierPayments.payment.amount')}</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
@@ -334,7 +342,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
               name="paymentMethod"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('payments.paymentMethod')}</FormLabel>
+                  <FormLabel>{t('supplierPayments.payment.paymentMethod')}</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
                     defaultValue={field.value}
