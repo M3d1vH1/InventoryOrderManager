@@ -299,16 +299,21 @@ const CalendarPage: React.FC = () => {
       inventoryEvents.forEach((event: any) => {
         const eventDate = new Date(event.date);
         
+        // Check if we have camelCase or snake_case fields
+        const productName = event.productName || event.product_name || t('common.unknown');
+        const eventType = event.eventType || event.event_type;
+        const productId = event.productId || event.product_id;
+        
         calendarEvents.push({
           id: `inventory-${event.id}`,
-          title: `${t('calendar.inventory')}: ${event.product_name || t('common.unknown')}`,
+          title: `${t('calendar.inventory')}: ${productName}`,
           start: eventDate,
           end: eventDate,
           type: 'inventory',
-          inventoryType: event.event_type,
-          productId: event.product_id,
-          productName: event.product_name,
-          customerName: event.product_name || t('common.unknown') // Reusing customerName field for consistent rendering
+          inventoryType: eventType,
+          productId: productId,
+          productName: productName,
+          customerName: productName // Reusing customerName field for consistent rendering
         });
       });
     }
@@ -316,54 +321,60 @@ const CalendarPage: React.FC = () => {
     // Add production batch events
     if (productionBatches && Array.isArray(productionBatches)) {
       productionBatches.forEach((batch: any) => {
+        // Handle both camelCase and snake_case field names
+        const startDate = batch.startDate || batch.start_date;
+        const completionDate = batch.completionDate || batch.completion_date;
+        const estimatedCompletionDate = batch.estimatedCompletionDate || batch.estimated_completion_date;
+        const recipeName = batch.recipeName || batch.recipe_name || t('common.unknown');
+        
         // Production start date
-        if (batch.start_date) {
-          const startDate = new Date(batch.start_date);
+        if (startDate) {
+          const startDateTime = new Date(startDate);
           calendarEvents.push({
             id: `production-start-${batch.id}`,
-            title: `${t('calendar.productionStart')}: ${batch.recipe_name || t('common.unknown')}`,
-            start: startDate,
-            end: startDate,
+            title: `${t('calendar.productionStart')}: ${recipeName}`,
+            start: startDateTime,
+            end: startDateTime,
             type: 'production',
             productionBatchId: batch.id,
             productionStage: 'start',
-            recipeName: batch.recipe_name,
+            recipeName: recipeName,
             productionQuantity: batch.quantity,
-            customerName: batch.recipe_name || t('common.unknown') // Reusing customerName field for display
+            customerName: recipeName // Reusing customerName field for display
           });
         }
         
         // Production completion date
-        if (batch.completion_date) {
-          const completionDate = new Date(batch.completion_date);
+        if (completionDate) {
+          const completionDateTime = new Date(completionDate);
           calendarEvents.push({
             id: `production-complete-${batch.id}`,
-            title: `${t('calendar.productionComplete')}: ${batch.recipe_name || t('common.unknown')}`,
-            start: completionDate,
-            end: completionDate,
+            title: `${t('calendar.productionComplete')}: ${recipeName}`,
+            start: completionDateTime,
+            end: completionDateTime,
             type: 'production',
             productionBatchId: batch.id,
             productionStage: 'complete',
-            recipeName: batch.recipe_name,
+            recipeName: recipeName,
             productionQuantity: batch.quantity,
-            customerName: batch.recipe_name || t('common.unknown') // Reusing customerName field for display
+            customerName: recipeName // Reusing customerName field for display
           });
         }
         
         // Estimated completion date (if not completed yet)
-        if (batch.estimated_completion_date && !batch.completion_date) {
-          const estimatedDate = new Date(batch.estimated_completion_date);
+        if (estimatedCompletionDate && !completionDate) {
+          const estimatedDateTime = new Date(estimatedCompletionDate);
           calendarEvents.push({
             id: `production-estimated-${batch.id}`,
-            title: `${t('calendar.productionEstimated')}: ${batch.recipe_name || t('common.unknown')}`,
-            start: estimatedDate,
-            end: estimatedDate,
+            title: `${t('calendar.productionEstimated')}: ${recipeName}`,
+            start: estimatedDateTime,
+            end: estimatedDateTime,
             type: 'production',
             productionBatchId: batch.id,
             productionStage: 'estimated',
-            recipeName: batch.recipe_name,
+            recipeName: recipeName,
             productionQuantity: batch.quantity,
-            customerName: batch.recipe_name || t('common.unknown') // Reusing customerName field for display
+            customerName: recipeName // Reusing customerName field for display
           });
         }
       });
