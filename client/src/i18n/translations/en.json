@@ -268,7 +268,50 @@
         "customDeclaration": "Custom declaration",
         "other": "Other"
       }
+    },
+    "printLabels": {
+      "title": "Print Shipping Labels",
+      "description": "Specify how many boxes are used for this order. A shipping label will be generated for each box.",
+      "boxCount": "Number of Boxes",
+      "currentBox": "Current Box",
+      "preview": "Preview Label",
+      "previewing": "Generating Preview...",
+      "previewTitle": "Label Preview",
+      "print": "Print Label",
+      "printing": "Printing...",
+      "printBatch": "Print All Labels",
+      "printingBatch": "Printing All Labels...",
+      "boxCountHelp": "Labels will be printed with order number, customer name, and box numbers."
     }
+  },
+  "labels": {
+    "title": "Print Shipping Label",
+    "description": "Print a shipping label for order {{orderNumber}}",
+    "boxCount": "Number of Boxes",
+    "currentBox": "Current Box",
+    "preview": "Preview Label",
+    "previewing": "Generating Preview...",
+    "previewTitle": "Label Preview",
+    "print": "Print Label",
+    "printing": "Printing...",
+    "printBatch": "Print All Labels",
+    "printingBatch": "Printing All Labels..."
+  },
+  "preview": {
+    "success": "Preview Generated",
+    "successDescription": "Label preview has been generated successfully.",
+    "error": "Preview Error",
+    "errorDescription": "There was an error generating the label preview."
+  },
+  "printing": {
+    "success": "Label Printed",
+    "successDescription": "The shipping label has been sent to the printer.",
+    "error": "Printing Error",
+    "errorDescription": "There was an error sending the label to the printer.",
+    "batchSuccess": "Labels Printed",
+    "batchSuccessDescription": "{{count}} shipping labels have been sent to the printer.",
+    "batchError": "Batch Printing Error",
+    "batchErrorDescription": "There was an error printing the batch of labels."
   },
   "inventory": {
     "alerts": "Inventory Alerts",
