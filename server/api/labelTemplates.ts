@@ -243,9 +243,15 @@ export async function previewLabelTemplate(req: Request, res: Response) {
       <div class="preview-container">
         <h2>Visual Representation (Simplified)</h2>
         <div class="jscript-visual-preview">
-          <!-- Show logo at the top of the preview in multiple formats to ensure it displays -->
+          <!-- Show logo at the top of the preview using embedded SVG -->
           <div style="text-align: center; margin-bottom: 20px; border: 1px solid #eee; padding: 10px; background-color: white;">
-            <img src="shipping-logo.png" alt="Company Logo" style="max-width: 150px; max-height: 50px; display: block; margin: 0 auto;">
+            <div style="margin: 0 auto; max-width: 200px;">
+              <svg width="200" height="50" viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
+                <rect x="0" y="0" width="200" height="50" fill="#f8f8f8" rx="5" ry="5"/>
+                <text x="10" y="30" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#0055aa">Amphoreus</text>
+                <text x="10" y="45" font-family="Arial, sans-serif" font-size="12" fill="#555555">Olive Oil Company</text>
+              </svg>
+            </div>
             <div style="font-size: 12px; color: #666; margin-top: 5px;">Company Logo</div>
           </div>
           

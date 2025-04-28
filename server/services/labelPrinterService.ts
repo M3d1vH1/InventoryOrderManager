@@ -13,7 +13,8 @@ const PRINTER_MODEL = 'EOS1';
 const PRINTER_DPI = 300;
 const LABEL_WIDTH_MM = 100; // 10 cm width
 const LABEL_HEIGHT_MM = 70;  // 7 cm height
-const LOGO_PATH = path.join(process.cwd(), 'public', 'shipping-logo.png');
+const LOGO_PATH_PNG = path.join(process.cwd(), 'public', 'shipping-logo.png');
+const LOGO_PATH_SVG = path.join(process.cwd(), 'public', 'simple-logo.svg');
 
 // Convert from mm to dots based on DPI
 const mmToDots = (mm: number): number => Math.round((mm * PRINTER_DPI) / 25.4);
@@ -139,8 +140,8 @@ S l1;0,0,${labelWidthDots},${labelHeightDots},100
 ; Set label size
 H ${labelHeightDots},0,T,P
 
-; Print logo at the top
-GI 10,10,"shipping-logo.png"
+; Print logo at the top (using exact path)
+GI 10,10,"public/shipping-logo.png"
 
 ; Customer name (bold)
 T 10,50,0,3,pt15,b:"${customerInfo}"
@@ -197,17 +198,26 @@ E
     const sourceLogo = path.join(process.cwd(), 'attached_assets', 'Frame 40.png');
     const targetDir = path.join(process.cwd(), 'public');
     const targetLogo = path.join(targetDir, 'shipping-logo.png');
+    const targetSvgLogo = path.join(targetDir, 'simple-logo.svg');
     
     // Ensure directory exists
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir, { recursive: true });
     }
     
-    // Always copy the logo to ensure the latest version is used
+    // Always copy the PNG logo to ensure the latest version is used
     if (fs.existsSync(sourceLogo)) {
       // Copy logo file even if it exists to ensure latest version
       console.log(`Copying logo from ${sourceLogo} to ${targetLogo} for label printing`);
       await fs.promises.copyFile(sourceLogo, targetLogo);
+      
+      // Set proper permissions for web access
+      try {
+        fs.chmodSync(targetLogo, 0o644);
+        console.log('Updated logo file permissions for web access');
+      } catch (error) {
+        console.error('Failed to update permissions:', error);
+      }
     } else {
       console.error(`Warning: Logo source file not found at ${sourceLogo}`);
       
@@ -217,8 +227,22 @@ E
         const placeholderPath = path.join(process.cwd(), 'public', 'placeholder-image.png');
         if (fs.existsSync(placeholderPath)) {
           await fs.promises.copyFile(placeholderPath, targetLogo);
+          fs.chmodSync(targetLogo, 0o644);
         }
       }
+    }
+    
+    // Create SVG logo if it doesn't exist
+    if (!fs.existsSync(targetSvgLogo)) {
+      console.log('Creating SVG logo for label printing');
+      const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="50" viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="200" height="50" fill="#f8f8f8" rx="5" ry="5"/>
+  <text x="10" y="30" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#0055aa">Amphoreus</text>
+  <text x="10" y="45" font-family="Arial, sans-serif" font-size="12" fill="#555555">Olive Oil Company</text>
+</svg>`;
+      await fs.promises.writeFile(targetSvgLogo, svgContent, 'utf8');
+      fs.chmodSync(targetSvgLogo, 0o644);
     }
   }
 
@@ -302,7 +326,7 @@ E
       const boxInfo = `${currentBox} / ${boxCount}`;
       
       // Create HTML preview
-      const logoPath = '/shipping-logo.png'; // Public URL to the logo
+      const logoPath = '/simple-logo.svg'; // Public URL to the SVG logo
       const html = `
       <!DOCTYPE html>
       <html>
@@ -375,8 +399,8 @@ E
       </head>
       <body>
         <div class="label-container">
-          <!-- Logo at the top -->
-          <img src="${logoPath}" class="logo" alt="Company Logo" onerror="this.onerror=null; this.src='/placeholder-image.png'" />
+          <!-- Logo at the top with simple fallback text -->
+          <img src="${logoPath}" class="logo" alt="Company Logo" onerror="this.onerror=null; this.src='/simple-logo.svg'" />
           
           <!-- Barcode placeholder -->
           <div class="barcode">Barcode: ${orderWithItems.orderNumber}</div>
