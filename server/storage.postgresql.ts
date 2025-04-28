@@ -4436,23 +4436,7 @@ export class DatabaseStorage implements IStorage {
   // Supplier Payment methods
   async getSupplierPayment(id: number): Promise<SupplierPayment | undefined> {
     const result = await this.db
-      .select({
-        id: supplierPayments.id,
-        invoiceId: supplierPayments.invoiceId,
-        paymentDate: supplierPayments.paymentDate,
-        amount: supplierPayments.amount,
-        paymentMethod: supplierPayments.paymentMethod,
-        referenceNumber: supplierPayments.referenceNumber,
-        reference: supplierPayments.reference,
-        notes: supplierPayments.notes,
-        receiptPath: supplierPayments.receiptPath,
-        callbackRequired: supplierPayments.callbackRequired,
-        callbackDate: supplierPayments.callbackDate,
-        callbackNotes: supplierPayments.callbackNotes,
-        callbackCompleted: supplierPayments.callbackCompleted,
-        createdAt: supplierPayments.createdAt,
-        createdById: supplierPayments.createdById
-      })
+      .select()
       .from(supplierPayments)
       .where(eq(supplierPayments.id, id));
     return result[0];
@@ -4460,23 +4444,7 @@ export class DatabaseStorage implements IStorage {
   
   async getSupplierPaymentsByInvoice(invoiceId: number): Promise<SupplierPayment[]> {
     return await this.db
-      .select({
-        id: supplierPayments.id,
-        invoiceId: supplierPayments.invoiceId,
-        paymentDate: supplierPayments.paymentDate,
-        amount: supplierPayments.amount,
-        paymentMethod: supplierPayments.paymentMethod,
-        referenceNumber: supplierPayments.referenceNumber,
-        reference: supplierPayments.reference,
-        notes: supplierPayments.notes,
-        receiptPath: supplierPayments.receiptPath,
-        callbackRequired: supplierPayments.callbackRequired,
-        callbackDate: supplierPayments.callbackDate,
-        callbackNotes: supplierPayments.callbackNotes,
-        callbackCompleted: supplierPayments.callbackCompleted,
-        createdAt: supplierPayments.createdAt,
-        createdById: supplierPayments.createdById
-      })
+      .select()
       .from(supplierPayments)
       .where(eq(supplierPayments.invoiceId, invoiceId))
       .orderBy(desc(supplierPayments.paymentDate));
@@ -4484,23 +4452,7 @@ export class DatabaseStorage implements IStorage {
   
   async getAllSupplierPayments(): Promise<SupplierPayment[]> {
     return await this.db
-      .select({
-        id: supplierPayments.id,
-        invoiceId: supplierPayments.invoiceId,
-        paymentDate: supplierPayments.paymentDate,
-        amount: supplierPayments.amount,
-        paymentMethod: supplierPayments.paymentMethod,
-        referenceNumber: supplierPayments.referenceNumber,
-        reference: supplierPayments.reference,
-        notes: supplierPayments.notes,
-        receiptPath: supplierPayments.receiptPath,
-        callbackRequired: supplierPayments.callbackRequired,
-        callbackDate: supplierPayments.callbackDate,
-        callbackNotes: supplierPayments.callbackNotes,
-        callbackCompleted: supplierPayments.callbackCompleted,
-        createdAt: supplierPayments.createdAt,
-        createdById: supplierPayments.createdById
-      })
+      .select()
       .from(supplierPayments)
       .orderBy(desc(supplierPayments.paymentDate));
   }
