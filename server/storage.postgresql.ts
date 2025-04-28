@@ -4205,6 +4205,361 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  // Supplier methods
+  async getSupplier(id: number): Promise<Supplier | undefined> {
+    const result = await this.db.select().from(suppliers).where(eq(suppliers.id, id));
+    return result[0];
+  }
+  
+  async getSupplierByName(name: string): Promise<Supplier | undefined> {
+    const result = await this.db.select().from(suppliers).where(eq(suppliers.name, name));
+    return result[0];
+  }
+  
+  async getAllSuppliers(): Promise<Supplier[]> {
+    return await this.db.select().from(suppliers).orderBy(asc(suppliers.name));
+  }
+  
+  async getActiveSuppliers(): Promise<Supplier[]> {
+    return await this.db
+      .select()
+      .from(suppliers)
+      .where(eq(suppliers.isActive, true))
+      .orderBy(asc(suppliers.name));
+  }
+  
+  async createSupplier(supplier: InsertSupplier): Promise<Supplier> {
+    const [newSupplier] = await this.db.insert(suppliers).values(supplier).returning();
+    return newSupplier;
+  }
+  
+  async updateSupplier(id: number, supplier: Partial<InsertSupplier>): Promise<Supplier | undefined> {
+    const [updatedSupplier] = await this.db
+      .update(suppliers)
+      .set(supplier)
+      .where(eq(suppliers.id, id))
+      .returning();
+    return updatedSupplier;
+  }
+  
+  async deleteSupplier(id: number): Promise<boolean> {
+    const result = await this.db.delete(suppliers).where(eq(suppliers.id, id)).returning();
+    return result.length > 0;
+  }
+  
+  // Supplier Invoice methods
+  async getSupplierInvoice(id: number): Promise<SupplierInvoice | undefined> {
+    const result = await this.db.select().from(supplierInvoices).where(eq(supplierInvoices.id, id));
+    return result[0];
+  }
+  
+  async getSupplierInvoicesBySupplier(supplierId: number): Promise<SupplierInvoice[]> {
+    return await this.db
+      .select()
+      .from(supplierInvoices)
+      .where(eq(supplierInvoices.supplierId, supplierId))
+      .orderBy(desc(supplierInvoices.dueDate));
+  }
+  
+  async getPendingInvoices(): Promise<SupplierInvoice[]> {
+    const now = new Date();
+    return await this.db
+      .select()
+      .from(supplierInvoices)
+      .where(and(
+        eq(supplierInvoices.status, 'pending'),
+        gte(supplierInvoices.dueDate, now)
+      ))
+      .orderBy(asc(supplierInvoices.dueDate));
+  }
+  
+  async getOverdueInvoices(): Promise<SupplierInvoice[]> {
+    const now = new Date();
+    return await this.db
+      .select()
+      .from(supplierInvoices)
+      .where(and(
+        or(
+          eq(supplierInvoices.status, 'pending'),
+          eq(supplierInvoices.status, 'partially_paid')
+        ),
+        lt(supplierInvoices.dueDate, now)
+      ))
+      .orderBy(asc(supplierInvoices.dueDate));
+  }
+  
+  async getAllSupplierInvoices(): Promise<SupplierInvoice[]> {
+    return await this.db
+      .select()
+      .from(supplierInvoices)
+      .orderBy(desc(supplierInvoices.invoiceDate));
+  }
+  
+  async createSupplierInvoice(invoice: InsertSupplierInvoice): Promise<SupplierInvoice> {
+    // Set default status to pending if not provided
+    if (!invoice.status) {
+      invoice.status = 'pending';
+    }
+    
+    // Set paid amount to 0 if not provided
+    if (invoice.paidAmount === undefined) {
+      invoice.paidAmount = 0;
+    }
+    
+    const [newInvoice] = await this.db.insert(supplierInvoices).values(invoice).returning();
+    return newInvoice;
+  }
+  
+  async updateSupplierInvoice(id: number, invoice: Partial<InsertSupplierInvoice>): Promise<SupplierInvoice | undefined> {
+    const [updatedInvoice] = await this.db
+      .update(supplierInvoices)
+      .set({
+        ...invoice,
+        lastUpdated: new Date()
+      })
+      .where(eq(supplierInvoices.id, id))
+      .returning();
+    return updatedInvoice;
+  }
+  
+  async updateInvoiceStatus(id: number, status: 'pending' | 'paid' | 'partially_paid' | 'overdue' | 'cancelled'): Promise<SupplierInvoice | undefined> {
+    const [updatedInvoice] = await this.db
+      .update(supplierInvoices)
+      .set({
+        status,
+        lastUpdated: new Date()
+      })
+      .where(eq(supplierInvoices.id, id))
+      .returning();
+    return updatedInvoice;
+  }
+  
+  async deleteSupplierInvoice(id: number): Promise<boolean> {
+    const result = await this.db.delete(supplierInvoices).where(eq(supplierInvoices.id, id)).returning();
+    return result.length > 0;
+  }
+  
+  // Supplier Payment methods
+  async getSupplierPayment(id: number): Promise<SupplierPayment | undefined> {
+    const result = await this.db.select().from(supplierPayments).where(eq(supplierPayments.id, id));
+    return result[0];
+  }
+  
+  async getSupplierPaymentsByInvoice(invoiceId: number): Promise<SupplierPayment[]> {
+    return await this.db
+      .select()
+      .from(supplierPayments)
+      .where(eq(supplierPayments.invoiceId, invoiceId))
+      .orderBy(desc(supplierPayments.paymentDate));
+  }
+  
+  async getAllSupplierPayments(): Promise<SupplierPayment[]> {
+    return await this.db
+      .select()
+      .from(supplierPayments)
+      .orderBy(desc(supplierPayments.paymentDate));
+  }
+  
+  async createSupplierPayment(payment: InsertSupplierPayment): Promise<SupplierPayment> {
+    const [newPayment] = await this.db.insert(supplierPayments).values(payment).returning();
+    
+    // Update the invoice's paid amount
+    const invoice = await this.getSupplierInvoice(payment.invoiceId);
+    if (invoice) {
+      const payments = await this.getSupplierPaymentsByInvoice(payment.invoiceId);
+      const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+      
+      // Update status based on payment amount
+      let newStatus = invoice.status;
+      if (totalPaid >= invoice.amount) {
+        newStatus = 'paid';
+      } else if (totalPaid > 0) {
+        newStatus = 'partially_paid';
+      }
+      
+      await this.updateSupplierInvoice(payment.invoiceId, {
+        paidAmount: totalPaid,
+        status: newStatus
+      });
+    }
+    
+    return newPayment;
+  }
+  
+  async updateSupplierPayment(id: number, payment: Partial<InsertSupplierPayment>): Promise<SupplierPayment | undefined> {
+    const [updatedPayment] = await this.db
+      .update(supplierPayments)
+      .set(payment)
+      .where(eq(supplierPayments.id, id))
+      .returning();
+    return updatedPayment;
+  }
+  
+  async deleteSupplierPayment(id: number): Promise<boolean> {
+    const payment = await this.getSupplierPayment(id);
+    if (!payment) {
+      return false;
+    }
+    
+    const invoiceId = payment.invoiceId;
+    
+    const result = await this.db.delete(supplierPayments)
+      .where(eq(supplierPayments.id, id))
+      .returning();
+    
+    // Update the invoice's paid amount
+    const invoice = await this.getSupplierInvoice(invoiceId);
+    if (invoice) {
+      const payments = await this.getSupplierPaymentsByInvoice(invoiceId);
+      const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+      
+      // Update status based on payment amount
+      let newStatus = invoice.status;
+      if (totalPaid >= invoice.amount) {
+        newStatus = 'paid';
+      } else if (totalPaid > 0) {
+        newStatus = 'partially_paid';
+      } else {
+        // If no payments, revert to pending or overdue status based on the due date
+        const today = new Date();
+        const dueDate = new Date(invoice.dueDate);
+        newStatus = dueDate < today ? 'overdue' : 'pending';
+      }
+      
+      await this.updateSupplierInvoice(invoiceId, {
+        paidAmount: totalPaid,
+        status: newStatus
+      });
+    }
+    
+    return result.length > 0;
+  }
+  
+  // Payment summary and reporting methods
+  async getPaymentsSummary(): Promise<{
+    totalPending: number;
+    totalOverdue: number;
+    upcomingPayments: {
+      id: number;
+      invoiceNumber: string;
+      supplierName: string;
+      amount: number;
+      dueDate: Date;
+      daysLeft: number;
+    }[];
+  }> {
+    // Get all pending and overdue invoices
+    const pendingInvoices = await this.getPendingInvoices();
+    const overdueInvoices = await this.getOverdueInvoices();
+    
+    // Calculate totals
+    const totalPending = pendingInvoices.reduce((sum, invoice) => 
+      sum + (invoice.amount - (invoice.paidAmount || 0)), 0);
+    
+    const totalOverdue = overdueInvoices.reduce((sum, invoice) => 
+      sum + (invoice.amount - (invoice.paidAmount || 0)), 0);
+    
+    // Upcoming payments (next 30 days)
+    const today = new Date();
+    const thirtyDaysLater = new Date();
+    thirtyDaysLater.setDate(today.getDate() + 30);
+    
+    const upcomingInvoices = pendingInvoices.filter(invoice => 
+      new Date(invoice.dueDate) <= thirtyDaysLater
+    ).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    
+    // Get supplier details for upcoming payments
+    const upcomingPayments = await Promise.all(upcomingInvoices.map(async invoice => {
+      const supplier = await this.getSupplier(invoice.supplierId);
+      const dueDate = new Date(invoice.dueDate);
+      const daysLeft = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      
+      return {
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        supplierName: supplier ? supplier.name : 'Unknown Supplier',
+        amount: invoice.amount - (invoice.paidAmount || 0),
+        dueDate: dueDate,
+        daysLeft: daysLeft
+      };
+    }));
+    
+    return {
+      totalPending,
+      totalOverdue,
+      upcomingPayments
+    };
+  }
+  
+  async getSupplierPaymentHistory(supplierId: number): Promise<{
+    totalPaid: number;
+    averageDaysToPayment: number;
+    payments: {
+      id: number;
+      invoiceNumber: string;
+      paymentDate: Date;
+      amount: number;
+      paymentMethod: string;
+    }[];
+  }> {
+    // Get all invoices for this supplier
+    const invoices = await this.getSupplierInvoicesBySupplier(supplierId);
+    
+    // Calculate total paid
+    const totalPaid = invoices.reduce((sum, invoice) => sum + (invoice.paidAmount || 0), 0);
+    
+    // Get payment details
+    const paymentDetails: {
+      id: number;
+      invoiceNumber: string;
+      paymentDate: Date;
+      amount: number;
+      paymentMethod: string;
+      daysToPayment: number;
+    }[] = [];
+    
+    let totalDaysToPayment = 0;
+    let paymentCount = 0;
+    
+    // Collect all payment details
+    for (const invoice of invoices) {
+      const payments = await this.getSupplierPaymentsByInvoice(invoice.id);
+      
+      for (const payment of payments) {
+        const invoiceDate = new Date(invoice.invoiceDate);
+        const paymentDate = new Date(payment.paymentDate);
+        const daysToPayment = Math.ceil((paymentDate.getTime() - invoiceDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        paymentDetails.push({
+          id: payment.id,
+          invoiceNumber: invoice.invoiceNumber,
+          paymentDate: paymentDate,
+          amount: payment.amount,
+          paymentMethod: payment.paymentMethod,
+          daysToPayment: daysToPayment
+        });
+        
+        totalDaysToPayment += daysToPayment;
+        paymentCount++;
+      }
+    }
+    
+    // Calculate average days to payment
+    const averageDaysToPayment = paymentCount > 0 ? totalDaysToPayment / paymentCount : 0;
+    
+    // Sort payments by date (newest first)
+    const payments = paymentDetails
+      .sort((a, b) => b.paymentDate.getTime() - a.paymentDate.getTime())
+      .map(({ id, invoiceNumber, paymentDate, amount, paymentMethod }) => 
+        ({ id, invoiceNumber, paymentDate, amount, paymentMethod }));
+    
+    return {
+      totalPaid,
+      averageDaysToPayment,
+      payments
+    };
+  }
 }
 
 // This will be initialized when the server starts

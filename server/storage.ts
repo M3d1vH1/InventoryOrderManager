@@ -387,6 +387,60 @@ export interface IStorage {
   // Quality Check methods
   getQualityChecksByProductionOrder(orderId: number): Promise<ProductionQualityCheck[]>;
   addProductionQualityCheck(check: InsertProductionQualityCheck): Promise<ProductionQualityCheck>;
+  
+  // Supplier methods
+  getSupplier(id: number): Promise<Supplier | undefined>;
+  getSupplierByName(name: string): Promise<Supplier | undefined>;
+  getAllSuppliers(): Promise<Supplier[]>;
+  getActiveSuppliers(): Promise<Supplier[]>;
+  createSupplier(supplier: InsertSupplier): Promise<Supplier>;
+  updateSupplier(id: number, supplier: Partial<InsertSupplier>): Promise<Supplier | undefined>;
+  deleteSupplier(id: number): Promise<boolean>;
+  
+  // Supplier Invoice methods
+  getSupplierInvoice(id: number): Promise<SupplierInvoice | undefined>;
+  getSupplierInvoicesBySupplier(supplierId: number): Promise<SupplierInvoice[]>;
+  getPendingInvoices(): Promise<SupplierInvoice[]>;
+  getOverdueInvoices(): Promise<SupplierInvoice[]>;
+  getAllSupplierInvoices(): Promise<SupplierInvoice[]>;
+  createSupplierInvoice(invoice: InsertSupplierInvoice): Promise<SupplierInvoice>;
+  updateSupplierInvoice(id: number, invoice: Partial<InsertSupplierInvoice>): Promise<SupplierInvoice | undefined>;
+  updateInvoiceStatus(id: number, status: 'pending' | 'paid' | 'partially_paid' | 'overdue' | 'cancelled'): Promise<SupplierInvoice | undefined>;
+  deleteSupplierInvoice(id: number): Promise<boolean>;
+  
+  // Supplier Payment methods
+  getSupplierPayment(id: number): Promise<SupplierPayment | undefined>;
+  getSupplierPaymentsByInvoice(invoiceId: number): Promise<SupplierPayment[]>;
+  getAllSupplierPayments(): Promise<SupplierPayment[]>;
+  createSupplierPayment(payment: InsertSupplierPayment): Promise<SupplierPayment>;
+  updateSupplierPayment(id: number, payment: Partial<InsertSupplierPayment>): Promise<SupplierPayment | undefined>;
+  deleteSupplierPayment(id: number): Promise<boolean>;
+  
+  // Payment summary and reporting methods
+  getPaymentsSummary(): Promise<{
+    totalPending: number;
+    totalOverdue: number;
+    upcomingPayments: {
+      id: number;
+      invoiceNumber: string;
+      supplierName: string;
+      amount: number;
+      dueDate: Date;
+      daysLeft: number;
+    }[];
+  }>;
+  
+  getSupplierPaymentHistory(supplierId: number): Promise<{
+    totalPaid: number;
+    averageDaysToPayment: number;
+    payments: {
+      id: number;
+      invoiceNumber: string;
+      paymentDate: Date;
+      amount: number;
+      paymentMethod: string;
+    }[];
+  }>;
 }
 
 // We're keeping the MemStorage class definition for fallback
