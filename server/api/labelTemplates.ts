@@ -117,12 +117,28 @@ export async function previewLabelTemplate(req: Request, res: Response) {
     const { templateName } = req.params;
     const { content } = req.body;
     
+    console.log('Request body for template preview:', req.body);
+    console.log('Template name:', templateName);
+    
     if (!templateName) {
       return res.status(400).json({ message: 'Template name is required' });
     }
     
     if (!content) {
-      return res.status(400).json({ message: 'Template content is required' });
+      console.log('Content missing in request body');
+      // If content is not provided in the request, try to fetch from the filesystem
+      const templatePath = path.join(labelTemplatesDir, `${templateName}.jscript`);
+      if (fs.existsSync(templatePath)) {
+        const fileContent = fs.readFileSync(templatePath, 'utf8');
+        if (fileContent) {
+          console.log('Using template content from file');
+          req.body.content = fileContent;
+        } else {
+          return res.status(400).json({ message: 'Template content is required and file is empty' });
+        }
+      } else {
+        return res.status(400).json({ message: 'Template content is required and template file not found' });
+      }
     }
     
     // Create temp directory if it doesn't exist

@@ -134,9 +134,11 @@ const LabelTemplateEditor: React.FC = () => {
   // Preview template mutation
   const previewTemplateMutation = useMutation({
     mutationFn: async (content: string) => {
+      console.log('Sending preview request with content:', content);
+      console.log('Template name:', selectedTemplate);
       return apiRequest(`/api/label-templates/${selectedTemplate}/preview`, {
         method: 'POST',
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content: content }),
       });
     },
     onSuccess: (data) => {
