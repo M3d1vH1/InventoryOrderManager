@@ -4,7 +4,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { storage } from '../storage';
 import { Product } from '../../shared/schema';
-import Canvas from 'canvas';
+// Import HTML-based rendering instead of Canvas
 
 const execPromise = promisify(exec);
 
@@ -214,7 +214,7 @@ E
    * @param order Order data
    * @param boxCount Total number of boxes
    * @param currentBox Current box number
-   * @returns Path to the generated preview image
+   * @returns HTML content for preview
    */
   async generatePreview(orderId: number, boxCount: number, currentBox: number): Promise<string> {
     try {
@@ -257,28 +257,6 @@ E
         orderWithItems.customer = await storage.getCustomerByName(order.customerName);
       }
       
-      // Create a canvas to draw the label preview
-      const canvas = Canvas.createCanvas(labelWidthDots / 2, labelHeightDots / 2); // Scale down for preview
-      const ctx = canvas.getContext('2d');
-      
-      // Draw white background
-      ctx.fillStyle = 'white';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Draw border
-      ctx.strokeStyle = 'black';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(0, 0, canvas.width, canvas.height);
-      
-      // Try to load and draw logo
-      try {
-        const logo = await Canvas.loadImage(path.join(process.cwd(), 'attached_assets', 'Frame 40.png'));
-        ctx.drawImage(logo, 10, 10, 100, 30);
-      } catch (error) {
-        console.error('Failed to load logo for preview:', error);
-        // Continue without logo
-      }
-      
       // Get shipping info from customer if available
       let shippingCompanyInfo = '';
       const customer = orderWithItems.customer || null;
@@ -295,12 +273,7 @@ E
         shippingCompanyInfo = orderWithItems.area;
       }
       
-      // Draw customer info and other details
-      ctx.fillStyle = 'black';
-      ctx.font = 'bold 15px Arial';
-      ctx.fillText(orderWithItems.customerName || '', 10, 50);
-      
-      ctx.font = '12px Arial';
+      // Build customer address
       const addressParts = [];
       if (orderWithItems.customerAddress) addressParts.push(orderWithItems.customerAddress);
       if (orderWithItems.customerCity) addressParts.push(orderWithItems.customerCity);
@@ -308,32 +281,96 @@ E
       if (orderWithItems.customerPostalCode) addressParts.push(orderWithItems.customerPostalCode);
       
       const address = addressParts.join(', ');
-      ctx.fillText(address, 10, 70);
       
-      ctx.fillText(`Τηλέφωνο: ${orderWithItems.customerPhone || ''}`, 10, 90);
-      ctx.fillText(`Μεταφορική: ${shippingCompanyInfo}`, 10, 110);
+      // Box info
+      const boxInfo = `${currentBox} / ${boxCount}`;
       
-      ctx.font = 'bold 16px Arial';
-      ctx.fillText(`Κιβώτιο: ${currentBox} / ${boxCount}`, 10, 140);
+      // Create HTML preview
+      const logoPath = '/shipping-logo.png'; // Public URL to the logo
+      const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Shipping Label Preview</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+          }
+          .label-container {
+            width: ${LABEL_WIDTH_MM * 3.779528}px; /* Convert mm to pixels at 96 DPI */
+            height: ${LABEL_HEIGHT_MM * 3.779528}px;
+            border: 1px solid #000;
+            margin: 20px auto;
+            padding: 10px;
+            position: relative;
+            box-sizing: border-box;
+            background-color: white;
+          }
+          .logo {
+            max-width: 150px;
+            max-height: 45px;
+            margin-bottom: 15px;
+          }
+          .customer-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+          }
+          .customer-address, .customer-phone {
+            font-size: 14px;
+            margin-bottom: 8px;
+          }
+          .shipping-company {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 15px;
+          }
+          .box-count {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+          }
+          .order-number {
+            font-size: 14px;
+            margin-bottom: 8px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="label-container">
+          <img src="${logoPath}" class="logo" alt="Company Logo" onerror="this.style.display='none'" />
+          
+          <div class="customer-name">${orderWithItems.customerName || ''}</div>
+          
+          <div class="customer-address">${address}</div>
+          
+          <div class="customer-phone">Τηλέφωνο: ${orderWithItems.customerPhone || ''}</div>
+          
+          <div class="shipping-company">Μεταφορική: ${shippingCompanyInfo}</div>
+          
+          <div class="box-count">Κιβώτιο: ${boxInfo}</div>
+          
+          <div class="order-number">Αρ. Παραγγελίας: ${orderWithItems.orderNumber}</div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+          <p>This is a preview of how the label will appear on the printer.</p>
+          <p>The actual label will be ${LABEL_WIDTH_MM}mm x ${LABEL_HEIGHT_MM}mm.</p>
+        </div>
+      </body>
+      </html>
+      `;
       
-      ctx.font = '12px Arial';
-      ctx.fillText(`Αρ. Παραγγελίας: ${orderWithItems.orderNumber}`, 10, 170);
-      
-      // Save the canvas to a png file
-      const previewDir = path.join(process.cwd(), 'temp');
-      if (!fs.existsSync(previewDir)) {
-        fs.mkdirSync(previewDir, { recursive: true });
+      // Save HTML to a temporary file
+      const tempDir = path.join(process.cwd(), 'temp');
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
       }
       
-      const previewPath = path.join(previewDir, `label-preview-${orderId}-${currentBox}-${Date.now()}.png`);
-      const out = fs.createWriteStream(previewPath);
-      const stream = canvas.createPNGStream();
-      
-      await new Promise<void>((resolve, reject) => {
-        stream.pipe(out);
-        out.on('finish', () => resolve());
-        out.on('error', reject);
-      });
+      const previewPath = path.join(tempDir, `label-preview-${orderId}-${currentBox}-${Date.now()}.html`);
+      await fs.promises.writeFile(previewPath, html, 'utf8');
       
       return previewPath;
     } catch (error: any) {

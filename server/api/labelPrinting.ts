@@ -96,10 +96,10 @@ export async function previewShippingLabel(req: Request, res: Response) {
       return res.status(400).json({ error: 'Current box number cannot exceed total box count' });
     }
     
-    // Generate preview image
+    // Generate preview HTML
     const previewPath = await labelPrinterService.generatePreview(orderId, boxCount, currentBox);
     
-    // Create a public URL for the image
+    // Create a public URL for the HTML preview
     const filename = path.basename(previewPath);
     const publicPath = path.join(process.cwd(), 'public', filename);
     
@@ -116,6 +116,7 @@ export async function previewShippingLabel(req: Request, res: Response) {
     return res.status(200).json({ 
       success: true,
       previewUrl,
+      isHtml: true,
       message: 'Preview generated successfully'
     });
   } catch (error: any) {
