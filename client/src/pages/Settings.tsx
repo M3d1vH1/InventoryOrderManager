@@ -26,6 +26,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 import { ImageMigration } from '@/components/settings/ImageMigration';
+import LabelTemplateEditorComponent from '@/components/settings/LabelTemplateEditor';
 
 const companySettingsSchema = z.object({
   companyName: z.string().min(2, { message: "Company name must be at least 2 characters" }),
@@ -2573,18 +2574,8 @@ const Settings = () => {
                   </AlertDescription>
                 </Alert>
                 
-                <Card>
-                  <CardHeader className="py-4">
-                    <CardTitle className="text-base font-medium">Shipping Label</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="mb-2 text-sm text-muted-foreground">This template is used for standard shipping labels.</p>
-                    <Button variant="outline" onClick={() => setActiveTab('shipping-label-editor')}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Template
-                    </Button>
-                  </CardContent>
-                </Card>
+                {/* Replace with our new LabelTemplateEditor component */}
+                <LabelTemplateEditorComponent />
               </div>
             </CardContent>
           </Card>
@@ -2785,10 +2776,7 @@ const Settings = () => {
   );
 };
 
-// Import the dedicated LabelTemplateEditor component
-import LabelTemplateEditorComponent from '@/components/settings/LabelTemplateEditor';
-
-// Label Template Editor Component (Deprecated - using imported component)
+// Label Template Editor Component (Deprecated - keeping for reference)
 const LabelTemplateEditor = () => {
   const { toast } = useToast();
   const [selectedTemplate, setSelectedTemplate] = useState('shipping-label');
