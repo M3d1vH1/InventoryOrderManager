@@ -76,8 +76,9 @@ interface OrderWithItems {
   notes?: string | null;
   items: OrderItem[];
   customer?: Customer | null;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+  orderDate?: Date;
 }
 
 /**
@@ -239,14 +240,16 @@ E
           ...item,
           name: product?.name || 'Unknown Product',
           sku: product?.sku || 'N/A',
-          category: product?.category || null
+          category: product?.categoryId ? String(product.categoryId) : null
         });
       }
       
       // Create order with items
       const orderWithItems: OrderWithItems = {
         ...order,
-        items: enhancedItems
+        items: enhancedItems,
+        createdAt: order.orderDate || new Date(),
+        updatedAt: order.lastUpdated || new Date()
       };
       
       // Get customer info if available
@@ -269,7 +272,7 @@ E
       
       // Try to load and draw logo
       try {
-        const logo = await Canvas.loadImage(LOGO_PATH);
+        const logo = await Canvas.loadImage(path.join(process.cwd(), 'attached_assets', 'Frame 40.png'));
         ctx.drawImage(logo, 10, 10, 100, 30);
       } catch (error) {
         console.error('Failed to load logo for preview:', error);
@@ -402,14 +405,16 @@ E
           ...item,
           name: product?.name || 'Unknown Product',
           sku: product?.sku || 'N/A',
-          category: product?.category || null
+          category: product?.categoryId ? String(product.categoryId) : null
         });
       }
       
       // Create order with items
       const orderWithItems: OrderWithItems = {
         ...order,
-        items: enhancedItems
+        items: enhancedItems,
+        createdAt: order.orderDate || new Date(),
+        updatedAt: order.lastUpdated || new Date()
       };
       
       // Get customer info if available
