@@ -46,7 +46,13 @@ import {
   AlertDescription,
   AlertTitle,
 } from '@/components/ui/alert';
-import { Edit, HelpCircle } from 'lucide-react';
+import { Edit, HelpCircle, Eye, Save, RotateCcw } from 'lucide-react';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 // Template schema
 const templateEditSchema = z.object({
@@ -59,6 +65,9 @@ const LabelTemplateEditor: React.FC = () => {
   const [selectedTemplate, setSelectedTemplate] = useState('shipping-label');
   const [isEditing, setIsEditing] = useState(false);
   const [showVariableHelp, setShowVariableHelp] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("edit");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
   
   // Template form
   const shippingLabelForm = useForm<z.infer<typeof templateEditSchema>>({
@@ -121,6 +130,52 @@ const LabelTemplateEditor: React.FC = () => {
       });
     }
   });
+  
+  // Preview template mutation
+  const previewTemplateMutation = useMutation({
+    mutationFn: async (content: string) => {
+      return apiRequest(`/api/label-templates/${selectedTemplate}/preview`, {
+        method: 'POST',
+        body: JSON.stringify({ content }),
+      });
+    },
+    onSuccess: (data) => {
+      if (data.previewUrl) {
+        setPreviewUrl(data.previewUrl);
+        setActiveTab("preview");
+      } else {
+        toast({
+          title: "Preview Error",
+          description: "Failed to generate preview URL",
+          variant: "destructive",
+        });
+      }
+      setIsGeneratingPreview(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Preview Error",
+        description: "Failed to generate preview. " + (error instanceof Error ? error.message : String(error)),
+        variant: "destructive",
+      });
+      setIsGeneratingPreview(false);
+    }
+  });
+  
+  // Generate preview
+  const handleGeneratePreview = () => {
+    const content = shippingLabelForm.getValues().content;
+    if (!content) {
+      toast({
+        title: "Error",
+        description: "Template content is required to generate a preview",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsGeneratingPreview(true);
+    previewTemplateMutation.mutate(content);
+  };
   
   // Template selection options
   const templateOptions = [
@@ -217,72 +272,141 @@ const LabelTemplateEditor: React.FC = () => {
                   </DialogDescription>
                 </DialogHeader>
                 
-                <div className="mb-4 flex justify-between items-center">
-                  <h4 className="font-medium">Edit template</h4>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setShowVariableHelp(!showVariableHelp)}
-                  >
-                    <HelpCircle className="h-4 w-4 mr-2" />
-                    {showVariableHelp ? "Hide Variables" : "Show Variables"}
-                  </Button>
-                </div>
-                
-                {showVariableHelp && (
-                  <div className="bg-slate-50 p-4 rounded-md mb-4">
-                    <h5 className="font-medium mb-2">Available Variables</h5>
-                    <p className="text-sm mb-2">Click a variable to insert it at cursor position:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {availableVariables.map((variable) => (
-                        <Badge 
-                          key={variable.name} 
-                          variant="outline" 
-                          className="cursor-pointer hover:bg-slate-100"
-                          onClick={() => insertVariable(variable.name)}
+                <Tabs 
+                  value={activeTab} 
+                  onValueChange={setActiveTab}
+                  className="w-full"
+                >
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="edit">
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Template
+                    </TabsTrigger>
+                    <TabsTrigger value="preview" disabled={!previewUrl && !isGeneratingPreview}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      Preview
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="edit" className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-medium">Edit template</h4>
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => setShowVariableHelp(!showVariableHelp)}
                         >
-                          {variable.name}
-                        </Badge>
-                      ))}
+                          <HelpCircle className="h-4 w-4 mr-2" />
+                          {showVariableHelp ? "Hide Variables" : "Show Variables"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleGeneratePreview}
+                          disabled={isGeneratingPreview || !shippingLabelForm.getValues().content}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          {isGeneratingPreview ? "Generating..." : "Generate Preview"}
+                        </Button>
+                      </div>
                     </div>
-                    <div className="mt-3 space-y-2">
-                      <p className="text-xs text-slate-500">
-                        <strong>Variable format:</strong> Use <code className="bg-slate-100 px-1">{"{variable_name}"}</code>
-                      </p>
-                    </div>
-                  </div>
-                )}
+                    
+                    {showVariableHelp && (
+                      <div className="bg-slate-50 p-4 rounded-md mb-4">
+                        <h5 className="font-medium mb-2">Available Variables</h5>
+                        <p className="text-sm mb-2">Click a variable to insert it at cursor position:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {availableVariables.map((variable) => (
+                            <Badge 
+                              key={variable.name} 
+                              variant="outline" 
+                              className="cursor-pointer hover:bg-slate-100"
+                              onClick={() => insertVariable(variable.name)}
+                            >
+                              {variable.name}
+                            </Badge>
+                          ))}
+                        </div>
+                        <div className="mt-3 space-y-2">
+                          <p className="text-xs text-slate-500">
+                            <strong>Variable format:</strong> Use <code className="bg-slate-100 px-1">{"{variable_name}"}</code>
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <Form {...shippingLabelForm}>
+                      <div className="space-y-4">
+                        <FormField
+                          control={shippingLabelForm.control}
+                          name="content"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Template JScript</FormLabel>
+                              <FormControl>
+                                <Textarea 
+                                  {...field} 
+                                  className="font-mono text-sm h-[300px]"
+                                  spellCheck={false}
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                JScript code for label printing. Variable format: {`{variable_name}`}
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </Form>
+                  </TabsContent>
+                  
+                  <TabsContent value="preview" className="space-y-4">
+                    {isGeneratingPreview ? (
+                      <div className="flex flex-col items-center justify-center p-8">
+                        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mb-4"></div>
+                        <p className="text-muted-foreground">Generating preview...</p>
+                      </div>
+                    ) : previewUrl ? (
+                      <div className="flex flex-col space-y-4">
+                        <div className="flex justify-between items-center">
+                          <h4 className="font-medium">Label Preview</h4>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setActiveTab("edit")}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Back to Editor
+                          </Button>
+                        </div>
+                        <div className="border rounded-md overflow-hidden bg-gray-50">
+                          <iframe 
+                            src={previewUrl} 
+                            className="w-full h-[500px] border-0"
+                            title="Label Preview"
+                          ></iframe>
+                        </div>
+                        <p className="text-sm text-muted-foreground italic">
+                          This is a simplified preview. The actual label will be rendered by the printer.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-8">
+                        <p className="text-muted-foreground">No preview available. Generate a preview first.</p>
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
                 
-                <Form {...shippingLabelForm}>
-                  <div className="space-y-4">
-                    <FormField
-                      control={shippingLabelForm.control}
-                      name="content"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Template JScript</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              {...field} 
-                              className="font-mono text-sm h-[300px]"
-                              spellCheck={false}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            JScript code for label printing. Variable format: {`{variable_name}`}
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </Form>
-                
-                <DialogFooter>
+                <DialogFooter className="mt-4 pt-4 border-t">
                   <Button 
                     variant="outline" 
                     onClick={() => {
                       setIsEditing(false);
+                      setActiveTab("edit");
+                      setPreviewUrl(null);
                       if (labelTemplateData && labelTemplateData.content) {
                         shippingLabelForm.reset({
                           content: labelTemplateData.content,
@@ -290,12 +414,14 @@ const LabelTemplateEditor: React.FC = () => {
                       }
                     }}
                   >
+                    <RotateCcw className="h-4 w-4 mr-2" />
                     Cancel
                   </Button>
                   <Button 
                     onClick={shippingLabelForm.handleSubmit(onTemplateSubmit)}
                     disabled={updateTemplateMutation.isPending}
                   >
+                    <Save className="h-4 w-4 mr-2" />
                     {updateTemplateMutation.isPending ? "Saving..." : "Save Template"}
                   </Button>
                 </DialogFooter>

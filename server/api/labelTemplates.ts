@@ -217,7 +217,7 @@ export async function previewLabelTemplate(req: Request, res: Response) {
         <div class="jscript-visual-preview">
           ${previewContent
             .split('\n')
-            .map(line => {
+            .map((line: string) => {
               // Parse label commands and convert to visual representation
               if (line.startsWith('T ')) {
                 // Text command: T x,y,r,font,x-mult,y-mult;data
@@ -234,7 +234,7 @@ export async function previewLabelTemplate(req: Request, res: Response) {
               }
               return '';
             })
-            .filter(line => line)
+            .filter((line: string) => line)
             .join('\n')
           }
         </div>

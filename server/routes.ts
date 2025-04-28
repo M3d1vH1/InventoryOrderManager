@@ -14,7 +14,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import PDFDocument from 'pdfkit';
 import { getEmailSettings, updateEmailSettings, testEmailConnection, getEmailTemplate, updateEmailTemplate } from "./api/emailSettings";
-import { getLabelTemplate, updateLabelTemplate, getAllLabelTemplates } from "./api/labelTemplates";
+import { getLabelTemplate, updateLabelTemplate, getAllLabelTemplates, previewLabelTemplate } from "./api/labelTemplates";
 import { getCompanySettings, updateCompanySettings, getNotificationSettings, updateNotificationSettings, testSlackWebhook, testSlackNotification, testSlackTemplate } from "./api/settings";
 import { getOrderErrors, getOrderQuality, createOrderError, updateOrderError, resolveOrderError, adjustInventoryForError, getErrorStats } from "./api/orderErrors";
 import { getInventoryChanges, getInventoryChange, addInventoryChange, getRecentInventoryChanges, getInventoryChangesByType } from "./api/inventoryChanges";
@@ -2626,6 +2626,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.put('/api/label-templates/:templateName', isAuthenticated, hasRole(['admin']), updateLabelTemplate);
   
+  app.post('/api/label-templates/:templateName/preview', isAuthenticated, hasRole(['admin', 'warehouse']), previewLabelTemplate);
+  
   // Company settings routes
   app.get('/api/company-settings', isAuthenticated, getCompanySettings);
   
@@ -3450,7 +3452,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/print-label', isAuthenticated, printShippingLabel);
   app.post('/api/print-batch-labels', isAuthenticated, printBatchShippingLabels);
   app.post('/api/preview-label', isAuthenticated, previewShippingLabel);
-  app.get('/api/preview-label/:filename', servePreviewImage); // Accessible without auth to allow image display
+  app.get('/api/preview-label/:filename', servePreviewImage); // Accessible without auth to allow image display in iframe
   
   return httpServer;
 }
