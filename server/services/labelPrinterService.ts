@@ -218,6 +218,9 @@ E
    */
   async generatePreview(orderId: number, boxCount: number, currentBox: number): Promise<string> {
     try {
+      // Log the exact user-specified box count values in preview generation
+      console.log(`[labelPrinterService:preview] Preview with exact user values - Box count: ${boxCount}, Current box: ${currentBox}`);
+      
       // Ensure logo is available
       await this.ensureLogoAvailable();
       
@@ -420,6 +423,9 @@ E
    */
   async printShippingLabel(orderId: number, boxCount: number, currentBox: number): Promise<string> {
     try {
+      // Log the exact user-specified box count values in the service
+      console.log(`[labelPrinterService] Printing with exact user values - Box count: ${boxCount}, Current box: ${currentBox}`);
+      
       // Ensure logo is available
       await this.ensureLogoAvailable();
       
@@ -490,6 +496,9 @@ E
    * @returns Results of printing operations
    */
   async printBatchLabels(orderId: number, boxCount: number): Promise<string[]> {
+    // Log the exact user-specified box count in batch printing
+    console.log(`[labelPrinterService:batchPrint] Using exact user-specified box count: ${boxCount}`);
+    
     const results: string[] = [];
     
     for (let i = 1; i <= boxCount; i++) {

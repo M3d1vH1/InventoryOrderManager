@@ -60,6 +60,9 @@ export async function printBatchShippingLabels(req: Request, res: Response) {
   try {
     const { orderId, boxCount } = batchPrintSchema.parse(req.body);
     
+    // Log exact values received from user input for batch printing
+    console.log(`[api:printBatchShippingLabels] Using user-specified box count: ${boxCount}`);
+    
     // Check if orderId exists
     const order = await storage.getOrder(orderId);
     if (!order) {
@@ -87,6 +90,9 @@ export async function printBatchShippingLabels(req: Request, res: Response) {
 export async function previewShippingLabel(req: Request, res: Response) {
   try {
     const { orderId, boxCount, currentBox } = printLabelSchema.parse(req.body);
+    
+    // Log exact values received from user input for preview
+    console.log(`[api:previewShippingLabel] Using user-specified values - Box count: ${boxCount}, Current box: ${currentBox}`);
     
     // Check if orderId exists
     const order = await storage.getOrder(orderId);
