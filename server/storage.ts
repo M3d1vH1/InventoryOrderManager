@@ -30,7 +30,11 @@ import {
   productionOrders, type ProductionOrder, type InsertProductionOrder,
   materialConsumptions, type MaterialConsumption, type InsertMaterialConsumption,
   productionLogs, type ProductionLog, type InsertProductionLog,
-  productionQualityChecks, type ProductionQualityCheck, type InsertProductionQualityCheck
+  productionQualityChecks, type ProductionQualityCheck, type InsertProductionQualityCheck,
+  // Supplier payment tracking imports
+  suppliers, type Supplier, type InsertSupplier,
+  supplierInvoices, type SupplierInvoice, type InsertSupplierInvoice, 
+  supplierPayments, type SupplierPayment, type InsertSupplierPayment
 } from "@shared/schema";
 import { DatabaseStorage, initStorage } from './storage.postgresql';
 import { log } from './vite';

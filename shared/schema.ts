@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, json, primaryKey, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, json, primaryKey, numeric, date, varchar, decimal } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -1196,3 +1196,137 @@ export type InsertMaterialInventoryChange = z.infer<typeof insertMaterialInvento
 export type MaterialInventoryChange = typeof materialInventoryChanges.$inferSelect;
 export type InsertProductionQualityCheck = z.infer<typeof insertProductionQualityCheckSchema>;
 export type ProductionQualityCheck = typeof productionQualityChecks.$inferSelect;
+
+// Supplier Payment Tracking Schemas
+
+// Suppliers Schema
+export const suppliers = pgTable("suppliers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  contactPerson: text("contact_person"),
+  email: text("email"),
+  phone: text("phone"),
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  postalCode: text("postal_code"),
+  country: text("country"),
+  vatNumber: text("vat_number"),
+  paymentTerms: text("payment_terms"), // e.g., "Net 30", "Net 60"
+  bankAccountInfo: text("bank_account_info"),
+  notes: text("notes"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertSupplierSchema = createInsertSchema(suppliers)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+    contactPerson: z.string().optional(),
+    email: z.union([z.string().email({ message: "Invalid email address" }), z.string().length(0), z.null()]).optional(),
+    phone: z.string().optional(),
+    address: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    postalCode: z.string().optional(),
+    country: z.string().optional(),
+    vatNumber: z.string().optional(),
+    paymentTerms: z.string().optional(),
+    bankAccountInfo: z.string().optional(),
+    notes: z.string().optional(),
+    isActive: z.boolean().default(true),
+  });
+
+export type InsertSupplier = z.infer<typeof insertSupplierSchema>;
+export type Supplier = typeof suppliers.$inferSelect;
+
+// Invoice Status Enum
+export const invoiceStatusEnum = pgEnum('invoice_status', [
+  'pending',
+  'paid',
+  'partially_paid',
+  'overdue',
+  'cancelled'
+]);
+
+// Supplier Invoices Schema
+export const supplierInvoices = pgTable("supplier_invoices", {
+  id: serial("id").primaryKey(),
+  invoiceNumber: text("invoice_number").notNull(),
+  supplierId: integer("supplier_id").notNull().references(() => suppliers.id),
+  invoiceDate: date("invoice_date").notNull(),
+  dueDate: date("due_date").notNull(),
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+  paidAmount: numeric("paid_amount", { precision: 10, scale: 2 }).default("0"),
+  status: invoiceStatusEnum("status").notNull().default('pending'),
+  description: text("description"),
+  notes: text("notes"),
+  attachmentPath: text("attachment_path"),
+  isRecurring: boolean("is_recurring").default(false),
+  recurringCycle: integer("recurring_cycle"), // Days between recurring invoices
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdById: integer("created_by_id").notNull().references(() => users.id),
+  lastUpdated: timestamp("last_updated"),
+  updatedById: integer("updated_by_id").references(() => users.id),
+});
+
+export const insertSupplierInvoiceSchema = createInsertSchema(supplierInvoices)
+  .omit({ id: true, createdAt: true, lastUpdated: true, updatedById: true })
+  .extend({
+    invoiceNumber: z.string().min(1, { message: "Invoice number is required" }),
+    supplierId: z.number(),
+    invoiceDate: z.string().min(1).transform(val => new Date(val)),
+    dueDate: z.string().min(1).transform(val => new Date(val)),
+    amount: z.number().min(0.01, { message: "Amount must be greater than 0" }),
+    paidAmount: z.number().min(0).default(0),
+    status: z.enum(['pending', 'paid', 'partially_paid', 'overdue', 'cancelled']).default('pending'),
+    description: z.string().optional(),
+    notes: z.string().optional(),
+    attachmentPath: z.string().optional(),
+    isRecurring: z.boolean().default(false),
+    recurringCycle: z.number().optional(),
+    createdById: z.number(),
+  });
+
+export type InsertSupplierInvoice = z.infer<typeof insertSupplierInvoiceSchema>;
+export type SupplierInvoice = typeof supplierInvoices.$inferSelect;
+
+// Payment Methods Enum
+export const paymentMethodEnum = pgEnum('payment_method', [
+  'bank_transfer',
+  'check',
+  'credit_card',
+  'cash',
+  'other'
+]);
+
+// Supplier Payments Schema
+export const supplierPayments = pgTable("supplier_payments", {
+  id: serial("id").primaryKey(),
+  invoiceId: integer("invoice_id").notNull().references(() => supplierInvoices.id),
+  paymentDate: date("payment_date").notNull(),
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+  paymentMethod: paymentMethodEnum("payment_method").notNull(),
+  referenceNumber: text("reference_number"),
+  notes: text("notes"),
+  receiptPath: text("receipt_path"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdById: integer("created_by_id").notNull().references(() => users.id),
+});
+
+export const insertSupplierPaymentSchema = createInsertSchema(supplierPayments)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    invoiceId: z.number(),
+    paymentDate: z.string().min(1).transform(val => new Date(val)),
+    amount: z.number().min(0.01, { message: "Amount must be greater than 0" }),
+    paymentMethod: z.enum(['bank_transfer', 'check', 'credit_card', 'cash', 'other']),
+    referenceNumber: z.string().optional(),
+    notes: z.string().optional(),
+    receiptPath: z.string().optional(),
+    createdById: z.number(),
+  });
+
+export type InsertSupplierPayment = z.infer<typeof insertSupplierPaymentSchema>;
+export type SupplierPayment = typeof supplierPayments.$inferSelect;
