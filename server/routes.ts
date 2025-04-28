@@ -2537,6 +2537,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Label content is required' });
       }
       
+      if (!boxNumber || !totalBoxes) {
+        return res.status(400).json({ message: 'Box number and total boxes are required' });
+      }
+      
+      // Log the exact user-specified values to ensure they are preserved
+      console.log(`[printer] Received exact box count from user input: ${totalBoxes}`);
+      console.log(`[printer] Current box number to print: ${boxNumber}`);
+      
       // Create a temporary file with the JScript content
       const tempDir = path.join(process.cwd(), 'temp_labels');
       

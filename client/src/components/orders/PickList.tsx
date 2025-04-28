@@ -265,7 +265,7 @@ const PickList = ({ order }: { order: Order }) => {
   
   // Function to generate shipping labels for CAB EOS printer
   const generateShippingLabels = (order: Order, boxCount: number) => {
-    // Only proceed if we have a valid box count
+    // Only proceed if we have a valid box count from user input
     if (boxCount < 1) {
       toast({
         title: "Error",
@@ -274,6 +274,10 @@ const PickList = ({ order }: { order: Order }) => {
       });
       return;
     }
+    
+    // Log the exact user-specified box count to ensure it's being used
+    console.log(`Using user-specified box count: ${boxCount}`);
+    
     
     // Create the JScript commands for the CAB EOS1 printer
     const createLabelJScript = (boxNumber: number, totalBoxes: number) => {

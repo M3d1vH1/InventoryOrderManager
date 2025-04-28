@@ -24,6 +24,9 @@ export async function printShippingLabel(req: Request, res: Response) {
   try {
     const { orderId, boxCount, currentBox } = printLabelSchema.parse(req.body);
     
+    // Log exact values received from user input
+    console.log(`[api:printShippingLabel] Using user-specified values - Box count: ${boxCount}, Current box: ${currentBox}`);
+    
     // Check if orderId exists
     const order = await storage.getOrder(orderId);
     if (!order) {
