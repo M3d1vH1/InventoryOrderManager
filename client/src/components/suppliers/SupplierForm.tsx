@@ -152,7 +152,7 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>
-            {supplier ? t('suppliers.edit') : t('suppliers.create')}
+            {supplier ? t('common.edit') : t('common.create')}
           </DialogTitle>
         </DialogHeader>
 
@@ -165,9 +165,9 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('suppliers.name')}</FormLabel>
+                    <FormLabel>{t('supplierPayments.supplier.name')}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t('suppliers.namePlaceholder')} {...field} />
+                      <Input placeholder={t('supplierPayments.supplier.name')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -180,9 +180,9 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                 name="contactPerson"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('suppliers.contactPerson')}</FormLabel>
+                    <FormLabel>{t('supplierPayments.supplier.contactPerson')}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t('suppliers.contactPersonPlaceholder')} {...field} />
+                      <Input placeholder={t('supplierPayments.supplier.contactPerson')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -195,9 +195,9 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                 name="vatNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('suppliers.vatNumber')}</FormLabel>
+                    <FormLabel>{t('supplierPayments.supplier.vatNumber')}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t('suppliers.vatNumberPlaceholder')} {...field} />
+                      <Input placeholder={t('supplierPayments.supplier.vatNumber')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -210,11 +210,11 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('suppliers.email')}</FormLabel>
+                    <FormLabel>{t('supplierPayments.supplier.email')}</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
-                        placeholder={t('suppliers.emailPlaceholder')}
+                        placeholder={t('supplierPayments.supplier.email')}
                         {...field}
                         value={field.value || ''}
                       />
@@ -230,9 +230,9 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('suppliers.phone')}</FormLabel>
+                    <FormLabel>{t('supplierPayments.supplier.phone')}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t('suppliers.phonePlaceholder')} {...field} />
+                      <Input placeholder={t('supplierPayments.supplier.phone')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -245,10 +245,10 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                 name="paymentTerms"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('suppliers.paymentTerms')}</FormLabel>
+                    <FormLabel>{t('supplierPayments.supplier.paymentTerms')}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder={t('suppliers.paymentTermsPlaceholder')}
+                        placeholder={t('supplierPayments.supplier.paymentTerms')}
                         {...field}
                       />
                     </FormControl>
@@ -263,9 +263,9 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                 name="address"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('suppliers.address')}</FormLabel>
+                    <FormLabel>{t('supplierPayments.supplier.address')}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t('suppliers.addressPlaceholder')} {...field} />
+                      <Input placeholder={t('supplierPayments.supplier.address')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -339,7 +339,7 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between space-x-2 rounded-md border p-4">
                     <div className="space-y-0.5">
-                      <FormLabel>{t('suppliers.isActive')}</FormLabel>
+                      <FormLabel>{t('supplierPayments.supplier.isActive')}</FormLabel>
                     </div>
                     <FormControl>
                       <Switch
@@ -358,10 +358,10 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('suppliers.notes')}</FormLabel>
+                  <FormLabel>{t('supplierPayments.supplier.notes')}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder={t('suppliers.notesPlaceholder')}
+                      placeholder={t('supplierPayments.supplier.notes')}
                       className="min-h-[80px]"
                       {...field}
                     />
