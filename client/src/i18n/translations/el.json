@@ -1738,6 +1738,13 @@
     "paidThisMonth": "Πληρωμές Αυτού του Μήνα",
     "unpaidInvoices": "Απλήρωτα Τιμολόγια",
     "paymentCompletionRate": "Ποσοστό Ολοκλήρωσης Πληρωμών",
+    "upcomingPayments": "Προσεχείς Πληρωμές",
+    "recentPayments": "Πρόσφατες Πληρωμές",
+    "nextPaymentsDue": "Επόμενες οφειλόμενες πληρωμές",
+    "lastPaymentsMade": "Τελευταίες πραγματοποιημένες πληρωμές",
+    "noUpcomingPayments": "Δεν υπάρχουν προσεχείς πληρωμές",
+    "noRecentPayments": "Δεν υπάρχουν πρόσφατες πληρωμές",
+    "dueWithin30Days": "Οφειλές εντός 30 ημερών",
     "supplier": {
       "name": "Όνομα Προμηθευτή",
       "address": "Διεύθυνση",

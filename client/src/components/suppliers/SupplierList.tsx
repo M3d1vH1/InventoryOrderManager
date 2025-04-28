@@ -99,9 +99,9 @@ export const SupplierList = () => {
       <Card className="mb-8">
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>{t('suppliers.list')}</CardTitle>
+            <CardTitle>{t('supplierPayments.suppliers')}</CardTitle>
             <Button onClick={handleAddClick}>
-              <Plus className="mr-2 h-4 w-4" /> {t('suppliers.add')}
+              <Plus className="mr-2 h-4 w-4" /> {t('supplierPayments.addSupplier')}
             </Button>
           </div>
         </CardHeader>
@@ -110,7 +110,7 @@ export const SupplierList = () => {
             <div className="relative flex-grow">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder={t('suppliers.search')}
+                placeholder={t('supplierPayments.searchSuppliers')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-8"
@@ -125,21 +125,21 @@ export const SupplierList = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{t('suppliers.name')}</TableHead>
-                    <TableHead>{t('suppliers.contactPerson')}</TableHead>
-                    <TableHead>{t('suppliers.vatNumber')}</TableHead>
-                    <TableHead>{t('suppliers.phone')}</TableHead>
-                    <TableHead>{t('suppliers.email')}</TableHead>
-                    <TableHead>{t('suppliers.paymentTerms')}</TableHead>
-                    <TableHead>{t('suppliers.status')}</TableHead>
-                    <TableHead className="text-right">{t('common.actions')}</TableHead>
+                    <TableHead>{t('supplierPayments.supplier.name')}</TableHead>
+                    <TableHead>{t('supplierPayments.supplier.contactPerson')}</TableHead>
+                    <TableHead>{t('supplierPayments.supplier.vatNumber')}</TableHead>
+                    <TableHead>{t('supplierPayments.supplier.phone')}</TableHead>
+                    <TableHead>{t('supplierPayments.supplier.email')}</TableHead>
+                    <TableHead>{t('supplierPayments.supplier.paymentTerms')}</TableHead>
+                    <TableHead>{t('app.status')}</TableHead>
+                    <TableHead className="text-right">{t('app.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredSuppliers.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-4">
-                        {t('suppliers.noResults')}
+                        {t('supplierPayments.noSuppliers')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -153,7 +153,7 @@ export const SupplierList = () => {
                         <TableCell>{supplier.paymentTerms || '-'}</TableCell>
                         <TableCell>
                           <Badge variant={supplier.isActive ? 'default' : 'outline'}>
-                            {supplier.isActive ? t('suppliers.active') : t('suppliers.inactive')}
+                            {supplier.isActive ? t('common.active') : t('common.inactive')}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
