@@ -40,6 +40,7 @@ import prospectiveCustomersRouter from "./api/prospectiveCustomers";
 import reportsRouter from "./api/reports";
 import productionRouter from "./api/production";
 import { createSlackService } from "./services/notifications/slackService";
+import { printShippingLabel, printBatchShippingLabels, previewShippingLabel, servePreviewImage } from "./api/labelPrinting";
 
 // Function to determine the appropriate storage path based on environment
 function getStoragePath(): string {
@@ -3443,6 +3444,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/seasonal-patterns', isAuthenticated, createSeasonalPattern);
   app.delete('/api/seasonal-patterns/:id', isAuthenticated, deleteSeasonalPattern);
   app.post('/api/seasonal-patterns/import', isAuthenticated, hasRole(['admin']), importSeasonalPatterns);
+  
+  // Label Printing Routes
+  app.post('/api/print-label', isAuthenticated, printShippingLabel);
+  app.post('/api/print-batch-labels', isAuthenticated, printBatchShippingLabels);
+  app.post('/api/preview-label', isAuthenticated, previewShippingLabel);
+  app.get('/api/preview-label/:filename', servePreviewImage); // Accessible without auth to allow image display
   
   return httpServer;
 }
