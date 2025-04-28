@@ -243,6 +243,11 @@ export async function previewLabelTemplate(req: Request, res: Response) {
       <div class="preview-container">
         <h2>Visual Representation (Simplified)</h2>
         <div class="jscript-visual-preview">
+          <!-- Show logo at the top of the preview -->
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img src="/shipping-logo.png" alt="Company Logo" style="max-width: 150px; max-height: 50px;">
+          </div>
+          
           ${previewContent
             .split('\n')
             .map((line: string) => {
@@ -259,6 +264,9 @@ export async function previewLabelTemplate(req: Request, res: Response) {
                 if (parts.length > 1) {
                   return `<div><strong>Barcode:</strong> ${parts[1]}</div>`;
                 }
+              } else if (line.includes('GI') && line.includes('shipping-logo.png')) {
+                // Logo command
+                return `<div><strong>Logo:</strong> Company Logo (shipping-logo.png)</div>`;
               }
               return '';
             })
@@ -279,6 +287,7 @@ ${previewContent}
         <ul>
           <li><span class="command">T x,y,r,font,x-mult,y-mult;data</span> - Text</li>
           <li><span class="command">B x,y,r,type,width,height;data</span> - Barcode</li>
+          <li><span class="command">GI x,y,"filename"</span> - Graphics/Image</li>
           <li><span class="command">J</span> - Job start</li>
           <li><span class="command">A n</span> - Number of labels</li>
           <li><span class="command">S l1;...</span> - Label size</li>
@@ -298,6 +307,16 @@ ${previewContent}
     const publicDir = path.join(process.cwd(), 'public');
     if (!fs.existsSync(publicDir)) {
       fs.mkdirSync(publicDir, { recursive: true });
+    }
+    
+    // Ensure the logo is available for the preview
+    const sourceLogo = path.join(process.cwd(), 'attached_assets', 'Frame 40.png');
+    const targetLogo = path.join(publicDir, 'shipping-logo.png');
+    
+    // Always copy the latest logo for preview
+    if (fs.existsSync(sourceLogo)) {
+      console.log(`Copying logo from ${sourceLogo} to ${targetLogo} for preview`);
+      fs.copyFileSync(sourceLogo, targetLogo);
     }
     
     const publicPath = path.join(publicDir, previewFilename);
