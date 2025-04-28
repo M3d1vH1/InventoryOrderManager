@@ -42,9 +42,9 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
       <div className="grid gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle>{t('paymentDashboard.noData')}</CardTitle>
+            <CardTitle>{t('supplierPayments.dashboard')}</CardTitle>
             <CardDescription>
-              {t('paymentDashboard.addPaymentsToSeeData')}
+              {t('common.noDataAvailable')}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -76,7 +76,7 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t('paymentDashboard.totalOutstanding')}
+              {t('supplierPayments.unpaidInvoices')}
             </CardTitle>
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -87,7 +87,7 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
               className="h-2 mt-2"
             />
             <p className="text-xs text-muted-foreground mt-2">
-              {summary.paymentCompletion.toFixed(0)}% {t('paymentDashboard.paid')}
+              {summary.paymentCompletion.toFixed(0)}% {t('supplierPayments.paymentCompletionRate')}
             </p>
           </CardContent>
         </Card>
@@ -95,14 +95,14 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t('paymentDashboard.totalPaid')}
+              {t('supplierPayments.totalPaid')}
             </CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(summary.totalPaid)}</div>
             <p className="text-xs text-muted-foreground mt-2">
-              {formatCurrency(summary.paidThisMonth)} {t('paymentDashboard.paidThisMonth')}
+              {formatCurrency(summary.paidThisMonth)} {t('supplierPayments.paidThisMonth')}
             </p>
           </CardContent>
         </Card>
@@ -110,14 +110,14 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t('paymentDashboard.overdueAmount')}
+              {t('supplierPayments.invoice.statuses.overdue')}
             </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(summary.overdueAmount)}</div>
             <p className="text-xs text-muted-foreground mt-2">
-              {formatCurrency(summary.dueWithin30Days)} {t('paymentDashboard.dueWithin30Days')}
+              {formatCurrency(summary.dueWithin30Days)} {t('supplierPayments.dueWithin30Days')}
             </p>
           </CardContent>
         </Card>
