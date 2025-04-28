@@ -117,6 +117,20 @@ const CalendarPage: React.FC = () => {
     retry: 1,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
+  
+  // Fetch supplier payments
+  const { data: payments, isLoading: paymentsLoading, isError: paymentsError } = useQuery({
+    queryKey: ['/api/supplier-payments/payments'],
+    retry: 1,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+  
+  // Fetch supplier invoices
+  const { data: invoices, isLoading: invoicesLoading, isError: invoicesError } = useQuery({
+    queryKey: ['/api/supplier-payments/invoices'],
+    retry: 1,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
   // Transform orders and call logs to calendar events
   const events: CalendarEvent[] = useMemo(() => {
@@ -213,16 +227,19 @@ const CalendarPage: React.FC = () => {
 
   // Filter events based on the selected tab
   const filteredEvents = useMemo(() => {
-    if (filterView === 'created') {
-      return events.filter(event => event.type === 'created');
-    } else if (filterView === 'shipped') {
-      return events.filter(event => event.type === 'shipped');
-    } else if (filterView === 'estimated') {
-      return events.filter(event => event.type === 'estimated');
-    } else if (filterView === 'calls') {
-      return events.filter(event => event.type === 'call');
+    switch(filterView) {
+      case 'orders':
+        return events.filter(event => ['created', 'shipped', 'estimated'].includes(event.type));
+      case 'calls':
+        return events.filter(event => event.type === 'call');
+      case 'payments':
+        return events.filter(event => event.type === 'payment');
+      case 'inventory':
+        return events.filter(event => event.type === 'inventory');
+      case 'all':
+      default:
+        return events;
     }
-    return events;
   }, [events, filterView]);
   
   // Get upcoming events for the sidebar
@@ -281,6 +298,17 @@ const CalendarPage: React.FC = () => {
         backgroundColor = '#F59E0B'; // Amber for scheduled calls
         borderLeft = '3px solid #D97706';
       }
+    } else if (event.type === 'payment') {
+      if (event.isCallback) {
+        backgroundColor = '#EC4899'; // Pink for payment callbacks
+        borderLeft = '3px solid #BE185D';
+      } else {
+        backgroundColor = '#14B8A6'; // Teal for regular payments
+        borderLeft = '3px solid #0F766E';
+      }
+    } else if (event.type === 'inventory') {
+      backgroundColor = '#06B6D4'; // Cyan for inventory
+      borderLeft = '3px solid #0E7490';
     } else {
       backgroundColor = '#6B7280'; // Gray default
     }
@@ -343,7 +371,7 @@ const CalendarPage: React.FC = () => {
   };
 
   // Loading state
-  if (ordersLoading || callsLoading) {
+  if (ordersLoading || callsLoading || paymentsLoading || invoicesLoading) {
     return (
       <div className="space-y-4">
         <PageHeader 
@@ -365,7 +393,7 @@ const CalendarPage: React.FC = () => {
   }
 
   // Error state
-  if (ordersError || callsError) {
+  if (ordersError || callsError || paymentsError || invoicesError) {
     return (
       <div className="space-y-4">
         <PageHeader 
@@ -395,22 +423,40 @@ const CalendarPage: React.FC = () => {
         <div className="md:col-span-2">
           <Tabs value={filterView} onValueChange={setFilterView} className="w-full">
             <TabsList className="grid grid-cols-5 gap-1 w-full mb-4">
-              <TabsTrigger value="month" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.allEvents')}</TabsTrigger>
-              <TabsTrigger value="created" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.ordersCreated')}</TabsTrigger>
-              <TabsTrigger value="shipped" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.ordersShipped')}</TabsTrigger>
-              <TabsTrigger value="estimated" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.estimatedShipping')}</TabsTrigger>
-              <TabsTrigger value="calls" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.customerCalls')}</TabsTrigger>
+              <TabsTrigger value="all" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.allEvents')}</TabsTrigger>
+              <TabsTrigger value="orders" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.orders')}</TabsTrigger>
+              <TabsTrigger value="calls" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.calls')}</TabsTrigger>
+              <TabsTrigger value="payments" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.payments')}</TabsTrigger>
+              <TabsTrigger value="inventory" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.inventory')}</TabsTrigger>
             </TabsList>
 
             <TabsContent value={filterView} className="space-y-4">
               <Card>
                 <CardContent className="pt-6">
                   <div className="mb-4 flex flex-wrap gap-2">
-                    <Badge className="bg-[#4F46E5]">{t('calendar.orderCreated')}</Badge>
-                    <Badge className="bg-[#10B981]">{t('calendar.orderShipped')}</Badge>
-                    <Badge className="bg-[#8B5CF6]">{t('calendar.estimatedShipping')}</Badge>
-                    <Badge className="bg-[#F59E0B]">{t('calendar.scheduledCall')}</Badge>
-                    <Badge className="bg-[#F43F5E]">{t('calendar.followUpCall')}</Badge>
+                    {/* Show legend based on the selected tab */}
+                    {(filterView === 'all' || filterView === 'orders') && (
+                      <>
+                        <Badge className="bg-[#4F46E5]">{t('calendar.orderCreated')}</Badge>
+                        <Badge className="bg-[#10B981]">{t('calendar.orderShipped')}</Badge>
+                        <Badge className="bg-[#8B5CF6]">{t('calendar.estimatedShipping')}</Badge>
+                      </>
+                    )}
+                    {(filterView === 'all' || filterView === 'calls') && (
+                      <>
+                        <Badge className="bg-[#F59E0B]">{t('calendar.scheduledCall')}</Badge>
+                        <Badge className="bg-[#F43F5E]">{t('calendar.followUpCall')}</Badge>
+                      </>
+                    )}
+                    {(filterView === 'all' || filterView === 'payments') && (
+                      <>
+                        <Badge className="bg-[#14B8A6]">{t('calendar.payment')}</Badge>
+                        <Badge className="bg-[#EC4899]">{t('calendar.paymentCallback')}</Badge>
+                      </>
+                    )}
+                    {(filterView === 'all' || filterView === 'inventory') && (
+                      <Badge className="bg-[#06B6D4]">{t('calendar.inventory')}</Badge>
+                    )}
                   </div>
 
                   <div className="h-[500px] md:h-[600px]">
