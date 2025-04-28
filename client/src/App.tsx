@@ -84,6 +84,7 @@ function AuthenticatedRouter() {
       <Route path="/calendar" component={Calendar} />
       <Route path="/inventory-predictions" component={InventoryPredictions} />
       <Route path="/production" component={Production} />
+      <Route path="/supplier-payments" component={SupplierPayments} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>

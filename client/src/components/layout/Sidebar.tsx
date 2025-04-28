@@ -6,7 +6,8 @@ import { FaTachometerAlt, FaShoppingCart, FaBox, FaWarehouse,
   FaChartBar, FaChartLine, FaUsers, FaPhoneAlt, FaCalendarAlt, 
   FaCog, FaUserCog, FaSignOutAlt, FaChevronDown, 
   FaList, FaTruckLoading, FaClipboardCheck, FaClipboardList,
-  FaBell, FaBoxes, FaAngleDoubleLeft, FaAngleDoubleRight } from 'react-icons/fa';
+  FaBell, FaBoxes, FaAngleDoubleLeft, FaAngleDoubleRight,
+  FaMoneyBillWave } from 'react-icons/fa';
 
 const Sidebar = () => {
   const { isSidebarOpen, toggleSidebar, setCurrentPage } = useSidebar();
@@ -236,6 +237,20 @@ const Sidebar = () => {
                         <FaBoxes size={16} />
                       </span>
                       {isSidebarOpen && <span className="ml-2">{t('production.title') || "Production"}</span>}
+                    </button>
+                  </Link>
+                </li>
+                
+                <li className="mb-1">
+                  <Link href="/supplier-payments" onClick={() => setCurrentPage("Supplier Payments")}>
+                    <button 
+                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/supplier-payments") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                      title={t('supplierPayments.title') || "Supplier Payments"}
+                    >
+                      <span className="flex items-center w-5 h-5">
+                        <FaMoneyBillWave size={16} />
+                      </span>
+                      {isSidebarOpen && <span className="ml-2">{t('supplierPayments.title') || "Supplier Payments"}</span>}
                     </button>
                   </Link>
                 </li>
