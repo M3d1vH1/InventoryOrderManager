@@ -406,7 +406,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
                 name="status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('invoices.status')}</FormLabel>
+                    <FormLabel>{t('supplierPayments.invoice.status')}</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
                       defaultValue={field.value}
@@ -414,15 +414,15 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder={t('invoices.selectStatus')} />
+                          <SelectValue placeholder={t('supplierPayments.invoice.selectStatus')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="pending">{t('invoices.statusPending')}</SelectItem>
-                        <SelectItem value="paid">{t('invoices.statusPaid')}</SelectItem>
-                        <SelectItem value="partially_paid">{t('invoices.statusPartiallyPaid')}</SelectItem>
-                        <SelectItem value="overdue">{t('invoices.statusOverdue')}</SelectItem>
-                        <SelectItem value="cancelled">{t('invoices.statusCancelled')}</SelectItem>
+                        <SelectItem value="pending">{t('supplierPayments.invoice.statusPending')}</SelectItem>
+                        <SelectItem value="paid">{t('supplierPayments.invoice.statusPaid')}</SelectItem>
+                        <SelectItem value="partially_paid">{t('supplierPayments.invoice.statusPartiallyPaid')}</SelectItem>
+                        <SelectItem value="overdue">{t('supplierPayments.invoice.statusOverdue')}</SelectItem>
+                        <SelectItem value="cancelled">{t('supplierPayments.invoice.statusCancelled')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -437,7 +437,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between space-x-2 rounded-md border p-4">
                     <div className="space-y-0.5">
-                      <FormLabel>{t('invoices.isRecurring')}</FormLabel>
+                      <FormLabel>{t('supplierPayments.invoice.isRecurring')}</FormLabel>
                     </div>
                     <FormControl>
                       <Switch
@@ -456,12 +456,12 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
                   name="recurringCycle"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('invoices.recurringCycle')}</FormLabel>
+                      <FormLabel>{t('supplierPayments.invoice.recurringCycle')}</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
                           min="1" 
-                          placeholder={t('invoices.recurringCyclePlaceholder')} 
+                          placeholder={t('supplierPayments.invoice.recurringCyclePlaceholder')} 
                           {...field} 
                         />
                       </FormControl>
@@ -478,10 +478,10 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('invoices.notes')}</FormLabel>
+                  <FormLabel>{t('supplierPayments.invoice.notes')}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder={t('invoices.notesPlaceholder')}
+                      placeholder={t('supplierPayments.invoice.notesPlaceholder')}
                       className="min-h-[80px]"
                       {...field}
                     />
