@@ -1,12 +1,28 @@
 m m
 J
+H 100,0,T
 S l1;0,0,68,71,100
-B 10,10,0,EAN13,12,0.5;{orderNumber}
-T 10,25,0,3,1,1;Order #{orderNumber}
-T 50,25,0,3,1,1;{boxInfo}
-T 10,30,0,3,1,1;{customerName}
-T 10,35,0,3,1,1;{customerAddress}
-T 10,40,0,3,1,1;{customerCity}, {customerPostalCode}
-T 10,45,0,3,1,1;{customerCountry}
-T 10,55,0,3,1,1;Shipping: {shippingCompany}
+
+; Print logo at the top
+GI 10,10,"shipping-logo.png"
+
+; Barcode for order number
+B 10,40,0,EAN13,12,0.5;{orderNumber}
+
+; Order information
+T 10,60,0,3,1,1;Order #{orderNumber}
+
+; Box count information (prominently displayed)
+T 50,60,0,3,2,1;BOX: {boxInfo}
+
+; Customer information
+T 10,70,0,3,1,1;{customerName}
+T 10,80,0,3,1,1;{customerAddress}
+T 10,90,0,3,1,1;{customerCity}, {customerPostalCode}
+T 10,100,0,3,1,1;{customerCountry}
+
+; Shipping information
+T 10,120,0,3,1,1;Shipping: {shippingCompany}
+
+; Print command
 A 1

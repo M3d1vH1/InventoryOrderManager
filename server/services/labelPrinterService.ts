@@ -203,9 +203,22 @@ E
       fs.mkdirSync(targetDir, { recursive: true });
     }
     
-    // Copy logo if it doesn't exist and source exists
-    if (!fs.existsSync(targetLogo) && fs.existsSync(sourceLogo)) {
+    // Always copy the logo to ensure the latest version is used
+    if (fs.existsSync(sourceLogo)) {
+      // Copy logo file even if it exists to ensure latest version
+      console.log(`Copying logo from ${sourceLogo} to ${targetLogo} for label printing`);
       await fs.promises.copyFile(sourceLogo, targetLogo);
+    } else {
+      console.error(`Warning: Logo source file not found at ${sourceLogo}`);
+      
+      // As a fallback, create a placeholder text-based logo if needed
+      if (!fs.existsSync(targetLogo)) {
+        console.log('Creating placeholder logo image for labels');
+        const placeholderPath = path.join(process.cwd(), 'public', 'placeholder-image.png');
+        if (fs.existsSync(placeholderPath)) {
+          await fs.promises.copyFile(placeholderPath, targetLogo);
+        }
+      }
     }
   }
 
@@ -312,9 +325,20 @@ E
             background-color: white;
           }
           .logo {
+            display: block;
             max-width: 150px;
             max-height: 45px;
+            margin-bottom: 20px;
+          }
+          .barcode {
+            height: 40px;
             margin-bottom: 15px;
+            background-color: #f8f8f8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: monospace;
+            border: 1px solid #ddd;
           }
           .customer-name {
             font-size: 18px;
@@ -334,28 +358,42 @@ E
             font-size: 20px;
             font-weight: bold;
             margin-bottom: 15px;
+            color: #0055aa;
           }
           .order-number {
             font-size: 14px;
             margin-bottom: 8px;
+            display: inline-block;
+          }
+          .order-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
           }
         </style>
       </head>
       <body>
         <div class="label-container">
-          <img src="${logoPath}" class="logo" alt="Company Logo" onerror="this.style.display='none'" />
+          <!-- Logo at the top -->
+          <img src="${logoPath}" class="logo" alt="Company Logo" onerror="this.onerror=null; this.src='/placeholder-image.png'" />
           
+          <!-- Barcode placeholder -->
+          <div class="barcode">Barcode: ${orderWithItems.orderNumber}</div>
+          
+          <!-- Order and Box info in the same line -->
+          <div class="order-info">
+            <div class="order-number">Αρ. Παραγγελίας: ${orderWithItems.orderNumber}</div>
+            <div class="box-count">BOX: ${boxInfo}</div>
+          </div>
+          
+          <!-- Customer information -->
           <div class="customer-name">${orderWithItems.customerName || ''}</div>
-          
           <div class="customer-address">${address}</div>
-          
           <div class="customer-phone">Τηλέφωνο: ${orderWithItems.customerPhone || ''}</div>
           
+          <!-- Shipping information -->
           <div class="shipping-company">Μεταφορική: ${shippingCompanyInfo}</div>
-          
-          <div class="box-count">Κιβώτιο: ${boxInfo}</div>
-          
-          <div class="order-number">Αρ. Παραγγελίας: ${orderWithItems.orderNumber}</div>
         </div>
         
         <div style="text-align: center; margin-top: 20px;">
