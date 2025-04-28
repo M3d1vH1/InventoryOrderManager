@@ -20,6 +20,7 @@ import CallLogs from "@/pages/CallLogs";
 import Calendar from "@/pages/Calendar";
 import InventoryPredictions from "@/pages/InventoryPredictions";
 import Production from "@/pages/Production";
+import SupplierPayments from "@/pages/SupplierPayments";
 import Login from "@/pages/Login";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Tab, Tabs, TabList, TabPanel } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { SupplierList } from '../components/suppliers/SupplierList';
@@ -27,14 +27,14 @@ export default function SupplierPayments() {
       <h1 className="text-2xl font-bold mb-6">{t('supplierPayments.title')}</h1>
 
       <Tabs defaultValue="dashboard" className="w-full">
-        <TabList className="mb-4">
-          <Tab value="dashboard">{t('supplierPayments.dashboard')}</Tab>
-          <Tab value="suppliers">{t('supplierPayments.suppliers')}</Tab>
-          <Tab value="invoices">{t('supplierPayments.invoices')}</Tab>
-          <Tab value="payments">{t('supplierPayments.payments')}</Tab>
-        </TabList>
+        <TabsList className="mb-4">
+          <TabsTrigger value="dashboard">{t('supplierPayments.dashboard')}</TabsTrigger>
+          <TabsTrigger value="suppliers">{t('supplierPayments.suppliers')}</TabsTrigger>
+          <TabsTrigger value="invoices">{t('supplierPayments.invoices')}</TabsTrigger>
+          <TabsTrigger value="payments">{t('supplierPayments.payments')}</TabsTrigger>
+        </TabsList>
 
-        <TabPanel value="dashboard">
+        <TabsContent value="dashboard">
           {isLoading ? (
             <div className="flex justify-center items-center h-64">
               <Loader className="h-8 w-8 animate-spin text-primary" />
@@ -42,19 +42,19 @@ export default function SupplierPayments() {
           ) : (
             <PaymentDashboard summary={paymentSummary} />
           )}
-        </TabPanel>
+        </TabsContent>
 
-        <TabPanel value="suppliers">
+        <TabsContent value="suppliers">
           <SupplierList />
-        </TabPanel>
+        </TabsContent>
 
-        <TabPanel value="invoices">
+        <TabsContent value="invoices">
           <InvoiceList />
-        </TabPanel>
+        </TabsContent>
 
-        <TabPanel value="payments">
+        <TabsContent value="payments">
           <PaymentList />
-        </TabPanel>
+        </TabsContent>
       </Tabs>
     </div>
   );
