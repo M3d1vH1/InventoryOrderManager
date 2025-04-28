@@ -158,6 +158,10 @@ export async function previewLabelTemplate(req: Request, res: Response) {
       trackingNumber: 'TRACK123456789',
       companyName: 'Your Company Name',
       shippingDate: new Date().toLocaleDateString(),
+      // Box counting information 
+      boxNumber: '1',
+      boxCount: '4',
+      boxInfo: 'Κιβώτιο 1/4', // Greek for "Box 1/4"
       // Product-related sample data
       name: 'Sample Product',
       sku: '123456789',
