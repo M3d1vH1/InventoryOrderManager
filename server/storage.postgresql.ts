@@ -4291,7 +4291,25 @@ export class DatabaseStorage implements IStorage {
   
   async getAllSupplierInvoices(): Promise<SupplierInvoice[]> {
     return await this.db
-      .select()
+      .select({
+        id: supplierInvoices.id,
+        invoiceNumber: supplierInvoices.invoiceNumber,
+        supplierId: supplierInvoices.supplierId,
+        invoiceDate: supplierInvoices.invoiceDate,
+        dueDate: supplierInvoices.dueDate,
+        amount: supplierInvoices.amount,
+        paidAmount: supplierInvoices.paidAmount,
+        status: supplierInvoices.status,
+        description: supplierInvoices.description,
+        notes: supplierInvoices.notes,
+        attachmentPath: supplierInvoices.attachmentPath,
+        isRecurring: supplierInvoices.isRecurring,
+        recurringCycle: supplierInvoices.recurringCycle,
+        createdAt: supplierInvoices.createdAt,
+        createdById: supplierInvoices.createdById,
+        lastUpdated: supplierInvoices.lastUpdated,
+        updatedById: supplierInvoices.updatedById
+      })
       .from(supplierInvoices)
       .orderBy(desc(supplierInvoices.invoiceDate));
   }
@@ -4342,13 +4360,48 @@ export class DatabaseStorage implements IStorage {
   
   // Supplier Payment methods
   async getSupplierPayment(id: number): Promise<SupplierPayment | undefined> {
-    const result = await this.db.select().from(supplierPayments).where(eq(supplierPayments.id, id));
+    const result = await this.db
+      .select({
+        id: supplierPayments.id,
+        invoiceId: supplierPayments.invoiceId,
+        paymentDate: supplierPayments.paymentDate,
+        amount: supplierPayments.amount,
+        paymentMethod: supplierPayments.paymentMethod,
+        referenceNumber: supplierPayments.referenceNumber,
+        reference: supplierPayments.reference,
+        notes: supplierPayments.notes,
+        receiptPath: supplierPayments.receiptPath,
+        callbackRequired: supplierPayments.callbackRequired,
+        callbackDate: supplierPayments.callbackDate,
+        callbackNotes: supplierPayments.callbackNotes,
+        callbackCompleted: supplierPayments.callbackCompleted,
+        createdAt: supplierPayments.createdAt,
+        createdById: supplierPayments.createdById
+      })
+      .from(supplierPayments)
+      .where(eq(supplierPayments.id, id));
     return result[0];
   }
   
   async getSupplierPaymentsByInvoice(invoiceId: number): Promise<SupplierPayment[]> {
     return await this.db
-      .select()
+      .select({
+        id: supplierPayments.id,
+        invoiceId: supplierPayments.invoiceId,
+        paymentDate: supplierPayments.paymentDate,
+        amount: supplierPayments.amount,
+        paymentMethod: supplierPayments.paymentMethod,
+        referenceNumber: supplierPayments.referenceNumber,
+        reference: supplierPayments.reference,
+        notes: supplierPayments.notes,
+        receiptPath: supplierPayments.receiptPath,
+        callbackRequired: supplierPayments.callbackRequired,
+        callbackDate: supplierPayments.callbackDate,
+        callbackNotes: supplierPayments.callbackNotes,
+        callbackCompleted: supplierPayments.callbackCompleted,
+        createdAt: supplierPayments.createdAt,
+        createdById: supplierPayments.createdById
+      })
       .from(supplierPayments)
       .where(eq(supplierPayments.invoiceId, invoiceId))
       .orderBy(desc(supplierPayments.paymentDate));
@@ -4356,7 +4409,23 @@ export class DatabaseStorage implements IStorage {
   
   async getAllSupplierPayments(): Promise<SupplierPayment[]> {
     return await this.db
-      .select()
+      .select({
+        id: supplierPayments.id,
+        invoiceId: supplierPayments.invoiceId,
+        paymentDate: supplierPayments.paymentDate,
+        amount: supplierPayments.amount,
+        paymentMethod: supplierPayments.paymentMethod,
+        referenceNumber: supplierPayments.referenceNumber,
+        reference: supplierPayments.reference,
+        notes: supplierPayments.notes,
+        receiptPath: supplierPayments.receiptPath,
+        callbackRequired: supplierPayments.callbackRequired,
+        callbackDate: supplierPayments.callbackDate,
+        callbackNotes: supplierPayments.callbackNotes,
+        callbackCompleted: supplierPayments.callbackCompleted,
+        createdAt: supplierPayments.createdAt,
+        createdById: supplierPayments.createdById
+      })
       .from(supplierPayments)
       .orderBy(desc(supplierPayments.paymentDate));
   }
