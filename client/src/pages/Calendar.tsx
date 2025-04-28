@@ -247,39 +247,48 @@ const CalendarPage: React.FC = () => {
     // Add supplier payment events
     if (payments && Array.isArray(payments)) {
       payments.forEach((payment: any) => {
-        const paymentDate = new Date(payment.payment_date);
+        const paymentDate = new Date(payment.paymentDate);
+        
+        // Get supplier name from related invoice and supplier
+        let supplierName = t('common.unknown');
+        if (invoices && Array.isArray(invoices)) {
+          const relatedInvoice = invoices.find((invoice: any) => invoice.id === payment.invoiceId);
+          if (relatedInvoice) {
+            supplierName = relatedInvoice.supplierName || t('common.unknown');
+          }
+        }
         
         // Payment event
         calendarEvents.push({
           id: `payment-${payment.id}`,
-          title: `${t('calendar.payment')}: ${payment.supplier_name || t('common.unknown')}`,
+          title: `${t('calendar.payment')}: ${supplierName}`,
           start: paymentDate,
           end: paymentDate,
           type: 'payment',
-          customerName: payment.supplier_name || t('common.unknown'), // Required field in CalendarEvent type
-          supplierName: payment.supplier_name || t('common.unknown'),
+          customerName: supplierName, // Required field in CalendarEvent type
+          supplierName: supplierName,
           paymentId: payment.id,
           paymentAmount: payment.amount,
-          callbackRequired: payment.callback_required || false,
-          callbackDate: payment.callback_date ? new Date(payment.callback_date) : undefined,
-          callbackNotes: payment.callback_notes || ''
+          callbackRequired: payment.callbackRequired || false,
+          callbackDate: payment.callbackDate ? new Date(payment.callbackDate) : undefined,
+          callbackNotes: payment.callbackNotes || ''
         });
         
         // Add callback event if required
-        if (payment.callback_required && payment.callback_date) {
-          const callbackDate = new Date(payment.callback_date);
+        if (payment.callbackRequired && payment.callbackDate) {
+          const callbackDate = new Date(payment.callbackDate);
           calendarEvents.push({
             id: `payment-callback-${payment.id}`,
-            title: `${t('calendar.paymentCallback')}: ${payment.supplier_name || t('common.unknown')}`,
+            title: `${t('calendar.paymentCallback')}: ${supplierName}`,
             start: callbackDate,
             end: callbackDate,
             type: 'payment',
-            customerName: payment.supplier_name || t('common.unknown'), // Required field in CalendarEvent type
-            supplierName: payment.supplier_name || t('common.unknown'),
+            customerName: supplierName, // Required field in CalendarEvent type
+            supplierName: supplierName,
             paymentId: payment.id,
             callbackRequired: true,
             callbackDate: callbackDate,
-            callbackNotes: payment.callback_notes || ''
+            callbackNotes: payment.callbackNotes || ''
           });
         }
       });
