@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Logo Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            text-align: center;
+        }
+        .logo-container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 500px;
+        }
+        .logo {
+            max-width: 200px;
+            max-height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Logo Display Test</h1>
+    
+    <div class="logo-container">
+        <h2>Absolute Path Test</h2>
+        <img src="/shipping-logo.png" class="logo" alt="Logo (Absolute Path)">
+    </div>
+    
+    <div class="logo-container">
+        <h2>Relative Path Test</h2>
+        <img src="shipping-logo.png" class="logo" alt="Logo (Relative Path)">
+    </div>
+    
+    <div class="logo-container">
+        <h2>Full URL Test</h2>
+        <img src="https://warehouse-management-system.replit.app/shipping-logo.png" class="logo" alt="Logo (Full URL)">
+    </div>
+
+    <div class="logo-container">
+        <h2>Image Size Information</h2>
+        <p>This page tests different ways of referencing the logo image.</p>
+        <p>If no images appear, there may be issues with the image path or permissions.</p>
+    </div>
+</body>
+</html>

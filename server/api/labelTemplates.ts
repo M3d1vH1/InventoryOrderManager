@@ -243,9 +243,10 @@ export async function previewLabelTemplate(req: Request, res: Response) {
       <div class="preview-container">
         <h2>Visual Representation (Simplified)</h2>
         <div class="jscript-visual-preview">
-          <!-- Show logo at the top of the preview -->
-          <div style="text-align: center; margin-bottom: 20px;">
-            <img src="/shipping-logo.png" alt="Company Logo" style="max-width: 150px; max-height: 50px;">
+          <!-- Show logo at the top of the preview in multiple formats to ensure it displays -->
+          <div style="text-align: center; margin-bottom: 20px; border: 1px solid #eee; padding: 10px; background-color: white;">
+            <img src="shipping-logo.png" alt="Company Logo" style="max-width: 150px; max-height: 50px; display: block; margin: 0 auto;">
+            <div style="font-size: 12px; color: #666; margin-top: 5px;">Company Logo</div>
           </div>
           
           ${previewContent
