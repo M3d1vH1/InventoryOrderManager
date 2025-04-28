@@ -3,8 +3,8 @@ J
 H 100,0,T
 S l1;0,0,68,71,100
 
-; Print logo at the top
-GI 10,10,"shipping-logo.png"
+; Print logo at the top with full path
+GI 10,10,"/home/runner/workspace/public/shipping-logo.png"
 
 ; Barcode for order number
 B 10,40,0,EAN13,12,0.5;{orderNumber}

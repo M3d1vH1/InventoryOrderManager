@@ -399,8 +399,14 @@ E
       </head>
       <body>
         <div class="label-container">
-          <!-- Logo at the top with simple fallback text -->
-          <img src="${logoPath}" class="logo" alt="Company Logo" onerror="this.onerror=null; this.src='/simple-logo.svg'" />
+          <!-- Logo at the top with embedded SVG (will always show) -->
+          <div class="logo-container" style="width: 150px; height: 45px; margin: 0 auto 15px auto;">
+            <svg width="150" height="45" viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
+              <rect x="0" y="0" width="200" height="50" fill="#f8f8f8" rx="5" ry="5"/>
+              <text x="10" y="30" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#0055aa">Amphoreus</text>
+              <text x="10" y="45" font-family="Arial, sans-serif" font-size="12" fill="#555555">Olive Oil Company</text>
+            </svg>
+          </div>
           
           <!-- Barcode placeholder -->
           <div class="barcode">Barcode: ${orderWithItems.orderNumber}</div>

@@ -243,16 +243,16 @@ export async function previewLabelTemplate(req: Request, res: Response) {
       <div class="preview-container">
         <h2>Visual Representation (Simplified)</h2>
         <div class="jscript-visual-preview">
-          <!-- Show logo at the top of the preview using embedded SVG -->
+          <!-- Embedded SVG logo that will always show -->
           <div style="text-align: center; margin-bottom: 20px; border: 1px solid #eee; padding: 10px; background-color: white;">
-            <div style="margin: 0 auto; max-width: 200px;">
-              <svg width="200" height="50" viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
+            <div style="margin: 0 auto; max-width: 200px; background-color: #fff; padding: 8px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+              <svg width="200" height="50" viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg" style="display: block; margin: 0 auto;">
                 <rect x="0" y="0" width="200" height="50" fill="#f8f8f8" rx="5" ry="5"/>
                 <text x="10" y="30" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#0055aa">Amphoreus</text>
                 <text x="10" y="45" font-family="Arial, sans-serif" font-size="12" fill="#555555">Olive Oil Company</text>
               </svg>
             </div>
-            <div style="font-size: 12px; color: #666; margin-top: 5px;">Company Logo</div>
+            <div style="font-size: 12px; color: #666; margin-top: 5px;">Company Logo (Always Visible)</div>
           </div>
           
           ${previewContent
@@ -271,9 +271,9 @@ export async function previewLabelTemplate(req: Request, res: Response) {
                 if (parts.length > 1) {
                   return `<div><strong>Barcode:</strong> ${parts[1]}</div>`;
                 }
-              } else if (line.includes('GI') && line.includes('shipping-logo.png')) {
-                // Logo command
-                return `<div><strong>Logo:</strong> Company Logo (shipping-logo.png)</div>`;
+              } else if (line.includes('GI') && (line.includes('shipping-logo.png') || line.includes('/home/runner/workspace/public/shipping-logo.png'))) {
+                // Logo command (detects both relative and absolute paths)
+                return `<div><strong>Logo:</strong> Company Logo will be displayed here</div>`;
               }
               return '';
             })

@@ -1,0 +1,128 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Label Preview</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        .preview-container {
+          border: 1px solid #ccc;
+          padding: 20px;
+          margin-bottom: 20px;
+          width: 100%;
+          max-width: 600px;
+          background-color: #f9f9f9;
+        }
+        .jscript-container {
+          font-family: monospace;
+          white-space: pre;
+          padding: 20px;
+          background-color: #f0f0f0;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          width: 100%;
+          max-width: 600px;
+          overflow-x: auto;
+        }
+        .preview-title {
+          margin-bottom: 15px;
+          color: #555;
+        }
+        .command-explanation {
+          margin-top: 10px;
+          color: #666;
+          font-size: 0.9em;
+        }
+        .command {
+          background-color: #e0e0e0;
+          padding: 5px;
+          border-radius: 3px;
+          font-family: monospace;
+        }
+      </style>
+    </head>
+    <body>
+      <h1 class="preview-title">Label Template Preview</h1>
+      
+      <div class="preview-container">
+        <h2>Visual Representation (Simplified)</h2>
+        <div class="jscript-visual-preview">
+          <!-- Show logo at the top of the preview using embedded SVG -->
+          <div style="text-align: center; margin-bottom: 20px; border: 1px solid #eee; padding: 10px; background-color: white;">
+            <div style="margin: 0 auto; max-width: 200px;">
+              <svg width="200" height="50" viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
+                <rect x="0" y="0" width="200" height="50" fill="#f8f8f8" rx="5" ry="5"/>
+                <text x="10" y="30" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#0055aa">Amphoreus</text>
+                <text x="10" y="45" font-family="Arial, sans-serif" font-size="12" fill="#555555">Olive Oil Company</text>
+              </svg>
+            </div>
+            <div style="font-size: 12px; color: #666; margin-top: 5px;">Company Logo</div>
+          </div>
+          
+          <div><strong>Logo:</strong> Company Logo (shipping-logo.png)</div>
+<div><strong>Barcode:</strong> ORD-0123</div>
+<div><strong>Text:</strong> Order #ORD-0123</div>
+<div><strong>Text:</strong> BOX: Κιβώτιο 1/4</div>
+<div><strong>Text:</strong> Sample Customer</div>
+<div><strong>Text:</strong> 123 Sample Street</div>
+<div><strong>Text:</strong> Sample City, 12345</div>
+<div><strong>Text:</strong> Greece</div>
+<div><strong>Text:</strong> Shipping: Sample Courier</div>
+        </div>
+      </div>
+      
+      <h2>JScript Preview</h2>
+      <div class="jscript-container">
+m m
+J
+H 100,0,T
+S l1;0,0,68,71,100
+
+; Print logo at the top
+GI 10,10,"shipping-logo.png"
+
+; Barcode for order number
+B 10,40,0,EAN13,12,0.5;ORD-0123
+
+; Order information
+T 10,60,0,3,1,1;Order #ORD-0123
+
+; Box count information (prominently displayed)
+T 50,60,0,3,2,1;BOX: Κιβώτιο 1/4
+
+; Customer information
+T 10,70,0,3,1,1;Sample Customer
+T 10,80,0,3,1,1;123 Sample Street
+T 10,90,0,3,1,1;Sample City, 12345
+T 10,100,0,3,1,1;Greece
+
+; Shipping information
+T 10,120,0,3,1,1;Shipping: Sample Courier
+
+; Print command
+A 1
+      </div>
+      
+      <div class="command-explanation">
+        <p>Note: This is a simplified preview. The actual label will be rendered by the printer.</p>
+        <p>Common JScript commands:</p>
+        <ul>
+          <li><span class="command">T x,y,r,font,x-mult,y-mult;data</span> - Text</li>
+          <li><span class="command">B x,y,r,type,width,height;data</span> - Barcode</li>
+          <li><span class="command">GI x,y,"filename"</span> - Graphics/Image</li>
+          <li><span class="command">J</span> - Job start</li>
+          <li><span class="command">A n</span> - Number of labels</li>
+          <li><span class="command">S l1;...</span> - Label size</li>
+        </ul>
+      </div>
+    </body>
+    </html>
+    
