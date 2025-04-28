@@ -41,13 +41,20 @@ type CalendarEvent = {
   title: string;
   start: Date;
   end: Date;
-  type: 'created' | 'shipped' | 'estimated' | 'call';
+  type: 'created' | 'shipped' | 'estimated' | 'call' | 'payment' | 'inventory';
   orderNumber?: string;
   customerName: string;
   callDetails?: string;
   callId?: number;
   orderId?: number;
   isFollowUp?: boolean;
+  paymentId?: number;
+  paymentAmount?: number;
+  supplierName?: string;
+  invoiceNumber?: string;
+  inventoryType?: 'restock' | 'audit' | 'adjustment';
+  productId?: number;
+  productName?: string;
 };
 
 // Order type definition
