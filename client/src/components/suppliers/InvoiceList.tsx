@@ -59,12 +59,15 @@ export const InvoiceList = () => {
   // Delete invoice mutation
   const deleteInvoiceMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest('DELETE', `/api/supplier-payments/invoices/${id}`);
+      return apiRequest({
+        url: `/api/supplier-payments/invoices/${id}`,
+        method: 'DELETE'
+      });
     },
     onSuccess: () => {
       toast({
-        title: t('invoices.deleted'),
-        description: t('invoices.deleteSuccess'),
+        title: t('supplierPayments.invoice.deleted'),
+        description: t('supplierPayments.invoice.deleteSuccess'),
       });
       queryClient.invalidateQueries({ queryKey: ['/api/supplier-payments/invoices'] });
       queryClient.invalidateQueries({ queryKey: ['/api/supplier-payments/summary'] });
@@ -73,7 +76,7 @@ export const InvoiceList = () => {
     onError: (error: any) => {
       toast({
         title: t('common.error'),
-        description: error.message || t('invoices.deleteError'),
+        description: error.message || t('supplierPayments.invoice.deleteError'),
         variant: 'destructive',
       });
     },
@@ -174,9 +177,9 @@ export const InvoiceList = () => {
       <Card className="mb-8">
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>{t('invoices.list')}</CardTitle>
+            <CardTitle>{t('supplierPayments.invoice.list')}</CardTitle>
             <Button onClick={handleAddClick}>
-              <Plus className="mr-2 h-4 w-4" /> {t('invoices.add')}
+              <Plus className="mr-2 h-4 w-4" /> {t('supplierPayments.invoice.add')}
             </Button>
           </div>
         </CardHeader>
@@ -185,7 +188,7 @@ export const InvoiceList = () => {
             <div className="relative flex-grow">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder={t('invoices.search')}
+                placeholder={t('supplierPayments.invoice.search')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-8"
@@ -197,15 +200,15 @@ export const InvoiceList = () => {
                 onValueChange={setFilterStatus}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t('invoices.filterByStatus')} />
+                  <SelectValue placeholder={t('supplierPayments.invoice.filterByStatus')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t('invoices.allStatuses')}</SelectItem>
-                  <SelectItem value="pending">{t('invoices.statusPending')}</SelectItem>
-                  <SelectItem value="paid">{t('invoices.statusPaid')}</SelectItem>
-                  <SelectItem value="partially_paid">{t('invoices.statusPartiallyPaid')}</SelectItem>
-                  <SelectItem value="overdue">{t('invoices.statusOverdue')}</SelectItem>
-                  <SelectItem value="cancelled">{t('invoices.statusCancelled')}</SelectItem>
+                  <SelectItem value="all">{t('supplierPayments.invoice.allStatuses')}</SelectItem>
+                  <SelectItem value="pending">{t('supplierPayments.invoice.statusPending')}</SelectItem>
+                  <SelectItem value="paid">{t('supplierPayments.invoice.statusPaid')}</SelectItem>
+                  <SelectItem value="partially_paid">{t('supplierPayments.invoice.statusPartiallyPaid')}</SelectItem>
+                  <SelectItem value="overdue">{t('supplierPayments.invoice.statusOverdue')}</SelectItem>
+                  <SelectItem value="cancelled">{t('supplierPayments.invoice.statusCancelled')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -218,13 +221,13 @@ export const InvoiceList = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{t('invoices.invoiceNumber')}</TableHead>
-                    <TableHead>{t('invoices.supplier')}</TableHead>
-                    <TableHead>{t('invoices.invoiceDate')}</TableHead>
-                    <TableHead>{t('invoices.dueDate')}</TableHead>
-                    <TableHead>{t('invoices.amount')}</TableHead>
-                    <TableHead>{t('invoices.paidAmount')}</TableHead>
-                    <TableHead>{t('invoices.status')}</TableHead>
+                    <TableHead>{t('supplierPayments.invoice.invoiceNumber')}</TableHead>
+                    <TableHead>{t('supplierPayments.invoice.supplier')}</TableHead>
+                    <TableHead>{t('supplierPayments.invoice.invoiceDate')}</TableHead>
+                    <TableHead>{t('supplierPayments.invoice.dueDate')}</TableHead>
+                    <TableHead>{t('supplierPayments.invoice.amount')}</TableHead>
+                    <TableHead>{t('supplierPayments.invoice.paidAmount')}</TableHead>
+                    <TableHead>{t('supplierPayments.invoice.status')}</TableHead>
                     <TableHead className="text-right">{t('common.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -232,7 +235,7 @@ export const InvoiceList = () => {
                   {filteredInvoices.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-4">
-                        {t('invoices.noResults')}
+                        {t('supplierPayments.invoice.noResults')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -250,7 +253,7 @@ export const InvoiceList = () => {
                             className="flex w-fit items-center gap-1"
                           >
                             {getStatusIcon(invoice.status)}
-                            {t(`invoices.status${invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}`)}
+                            {t(`supplierPayments.invoice.status${invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}`)}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -291,9 +294,9 @@ export const InvoiceList = () => {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('invoices.confirmDelete')}</DialogTitle>
+            <DialogTitle>{t('supplierPayments.invoice.confirmDelete')}</DialogTitle>
             <DialogDescription>
-              {t('invoices.deleteWarning', { number: selectedInvoice?.invoiceNumber })}
+              {t('supplierPayments.invoice.deleteWarning', { number: selectedInvoice?.invoiceNumber })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
