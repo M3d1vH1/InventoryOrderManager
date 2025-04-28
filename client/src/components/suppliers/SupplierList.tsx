@@ -36,7 +36,7 @@ export const SupplierList = () => {
   const [selectedSupplier, setSelectedSupplier] = useState<any>(null);
 
   // Fetch all suppliers
-  const { data: suppliers = [], isLoading } = useQuery({
+  const { data: suppliers = [], isLoading } = useQuery<any[]>({
     queryKey: ['/api/supplier-payments/suppliers'],
     retry: 1,
   });
@@ -44,12 +44,12 @@ export const SupplierList = () => {
   // Delete supplier mutation
   const deleteSupplierMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest('DELETE', `/api/supplier-payments/suppliers/${id}`);
+      return apiRequest(`/api/supplier-payments/suppliers/${id}`, { method: 'DELETE' });
     },
     onSuccess: () => {
       toast({
-        title: t('suppliers.deleted'),
-        description: t('suppliers.deleteSuccess'),
+        title: t('supplierPayments.supplier.deleted'),
+        description: t('supplierPayments.supplier.deleteSuccess'),
       });
       queryClient.invalidateQueries({ queryKey: ['/api/supplier-payments/suppliers'] });
       setIsDeleteDialogOpen(false);
@@ -57,7 +57,7 @@ export const SupplierList = () => {
     onError: (error: any) => {
       toast({
         title: t('common.error'),
-        description: error.message || t('suppliers.deleteError'),
+        description: error.message || t('supplierPayments.supplier.deleteError'),
         variant: 'destructive',
       });
     },

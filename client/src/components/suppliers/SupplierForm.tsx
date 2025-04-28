@@ -119,16 +119,24 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
     mutationFn: async (data: SupplierFormValues) => {
       if (supplier) {
         // Update existing supplier
-        return apiRequest('PATCH', `/api/supplier-payments/suppliers/${supplier.id}`, { body: data });
+        return apiRequest(`/api/supplier-payments/suppliers/${supplier.id}`, { 
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
       } else {
         // Create new supplier
-        return apiRequest('POST', '/api/supplier-payments/suppliers', { body: data });
+        return apiRequest('/api/supplier-payments/suppliers', { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
       }
     },
     onSuccess: () => {
       toast({
-        title: supplier ? t('suppliers.updated') : t('suppliers.created'),
-        description: supplier ? t('suppliers.updateSuccess') : t('suppliers.createSuccess'),
+        title: supplier ? t('supplierPayments.supplier.updated') : t('supplierPayments.supplier.created'),
+        description: supplier ? t('supplierPayments.supplier.updateSuccess') : t('supplierPayments.supplier.createSuccess'),
       });
       queryClient.invalidateQueries({ queryKey: ['/api/supplier-payments/suppliers'] });
       onClose();
@@ -136,7 +144,7 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
     onError: (error: any) => {
       toast({
         title: t('common.error'),
-        description: error.message || t('suppliers.saveError'),
+        description: error.message || t('supplierPayments.supplier.saveError'),
         variant: 'destructive',
       });
     },
