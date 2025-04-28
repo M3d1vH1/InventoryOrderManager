@@ -149,16 +149,16 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
     mutationFn: async (data: any) => {
       if (invoice) {
         // Update existing invoice
-        return apiRequest('PATCH', `/api/supplier-payments/invoices/${invoice.id}`, data);
+        return apiRequest(`PATCH /api/supplier-payments/invoices/${invoice.id}`, data);
       } else {
         // Create new invoice
-        return apiRequest('POST', '/api/supplier-payments/invoices', data);
+        return apiRequest('POST /api/supplier-payments/invoices', data);
       }
     },
     onSuccess: () => {
       toast({
-        title: invoice ? t('invoices.updated') : t('invoices.created'),
-        description: invoice ? t('invoices.updateSuccess') : t('invoices.createSuccess'),
+        title: invoice ? t('supplierPayments.invoice.updated') : t('supplierPayments.invoice.created'),
+        description: invoice ? t('supplierPayments.invoice.updateSuccess') : t('supplierPayments.invoice.createSuccess'),
       });
       queryClient.invalidateQueries({ queryKey: ['/api/supplier-payments/invoices'] });
       queryClient.invalidateQueries({ queryKey: ['/api/supplier-payments/summary'] });
@@ -167,7 +167,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
     onError: (error: any) => {
       toast({
         title: t('common.error'),
-        description: error.message || t('invoices.saveError'),
+        description: error.message || t('supplierPayments.invoice.saveError'),
         variant: 'destructive',
       });
     },
@@ -209,7 +209,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>
-            {invoice ? t('invoices.edit') : t('invoices.create')}
+            {invoice ? t('supplierPayments.invoice.edit') : t('supplierPayments.invoice.create')}
           </DialogTitle>
         </DialogHeader>
 
@@ -222,9 +222,9 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
                 name="invoiceNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('invoices.invoiceNumber')}</FormLabel>
+                    <FormLabel>{t('supplierPayments.invoice.invoiceNumber')}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t('invoices.invoiceNumberPlaceholder')} {...field} />
+                      <Input placeholder={t('supplierPayments.invoice.invoiceNumberPlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
