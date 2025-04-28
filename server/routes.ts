@@ -3041,6 +3041,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/production', isAuthenticated, productionRouter);
   app.use('/api/order-pdf', orderPdfRouter);
   
+  // Supplier Payment Tracking routes
+  app.use('/api/supplier-payments', isAuthenticated, supplierPaymentsRouter);
+  
   // Image upload and fix routes
   app.use('/api/image-fix', imageUploadFixRouter);
   

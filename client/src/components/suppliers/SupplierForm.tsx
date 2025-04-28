@@ -1,0 +1,395 @@
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
+import { apiRequest } from '@/lib/queryClient';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Switch } from '@/components/ui/switch';
+import { Loader } from 'lucide-react';
+
+// Define validation schema for supplier form
+const supplierFormSchema = z.object({
+  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
+  contactPerson: z.string().optional(),
+  vatNumber: z.string().optional(),
+  email: z.string().email().optional().nullable(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  postalCode: z.string().optional(),
+  country: z.string().optional(),
+  notes: z.string().optional(),
+  paymentTerms: z.string().optional(),
+  isActive: z.boolean().default(true),
+});
+
+type SupplierFormValues = z.infer<typeof supplierFormSchema>;
+
+interface SupplierFormProps {
+  isOpen: boolean;
+  onClose: () => void;
+  supplier?: any;
+}
+
+export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) => {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Initialize form with supplier data or defaults
+  const form = useForm<SupplierFormValues>({
+    resolver: zodResolver(supplierFormSchema),
+    defaultValues: {
+      name: '',
+      contactPerson: '',
+      vatNumber: '',
+      email: '',
+      phone: '',
+      address: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: '',
+      notes: '',
+      paymentTerms: '',
+      isActive: true,
+    },
+  });
+
+  // Reset form when supplier changes
+  useEffect(() => {
+    if (supplier) {
+      form.reset({
+        name: supplier.name || '',
+        contactPerson: supplier.contactPerson || '',
+        vatNumber: supplier.vatNumber || '',
+        email: supplier.email || '',
+        phone: supplier.phone || '',
+        address: supplier.address || '',
+        city: supplier.city || '',
+        state: supplier.state || '',
+        postalCode: supplier.postalCode || '',
+        country: supplier.country || '',
+        notes: supplier.notes || '',
+        paymentTerms: supplier.paymentTerms || '',
+        isActive: supplier.isActive ?? true,
+      });
+    } else {
+      form.reset({
+        name: '',
+        contactPerson: '',
+        vatNumber: '',
+        email: '',
+        phone: '',
+        address: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        country: '',
+        notes: '',
+        paymentTerms: '',
+        isActive: true,
+      });
+    }
+  }, [supplier, form]);
+
+  // Save supplier mutation
+  const saveSupplierMutation = useMutation({
+    mutationFn: async (data: SupplierFormValues) => {
+      if (supplier) {
+        // Update existing supplier
+        return apiRequest('PATCH', `/api/supplier-payments/suppliers/${supplier.id}`, data);
+      } else {
+        // Create new supplier
+        return apiRequest('POST', '/api/supplier-payments/suppliers', data);
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: supplier ? t('suppliers.updated') : t('suppliers.created'),
+        description: supplier ? t('suppliers.updateSuccess') : t('suppliers.createSuccess'),
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/supplier-payments/suppliers'] });
+      onClose();
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('common.error'),
+        description: error.message || t('suppliers.saveError'),
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Form submission handler
+  const onSubmit = (data: SupplierFormValues) => {
+    saveSupplierMutation.mutate(data);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>
+            {supplier ? t('suppliers.edit') : t('suppliers.create')}
+          </DialogTitle>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Name field - required */}
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('suppliers.name')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t('suppliers.namePlaceholder')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Contact Person field */}
+              <FormField
+                control={form.control}
+                name="contactPerson"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('suppliers.contactPerson')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t('suppliers.contactPersonPlaceholder')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* VAT Number field */}
+              <FormField
+                control={form.control}
+                name="vatNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('suppliers.vatNumber')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t('suppliers.vatNumberPlaceholder')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Email field */}
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('suppliers.email')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder={t('suppliers.emailPlaceholder')}
+                        {...field}
+                        value={field.value || ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Phone field */}
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('suppliers.phone')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t('suppliers.phonePlaceholder')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Payment Terms field */}
+              <FormField
+                control={form.control}
+                name="paymentTerms"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('suppliers.paymentTerms')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t('suppliers.paymentTermsPlaceholder')}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Address field */}
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('suppliers.address')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t('suppliers.addressPlaceholder')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* City field */}
+              <FormField
+                control={form.control}
+                name="city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('suppliers.city')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t('suppliers.cityPlaceholder')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* State/Region field */}
+              <FormField
+                control={form.control}
+                name="state"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('suppliers.state')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t('suppliers.statePlaceholder')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Postal Code field */}
+              <FormField
+                control={form.control}
+                name="postalCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('suppliers.postalCode')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t('suppliers.postalCodePlaceholder')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Country field */}
+              <FormField
+                control={form.control}
+                name="country"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('suppliers.country')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t('suppliers.countryPlaceholder')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Active Status */}
+              <FormField
+                control={form.control}
+                name="isActive"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between space-x-2 rounded-md border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel>{t('suppliers.isActive')}</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Notes field */}
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('suppliers.notes')}</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder={t('suppliers.notesPlaceholder')}
+                      className="min-h-[80px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={saveSupplierMutation.isPending}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button type="submit" disabled={saveSupplierMutation.isPending}>
+                {saveSupplierMutation.isPending && (
+                  <Loader className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                {supplier ? t('common.update') : t('common.create')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+};
