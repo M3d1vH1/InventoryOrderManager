@@ -35,6 +35,8 @@ const localizer = momentLocalizer(moment);
 const FullCalendar = ({ title, icon, events, color, onClose }) => {
   const { t, i18n } = useTranslation();
   const [view, setView] = useState('month');
+  const [_, navigate] = useLocation();
+  const { toast } = useToast();
   
   const headerBgClass = 
     color === 'blue' ? 'bg-blue-50' : 
@@ -43,12 +45,38 @@ const FullCalendar = ({ title, icon, events, color, onClose }) => {
     color === 'amber' ? 'bg-amber-50' :
     color === 'purple' ? 'bg-purple-50' : '';
   
+  const handleEventClick = (event) => {
+    try {
+      if (event.resource) {
+        // Determine where to navigate based on the event type
+        if (event.id.startsWith('order-')) {
+          navigate(`/orders/${event.resource.id}`);
+        } else if (event.id.startsWith('call-')) {
+          navigate(`/call-logs/${event.resource.id}`);
+        } else if (event.id.startsWith('payment-')) {
+          navigate(`/supplier-payments?id=${event.resource.id}`);
+        } else if (event.id.startsWith('inventory-')) {
+          navigate(`/inventory?product=${event.resource.productId || ''}`);
+        } else if (event.id.startsWith('production-')) {
+          navigate(`/production/batches/${event.resource.id}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error navigating from calendar event:', error);
+      toast({
+        title: t('common.error'),
+        description: t('common.navigationError'),
+        variant: 'destructive',
+      });
+    }
+  };
+  
   return (
     <>
       <DialogTitle className="sr-only">{title}</DialogTitle>
       <DialogDescription className="sr-only">{t('calendar.fullCalendarDescription')}</DialogDescription>
       
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full w-full">
         <div className={`flex items-center justify-between p-4 ${headerBgClass}`}>
           <div className="flex items-center space-x-3">
             {icon}
@@ -72,16 +100,17 @@ const FullCalendar = ({ title, icon, events, color, onClose }) => {
             </Button>
           </div>
         </div>
-        <div className="flex-1 p-4">
+        <div className="flex-1 p-4 w-full">
           <Calendar
             localizer={localizer}
             events={events || []}
             startAccessor="start"
             endAccessor="end"
-            style={{ height: 'calc(100vh - 200px)' }}
+            style={{ height: 'calc(85vh - 120px)', width: '100%' }}
             view={view}
             onView={setView}
             views={['month', 'week', 'day', 'agenda']}
+            onSelectEvent={handleEventClick}
             messages={{
               today: t('calendar.today'),
               previous: t('calendar.previous'),
@@ -106,7 +135,8 @@ const FullCalendar = ({ title, icon, events, color, onClose }) => {
                     color === 'green' ? '#22c55e' :
                     color === 'amber' ? '#f59e0b' :
                     color === 'purple' ? '#8b5cf6' : '#3b82f6'
-                  )
+                  ),
+                  cursor: 'pointer'
                 }
               };
             }}
@@ -191,7 +221,7 @@ const MiniCalendar = ({ title, icon, events, color, onNavigate, onExpand = () =>
       </Card>
       
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-6xl w-[95vw]">
+        <DialogContent className="max-w-[95vw] w-[95vw] max-h-[90vh] h-[90vh]">
           <FullCalendar 
             title={title}
             icon={icon}
