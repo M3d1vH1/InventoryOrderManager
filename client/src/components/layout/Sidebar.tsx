@@ -33,7 +33,6 @@ const Sidebar = () => {
     // Special case for sales - make parent active when children are active
     if (path === "/sales" && 
         (location === "/call-logs" || 
-         location === "/calendar" ||
          location === "/customers")) return true;
     
     // Default behavior
@@ -73,6 +72,21 @@ const Sidebar = () => {
                         <FaTachometerAlt size={16} />
                       </span>
                       {isSidebarOpen && <span className="ml-2">{t('dashboard.title')}</span>}
+                    </button>
+                  </Link>
+                </li>
+                
+                {/* Calendar link moved out of Sales submenu and placed directly under Dashboard */}
+                <li className="mb-1">
+                  <Link href="/calendar" onClick={() => setCurrentPage("Calendar")}>
+                    <button 
+                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/calendar") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                      title={t('app.calendar') || "Calendar"}
+                    >
+                      <span className="flex items-center w-5 h-5">
+                        <FaCalendarAlt size={16} />
+                      </span>
+                      {isSidebarOpen && <span className="ml-2">{t('app.calendar') || "Calendar"}</span>}
                     </button>
                   </Link>
                 </li>

@@ -107,6 +107,18 @@ const FullCalendar = ({ title, icon, events, color, onClose }) => {
             startAccessor="start"
             endAccessor="end"
             style={{ height: 'calc(85vh - 120px)', width: '100%' }}
+            formats={{
+              timeGutterFormat: (date, culture, localizer) => 
+                localizer.format(date, 'HH:mm', culture),
+              dayFormat: (date, culture, localizer) =>
+                localizer.format(date, 'ddd', culture),
+              eventTimeRangeFormat: () => '',  // Removes the time range completely
+              eventTimeRangeEndFormat: () => '',
+              eventTimeRangeStartFormat: () => '',
+              timeRangeFormat: () => '',
+              timeRangeEndFormat: () => '',
+              timeRangeStartFormat: () => '',
+            }}
             min={new Date(new Date().setHours(9, 0, 0))}
             max={new Date(new Date().setHours(17, 0, 0))}
             view={view}
@@ -216,6 +228,12 @@ const MiniCalendar = ({ title, icon, events, color, onNavigate, onExpand = () =>
                   localizer.format(date, 'HH:mm', culture),
                 dayFormat: (date, culture, localizer) =>
                   localizer.format(date, 'ddd', culture),
+                eventTimeRangeFormat: () => '',  // Removes the time range completely
+                eventTimeRangeEndFormat: () => '',
+                eventTimeRangeStartFormat: () => '',
+                timeRangeFormat: () => '',
+                timeRangeEndFormat: () => '',
+                timeRangeStartFormat: () => '',
               }}
               min={new Date(new Date().setHours(9, 0, 0))}
               max={new Date(new Date().setHours(17, 0, 0))}
