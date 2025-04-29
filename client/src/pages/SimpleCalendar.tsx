@@ -75,7 +75,7 @@ const FullCalendar = ({ title, icon, events, color, onClose }) => {
         <div className="flex-1 p-4">
           <Calendar
             localizer={localizer}
-            events={events}
+            events={events || []}
             startAccessor="start"
             endAccessor="end"
             style={{ height: 'calc(100vh - 200px)' }}
@@ -96,6 +96,19 @@ const FullCalendar = ({ title, icon, events, color, onClose }) => {
               noEventsInRange: t('calendar.noEvents'),
               showMore: (count) => t('calendar.showMore', { count }),
               allDay: t('calendar.allDay')
+            }}
+            eventPropGetter={(event) => {
+              return {
+                style: {
+                  backgroundColor: event.backgroundColor || (
+                    color === 'blue' ? '#3b82f6' : 
+                    color === 'emerald' ? '#10b981' :
+                    color === 'green' ? '#22c55e' :
+                    color === 'amber' ? '#f59e0b' :
+                    color === 'purple' ? '#8b5cf6' : '#3b82f6'
+                  )
+                }
+              };
             }}
           />
         </div>
@@ -139,11 +152,11 @@ const MiniCalendar = ({ title, icon, events, color, onNavigate, onExpand = () =>
             {t('calendar.upcomingEvents')}
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-2" onClick={onNavigate}>
-          <div className="h-[200px] cursor-pointer">
+        <CardContent className="p-2">
+          <div className="h-[200px] cursor-pointer" onClick={handleExpand}>
             <Calendar
               localizer={localizer}
-              events={events}
+              events={events || []}
               startAccessor="start"
               endAccessor="end"
               style={{ height: '100%' }}
@@ -159,14 +172,22 @@ const MiniCalendar = ({ title, icon, events, color, onNavigate, onExpand = () =>
               messages={{
                 noEventsInRange: t('calendar.noEvents'),
               }}
+              eventPropGetter={(event) => {
+                return {
+                  style: {
+                    backgroundColor: event.backgroundColor || (
+                      color === 'blue' ? '#3b82f6' : 
+                      color === 'emerald' ? '#10b981' :
+                      color === 'green' ? '#22c55e' :
+                      color === 'amber' ? '#f59e0b' :
+                      color === 'purple' ? '#8b5cf6' : '#3b82f6'
+                    )
+                  }
+                };
+              }}
             />
           </div>
         </CardContent>
-        <CardFooter className={`pt-2 justify-end ${headerBgClass}`}>
-          <Button variant="outline" size="sm" onClick={onNavigate}>
-            {t('common.viewAll')}
-          </Button>
-        </CardFooter>
       </Card>
       
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -174,7 +195,7 @@ const MiniCalendar = ({ title, icon, events, color, onNavigate, onExpand = () =>
           <FullCalendar 
             title={title}
             icon={icon}
-            events={events}
+            events={events || []}
             color={color}
             onClose={() => setIsOpen(false)}
           />
