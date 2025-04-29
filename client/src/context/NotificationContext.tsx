@@ -507,7 +507,10 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         
         // Connection closed - attempt to reconnect
         socket.addEventListener('close', (event) => {
-          console.log('WebSocket disconnected');
+          // Use less aggressive logging to reduce console noise in production
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('WebSocket disconnected - reconnecting automatically');
+          }
           
           // Clean up ping interval if it exists
           if (pingInterval) {
@@ -531,13 +534,17 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
           }
         });
         
-        // Connection error
+        // Connection error - show less aggressive error handling to reduce console noise
         socket.addEventListener('error', (event) => {
-          console.error('WebSocket error:', event);
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('WebSocket connection issue - will auto-reconnect silently');
+          }
           // No need to call restartConnection here as the close event will be triggered after an error
         });
       } catch (error) {
-        console.error('Error setting up WebSocket:', error);
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('WebSocket setup issue - will retry with backoff');
+        }
         // Try to reconnect with backoff
         restartConnection();
       }
