@@ -204,29 +204,31 @@ const CallLogDetail: React.FC<CallLogDetailProps> = ({ callId, onBack }) => {
               <div>
                 <CardTitle className="text-xl">{callLog.subject}</CardTitle>
                 <CardDescription className="mt-1">
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    <Badge variant="outline" className={getCallTypeColor(callLog.callType)}>
-                      <Phone className="mr-1 h-3 w-3" />
-                      {t(`callLogs.form.callTypes.${callLog.callType}`)}
-                    </Badge>
-                    <Badge variant="outline" className={getPriorityColor(callLog.priority)}>
-                      {
-                        callLog.priority === 'urgent' 
-                          ? <AlertTriangle className="mr-1 h-3 w-3" />
-                          : callLog.priority === 'high'
-                            ? <AlertTriangle className="mr-1 h-3 w-3" />
-                            : <Tag className="mr-1 h-3 w-3" />
-                      }
-                      {t(`callLogs.form.priorities.${callLog.priority}`)}
-                    </Badge>
-                    {callLog.isFollowup && (
-                      <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                        <MessageCircle className="mr-1 h-3 w-3" />
-                        {t('callLogs.followupCall')}
-                      </Badge>
-                    )}
-                  </div>
+                  {/* Removing nesting issue */}
+                  {t('callLogs.callType')}: {t(`callLogs.form.callTypes.${callLog.callType}`)} 
                 </CardDescription>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <Badge variant="outline" className={getCallTypeColor(callLog.callType)}>
+                    <Phone className="mr-1 h-3 w-3" />
+                    {t(`callLogs.form.callTypes.${callLog.callType}`)}
+                  </Badge>
+                  <Badge variant="outline" className={getPriorityColor(callLog.priority)}>
+                    {
+                      callLog.priority === 'urgent' 
+                        ? <AlertTriangle className="mr-1 h-3 w-3" />
+                        : callLog.priority === 'high'
+                          ? <AlertTriangle className="mr-1 h-3 w-3" />
+                          : <Tag className="mr-1 h-3 w-3" />
+                    }
+                    {t(`callLogs.form.priorities.${callLog.priority}`)}
+                  </Badge>
+                  {callLog.isFollowup && (
+                    <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                      <MessageCircle className="mr-1 h-3 w-3" />
+                      {t('callLogs.followupCall')}
+                    </Badge>
+                  )}
+                </div>
               </div>
               <div className="text-sm text-muted-foreground">
                 {t('callLogs.callId')}: {callLog.id}

@@ -47,18 +47,27 @@ const FullCalendar = ({ title, icon, events, color, onClose }) => {
   
   const handleEventClick = (event) => {
     try {
+      console.log('Calendar event clicked:', event);
+      
       if (event.resource) {
         // Determine where to navigate based on the event type
         if (event.id.startsWith('order-')) {
-          navigate(`/orders/${event.resource.id}`);
+          const orderId = event.resource.id;
+          console.log(`Navigating to order: /orders/${orderId}`);
+          navigate(`/orders/${orderId}`);
         } else if (event.id.startsWith('call-')) {
           // Make sure we navigate to the proper call log detail page
           const callId = event.resource.id;
           if (callId) {
+            console.log(`Navigating to call detail: /call-logs/${callId}`, event.resource);
             navigate(`/call-logs/${callId}`);
-            console.log(`Navigating to call detail: /call-logs/${callId}`);
+            
+            // Force a refresh if needed (if the URL didn't change but we need to load different data)
+            if (window.location.pathname === `/call-logs/${callId}`) {
+              window.location.reload();
+            }
           } else {
-            console.error('Call event clicked but no ID was found in the resource');
+            console.error('Call event clicked but no ID was found in the resource:', event);
             toast({
               title: t('common.error'),
               description: t('common.resourceNotFound'),
@@ -66,14 +75,27 @@ const FullCalendar = ({ title, icon, events, color, onClose }) => {
             });
           }
         } else if (event.id.startsWith('payment-')) {
-          navigate(`/supplier-payments?id=${event.resource.id}`);
+          const paymentId = event.resource.id;
+          console.log(`Navigating to payment: /supplier-payments?id=${paymentId}`);
+          navigate(`/supplier-payments?id=${paymentId}`);
         } else if (event.id.startsWith('inventory-')) {
-          navigate(`/inventory?product=${event.resource.productId || ''}`);
+          const productId = event.resource.productId || '';
+          console.log(`Navigating to inventory: /inventory?product=${productId}`);
+          navigate(`/inventory?product=${productId}`);
         } else if (event.id.startsWith('production-')) {
-          navigate(`/production/batches/${event.resource.id}`);
+          const batchId = event.resource.id;
+          console.log(`Navigating to production: /production/batches/${batchId}`);
+          navigate(`/production/batches/${batchId}`);
+        } else {
+          console.error('Unknown event type:', event.id);
+          toast({
+            title: t('common.error'),
+            description: t('common.unknownEventType'),
+            variant: 'destructive',
+          });
         }
       } else {
-        console.error('Event clicked but no resource data was found');
+        console.error('Event clicked but no resource data was found:', event);
         toast({
           title: t('common.error'),
           description: t('common.resourceNotFound'),
@@ -81,7 +103,7 @@ const FullCalendar = ({ title, icon, events, color, onClose }) => {
         });
       }
     } catch (error) {
-      console.error('Error navigating from calendar event:', error);
+      console.error('Error navigating from calendar event:', error, event);
       toast({
         title: t('common.error'),
         description: t('common.navigationError'),
@@ -429,13 +451,24 @@ const SimpleCalendar = () => {
           const start = new Date(call.callDate);
           if (isNaN(start.getTime())) continue;
           
+          // Ensure we have a valid ID for the call
+          const callId = call.id;
+          if (!callId) {
+            console.error('Call log missing ID:', call);
+            continue;
+          }
+          
           events.push({
-            id: `call-${call.id}`,
-            title: call.customerName || t('common.unknown'),
+            id: `call-${callId}`,
+            title: (call.subject || call.customerName || t('common.unknown')).slice(0, 50),
             start,
             end: start,
             allDay: false,
-            resource: call
+            resource: {
+              id: callId,
+              ...call
+            },
+            backgroundColor: '#8b5cf6' // purple-500 for call events
           });
         }
       }
