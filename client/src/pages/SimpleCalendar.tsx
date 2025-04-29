@@ -170,7 +170,7 @@ const MiniCalendar = ({ title, icon, events, color, onNavigate, onExpand = () =>
   return (
     <>
       <Card className="h-full transition-all hover:shadow-md">
-        <CardHeader className={`pb-1 ${headerBgClass}`}>
+        <CardHeader className={`py-2 ${headerBgClass}`}>
           <div className="flex items-center justify-between">
             <div className="flex-1"></div>
             <div className="flex items-center space-x-2 justify-center">
@@ -178,8 +178,9 @@ const MiniCalendar = ({ title, icon, events, color, onNavigate, onExpand = () =>
               <CardTitle className="text-lg">{title}</CardTitle>
             </div>
             <div className="flex-1 flex justify-end">
-              <Button variant="ghost" size="icon" onClick={handleExpand}>
-                <Maximize2 className="h-4 w-4" />
+              <Button variant="ghost" size="sm" onClick={handleExpand} className="flex items-center">
+                <Maximize2 className="h-4 w-4 mr-1" />
+                <span className="text-xs">{t('calendar.expand')}</span>
               </Button>
             </div>
           </div>

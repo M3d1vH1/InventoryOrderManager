@@ -1146,6 +1146,7 @@
     "payments": "Payments",
     "inventory": "Inventory",
     "production": "Production",
+    "expand": "Expand",
     "ordersCreated": "Orders Created",
     "ordersShipped": "Orders Shipped",
     "estimatedShipping": "Estimated Shipping",
