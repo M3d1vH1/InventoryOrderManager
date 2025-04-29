@@ -463,7 +463,22 @@ const CalendarPage: React.FC = () => {
         .filter(event => {
           if (!event || !event.start) return false;
           try {
-            const eventStart = event.start instanceof Date ? event.start : new Date(event.start);
+            // Make sure we have a valid start date
+            let eventStart: Date;
+            if (event.start instanceof Date) {
+              eventStart = event.start;
+            } else if (typeof event.start === 'string') {
+              eventStart = new Date(event.start);
+            } else {
+              // Skip events with invalid start dates
+              return false;
+            }
+            
+            // Check if date is valid
+            if (isNaN(eventStart.getTime())) {
+              return false;
+            }
+            
             return eventStart >= now && eventStart <= nextWeek;
           } catch (err) {
             console.error("Error filtering event:", err, event);
@@ -472,11 +487,29 @@ const CalendarPage: React.FC = () => {
         })
         .sort((a, b) => {
           try {
-            const aStart = a.start instanceof Date ? a.start : new Date(a.start);
-            const bStart = b.start instanceof Date ? b.start : new Date(b.start);
+            // Safe date conversion
+            let aStart: Date, bStart: Date;
+            
+            if (a.start instanceof Date) {
+              aStart = a.start;
+            } else {
+              aStart = new Date(String(a.start));
+            }
+            
+            if (b.start instanceof Date) {
+              bStart = b.start;
+            } else {
+              bStart = new Date(String(b.start));
+            }
+            
+            // Check if dates are valid
+            if (isNaN(aStart.getTime()) || isNaN(bStart.getTime())) {
+              return 0;
+            }
+            
             return aStart.getTime() - bStart.getTime();
           } catch (err) {
-            console.error("Error sorting event:", err, a, b);
+            console.error("Error sorting event:", err);
             return 0;
           }
         })
@@ -509,71 +542,10 @@ const CalendarPage: React.FC = () => {
   };
 
   // Custom event styling
-  const eventStyleGetter = (event: CalendarEvent) => {
-    try {
-      if (!event || !event.type) {
-        console.warn("Invalid event for styling:", event);
-        return {
-          style: {
-            backgroundColor: '#6B7280',
-            borderRadius: '4px',
-            opacity: 0.9,
-            color: 'white',
-            border: '0px',
-            display: 'block',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            fontSize: '0.8rem'
-          }
-        };
-      }
-      
-      let backgroundColor = '#6B7280'; // Default gray
-      let borderLeft;
-      
-      // Determine color based on event type
-      if (event.type === 'created') {
-        backgroundColor = '#4F46E5'; // Blue for order created
-      } else if (event.type === 'shipped') {
-        backgroundColor = '#10B981'; // Green for shipped
-      } else if (event.type === 'estimated') {
-        backgroundColor = '#8B5CF6'; // Purple for estimated shipping date
-        borderLeft = '3px solid #7C3AED';
-      } else if (event.type === 'call') {
-        if (event.isFollowUp) {
-          backgroundColor = '#F43F5E'; // Pink for follow-up calls
-          borderLeft = '3px solid #BE185D';
-        } else {
-          backgroundColor = '#F59E0B'; // Amber for scheduled calls
-          borderLeft = '3px solid #D97706';
-        }
-      } else if (event.type === 'payment') {
-        if (event.callbackRequired) {
-          backgroundColor = '#EC4899'; // Pink for payment callbacks
-          borderLeft = '3px solid #BE185D';
-        } else {
-          backgroundColor = '#14B8A6'; // Teal for regular payments
-          borderLeft = '3px solid #0F766E';
-        }
-      } else if (event.type === 'inventory') {
-        backgroundColor = '#06B6D4'; // Cyan for inventory
-        borderLeft = '3px solid #0E7490';
-      } else if (event.type === 'production') {
-        if (event.productionStage === 'start') {
-          backgroundColor = '#2563EB'; // Blue for production start
-          borderLeft = '3px solid #1D4ED8';
-        } else if (event.productionStage === 'complete') {
-          backgroundColor = '#16A34A'; // Green for production complete
-          borderLeft = '3px solid #15803D';
-        } else {
-          backgroundColor = '#7C3AED'; // Purple for estimated completion
-          borderLeft = '3px solid #6D28D9';
-        }
-      }
-      
-      let style = {
-        backgroundColor,
+  const eventStyleGetter = (event: any) => {
+    const defaultStyle = {
+      style: {
+        backgroundColor: '#6B7280', // Default gray
         borderRadius: '4px',
         opacity: 0.9,
         color: 'white',
@@ -582,26 +554,92 @@ const CalendarPage: React.FC = () => {
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
-        fontSize: '0.8rem',
-        borderLeft
-      };
+        fontSize: '0.8rem'
+      }
+    };
+    
+    try {
+      if (!event || typeof event !== 'object') {
+        return defaultStyle;
+      }
+      
+      const eventType = event.type;
+      if (!eventType) {
+        return defaultStyle;
+      }
+      
+      let backgroundColor = '#6B7280'; // Default gray
+      let borderLeft;
+      
+      // Determine color based on event type
+      switch (eventType) {
+        case 'created':
+          backgroundColor = '#4F46E5'; // Blue for order created
+          break;
+        case 'shipped':
+          backgroundColor = '#10B981'; // Green for shipped
+          break;
+        case 'estimated':
+          backgroundColor = '#8B5CF6'; // Purple for estimated shipping date
+          borderLeft = '3px solid #7C3AED';
+          break;
+        case 'call':
+          if (event.isFollowUp) {
+            backgroundColor = '#F43F5E'; // Pink for follow-up calls
+            borderLeft = '3px solid #BE185D';
+          } else {
+            backgroundColor = '#F59E0B'; // Amber for scheduled calls
+            borderLeft = '3px solid #D97706';
+          }
+          break;
+        case 'payment':
+          if (event.callbackRequired) {
+            backgroundColor = '#EC4899'; // Pink for payment callbacks
+            borderLeft = '3px solid #BE185D';
+          } else {
+            backgroundColor = '#14B8A6'; // Teal for regular payments
+            borderLeft = '3px solid #0F766E';
+          }
+          break;
+        case 'inventory':
+          backgroundColor = '#06B6D4'; // Cyan for inventory
+          borderLeft = '3px solid #0E7490';
+          break;
+        case 'production':
+          if (event.productionStage === 'start') {
+            backgroundColor = '#2563EB'; // Blue for production start
+            borderLeft = '3px solid #1D4ED8';
+          } else if (event.productionStage === 'complete') {
+            backgroundColor = '#16A34A'; // Green for production complete
+            borderLeft = '3px solid #15803D';
+          } else {
+            backgroundColor = '#7C3AED'; // Purple for estimated completion
+            borderLeft = '3px solid #6D28D9';
+          }
+          break;
+        default:
+          // Default gray styling
+          return defaultStyle;
+      }
       
       return {
-        style
-      };
-    } catch (err) {
-      console.error("Error styling event:", err, event);
-      // Return default style if there's an error
-      return {
         style: {
-          backgroundColor: '#6B7280',
+          backgroundColor,
           borderRadius: '4px',
           opacity: 0.9,
           color: 'white',
           border: '0px',
-          fontSize: '0.8rem'
+          display: 'block',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          fontSize: '0.8rem',
+          borderLeft
         }
       };
+    } catch (err) {
+      console.error("Error styling event:", err);
+      return defaultStyle;
     }
   };
   
@@ -847,27 +885,47 @@ const CalendarPage: React.FC = () => {
                           noEventsInRange: t('calendar.controls.noEventsInRange'),
                         }}
                         tooltipAccessor={(event: any) => {
-                          if (event.type === 'call') {
-                            return `${event.customerName} - ${event.callDetails || t('calendar.noCallDetails')}`;
-                          } else if (event.type === 'payment') {
-                            if (event.callbackRequired) {
-                              return `${event.supplierName} - ${t('supplierPayments.callbackRequired')}: ${t('common.yes')}`;
+                          try {
+                            if (!event || !event.type) return '';
+                            
+                            const customerName = event.customerName || t('common.unknown');
+                            
+                            if (event.type === 'call') {
+                              return `${customerName} - ${event.callDetails || t('calendar.noCallDetails')}`;
+                            } else if (event.type === 'payment') {
+                              const supplierName = event.supplierName || customerName;
+                              if (event.callbackRequired) {
+                                return `${supplierName} - ${t('supplierPayments.callbackRequired')}: ${t('common.yes')}`;
+                              }
+                              const amount = typeof event.paymentAmount === 'number' ? 
+                                event.paymentAmount.toFixed(2) : 
+                                (event.paymentAmount || '');
+                              return `${supplierName} - ${t('supplierPayments.amount')}: ${amount}`;
+                            } else if (event.type === 'inventory') {
+                              const productName = event.productName || customerName;
+                              let inventoryTypeText = t('inventory.adjustment');
+                              if (event.inventoryType === 'restock') {
+                                inventoryTypeText = t('inventory.restock');
+                              } else if (event.inventoryType === 'audit') {
+                                inventoryTypeText = t('inventory.audit');
+                              }
+                              return `${productName} - ${inventoryTypeText}`;
+                            } else if (event.type === 'production') {
+                              const recipeName = event.recipeName || customerName;
+                              let stageText = t('production.estimatedCompletion');
+                              if (event.productionStage === 'start') {
+                                stageText = t('production.started');
+                              } else if (event.productionStage === 'complete') {
+                                stageText = t('production.completed');
+                              }
+                              return `${recipeName} - ${stageText} - ${t('production.quantity')}: ${event.productionQuantity || '0'}`;
                             }
-                            return `${event.supplierName} - ${t('supplierPayments.amount')}: ${event.paymentAmount?.toFixed(2) || ''}`;
-                          } else if (event.type === 'inventory') {
-                            return `${event.productName} - ${
-                              event.inventoryType === 'restock' ? t('inventory.restock') :
-                              event.inventoryType === 'audit' ? t('inventory.audit') :
-                              t('inventory.adjustment')
-                            }`;
-                          } else if (event.type === 'production') {
-                            return `${event.recipeName} - ${
-                              event.productionStage === 'start' ? t('production.started') :
-                              event.productionStage === 'complete' ? t('production.completed') :
-                              t('production.estimatedCompletion')
-                            } - ${t('production.quantity')}: ${event.productionQuantity || ''}`;
+                            // Default for orders
+                            return `${customerName} - ${event.orderNumber || ''}`;
+                          } catch (err) {
+                            console.error('Error generating tooltip:', err);
+                            return '';
                           }
-                          return `${event.customerName} - ${event.orderNumber || ''}`;
                         }}
                       />
                     ) : (
