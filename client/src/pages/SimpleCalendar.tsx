@@ -52,7 +52,19 @@ const FullCalendar = ({ title, icon, events, color, onClose }) => {
         if (event.id.startsWith('order-')) {
           navigate(`/orders/${event.resource.id}`);
         } else if (event.id.startsWith('call-')) {
-          navigate(`/call-logs/${event.resource.id}`);
+          // Make sure we navigate to the proper call log detail page
+          const callId = event.resource.id;
+          if (callId) {
+            navigate(`/call-logs/${callId}`);
+            console.log(`Navigating to call detail: /call-logs/${callId}`);
+          } else {
+            console.error('Call event clicked but no ID was found in the resource');
+            toast({
+              title: t('common.error'),
+              description: t('common.resourceNotFound'),
+              variant: 'destructive',
+            });
+          }
         } else if (event.id.startsWith('payment-')) {
           navigate(`/supplier-payments?id=${event.resource.id}`);
         } else if (event.id.startsWith('inventory-')) {
@@ -60,6 +72,13 @@ const FullCalendar = ({ title, icon, events, color, onClose }) => {
         } else if (event.id.startsWith('production-')) {
           navigate(`/production/batches/${event.resource.id}`);
         }
+      } else {
+        console.error('Event clicked but no resource data was found');
+        toast({
+          title: t('common.error'),
+          description: t('common.resourceNotFound'),
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       console.error('Error navigating from calendar event:', error);
