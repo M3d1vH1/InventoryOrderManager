@@ -1178,6 +1178,9 @@
     "today": "Today",
     "tomorrow": "Tomorrow",
     "inXDays": "In {days} days",
+    "noEventsForFilter": "No events found",
+    "tryDifferentFilter": "Try a different filter or view all events",
+    "noEventsAvailable": "No events available in the system",
     "controls": {
       "next": "Next",
       "previous": "Previous",

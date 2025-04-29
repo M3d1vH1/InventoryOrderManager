@@ -455,16 +455,42 @@ const CalendarPage: React.FC = () => {
   
   // Get upcoming events for the sidebar
   const upcomingEvents = useMemo(() => {
-    const now = new Date();
-    const nextWeek = new Date();
-    nextWeek.setDate(now.getDate() + 7);
+    if (!events || !Array.isArray(events) || events.length === 0) {
+      console.log("No events available for upcoming events sidebar");
+      return [];
+    }
     
-    return events
-      .filter(event => {
-        return event.start >= now && event.start <= nextWeek;
-      })
-      .sort((a, b) => a.start.getTime() - b.start.getTime())
-      .slice(0, 5);
+    try {
+      const now = new Date();
+      const nextWeek = new Date();
+      nextWeek.setDate(now.getDate() + 7);
+      
+      return events
+        .filter(event => {
+          if (!event || !event.start) return false;
+          try {
+            const eventStart = event.start instanceof Date ? event.start : new Date(event.start);
+            return eventStart >= now && eventStart <= nextWeek;
+          } catch (err) {
+            console.error("Error filtering event:", err, event);
+            return false;
+          }
+        })
+        .sort((a, b) => {
+          try {
+            const aStart = a.start instanceof Date ? a.start : new Date(a.start);
+            const bStart = b.start instanceof Date ? b.start : new Date(b.start);
+            return aStart.getTime() - bStart.getTime();
+          } catch (err) {
+            console.error("Error sorting event:", err, a, b);
+            return 0;
+          }
+        })
+        .slice(0, 5);
+    } catch (err) {
+      console.error("Error getting upcoming events:", err);
+      return [];
+    }
   }, [events]);
   
   // Format relative date for upcoming events
@@ -490,68 +516,99 @@ const CalendarPage: React.FC = () => {
 
   // Custom event styling
   const eventStyleGetter = (event: CalendarEvent) => {
-    let backgroundColor;
-    let borderLeft;
-    
-    // Determine color based on event type
-    if (event.type === 'created') {
-      backgroundColor = '#4F46E5'; // Blue for order created
-    } else if (event.type === 'shipped') {
-      backgroundColor = '#10B981'; // Green for shipped
-    } else if (event.type === 'estimated') {
-      backgroundColor = '#8B5CF6'; // Purple for estimated shipping date
-      borderLeft = '3px solid #7C3AED';
-    } else if (event.type === 'call') {
-      if (event.isFollowUp) {
-        backgroundColor = '#F43F5E'; // Pink for follow-up calls
-        borderLeft = '3px solid #BE185D';
-      } else {
-        backgroundColor = '#F59E0B'; // Amber for scheduled calls
-        borderLeft = '3px solid #D97706';
+    try {
+      if (!event || !event.type) {
+        console.warn("Invalid event for styling:", event);
+        return {
+          style: {
+            backgroundColor: '#6B7280',
+            borderRadius: '4px',
+            opacity: 0.9,
+            color: 'white',
+            border: '0px',
+            display: 'block',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            fontSize: '0.8rem'
+          }
+        };
       }
-    } else if (event.type === 'payment') {
-      if (event.callbackRequired) {
-        backgroundColor = '#EC4899'; // Pink for payment callbacks
-        borderLeft = '3px solid #BE185D';
-      } else {
-        backgroundColor = '#14B8A6'; // Teal for regular payments
-        borderLeft = '3px solid #0F766E';
+      
+      let backgroundColor = '#6B7280'; // Default gray
+      let borderLeft;
+      
+      // Determine color based on event type
+      if (event.type === 'created') {
+        backgroundColor = '#4F46E5'; // Blue for order created
+      } else if (event.type === 'shipped') {
+        backgroundColor = '#10B981'; // Green for shipped
+      } else if (event.type === 'estimated') {
+        backgroundColor = '#8B5CF6'; // Purple for estimated shipping date
+        borderLeft = '3px solid #7C3AED';
+      } else if (event.type === 'call') {
+        if (event.isFollowUp) {
+          backgroundColor = '#F43F5E'; // Pink for follow-up calls
+          borderLeft = '3px solid #BE185D';
+        } else {
+          backgroundColor = '#F59E0B'; // Amber for scheduled calls
+          borderLeft = '3px solid #D97706';
+        }
+      } else if (event.type === 'payment') {
+        if (event.callbackRequired) {
+          backgroundColor = '#EC4899'; // Pink for payment callbacks
+          borderLeft = '3px solid #BE185D';
+        } else {
+          backgroundColor = '#14B8A6'; // Teal for regular payments
+          borderLeft = '3px solid #0F766E';
+        }
+      } else if (event.type === 'inventory') {
+        backgroundColor = '#06B6D4'; // Cyan for inventory
+        borderLeft = '3px solid #0E7490';
+      } else if (event.type === 'production') {
+        if (event.productionStage === 'start') {
+          backgroundColor = '#2563EB'; // Blue for production start
+          borderLeft = '3px solid #1D4ED8';
+        } else if (event.productionStage === 'complete') {
+          backgroundColor = '#16A34A'; // Green for production complete
+          borderLeft = '3px solid #15803D';
+        } else {
+          backgroundColor = '#7C3AED'; // Purple for estimated completion
+          borderLeft = '3px solid #6D28D9';
+        }
       }
-    } else if (event.type === 'inventory') {
-      backgroundColor = '#06B6D4'; // Cyan for inventory
-      borderLeft = '3px solid #0E7490';
-    } else if (event.type === 'production') {
-      if (event.productionStage === 'start') {
-        backgroundColor = '#2563EB'; // Blue for production start
-        borderLeft = '3px solid #1D4ED8';
-      } else if (event.productionStage === 'complete') {
-        backgroundColor = '#16A34A'; // Green for production complete
-        borderLeft = '3px solid #15803D';
-      } else {
-        backgroundColor = '#7C3AED'; // Purple for estimated completion
-        borderLeft = '3px solid #6D28D9';
-      }
-    } else {
-      backgroundColor = '#6B7280'; // Gray default
+      
+      let style = {
+        backgroundColor,
+        borderRadius: '4px',
+        opacity: 0.9,
+        color: 'white',
+        border: '0px',
+        display: 'block',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        fontSize: '0.8rem',
+        borderLeft
+      };
+      
+      return {
+        style
+      };
+    } catch (err) {
+      console.error("Error styling event:", err, event);
+      // Return default style if there's an error
+      return {
+        style: {
+          backgroundColor: '#6B7280',
+          borderRadius: '4px',
+          opacity: 0.9,
+          color: 'white',
+          border: '0px',
+          fontSize: '0.8rem'
+        }
+      };
     }
-    
-    let style = {
-      backgroundColor,
-      borderRadius: '4px',
-      opacity: 0.9,
-      color: 'white',
-      border: '0px',
-      display: 'block',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
-      fontSize: '0.8rem',
-      borderLeft
-    };
-    
-    return {
-      style
-    };
   };
   
   // Handle event click
@@ -690,134 +747,149 @@ const CalendarPage: React.FC = () => {
                   </div>
 
                   <div className="h-[500px] md:h-[600px]">
-                    <BigCalendar
-                      localizer={localizer}
-                      events={filteredEvents}
-                      startAccessor="start"
-                      endAccessor="end"
-                      style={{ height: '100%' }}
-                      eventPropGetter={eventStyleGetter}
-                      views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
-                      view={calendarView}
-                      onView={(view) => setCalendarView(view)}
-                      components={{
-                        toolbar: props => (
-                          <div className="flex flex-col space-y-3 mb-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex gap-1">
+                    {filteredEvents && filteredEvents.length > 0 ? (
+                      <BigCalendar
+                        localizer={localizer}
+                        events={filteredEvents}
+                        startAccessor="start"
+                        endAccessor="end"
+                        style={{ height: '100%' }}
+                        eventPropGetter={eventStyleGetter}
+                        views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
+                        view={calendarView}
+                        onView={(view) => setCalendarView(view)}
+                        onSelectEvent={handleEventClick}
+                        components={{
+                          toolbar: props => (
+                            <div className="flex flex-col space-y-3 mb-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex gap-1">
+                                  <button 
+                                    type="button" 
+                                    onClick={() => props.onNavigate('PREV')}
+                                    className="inline-flex items-center justify-center h-7 w-7 text-xs font-medium rounded-md border border-input bg-background hover:bg-accent"
+                                  >
+                                    <ChevronLeft className="h-3 w-3" />
+                                  </button>
+                                  <button 
+                                    type="button" 
+                                    onClick={() => props.onNavigate('NEXT')}
+                                    className="inline-flex items-center justify-center h-7 w-7 text-xs font-medium rounded-md border border-input bg-background hover:bg-accent"
+                                  >
+                                    <ChevronRight className="h-3 w-3" />
+                                  </button>
+                                  <button 
+                                    type="button" 
+                                    onClick={() => props.onNavigate('TODAY')}
+                                    className="inline-flex items-center justify-center h-7 px-2 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 ml-1"
+                                  >
+                                    {t('calendar.controls.today')}
+                                  </button>
+                                </div>
+                                <span className="text-xs sm:text-sm font-medium">
+                                  {moment(props.date).format('MMMM YYYY')}
+                                </span>
+                              </div>
+                              
+                              <div className="grid grid-cols-4 gap-1">
                                 <button 
                                   type="button" 
-                                  onClick={() => props.onNavigate('PREV')}
-                                  className="inline-flex items-center justify-center h-7 w-7 text-xs font-medium rounded-md border border-input bg-background hover:bg-accent"
+                                  onClick={() => props.onView('month')}
+                                  className={`inline-flex items-center justify-center h-7 px-1 text-[10px] sm:text-xs font-medium rounded-md ${props.view === 'month' 
+                                    ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                                    : 'border border-input bg-background hover:bg-accent'
+                                  }`}
                                 >
-                                  <ChevronLeft className="h-3 w-3" />
+                                  {t('calendar.controls.month')}
                                 </button>
                                 <button 
                                   type="button" 
-                                  onClick={() => props.onNavigate('NEXT')}
-                                  className="inline-flex items-center justify-center h-7 w-7 text-xs font-medium rounded-md border border-input bg-background hover:bg-accent"
+                                  onClick={() => props.onView('week')}
+                                  className={`inline-flex items-center justify-center h-7 px-1 text-[10px] sm:text-xs font-medium rounded-md ${props.view === 'week' 
+                                    ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                                    : 'border border-input bg-background hover:bg-accent'
+                                  }`}
                                 >
-                                  <ChevronRight className="h-3 w-3" />
+                                  {t('calendar.controls.week')}
                                 </button>
                                 <button 
                                   type="button" 
-                                  onClick={() => props.onNavigate('TODAY')}
-                                  className="inline-flex items-center justify-center h-7 px-2 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 ml-1"
+                                  onClick={() => props.onView('day')}
+                                  className={`inline-flex items-center justify-center h-7 px-1 text-[10px] sm:text-xs font-medium rounded-md ${props.view === 'day' 
+                                    ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                                    : 'border border-input bg-background hover:bg-accent'
+                                  }`}
                                 >
-                                  {t('calendar.controls.today')}
+                                  {t('calendar.controls.day')}
+                                </button>
+                                <button 
+                                  type="button" 
+                                  onClick={() => props.onView('agenda')}
+                                  className={`inline-flex items-center justify-center h-7 px-1 text-[10px] sm:text-xs font-medium rounded-md ${props.view === 'agenda' 
+                                    ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                                    : 'border border-input bg-background hover:bg-accent'
+                                  }`}
+                                >
+                                  {t('calendar.controls.agenda')}
                                 </button>
                               </div>
-                              <span className="text-xs sm:text-sm font-medium">
-                                {moment(props.date).format('MMMM YYYY')}
-                              </span>
                             </div>
-                            
-                            <div className="grid grid-cols-4 gap-1">
-                              <button 
-                                type="button" 
-                                onClick={() => props.onView('month')}
-                                className={`inline-flex items-center justify-center h-7 px-1 text-[10px] sm:text-xs font-medium rounded-md ${props.view === 'month' 
-                                  ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-                                  : 'border border-input bg-background hover:bg-accent'
-                                }`}
-                              >
-                                {t('calendar.controls.month')}
-                              </button>
-                              <button 
-                                type="button" 
-                                onClick={() => props.onView('week')}
-                                className={`inline-flex items-center justify-center h-7 px-1 text-[10px] sm:text-xs font-medium rounded-md ${props.view === 'week' 
-                                  ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-                                  : 'border border-input bg-background hover:bg-accent'
-                                }`}
-                              >
-                                {t('calendar.controls.week')}
-                              </button>
-                              <button 
-                                type="button" 
-                                onClick={() => props.onView('day')}
-                                className={`inline-flex items-center justify-center h-7 px-1 text-[10px] sm:text-xs font-medium rounded-md ${props.view === 'day' 
-                                  ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-                                  : 'border border-input bg-background hover:bg-accent'
-                                }`}
-                              >
-                                {t('calendar.controls.day')}
-                              </button>
-                              <button 
-                                type="button" 
-                                onClick={() => props.onView('agenda')}
-                                className={`inline-flex items-center justify-center h-7 px-1 text-[10px] sm:text-xs font-medium rounded-md ${props.view === 'agenda' 
-                                  ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-                                  : 'border border-input bg-background hover:bg-accent'
-                                }`}
-                              >
-                                {t('calendar.controls.agenda')}
-                              </button>
-                            </div>
-                          </div>
-                        )
-                      }}
-                      onNavigate={(date) => setSelectedDate(date)}
-                      date={selectedDate}
-                      onSelectEvent={handleEventClick}
-                      popup
-                      messages={{
-                        next: t('calendar.controls.next'),
-                        previous: t('calendar.controls.previous'),
-                        today: t('calendar.controls.today'),
-                        month: t('calendar.controls.month'),
-                        week: t('calendar.controls.week'),
-                        day: t('calendar.controls.day'),
-                        agenda: t('calendar.controls.agenda'),
-                        date: t('calendar.controls.date'),
-                        time: t('calendar.controls.time'),
-                        event: t('calendar.controls.event'),
-                        noEventsInRange: t('calendar.controls.noEventsInRange'),
-                      }}
-                      tooltipAccessor={(event: any) => {
-                        if (event.type === 'call') {
-                          return `${event.customerName} - ${event.callDetails || t('calendar.noCallDetails')}`;
-                        } else if (event.type === 'payment') {
-                          if (event.callbackRequired) {
-                            return `${event.supplierName} - ${t('supplierPayments.callbackRequired')}: ${t('common.yes')}`;
+                          )
+                        }}
+                        onNavigate={(date) => setSelectedDate(date)}
+                        date={selectedDate}
+                        popup
+                        messages={{
+                          next: t('calendar.controls.next'),
+                          previous: t('calendar.controls.previous'),
+                          today: t('calendar.controls.today'),
+                          month: t('calendar.controls.month'),
+                          week: t('calendar.controls.week'),
+                          day: t('calendar.controls.day'),
+                          agenda: t('calendar.controls.agenda'),
+                          date: t('calendar.controls.date'),
+                          time: t('calendar.controls.time'),
+                          event: t('calendar.controls.event'),
+                          noEventsInRange: t('calendar.controls.noEventsInRange'),
+                        }}
+                        tooltipAccessor={(event: any) => {
+                          if (event.type === 'call') {
+                            return `${event.customerName} - ${event.callDetails || t('calendar.noCallDetails')}`;
+                          } else if (event.type === 'payment') {
+                            if (event.callbackRequired) {
+                              return `${event.supplierName} - ${t('supplierPayments.callbackRequired')}: ${t('common.yes')}`;
+                            }
+                            return `${event.supplierName} - ${t('supplierPayments.amount')}: ${event.paymentAmount?.toFixed(2) || ''}`;
+                          } else if (event.type === 'inventory') {
+                            return `${event.productName} - ${
+                              event.inventoryType === 'restock' ? t('inventory.restock') :
+                              event.inventoryType === 'audit' ? t('inventory.audit') :
+                              t('inventory.adjustment')
+                            }`;
+                          } else if (event.type === 'production') {
+                            return `${event.recipeName} - ${
+                              event.productionStage === 'start' ? t('production.started') :
+                              event.productionStage === 'complete' ? t('production.completed') :
+                              t('production.estimatedCompletion')
+                            } - ${t('production.quantity')}: ${event.productionQuantity || ''}`;
                           }
-                          return `${event.supplierName} - ${t('supplierPayments.amount')}: ${event.paymentAmount?.toFixed(2) || ''}`;
-                        } else if (event.type === 'inventory') {
-                          return `${event.productName} - ${
-                            event.inventoryType === 'restock' ? t('inventory.restock') :
-                            event.inventoryType === 'audit' ? t('inventory.audit') :
-                            t('inventory.adjustment')
-                          }`;
-                        } else if (event.type === 'production') {
-                          return `${event.recipeName} - ${
-                            event.productionStage === 'start' ? t('production.started') :
-                            event.productionStage === 'complete' ? t('production.completed') :
-                            t('production.estimatedCompletion')
-                          } - ${t('production.quantity')}: ${event.productionQuantity || ''}`;
-                        }
-                        return `${event.customerName} - ${event.orderNumber || ''}`;
-                      }}
-                    />
+                          return `${event.customerName} - ${event.orderNumber || ''}`;
+                        }}
+                      />
+                    ) : (
+                      <div className="h-full flex items-center justify-center flex-col space-y-4">
+                        <CalendarIcon className="h-12 w-12 text-muted-foreground" />
+                        <p className="text-lg text-muted-foreground text-center">
+                          {t('calendar.noEventsForFilter')}
+                        </p>
+                        <p className="text-sm text-muted-foreground text-center">
+                          {filterView !== 'all' 
+                            ? t('calendar.tryDifferentFilter')
+                            : t('calendar.noEventsAvailable')
+                          }
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
