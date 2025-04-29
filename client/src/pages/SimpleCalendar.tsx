@@ -17,68 +17,163 @@ import {
   CardDescription,
   CardFooter,
 } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
-import { Package, Calendar as CalendarIcon, DollarSign, Factory, Tag, Phone } from 'lucide-react';
+import { X, Package, Calendar as CalendarIcon, DollarSign, Factory, Tag, Phone, Maximize2, Minimize2 } from 'lucide-react';
 
 // Set up localizer for the calendar
 const localizer = momentLocalizer(moment);
 
-// Mini calendar component for each quadrant
-const MiniCalendar = ({ title, icon, events, color, onClick }) => {
+// Full screen calendar component
+const FullCalendar = ({ title, icon, events, color, onClose }) => {
   const { t, i18n } = useTranslation();
+  const [view, setView] = useState('month');
+  
+  const headerBgClass = 
+    color === 'blue' ? 'bg-blue-50' : 
+    color === 'emerald' ? 'bg-emerald-50' :
+    color === 'green' ? 'bg-green-50' :
+    color === 'amber' ? 'bg-amber-50' :
+    color === 'purple' ? 'bg-purple-50' : '';
   
   return (
-    <Card className="h-full transition-all hover:shadow-md cursor-pointer" onClick={onClick}>
-      <CardHeader className={`pb-2 ${
-        color === 'blue' ? 'bg-blue-50' : 
-        color === 'emerald' ? 'bg-emerald-50' :
-        color === 'green' ? 'bg-green-50' :
-        color === 'amber' ? 'bg-amber-50' :
-        color === 'purple' ? 'bg-purple-50' : ''
-      }`}>
-        <div className="flex items-center space-x-2">
+    <div className="flex flex-col h-full">
+      <div className={`flex items-center justify-between p-4 ${headerBgClass}`}>
+        <div className="flex items-center space-x-3">
           {icon}
-          <CardTitle className="text-lg">{title}</CardTitle>
+          <h2 className="text-xl font-semibold">{title}</h2>
         </div>
-        <CardDescription>
-          {t('calendar.upcomingEvents')}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="p-2">
-        <div className="h-[200px]">
-          <Calendar
-            localizer={localizer}
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" size="sm" onClick={() => setView('month')}>
+            {t('calendar.month')}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setView('week')}>
+            {t('calendar.week')}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setView('day')}>
+            {t('calendar.day')}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setView('agenda')}>
+            {t('calendar.agenda')}
+          </Button>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+      <div className="flex-1 p-4">
+        <Calendar
+          localizer={localizer}
+          events={events}
+          startAccessor="start"
+          endAccessor="end"
+          style={{ height: 'calc(100vh - 200px)' }}
+          view={view}
+          onView={setView}
+          views={['month', 'week', 'day', 'agenda']}
+          messages={{
+            today: t('calendar.today'),
+            previous: t('calendar.previous'),
+            next: t('calendar.next'),
+            month: t('calendar.month'),
+            week: t('calendar.week'),
+            day: t('calendar.day'),
+            agenda: t('calendar.agenda'),
+            date: t('calendar.date'),
+            time: t('calendar.time'),
+            event: t('calendar.event'),
+            noEventsInRange: t('calendar.noEvents'),
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
+// Mini calendar component for each quadrant
+const MiniCalendar = ({ title, icon, events, color, onNavigate, onExpand = () => {} }) => {
+  const { t, i18n } = useTranslation();
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const handleExpand = (e) => {
+    e.stopPropagation();
+    setIsOpen(true);
+    if (onExpand) onExpand();
+  };
+  
+  const headerBgClass = 
+    color === 'blue' ? 'bg-blue-50' : 
+    color === 'emerald' ? 'bg-emerald-50' :
+    color === 'green' ? 'bg-green-50' :
+    color === 'amber' ? 'bg-amber-50' :
+    color === 'purple' ? 'bg-purple-50' : '';
+  
+  return (
+    <>
+      <Card className="h-full transition-all hover:shadow-md">
+        <CardHeader className={`pb-2 ${headerBgClass}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              {icon}
+              <CardTitle className="text-lg">{title}</CardTitle>
+            </div>
+            <Button variant="ghost" size="icon" onClick={handleExpand}>
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </div>
+          <CardDescription>
+            {t('calendar.upcomingEvents')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-2" onClick={onNavigate}>
+          <div className="h-[200px] cursor-pointer">
+            <Calendar
+              localizer={localizer}
+              events={events}
+              startAccessor="start"
+              endAccessor="end"
+              style={{ height: '100%' }}
+              views={['week']}
+              defaultView="week"
+              toolbar={false}
+              formats={{
+                timeGutterFormat: (date, culture, localizer) => 
+                  localizer.format(date, 'HH:mm', culture),
+                dayFormat: (date, culture, localizer) =>
+                  localizer.format(date, 'ddd', culture),
+              }}
+              messages={{
+                noEventsInRange: t('calendar.noEvents'),
+              }}
+            />
+          </div>
+        </CardContent>
+        <CardFooter className={`pt-2 justify-end ${headerBgClass}`}>
+          <Button variant="outline" size="sm" onClick={onNavigate}>
+            {t('common.viewAll')}
+          </Button>
+        </CardFooter>
+      </Card>
+      
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="max-w-6xl w-[95vw]">
+          <FullCalendar 
+            title={title}
+            icon={icon}
             events={events}
-            startAccessor="start"
-            endAccessor="end"
-            style={{ height: '100%' }}
-            views={['week']}
-            defaultView="week"
-            toolbar={false}
-            formats={{
-              timeGutterFormat: (date, culture, localizer) => 
-                localizer.format(date, 'HH:mm', culture),
-              dayFormat: (date, culture, localizer) =>
-                localizer.format(date, 'ddd', culture),
-            }}
-            messages={{
-              noEventsInRange: t('calendar.noEvents'),
-            }}
+            color={color}
+            onClose={() => setIsOpen(false)}
           />
-        </div>
-      </CardContent>
-      <CardFooter className={`pt-2 justify-end ${
-        color === 'blue' ? 'bg-blue-50' : 
-        color === 'emerald' ? 'bg-emerald-50' :
-        color === 'green' ? 'bg-green-50' :
-        color === 'amber' ? 'bg-amber-50' :
-        color === 'purple' ? 'bg-purple-50' : ''
-      }`}>
-        <Button variant="outline" size="sm">
-          {t('common.viewAll')}
-        </Button>
-      </CardFooter>
-    </Card>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
@@ -105,10 +200,7 @@ const SimpleCalendar = () => {
   const { data: callLogs, isLoading: callsLoading, isError: callsError } = useQuery({
     queryKey: ['/api/call-logs'],
     retry: 1, 
-    staleTime: 1000 * 60 * 5,
-    onError: (error) => {
-      console.error("Call logs error:", error);
-    }
+    staleTime: 1000 * 60 * 5
   });
   
   const { data: payments, isLoading: paymentsLoading, isError: paymentsError } = useQuery({
@@ -376,7 +468,7 @@ const SimpleCalendar = () => {
           icon={<Package className="h-5 w-5 text-blue-600" />}
           events={orderEvents}
           color="blue"
-          onClick={navigateToOrders}
+          onNavigate={navigateToOrders}
         />
         
         <MiniCalendar 
@@ -384,7 +476,7 @@ const SimpleCalendar = () => {
           icon={<DollarSign className="h-5 w-5 text-emerald-600" />}
           events={paymentEvents}
           color="emerald"
-          onClick={navigateToPayments}
+          onNavigate={navigateToPayments}
         />
         
         {/* Middle row: Inventory and Calls */}
@@ -393,7 +485,7 @@ const SimpleCalendar = () => {
           icon={<Tag className="h-5 w-5 text-green-600" />}
           events={inventoryEvents}
           color="green"
-          onClick={navigateToInventory}
+          onNavigate={navigateToInventory}
         />
         
         <MiniCalendar 
@@ -401,7 +493,7 @@ const SimpleCalendar = () => {
           icon={<Phone className="h-5 w-5 text-amber-600" />}
           events={callEvents}
           color="amber"
-          onClick={navigateToCalls}
+          onNavigate={navigateToCalls}
         />
         
         {/* Bottom row: Production (takes full width) */}
@@ -411,7 +503,7 @@ const SimpleCalendar = () => {
             icon={<Factory className="h-5 w-5 text-purple-600" />}
             events={productionEvents}
             color="purple"
-            onClick={navigateToProduction}
+            onNavigate={navigateToProduction}
           />
         </div>
       </div>
