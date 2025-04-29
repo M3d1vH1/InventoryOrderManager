@@ -113,6 +113,19 @@ const FullCalendar = ({ title, icon, events, color, onClose }) => {
             onView={setView}
             views={['month', 'week', 'day', 'agenda']}
             onSelectEvent={handleEventClick}
+            components={{
+              event: ({ event }) => (
+                <div className="text-xs whitespace-nowrap overflow-hidden text-ellipsis">
+                  {event.title || ''}
+                </div>
+              ),
+              // Hide time labels completely from the event display
+              eventWrapper: ({ event, children }) => (
+                <div title={typeof event === 'object' && event !== null && 'title' in event ? String(event.title) : ''}>
+                  {children}
+                </div>
+              )
+            }}
             messages={{
               today: t('calendar.today'),
               previous: t('calendar.previous'),
@@ -131,7 +144,9 @@ const FullCalendar = ({ title, icon, events, color, onClose }) => {
             eventPropGetter={(event) => {
               return {
                 style: {
-                  backgroundColor: event.backgroundColor || (
+                  backgroundColor: (
+                    typeof event === 'object' && event !== null && 'backgroundColor' in event ? 
+                    event.backgroundColor : 
                     color === 'blue' ? '#3b82f6' : 
                     color === 'emerald' ? '#10b981' :
                     color === 'green' ? '#22c55e' :
@@ -205,7 +220,18 @@ const MiniCalendar = ({ title, icon, events, color, onNavigate, onExpand = () =>
               min={new Date(new Date().setHours(9, 0, 0))}
               max={new Date(new Date().setHours(17, 0, 0))}
               components={{
-                toolbar: () => null // Ensure toolbar is hidden
+                toolbar: () => null, // Ensure toolbar is hidden
+                event: ({ event }) => (
+                  <div className="text-xs whitespace-nowrap overflow-hidden text-ellipsis">
+                    {event.title || ''}
+                  </div>
+                ),
+                // Hide time labels completely from the event display
+                eventWrapper: ({ event, children }) => (
+                  <div title={typeof event === 'object' && event !== null && 'title' in event ? String(event.title) : ''}>
+                    {children}
+                  </div>
+                )
               }}
               messages={{
                 noEventsInRange: t('calendar.noEvents'),
@@ -217,7 +243,9 @@ const MiniCalendar = ({ title, icon, events, color, onNavigate, onExpand = () =>
               eventPropGetter={(event) => {
                 return {
                   style: {
-                    backgroundColor: event.backgroundColor || (
+                    backgroundColor: (
+                      typeof event === 'object' && event !== null && 'backgroundColor' in event ? 
+                      event.backgroundColor : 
                       color === 'blue' ? '#3b82f6' : 
                       color === 'emerald' ? '#10b981' :
                       color === 'green' ? '#22c55e' :
