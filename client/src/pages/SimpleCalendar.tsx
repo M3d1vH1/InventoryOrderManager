@@ -44,56 +44,63 @@ const FullCalendar = ({ title, icon, events, color, onClose }) => {
     color === 'purple' ? 'bg-purple-50' : '';
   
   return (
-    <div className="flex flex-col h-full">
-      <div className={`flex items-center justify-between p-4 ${headerBgClass}`}>
-        <div className="flex items-center space-x-3">
-          {icon}
-          <h2 className="text-xl font-semibold">{title}</h2>
+    <>
+      <DialogTitle className="sr-only">{title}</DialogTitle>
+      <DialogDescription className="sr-only">{t('calendar.fullCalendarDescription')}</DialogDescription>
+      
+      <div className="flex flex-col h-full">
+        <div className={`flex items-center justify-between p-4 ${headerBgClass}`}>
+          <div className="flex items-center space-x-3">
+            {icon}
+            <h2 className="text-xl font-semibold">{title}</h2>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" onClick={() => setView('month')}>
+              {t('calendar.month')}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setView('week')}>
+              {t('calendar.week')}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setView('day')}>
+              {t('calendar.day')}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setView('agenda')}>
+              {t('calendar.agenda')}
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={() => setView('month')}>
-            {t('calendar.month')}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setView('week')}>
-            {t('calendar.week')}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setView('day')}>
-            {t('calendar.day')}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setView('agenda')}>
-            {t('calendar.agenda')}
-          </Button>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-5 w-5" />
-          </Button>
+        <div className="flex-1 p-4">
+          <Calendar
+            localizer={localizer}
+            events={events}
+            startAccessor="start"
+            endAccessor="end"
+            style={{ height: 'calc(100vh - 200px)' }}
+            view={view}
+            onView={setView}
+            views={['month', 'week', 'day', 'agenda']}
+            messages={{
+              today: t('calendar.today'),
+              previous: t('calendar.previous'),
+              next: t('calendar.next'),
+              month: t('calendar.month'),
+              week: t('calendar.week'),
+              day: t('calendar.day'),
+              agenda: t('calendar.agenda'),
+              date: t('calendar.date'),
+              time: t('calendar.time'),
+              event: t('calendar.event'),
+              noEventsInRange: t('calendar.noEvents'),
+              showMore: (count) => t('calendar.showMore', { count }),
+              allDay: t('calendar.allDay')
+            }}
+          />
         </div>
       </div>
-      <div className="flex-1 p-4">
-        <Calendar
-          localizer={localizer}
-          events={events}
-          startAccessor="start"
-          endAccessor="end"
-          style={{ height: 'calc(100vh - 200px)' }}
-          view={view}
-          onView={setView}
-          views={['month', 'week', 'day', 'agenda']}
-          messages={{
-            today: t('calendar.today'),
-            previous: t('calendar.previous'),
-            next: t('calendar.next'),
-            month: t('calendar.month'),
-            week: t('calendar.week'),
-            day: t('calendar.day'),
-            agenda: t('calendar.agenda'),
-            date: t('calendar.date'),
-            time: t('calendar.time'),
-            event: t('calendar.event'),
-            noEventsInRange: t('calendar.noEvents'),
-          }}
-        />
-      </div>
-    </div>
+    </>
   );
 };
 
@@ -229,24 +236,58 @@ const SimpleCalendar = () => {
         for (const order of orders) {
           if (!order || !order.orderDate) continue;
           
-          const start = new Date(order.orderDate);
-          if (isNaN(start.getTime())) continue;
+          // Add order creation date
+          const orderDate = new Date(order.orderDate);
+          if (!isNaN(orderDate.getTime())) {
+            events.push({
+              id: `order-${order.id}`,
+              title: `${t('calendar.orderCreated')}: ${order.orderNumber || ''}`,
+              start: orderDate,
+              end: orderDate,
+              allDay: false,
+              resource: order,
+              backgroundColor: '#3b82f6' // blue-500
+            });
+          }
           
-          events.push({
-            id: `order-${order.id}`,
-            title: `${order.orderNumber || ''}`,
-            start,
-            end: start,
-            allDay: false,
-            resource: order
-          });
+          // Add order shipping date if available
+          if (order.shippingDate && order.status === 'shipped') {
+            const shippingDate = new Date(order.shippingDate);
+            if (!isNaN(shippingDate.getTime())) {
+              events.push({
+                id: `order-shipped-${order.id}`,
+                title: `${t('calendar.orderShipped')}: ${order.orderNumber || ''}`,
+                start: shippingDate,
+                end: shippingDate,
+                allDay: false,
+                resource: order,
+                backgroundColor: '#22c55e' // green-500
+              });
+            }
+          }
+          
+          // Add delivery date if available and status is delivered
+          if (order.deliveryDate && order.status === 'delivered') {
+            const deliveryDate = new Date(order.deliveryDate);
+            if (!isNaN(deliveryDate.getTime())) {
+              events.push({
+                id: `order-delivered-${order.id}`,
+                title: `${t('calendar.orderDelivered')}: ${order.orderNumber || ''}`,
+                start: deliveryDate,
+                end: deliveryDate,
+                allDay: false,
+                resource: order,
+                backgroundColor: '#8b5cf6' // purple-500
+              });
+            }
+          }
         }
       }
     } catch (error) {
       console.error('Error preparing order events:', error);
     }
     return events;
-  }, [orders]);
+  }, [orders, t]);
 
   // Call log events
   const callEvents = React.useMemo(() => {
