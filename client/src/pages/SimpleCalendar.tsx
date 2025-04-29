@@ -170,7 +170,7 @@ const MiniCalendar = ({ title, icon, events, color, onNavigate, onExpand = () =>
   return (
     <>
       <Card className="h-full transition-all hover:shadow-md">
-        <CardHeader className={`pb-2 ${headerBgClass}`}>
+        <CardHeader className={`pb-1 ${headerBgClass}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               {icon}
@@ -180,12 +180,10 @@ const MiniCalendar = ({ title, icon, events, color, onNavigate, onExpand = () =>
               <Maximize2 className="h-4 w-4" />
             </Button>
           </div>
-          <CardDescription>
-            {t('calendar.upcomingEvents')}
-          </CardDescription>
+
         </CardHeader>
         <CardContent className="p-2">
-          <div className="h-[calc(20vh_+_60px)] min-h-[200px] max-h-[300px] w-full cursor-pointer" onClick={handleExpand}>
+          <div className="h-[calc(25vh_+_60px)] min-h-[220px] max-h-[350px] w-full cursor-pointer" onClick={handleExpand}>
             <Calendar
               localizer={localizer}
               events={events || []}
@@ -558,7 +556,7 @@ const SimpleCalendar = () => {
         </div>
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Top row: Orders and Payments */}
         <MiniCalendar 
           title={t('calendar.orders')}
@@ -593,14 +591,16 @@ const SimpleCalendar = () => {
           onNavigate={navigateToCalls}
         />
         
-        {/* Production calendar */}
-        <MiniCalendar 
-          title={t('calendar.production')}
-          icon={<Factory className="h-5 w-5 text-purple-600" />}
-          events={productionEvents}
-          color="purple"
-          onNavigate={navigateToProduction}
-        />
+        {/* Production calendar - full width */}
+        <div className="md:col-span-2">
+          <MiniCalendar 
+            title={t('calendar.production')}
+            icon={<Factory className="h-5 w-5 text-purple-600" />}
+            events={productionEvents}
+            color="purple"
+            onNavigate={navigateToProduction}
+          />
+        </div>
       </div>
     </div>
   );
