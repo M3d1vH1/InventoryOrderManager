@@ -81,6 +81,7 @@ function AuthenticatedRouter() {
       <Route path="/order-picking/:id" component={OrderPicking} />
       <Route path="/product-barcode/:id" component={ProductBarcode} />
       <Route path="/call-logs" component={CallLogs} />
+      <Route path="/call-logs/:id" component={CallLogs} />
       <Route path="/calendar" component={SimpleCalendar} />
       <Route path="/inventory-predictions" component={InventoryPredictions} />
       <Route path="/production" component={Production} />

@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useSidebar } from '@/context/SidebarContext';
 import { PageHeader } from '@/components/common/PageHeader';
+import { useParams, useLocation } from 'wouter';
 import {
   Card,
   CardContent,
@@ -60,12 +61,25 @@ const CallLogs: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { toast } = useToast();
   const { setCurrentPage } = useSidebar();
+  const params = useParams();
+  const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState('all');
   const [formOpen, setFormOpen] = useState(false);
   const [selectedCallLog, setSelectedCallLog] = useState<CallLog | null>(null);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [detailView, setDetailView] = useState(false);
   const [selectedCallId, setSelectedCallId] = useState<number | null>(null);
+  
+  // Check for call ID in the URL params and set detail view
+  useEffect(() => {
+    if (params && params.id) {
+      const callId = parseInt(params.id, 10);
+      if (!isNaN(callId)) {
+        setDetailView(true);
+        setSelectedCallId(callId);
+      }
+    }
+  }, [params]);
   
   React.useEffect(() => {
     setCurrentPage(t('callLogs.title'));
@@ -193,11 +207,15 @@ const CallLogs: React.FC = () => {
   const handleViewCallClick = (call: CallLog) => {
     setDetailView(true);
     setSelectedCallId(call.id);
+    // Update URL to include the call ID
+    setLocation(`/call-logs/${call.id}`);
   };
   
   const handleBackFromDetail = () => {
     setDetailView(false);
     setSelectedCallId(null);
+    // Update URL to remove the ID parameter
+    setLocation('/call-logs');
   };
 
   if (isLoading) {
