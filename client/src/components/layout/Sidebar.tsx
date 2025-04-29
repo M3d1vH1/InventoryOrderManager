@@ -298,7 +298,7 @@ const Sidebar = () => {
                     </button>
                     
                     {isSidebarOpen && (
-                      <div id="sales-submenu" className={`pl-7 mt-1 ${!isActive("/call-logs") && !isActive("/calendar") && !isActive("/customers") ? 'hidden' : ''}`}>
+                      <div id="sales-submenu" className={`pl-7 mt-1 ${!isActive("/call-logs") && !isActive("/customers") ? 'hidden' : ''}`}>
                         <Link href="/customers" onClick={() => setCurrentPage("Customers")}>
                           <button 
                             className={`flex items-center w-full p-2 text-left rounded ${isActive("/customers") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
@@ -315,15 +315,6 @@ const Sidebar = () => {
                           >
                             <FaPhoneAlt size={12} className="mr-2" />
                             <span>{t('app.callLogs') || "Call Logs"}</span>
-                          </button>
-                        </Link>
-                        <Link href="/calendar" onClick={() => setCurrentPage("Calendar")}>
-                          <button 
-                            className={`flex items-center w-full p-2 text-left rounded ${isActive("/calendar") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
-                            title={t('app.calendar') || "Calendar"}
-                          >
-                            <FaCalendarAlt size={12} className="mr-2" />
-                            <span>{t('app.calendar') || "Calendar"}</span>
                           </button>
                         </Link>
                       </div>
