@@ -172,15 +172,17 @@ const MiniCalendar = ({ title, icon, events, color, onNavigate, onExpand = () =>
       <Card className="h-full transition-all hover:shadow-md">
         <CardHeader className={`pb-1 ${headerBgClass}`}>
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
+            <div className="flex-1"></div>
+            <div className="flex items-center space-x-2 justify-center">
               {icon}
               <CardTitle className="text-lg">{title}</CardTitle>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleExpand}>
-              <Maximize2 className="h-4 w-4" />
-            </Button>
+            <div className="flex-1 flex justify-end">
+              <Button variant="ghost" size="icon" onClick={handleExpand}>
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-
         </CardHeader>
         <CardContent className="p-2">
           <div className="h-[calc(25vh_+_60px)] min-h-[220px] max-h-[350px] w-full cursor-pointer" onClick={handleExpand}>
@@ -190,8 +192,8 @@ const MiniCalendar = ({ title, icon, events, color, onNavigate, onExpand = () =>
               startAccessor="start"
               endAccessor="end"
               style={{ height: '100%' }}
-              views={['week']}
-              defaultView="week"
+              views={['work_week']}
+              defaultView="work_week"
               toolbar={false}
               formats={{
                 timeGutterFormat: (date, culture, localizer) => 
@@ -201,8 +203,15 @@ const MiniCalendar = ({ title, icon, events, color, onNavigate, onExpand = () =>
               }}
               min={new Date(new Date().setHours(9, 0, 0))}
               max={new Date(new Date().setHours(17, 0, 0))}
+              components={{
+                toolbar: () => null // Ensure toolbar is hidden
+              }}
               messages={{
                 noEventsInRange: t('calendar.noEvents'),
+              }}
+              onSelectEvent={() => {
+                // Prevent default action which causes errors
+                return false;
               }}
               eventPropGetter={(event) => {
                 return {
@@ -549,7 +558,8 @@ const SimpleCalendar = () => {
         description={t('calendar.pageDescription')}
       />
       
-      {hasAnyError && hasAnyData && (
+      {/* Only show error message if there's actually missing critical data and not for supplier API errors */}
+      {(ordersError || inventoryError) && hasAnyData && (
         <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-md mb-4">
           <p className="font-medium">{t('calendar.partialDataWarning')}</p>
           <p className="text-sm">{t('calendar.someDataMightBeMissing')}</p>
