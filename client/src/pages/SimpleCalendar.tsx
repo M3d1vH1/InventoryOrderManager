@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Calendar, momentLocalizer, Views } from 'react-big-calendar';
+import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'moment/locale/el';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -14,15 +14,79 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  CardDescription,
+  CardFooter,
 } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Package, Calendar as CalendarIcon, DollarSign, Factory, Tag, Phone } from 'lucide-react';
 
 // Set up localizer for the calendar
 const localizer = momentLocalizer(moment);
 
-const SimpleCalendar: React.FC = () => {
+// Mini calendar component for each quadrant
+const MiniCalendar = ({ title, icon, events, color, onClick }) => {
+  const { t, i18n } = useTranslation();
+  
+  return (
+    <Card className="h-full transition-all hover:shadow-md cursor-pointer" onClick={onClick}>
+      <CardHeader className={`pb-2 ${
+        color === 'blue' ? 'bg-blue-50' : 
+        color === 'emerald' ? 'bg-emerald-50' :
+        color === 'green' ? 'bg-green-50' :
+        color === 'amber' ? 'bg-amber-50' :
+        color === 'purple' ? 'bg-purple-50' : ''
+      }`}>
+        <div className="flex items-center space-x-2">
+          {icon}
+          <CardTitle className="text-lg">{title}</CardTitle>
+        </div>
+        <CardDescription>
+          {t('calendar.upcomingEvents')}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-2">
+        <div className="h-[200px]">
+          <Calendar
+            localizer={localizer}
+            events={events}
+            startAccessor="start"
+            endAccessor="end"
+            style={{ height: '100%' }}
+            views={['week']}
+            defaultView="week"
+            toolbar={false}
+            formats={{
+              timeGutterFormat: (date, culture, localizer) => 
+                localizer.format(date, 'HH:mm', culture),
+              dayFormat: (date, culture, localizer) =>
+                localizer.format(date, 'ddd', culture),
+            }}
+            messages={{
+              noEventsInRange: t('calendar.noEvents'),
+            }}
+          />
+        </div>
+      </CardContent>
+      <CardFooter className={`pt-2 justify-end ${
+        color === 'blue' ? 'bg-blue-50' : 
+        color === 'emerald' ? 'bg-emerald-50' :
+        color === 'green' ? 'bg-green-50' :
+        color === 'amber' ? 'bg-amber-50' :
+        color === 'purple' ? 'bg-purple-50' : ''
+      }`}>
+        <Button variant="outline" size="sm">
+          {t('common.viewAll')}
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+};
+
+const SimpleCalendar = () => {
   const { t, i18n } = useTranslation();
   const { setCurrentPage } = useSidebar();
   const [_, navigate] = useLocation();
+  const { toast } = useToast();
 
   useEffect(() => {
     setCurrentPage(t('calendar.title'));
@@ -31,17 +95,43 @@ const SimpleCalendar: React.FC = () => {
     moment.locale(i18n.language);
   }, [setCurrentPage, t, i18n.language]);
   
-  // Fetch orders
+  // Fetch all data sources
   const { data: orders, isLoading: ordersLoading, isError: ordersError } = useQuery({
     queryKey: ['/api/orders'],
     retry: 1,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
   
-  // Simple events calculation
-  const events = React.useMemo(() => {
-    const calendarEvents = [];
-    
+  const { data: callLogs, isLoading: callsLoading, isError: callsError } = useQuery({
+    queryKey: ['/api/call-logs'],
+    retry: 1, 
+    staleTime: 1000 * 60 * 5,
+    onError: (error) => {
+      console.error("Call logs error:", error);
+    }
+  });
+  
+  const { data: payments, isLoading: paymentsLoading, isError: paymentsError } = useQuery({
+    queryKey: ['/api/supplier-payments/payments'],
+    retry: 1,
+    staleTime: 1000 * 60 * 5,
+  });
+  
+  const { data: inventory, isLoading: inventoryLoading, isError: inventoryError } = useQuery({
+    queryKey: ['/api/inventory/events'],
+    retry: 1, 
+    staleTime: 1000 * 60 * 5,
+  });
+  
+  const { data: production, isLoading: productionLoading, isError: productionError } = useQuery({
+    queryKey: ['/api/production/batches'],
+    retry: 1,
+    staleTime: 1000 * 60 * 5,
+  });
+  
+  // Prepare events for each category
+  const orderEvents = React.useMemo(() => {
+    const events = [];
     try {
       if (orders && Array.isArray(orders)) {
         for (const order of orders) {
@@ -50,24 +140,198 @@ const SimpleCalendar: React.FC = () => {
           const start = new Date(order.orderDate);
           if (isNaN(start.getTime())) continue;
           
-          calendarEvents.push({
+          events.push({
             id: `order-${order.id}`,
-            title: `Order: ${order.orderNumber || 'Unknown'}`,
+            title: `${order.orderNumber || ''}`,
             start,
             end: start,
-            allDay: true
+            allDay: false,
+            resource: order
           });
         }
       }
     } catch (error) {
-      console.error('Error preparing calendar events:', error);
+      console.error('Error preparing order events:', error);
     }
-    
-    return calendarEvents;
+    return events;
   }, [orders]);
+
+  // Call log events
+  const callEvents = React.useMemo(() => {
+    const events = [];
+    try {
+      if (callLogs && Array.isArray(callLogs)) {
+        for (const call of callLogs) {
+          if (!call || !call.callDate) continue;
+          
+          const start = new Date(call.callDate);
+          if (isNaN(start.getTime())) continue;
+          
+          events.push({
+            id: `call-${call.id}`,
+            title: call.customerName || t('common.unknown'),
+            start,
+            end: start,
+            allDay: false,
+            resource: call
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error preparing call events:', error);
+    }
+    return events;
+  }, [callLogs, t]);
+  
+  // Payment events
+  const paymentEvents = React.useMemo(() => {
+    const events = [];
+    try {
+      if (payments && Array.isArray(payments)) {
+        for (const payment of payments) {
+          if (!payment || !payment.paymentDate) continue;
+          
+          const start = new Date(payment.paymentDate);
+          if (isNaN(start.getTime())) continue;
+          
+          events.push({
+            id: `payment-${payment.id}`,
+            title: `${payment.amount || 0}€`,
+            start,
+            end: start,
+            allDay: false,
+            resource: payment
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error preparing payment events:', error);
+    }
+    return events;
+  }, [payments]);
+  
+  // Inventory events
+  const inventoryEvents = React.useMemo(() => {
+    const events = [];
+    try {
+      if (inventory && Array.isArray(inventory)) {
+        for (const item of inventory) {
+          if (!item || !item.date) continue;
+          
+          const start = new Date(item.date);
+          if (isNaN(start.getTime())) continue;
+          
+          events.push({
+            id: `inventory-${item.id}`,
+            title: item.productName || t('common.unknown'),
+            start,
+            end: start,
+            allDay: false,
+            resource: item
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error preparing inventory events:', error);
+    }
+    return events;
+  }, [inventory, t]);
+  
+  // Production events
+  const productionEvents = React.useMemo(() => {
+    const events = [];
+    try {
+      if (production && Array.isArray(production)) {
+        for (const batch of production) {
+          if (!batch || !batch.startDate) continue;
+          
+          const start = new Date(batch.startDate);
+          if (isNaN(start.getTime())) continue;
+          
+          events.push({
+            id: `production-${batch.id}`,
+            title: batch.batchNumber || t('common.unknown'),
+            start,
+            end: start,
+            allDay: false,
+            resource: batch
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error preparing production events:', error);
+    }
+    return events;
+  }, [production, t]);
+  
+  // Navigation handlers
+  const navigateToOrders = () => {
+    try {
+      navigate('/orders');
+    } catch (error) {
+      console.error('Error navigating to orders:', error);
+      toast({
+        title: t('common.error'),
+        description: t('common.navigationError'),
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  const navigateToCalls = () => {
+    try {
+      navigate('/call-logs');
+    } catch (error) {
+      console.error('Error navigating to calls:', error);
+      toast({
+        title: t('common.error'),
+        description: t('common.navigationError'),
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  const navigateToPayments = () => {
+    try {
+      navigate('/supplier-payments');
+    } catch (error) {
+      console.error('Error navigating to payments:', error);
+      toast({
+        title: t('common.error'),
+        description: t('common.navigationError'),
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  const navigateToInventory = () => {
+    try {
+      navigate('/inventory');
+    } catch (error) {
+      console.error('Error navigating to inventory:', error);
+      toast({
+        title: t('common.error'),
+        description: t('common.navigationError'),
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  const navigateToProduction = () => {
+    try {
+      navigate('/production');
+    } catch (error) {
+      console.error('Error navigating to production:', error);
+      toast({
+        title: t('common.error'),
+        description: t('common.navigationError'),
+        variant: 'destructive',
+      });
+    }
+  };
   
   // Loading state
-  if (ordersLoading) {
+  if (ordersLoading || callsLoading || paymentsLoading || inventoryLoading || productionLoading) {
     return (
       <div className="space-y-4">
         <PageHeader 
@@ -88,25 +352,8 @@ const SimpleCalendar: React.FC = () => {
     );
   }
 
-  // Error state
-  if (ordersError) {
-    return (
-      <div className="space-y-4">
-        <PageHeader 
-          title={t('calendar.pageTitle')}
-          description={t('calendar.pageDescription')}
-        />
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-red-600">{t('common.error')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>{t('common.errorLoadingData')}</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // Error state - show partial data if available
+  const hasAnyError = ordersError || callsError || paymentsError || inventoryError || productionError;
 
   return (
     <div className="space-y-4">
@@ -114,33 +361,60 @@ const SimpleCalendar: React.FC = () => {
         title={t('calendar.pageTitle')}
         description={t('calendar.pageDescription')}
       />
-      <Card>
-        <CardContent className="pt-6">
-          <div className="h-[600px]">
-            <Calendar
-              localizer={localizer}
-              events={events}
-              startAccessor="start"
-              endAccessor="end"
-              style={{ height: '100%' }}
-              views={['month', 'week', 'day', 'agenda']}
-              messages={{
-                today: t('calendar.today'),
-                previous: t('calendar.previous'),
-                next: t('calendar.next'),
-                month: t('calendar.month'),
-                week: t('calendar.week'),
-                day: t('calendar.day'),
-                agenda: t('calendar.agenda'),
-                date: t('calendar.date'),
-                time: t('calendar.time'),
-                event: t('calendar.event'),
-                noEventsInRange: t('calendar.noEvents'),
-              }}
-            />
-          </div>
-        </CardContent>
-      </Card>
+      
+      {hasAnyError && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-md mb-4">
+          <p className="font-medium">{t('common.partialDataWarning')}</p>
+          <p className="text-sm">{t('common.someDataMightBeMissing')}</p>
+        </div>
+      )}
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Top row: Orders and Payments */}
+        <MiniCalendar 
+          title={t('calendar.orders')}
+          icon={<Package className="h-5 w-5 text-blue-600" />}
+          events={orderEvents}
+          color="blue"
+          onClick={navigateToOrders}
+        />
+        
+        <MiniCalendar 
+          title={t('calendar.payments')}
+          icon={<DollarSign className="h-5 w-5 text-emerald-600" />}
+          events={paymentEvents}
+          color="emerald"
+          onClick={navigateToPayments}
+        />
+        
+        {/* Middle row: Inventory and Calls */}
+        <MiniCalendar 
+          title={t('calendar.inventory')}
+          icon={<Tag className="h-5 w-5 text-green-600" />}
+          events={inventoryEvents}
+          color="green"
+          onClick={navigateToInventory}
+        />
+        
+        <MiniCalendar 
+          title={t('calendar.calls')}
+          icon={<Phone className="h-5 w-5 text-amber-600" />}
+          events={callEvents}
+          color="amber"
+          onClick={navigateToCalls}
+        />
+        
+        {/* Bottom row: Production (takes full width) */}
+        <div className="md:col-span-2">
+          <MiniCalendar 
+            title={t('calendar.production')}
+            icon={<Factory className="h-5 w-5 text-purple-600" />}
+            events={productionEvents}
+            color="purple"
+            onClick={navigateToProduction}
+          />
+        </div>
+      </div>
     </div>
   );
 };
