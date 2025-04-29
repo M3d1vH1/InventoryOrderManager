@@ -967,7 +967,7 @@ const CalendarPage: React.FC = () => {
                           {event.type === 'payment' && event.paymentAmount && (
                             <div className="flex items-start space-x-2 mt-1">
                               <DollarSign className="h-4 w-4 text-muted-foreground mt-0.5" />
-                              <span className="text-sm">{event.paymentAmount.toFixed(2)}</span>
+                              <span className="text-sm">{typeof event.paymentAmount === 'number' ? event.paymentAmount.toFixed(2) : event.paymentAmount}</span>
                             </div>
                           )}
                           
@@ -1114,7 +1114,7 @@ const CalendarPage: React.FC = () => {
                       <Separator />
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">{t('supplierPayments.amount')}</span>
-                        <span className="text-sm">{selectedEvent.paymentAmount.toFixed(2)}</span>
+                        <span className="text-sm">{typeof selectedEvent.paymentAmount === 'number' ? selectedEvent.paymentAmount.toFixed(2) : selectedEvent.paymentAmount}</span>
                       </div>
                     </>
                   )}
