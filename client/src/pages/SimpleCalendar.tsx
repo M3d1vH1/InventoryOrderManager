@@ -485,8 +485,9 @@ const SimpleCalendar = () => {
     );
   }
 
-  // Error state - show partial data if available
+  // Error state - show partial data if available, but only if we have actual data
   const hasAnyError = ordersError || callsError || paymentsError || inventoryError || productionError;
+  const hasAnyData = Boolean(orders?.length || callLogs?.length || payments?.length || inventory?.length || production?.length);
 
   return (
     <div className="space-y-4">
@@ -495,10 +496,10 @@ const SimpleCalendar = () => {
         description={t('calendar.pageDescription')}
       />
       
-      {hasAnyError && (
+      {hasAnyError && hasAnyData && (
         <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-md mb-4">
-          <p className="font-medium">{t('common.partialDataWarning')}</p>
-          <p className="text-sm">{t('common.someDataMightBeMissing')}</p>
+          <p className="font-medium">{t('calendar.partialDataWarning')}</p>
+          <p className="text-sm">{t('calendar.someDataMightBeMissing')}</p>
         </div>
       )}
       
