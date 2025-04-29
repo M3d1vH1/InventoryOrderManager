@@ -17,7 +17,7 @@ import Categories from "@/pages/Categories";
 import UnshippedItems from "@/pages/UnshippedItems";
 import OrderQuality from "@/pages/OrderQuality";
 import CallLogs from "@/pages/CallLogs";
-import Calendar from "@/pages/Calendar";
+import SimpleCalendar from "@/pages/SimpleCalendar";
 import InventoryPredictions from "@/pages/InventoryPredictions";
 import Production from "@/pages/Production";
 import SupplierPayments from "@/pages/SupplierPayments";
@@ -81,7 +81,7 @@ function AuthenticatedRouter() {
       <Route path="/order-picking/:id" component={OrderPicking} />
       <Route path="/product-barcode/:id" component={ProductBarcode} />
       <Route path="/call-logs" component={CallLogs} />
-      <Route path="/calendar" component={Calendar} />
+      <Route path="/calendar" component={SimpleCalendar} />
       <Route path="/inventory-predictions" component={InventoryPredictions} />
       <Route path="/production" component={Production} />
       <Route path="/supplier-payments" component={SupplierPayments} />
