@@ -782,8 +782,17 @@ const CalendarPage: React.FC = () => {
   // Handle view order
   const handleViewOrder = () => {
     if (selectedEvent?.orderId) {
-      navigate(`/orders/${selectedEvent.orderId}`);
-      setIsEventModalOpen(false);
+      try {
+        navigate(`/orders/${selectedEvent.orderId}`);
+        setIsEventModalOpen(false);
+      } catch (error) {
+        console.error("Error navigating to order:", error);
+        toast({
+          title: "Navigation Error",
+          description: "Couldn't navigate to order details",
+          variant: "destructive",
+        });
+      }
     }
   };
   
