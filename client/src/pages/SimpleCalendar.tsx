@@ -588,13 +588,7 @@ const SimpleCalendar = () => {
         description={t('calendar.pageDescription')}
       />
       
-      {/* Only show error message if there's actually missing critical data and not for supplier API errors */}
-      {(ordersError || inventoryError) && hasAnyData && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-md mb-4">
-          <p className="font-medium">{t('calendar.partialDataWarning')}</p>
-          <p className="text-sm">{t('calendar.someDataMightBeMissing')}</p>
-        </div>
-      )}
+      {/* Error message removed as requested */}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Top row: Orders and Payments */}
