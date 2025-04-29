@@ -4251,25 +4251,7 @@ export class DatabaseStorage implements IStorage {
   // Supplier Invoice methods
   async getSupplierInvoice(id: number): Promise<SupplierInvoice | undefined> {
     const result = await this.db
-      .select({
-        id: supplierInvoices.id,
-        invoiceNumber: supplierInvoices.invoiceNumber,
-        supplierId: supplierInvoices.supplierId,
-        invoiceDate: supplierInvoices.invoiceDate,
-        dueDate: supplierInvoices.dueDate,
-        amount: supplierInvoices.amount,
-        paidAmount: supplierInvoices.paidAmount,
-        status: supplierInvoices.status,
-        description: supplierInvoices.description,
-        notes: supplierInvoices.notes,
-        attachmentPath: supplierInvoices.attachmentPath,
-        isRecurring: supplierInvoices.isRecurring,
-        recurringCycle: supplierInvoices.recurringCycle,
-        createdAt: supplierInvoices.createdAt,
-        createdById: supplierInvoices.createdById,
-        lastUpdated: supplierInvoices.lastUpdated,
-        updatedById: supplierInvoices.updatedById
-      })
+      .select()
       .from(supplierInvoices)
       .where(eq(supplierInvoices.id, id));
     return result[0];
@@ -4277,25 +4259,7 @@ export class DatabaseStorage implements IStorage {
   
   async getSupplierInvoicesBySupplier(supplierId: number): Promise<SupplierInvoice[]> {
     return await this.db
-      .select({
-        id: supplierInvoices.id,
-        invoiceNumber: supplierInvoices.invoiceNumber,
-        supplierId: supplierInvoices.supplierId,
-        invoiceDate: supplierInvoices.invoiceDate,
-        dueDate: supplierInvoices.dueDate,
-        amount: supplierInvoices.amount,
-        paidAmount: supplierInvoices.paidAmount,
-        status: supplierInvoices.status,
-        description: supplierInvoices.description,
-        notes: supplierInvoices.notes,
-        attachmentPath: supplierInvoices.attachmentPath,
-        isRecurring: supplierInvoices.isRecurring,
-        recurringCycle: supplierInvoices.recurringCycle,
-        createdAt: supplierInvoices.createdAt,
-        createdById: supplierInvoices.createdById,
-        lastUpdated: supplierInvoices.lastUpdated,
-        updatedById: supplierInvoices.updatedById
-      })
+      .select()
       .from(supplierInvoices)
       .where(eq(supplierInvoices.supplierId, supplierId))
       .orderBy(desc(supplierInvoices.dueDate));
@@ -4304,25 +4268,7 @@ export class DatabaseStorage implements IStorage {
   async getPendingInvoices(): Promise<SupplierInvoice[]> {
     const now = new Date();
     return await this.db
-      .select({
-        id: supplierInvoices.id,
-        invoiceNumber: supplierInvoices.invoiceNumber,
-        supplierId: supplierInvoices.supplierId,
-        invoiceDate: supplierInvoices.invoiceDate,
-        dueDate: supplierInvoices.dueDate,
-        amount: supplierInvoices.amount,
-        paidAmount: supplierInvoices.paidAmount,
-        status: supplierInvoices.status,
-        description: supplierInvoices.description,
-        notes: supplierInvoices.notes,
-        attachmentPath: supplierInvoices.attachmentPath,
-        isRecurring: supplierInvoices.isRecurring,
-        recurringCycle: supplierInvoices.recurringCycle,
-        createdAt: supplierInvoices.createdAt,
-        createdById: supplierInvoices.createdById,
-        lastUpdated: supplierInvoices.lastUpdated,
-        updatedById: supplierInvoices.updatedById
-      })
+      .select()
       .from(supplierInvoices)
       .where(and(
         eq(supplierInvoices.status, 'pending'),
@@ -4334,25 +4280,7 @@ export class DatabaseStorage implements IStorage {
   async getOverdueInvoices(): Promise<SupplierInvoice[]> {
     const now = new Date();
     return await this.db
-      .select({
-        id: supplierInvoices.id,
-        invoiceNumber: supplierInvoices.invoiceNumber,
-        supplierId: supplierInvoices.supplierId,
-        invoiceDate: supplierInvoices.invoiceDate,
-        dueDate: supplierInvoices.dueDate,
-        amount: supplierInvoices.amount,
-        paidAmount: supplierInvoices.paidAmount,
-        status: supplierInvoices.status,
-        description: supplierInvoices.description,
-        notes: supplierInvoices.notes,
-        attachmentPath: supplierInvoices.attachmentPath,
-        isRecurring: supplierInvoices.isRecurring,
-        recurringCycle: supplierInvoices.recurringCycle,
-        createdAt: supplierInvoices.createdAt,
-        createdById: supplierInvoices.createdById,
-        lastUpdated: supplierInvoices.lastUpdated,
-        updatedById: supplierInvoices.updatedById
-      })
+      .select()
       .from(supplierInvoices)
       .where(and(
         or(
@@ -4366,25 +4294,7 @@ export class DatabaseStorage implements IStorage {
   
   async getAllSupplierInvoices(): Promise<SupplierInvoice[]> {
     return await this.db
-      .select({
-        id: supplierInvoices.id,
-        invoiceNumber: supplierInvoices.invoiceNumber,
-        supplierId: supplierInvoices.supplierId,
-        invoiceDate: supplierInvoices.invoiceDate,
-        dueDate: supplierInvoices.dueDate,
-        amount: supplierInvoices.amount,
-        paidAmount: supplierInvoices.paidAmount,
-        status: supplierInvoices.status,
-        description: supplierInvoices.description,
-        notes: supplierInvoices.notes,
-        attachmentPath: supplierInvoices.attachmentPath,
-        isRecurring: supplierInvoices.isRecurring,
-        recurringCycle: supplierInvoices.recurringCycle,
-        createdAt: supplierInvoices.createdAt,
-        createdById: supplierInvoices.createdById,
-        lastUpdated: supplierInvoices.lastUpdated,
-        updatedById: supplierInvoices.updatedById
-      })
+      .select()
       .from(supplierInvoices)
       .orderBy(desc(supplierInvoices.invoiceDate));
   }
