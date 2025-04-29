@@ -316,9 +316,7 @@ const CalendarPage: React.FC = () => {
           console.error('Error processing payment for calendar:', err, payment);
         }
       });
-    } else {
-      console.log('No supplier payments available for calendar');
-    }
+    } // End of supplier payments processing
     
     // Add inventory events
     if (inventoryEvents && Array.isArray(inventoryEvents) && inventoryEvents.length > 0) {
@@ -352,9 +350,7 @@ const CalendarPage: React.FC = () => {
           console.error('Error processing inventory event for calendar:', err, event);
         }
       });
-    } else {
-      console.log('No inventory events available for calendar');
-    }
+    } // End of inventory events processing
     
     // Add production batch events
     if (productionBatches && Array.isArray(productionBatches) && productionBatches.length > 0) {
@@ -427,9 +423,7 @@ const CalendarPage: React.FC = () => {
           console.error('Error processing production batch for calendar:', err, batch);
         }
       });
-    } else {
-      console.log('No production batches available for calendar');
-    }
+    } // End of production batches processing
     
     return calendarEvents;
   }, [orders, callLogs, payments, invoices, inventoryEvents, productionBatches, t]);
@@ -456,7 +450,7 @@ const CalendarPage: React.FC = () => {
   // Get upcoming events for the sidebar
   const upcomingEvents = useMemo(() => {
     if (!events || !Array.isArray(events) || events.length === 0) {
-      console.log("No events available for upcoming events sidebar");
+      // No events available for upcoming events sidebar
       return [];
     }
     
