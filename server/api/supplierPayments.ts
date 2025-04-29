@@ -5,6 +5,7 @@ import { isAuthenticated } from '../auth';
 import { createInsertSchema } from 'drizzle-zod';
 import { suppliers, supplierInvoices as invoices, supplierPayments as payments } from '@shared/schema';
 import { subDays, startOfMonth, endOfMonth } from 'date-fns';
+import { pool } from '../db';
 
 const router = Router();
 
@@ -153,8 +154,18 @@ router.delete('/suppliers/:id', async (req, res) => {
 // Get all invoices
 router.get('/invoices', async (req, res) => {
   try {
-    const allInvoices = await storage.getAllSupplierInvoices();
-    res.json(allInvoices);
+    // Use direct SQL query to bypass schema issues
+    const client = await pool.connect();
+    try {
+      const result = await client.query(`
+        SELECT si.*, s.name as supplier_name
+        FROM supplier_invoices si 
+        JOIN suppliers s ON si.supplier_id = s.id
+      `);
+      res.json(result.rows);
+    } finally {
+      client.release();
+    }
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -294,8 +305,14 @@ router.delete('/invoices/:id', async (req, res) => {
 // Get all payments
 router.get('/payments', async (req, res) => {
   try {
-    const allPayments = await storage.getAllSupplierPayments();
-    res.json(allPayments);
+    // Use direct SQL query to bypass schema issues
+    const client = await pool.connect();
+    try {
+      const result = await client.query('SELECT * FROM supplier_payments');
+      res.json(result.rows);
+    } finally {
+      client.release();
+    }
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -459,40 +476,111 @@ router.delete('/payments/:id', async (req, res) => {
 // Get dashboard summary
 router.get('/summary', async (req, res) => {
   try {
-    // Get payment summary
-    const summary = await storage.getPaymentsSummary();
-    
-    // Recent payments (last 10)
-    const allPayments = await storage.getAllSupplierPayments();
-    const recentPayments = allPayments
-      .sort((a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime())
-      .slice(0, 10)
-      .map(async (payment) => {
-        const invoice = await storage.getSupplierInvoice(payment.invoiceId);
-        const supplier = invoice ? await storage.getSupplier(invoice.supplierId) : null;
-        return {
-          id: payment.id,
-          invoiceNumber: invoice ? invoice.invoiceNumber : 'Unknown',
-          supplierName: supplier ? supplier.name : 'Unknown',
-          amount: payment.amount,
-          paymentDate: payment.paymentDate,
-          paymentMethod: payment.paymentMethod
-        };
-      });
-    
-    // Combine everything for the dashboard
-    const dashboardSummary = {
-      totalOutstanding: summary.totalPending + summary.totalOverdue,
-      totalPaid: await getTotalPaidAmount(),
-      paidThisMonth: await getPaidThisMonth(),
-      overdueAmount: summary.totalOverdue,
-      dueWithin30Days: summary.totalPending,
-      paymentCompletion: calculatePaymentCompletion(),
-      upcomingPayments: summary.upcomingPayments,
-      recentPayments: await Promise.all(recentPayments)
-    };
-    
-    res.json(dashboardSummary);
+    const client = await pool.connect();
+    try {
+      // Get summary data directly from database using SQL queries
+      // Get recent payments with supplier info
+      const recentPaymentsResult = await client.query(`
+        SELECT 
+          p.id, 
+          p.amount, 
+          p.payment_date as "paymentDate",
+          p.payment_method as "paymentMethod",
+          i.invoice_number as "invoiceNumber",
+          s.name as "supplierName"
+        FROM 
+          supplier_payments p
+        JOIN 
+          supplier_invoices i ON p.invoice_id = i.id
+        JOIN 
+          suppliers s ON i.supplier_id = s.id
+        ORDER BY 
+          p.payment_date DESC
+        LIMIT 10
+      `);
+      
+      // Get pending invoices amount
+      const pendingResult = await client.query(`
+        SELECT COALESCE(SUM(amount - paid_amount), 0) as total_pending
+        FROM supplier_invoices
+        WHERE status = 'pending'
+      `);
+      
+      // Get overdue invoices amount
+      const overdueResult = await client.query(`
+        SELECT COALESCE(SUM(amount - paid_amount), 0) as total_overdue
+        FROM supplier_invoices
+        WHERE status = 'overdue'
+      `);
+      
+      // Get total paid amount
+      const totalPaidResult = await client.query(`
+        SELECT COALESCE(SUM(amount), 0) as total_paid
+        FROM supplier_payments
+      `);
+      
+      // Get paid this month
+      const paidThisMonthResult = await client.query(`
+        SELECT COALESCE(SUM(amount), 0) as paid_this_month
+        FROM supplier_payments
+        WHERE 
+          payment_date >= date_trunc('month', CURRENT_DATE) AND
+          payment_date < date_trunc('month', CURRENT_DATE) + interval '1 month'
+      `);
+      
+      const dashboardSummary = {
+        totalOutstanding: parseFloat(pendingResult.rows[0].total_pending) + parseFloat(overdueResult.rows[0].total_overdue),
+        totalPaid: parseFloat(totalPaidResult.rows[0].total_paid),
+        paidThisMonth: parseFloat(paidThisMonthResult.rows[0].paid_this_month),
+        overdueAmount: parseFloat(overdueResult.rows[0].total_overdue),
+        dueWithin30Days: parseFloat(pendingResult.rows[0].total_pending),
+        paymentCompletion: 0, // We'll calculate this below
+        upcomingPayments: [], // We'll add this below
+        recentPayments: recentPaymentsResult.rows
+      };
+      
+      // Calculate payment completion
+      const totalInvoicesResult = await client.query(`
+        SELECT 
+          COALESCE(SUM(amount), 0) as total_amount,
+          COALESCE(SUM(paid_amount), 0) as total_paid_amount
+        FROM 
+          supplier_invoices
+        WHERE 
+          status != 'cancelled'
+      `);
+      
+      const totalAmount = parseFloat(totalInvoicesResult.rows[0].total_amount);
+      const totalPaidAmount = parseFloat(totalInvoicesResult.rows[0].total_paid_amount);
+      
+      dashboardSummary.paymentCompletion = totalAmount > 0 ? (totalPaidAmount / totalAmount) * 100 : 0;
+      
+      // Get upcoming payments
+      const upcomingPaymentsResult = await client.query(`
+        SELECT 
+          i.id,
+          i.invoice_number as "invoiceNumber",
+          s.name as "supplierName",
+          i.amount - i.paid_amount as "remainingAmount",
+          i.due_date as "dueDate"
+        FROM 
+          supplier_invoices i
+        JOIN 
+          suppliers s ON i.supplier_id = s.id
+        WHERE 
+          i.status IN ('pending', 'partially_paid') AND
+          i.due_date > CURRENT_DATE AND
+          i.due_date <= CURRENT_DATE + interval '30 days'
+        ORDER BY 
+          i.due_date ASC
+      `);
+      
+      dashboardSummary.upcomingPayments = upcomingPaymentsResult.rows;
+      
+      res.json(dashboardSummary);
+    } finally {
+      client.release();
+    }
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
