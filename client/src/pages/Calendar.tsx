@@ -97,7 +97,7 @@ const CalendarPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { toast } = useToast();
   const { setCurrentPage } = useSidebar();
-  const [filterView, setFilterView] = useState('month');
+  const [filterView, setFilterView] = useState('all');
   const [calendarView, setCalendarView] = useState<any>(Views.MONTH);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -154,278 +154,399 @@ const CalendarPage: React.FC = () => {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Transform orders and call logs to calendar events
-  const events: CalendarEvent[] = useMemo(() => {
-    const calendarEvents: CalendarEvent[] = [];
+  // Process orders to calendar events
+  const createOrderEvents = (orders: Order[] | undefined): CalendarEvent[] => {
+    const events: CalendarEvent[] = [];
     
-    // Add order creation events
-    if (orders && Array.isArray(orders)) {
-      orders.forEach((order: Order) => {
-      const orderDate = new Date(order.orderDate);
-      
-      // Order created event
-      calendarEvents.push({
-        id: `created-${order.id}`,
-        title: `${t('calendar.orderCreated')}: ${order.orderNumber}`,
-        start: orderDate,
-        end: orderDate,
-        type: 'created',
-        orderNumber: order.orderNumber,
-        customerName: order.customerName,
-        orderId: order.id
-      });
-      
-      // Order shipped event (if applicable)
-      if (order.status === 'shipped' && order.shippedDate) {
-        const shippedDate = new Date(order.shippedDate);
-        calendarEvents.push({
-          id: `shipped-${order.id}`,
-          title: `${t('calendar.orderShipped')}: ${order.orderNumber}`,
-          start: shippedDate,
-          end: shippedDate,
-          type: 'shipped',
-          orderNumber: order.orderNumber,
-          customerName: order.customerName,
-          orderId: order.id
-        });
-      }
-      
-      // Estimated shipping date event (if applicable)
-      if (order.estimatedShippingDate && order.status !== 'shipped' && order.status !== 'cancelled') {
-        const estimatedDate = new Date(order.estimatedShippingDate);
-        calendarEvents.push({
-          id: `estimated-${order.id}`,
-          title: `${t('calendar.estimatedShipping')}: ${order.orderNumber}`,
-          start: estimatedDate,
-          end: estimatedDate,
-          type: 'estimated',
-          orderNumber: order.orderNumber,
-          customerName: order.customerName,
-          orderId: order.id
-        });
-      }
-    });
+    if (!orders || !Array.isArray(orders)) {
+      return events;
     }
+    
+    for (const order of orders) {
+      try {
+        if (!order || !order.id || !order.orderDate || !order.orderNumber || !order.customerName) {
+          console.warn('Skipping invalid order entry', order);
+          continue;
+        }
+        
+        // Order created event
+        const orderDate = new Date(order.orderDate);
+        if (!isNaN(orderDate.getTime())) {
+          events.push({
+            id: `created-${order.id}`,
+            title: `${t('calendar.orderCreated')}: ${order.orderNumber}`,
+            start: orderDate,
+            end: orderDate,
+            type: 'created',
+            orderNumber: order.orderNumber,
+            customerName: order.customerName,
+            orderId: order.id
+          });
+        }
+        
+        // Order shipped event
+        if (order.status === 'shipped' && order.shippedDate) {
+          const shippedDate = new Date(order.shippedDate);
+          if (!isNaN(shippedDate.getTime())) {
+            events.push({
+              id: `shipped-${order.id}`,
+              title: `${t('calendar.orderShipped')}: ${order.orderNumber}`,
+              start: shippedDate,
+              end: shippedDate,
+              type: 'shipped',
+              orderNumber: order.orderNumber,
+              customerName: order.customerName,
+              orderId: order.id
+            });
+          }
+        }
+        
+        // Estimated shipping date
+        if (order.estimatedShippingDate && order.status !== 'shipped' && order.status !== 'cancelled') {
+          const estimatedDate = new Date(order.estimatedShippingDate);
+          if (!isNaN(estimatedDate.getTime())) {
+            events.push({
+              id: `estimated-${order.id}`,
+              title: `${t('calendar.estimatedShipping')}: ${order.orderNumber}`,
+              start: estimatedDate,
+              end: estimatedDate,
+              type: 'estimated',
+              orderNumber: order.orderNumber,
+              customerName: order.customerName,
+              orderId: order.id
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Error processing order for calendar:', err, order?.id);
+      }
+    }
+    
+    return events;
+  };
 
-    // Add call log events
-    if (callLogs && Array.isArray(callLogs)) {
-      (callLogs as CallLog[]).forEach((call: CallLog) => {
-        // Only add scheduled calls
+  // Process call logs to calendar events
+  const createCallEvents = (callLogs: CallLog[] | undefined): CalendarEvent[] => {
+    const events: CalendarEvent[] = [];
+    
+    if (!callLogs || !Array.isArray(callLogs)) {
+      return events;
+    }
+    
+    for (const call of callLogs) {
+      try {
+        if (!call || !call.id || !call.customerName) {
+          console.warn('Skipping invalid call log entry', call);
+          continue;
+        }
+        
+        // Add scheduled calls
         if (call.scheduledDate) {
           const scheduledDate = new Date(call.scheduledDate);
-          calendarEvents.push({
-            id: `call-${call.id}`,
-            title: `${t('calendar.scheduledCall')}: ${call.customerName}`,
-            start: scheduledDate,
-            end: scheduledDate,
-            type: 'call',
-            customerName: call.customerName,
-            callDetails: call.summary,
-            callId: call.id,
-            isFollowUp: false
-          });
+          if (!isNaN(scheduledDate.getTime())) {
+            events.push({
+              id: `call-${call.id}`,
+              title: `${t('calendar.scheduledCall')}: ${call.customerName}`,
+              start: scheduledDate,
+              end: scheduledDate,
+              type: 'call',
+              customerName: call.customerName || t('common.unknown'),
+              callDetails: call.summary || '',
+              callId: call.id,
+              isFollowUp: false
+            });
+          }
         }
-
-        // Add follow-up events
+        
+        // Add follow-up calls
         if (call.followUpRequired && call.followUpDate) {
           const followUpDate = new Date(call.followUpDate);
-          calendarEvents.push({
-            id: `followup-${call.id}`,
-            title: `${t('calendar.followUpCall')}: ${call.customerName}`,
-            start: followUpDate,
-            end: followUpDate,
-            type: 'call',
-            customerName: call.customerName,
-            callDetails: call.summary,
-            callId: call.id,
-            isFollowUp: true
-          });
+          if (!isNaN(followUpDate.getTime())) {
+            events.push({
+              id: `followup-${call.id}`,
+              title: `${t('calendar.followUpCall')}: ${call.customerName}`,
+              start: followUpDate,
+              end: followUpDate,
+              type: 'call',
+              customerName: call.customerName || t('common.unknown'),
+              callDetails: call.summary || '',
+              callId: call.id,
+              isFollowUp: true
+            });
+          }
         }
-      });
+      } catch (err) {
+        console.error('Error processing call log for calendar:', err, call?.id);
+      }
     }
     
-    // Add supplier payment events
-    if (payments && Array.isArray(payments) && payments.length > 0) {
-      payments.forEach((payment: any) => {
-        try {
-          // Make sure payment has required fields
-          if (!payment || !payment.id) {
-            console.warn('Invalid payment data:', payment);
-            return; // Skip this payment
-          }
-            
-          // Handle both snake_case and camelCase field names
-          const paymentDate = payment.paymentDate || payment.payment_date;
-          if (!paymentDate) {
-            console.warn('Payment missing date:', payment);
-            return; // Skip this payment
-          }
-          
-          const paymentDateObj = new Date(paymentDate);
-          const invoiceId = payment.invoiceId || payment.invoice_id;
-          const callbackRequired = payment.callbackRequired || payment.callback_required || false;
-          const callbackDate = payment.callbackDate || payment.callback_date;
-          const callbackNotes = payment.callbackNotes || payment.callback_notes || '';
-          
-          // Get supplier name from related invoice and supplier
-          let supplierName = t('common.unknown');
-          if (invoices && Array.isArray(invoices) && invoices.length > 0) {
-            const relatedInvoice = invoices.find((invoice: any) => 
-              invoice && invoice.id === invoiceId
-            );
-            
-            if (relatedInvoice) {
-              supplierName = relatedInvoice.supplierName || relatedInvoice.supplier_name || t('common.unknown');
-            }
-          }
-          
-          // Payment event
-          calendarEvents.push({
-            id: `payment-${payment.id}`,
-            title: `${t('calendar.payment')}: ${supplierName}`,
-            start: paymentDateObj,
-            end: paymentDateObj,
-            type: 'payment',
-            customerName: supplierName, // Required field in CalendarEvent type
-            supplierName: supplierName,
-            paymentId: payment.id,
-            paymentAmount: parseFloat(payment.amount || '0'),
-            callbackRequired: callbackRequired,
-            callbackDate: callbackDate ? new Date(callbackDate) : undefined,
-            callbackNotes: callbackNotes
-          });
-          
-          // Add callback event if required
-          if (callbackRequired && callbackDate) {
-            const callbackDateObj = new Date(callbackDate);
-            calendarEvents.push({
-              id: `payment-callback-${payment.id}`,
-              title: `${t('calendar.paymentCallback')}: ${supplierName}`,
-              start: callbackDateObj,
-              end: callbackDateObj,
-              type: 'payment',
-              customerName: supplierName, // Required field in CalendarEvent type
-              supplierName: supplierName,
-              paymentId: payment.id,
-              callbackRequired: true,
-              callbackDate: callbackDateObj,
-              callbackNotes: callbackNotes
-            });
-          }
-        } catch (err) {
-          console.error('Error processing payment for calendar:', err, payment);
-        }
-      });
-    } // End of supplier payments processing
+    return events;
+  };
+
+  // Process payment events
+  const createPaymentEvents = (payments: any[] | undefined, invoices: any[] | undefined): CalendarEvent[] => {
+    const events: CalendarEvent[] = [];
     
-    // Add inventory events
-    if (inventoryEvents && Array.isArray(inventoryEvents) && inventoryEvents.length > 0) {
-      inventoryEvents.forEach((event: any) => {
-        try {
-          // Make sure event has required fields
-          if (!event || !event.id || !event.date) {
-            console.warn('Invalid inventory event data:', event);
-            return; // Skip this event
-          }
+    if (!payments || !Array.isArray(payments)) {
+      return events;
+    }
+    
+    for (const payment of payments) {
+      try {
+        if (!payment || !payment.id) {
+          console.warn('Invalid payment data:', payment);
+          continue;
+        }
         
-          const eventDate = new Date(event.date);
-          
-          // Check if we have camelCase or snake_case fields
-          const productName = event.productName || event.product_name || t('common.unknown');
-          const eventType = event.eventType || event.event_type;
-          const productId = event.productId || event.product_id;
-          
-          calendarEvents.push({
-            id: `inventory-${event.id}`,
-            title: `${t('calendar.inventory')}: ${productName}`,
-            start: eventDate,
-            end: eventDate,
-            type: 'inventory',
-            inventoryType: eventType,
-            productId: productId,
-            productName: productName,
-            customerName: productName // Reusing customerName field for consistent rendering
-          });
-        } catch (err) {
-          console.error('Error processing inventory event for calendar:', err, event);
+        // Handle both snake_case and camelCase field names
+        const paymentDate = payment.paymentDate || payment.payment_date;
+        if (!paymentDate) {
+          console.warn('Payment missing date:', payment);
+          continue;
         }
-      });
-    } // End of inventory events processing
-    
-    // Add production batch events
-    if (productionBatches && Array.isArray(productionBatches) && productionBatches.length > 0) {
-      productionBatches.forEach((batch: any) => {
-        try {
-          // Make sure batch has required fields
-          if (!batch || !batch.id) {
-            console.warn('Invalid production batch data:', batch);
-            return; // Skip this batch
+        
+        const paymentDateObj = new Date(paymentDate);
+        if (isNaN(paymentDateObj.getTime())) {
+          console.warn('Invalid payment date:', paymentDate);
+          continue;
+        }
+        
+        const invoiceId = payment.invoiceId || payment.invoice_id;
+        const callbackRequired = payment.callbackRequired || payment.callback_required || false;
+        const callbackDate = payment.callbackDate || payment.callback_date;
+        const callbackNotes = payment.callbackNotes || payment.callback_notes || '';
+        
+        // Find supplier name from related invoice
+        let supplierName = t('common.unknown');
+        if (invoices && Array.isArray(invoices) && invoices.length > 0) {
+          const relatedInvoice = invoices.find((invoice: any) => 
+            invoice && invoice.id === invoiceId
+          );
+          
+          if (relatedInvoice) {
+            supplierName = relatedInvoice.supplierName || relatedInvoice.supplier_name || t('common.unknown');
           }
-          
-          // Handle both camelCase and snake_case field names
-          const startDate = batch.startDate || batch.start_date;
-          const completionDate = batch.completionDate || batch.completion_date;
-          const estimatedCompletionDate = batch.estimatedCompletionDate || batch.estimated_completion_date;
-          const recipeName = batch.recipeName || batch.recipe_name || t('common.unknown');
-          const quantity = parseFloat(batch.quantity || '0');
-          
-          // Production start date
-          if (startDate) {
+        }
+        
+        // Add payment event
+        events.push({
+          id: `payment-${payment.id}`,
+          title: `${t('calendar.payment')}: ${supplierName}`,
+          start: paymentDateObj,
+          end: paymentDateObj,
+          type: 'payment',
+          customerName: supplierName, // Required field in CalendarEvent type
+          supplierName: supplierName,
+          paymentId: payment.id,
+          paymentAmount: parseFloat(payment.amount || '0'),
+          callbackRequired: callbackRequired,
+          callbackDate: callbackDate ? new Date(callbackDate) : undefined,
+          callbackNotes: callbackNotes
+        });
+        
+        // Add callback event if required
+        if (callbackRequired && callbackDate) {
+          try {
+            const callbackDateObj = new Date(callbackDate);
+            if (!isNaN(callbackDateObj.getTime())) {
+              events.push({
+                id: `payment-callback-${payment.id}`,
+                title: `${t('calendar.paymentCallback')}: ${supplierName}`,
+                start: callbackDateObj,
+                end: callbackDateObj,
+                type: 'payment',
+                customerName: supplierName,
+                supplierName: supplierName,
+                paymentId: payment.id,
+                callbackRequired: true,
+                callbackDate: callbackDateObj,
+                callbackNotes: callbackNotes
+              });
+            }
+          } catch (callbackErr) {
+            console.error('Error processing payment callback date:', callbackErr);
+          }
+        }
+      } catch (err) {
+        console.error('Error processing payment for calendar:', err, payment?.id);
+      }
+    }
+    
+    return events;
+  };
+
+  // Process inventory events
+  const createInventoryEvents = (inventoryEvents: any[] | undefined): CalendarEvent[] => {
+    const events: CalendarEvent[] = [];
+    
+    if (!inventoryEvents || !Array.isArray(inventoryEvents)) {
+      return events;
+    }
+    
+    for (const event of inventoryEvents) {
+      try {
+        if (!event || !event.id || !event.date) {
+          console.warn('Invalid inventory event data:', event);
+          continue;
+        }
+        
+        const eventDate = new Date(event.date);
+        if (isNaN(eventDate.getTime())) {
+          console.warn('Invalid inventory event date:', event.date);
+          continue;
+        }
+        
+        // Check if we have camelCase or snake_case fields
+        const productName = event.productName || event.product_name || t('common.unknown');
+        const eventType = event.eventType || event.event_type;
+        const productId = event.productId || event.product_id;
+        
+        events.push({
+          id: `inventory-${event.id}`,
+          title: `${t('calendar.inventory')}: ${productName}`,
+          start: eventDate,
+          end: eventDate,
+          type: 'inventory',
+          inventoryType: eventType,
+          productId: productId,
+          productName: productName,
+          customerName: productName // Reusing customerName field for consistent rendering
+        });
+      } catch (err) {
+        console.error('Error processing inventory event for calendar:', err, event?.id);
+      }
+    }
+    
+    return events;
+  };
+
+  // Process production batch events
+  const createProductionEvents = (productionBatches: any[] | undefined): CalendarEvent[] => {
+    const events: CalendarEvent[] = [];
+    
+    if (!productionBatches || !Array.isArray(productionBatches)) {
+      return events;
+    }
+    
+    for (const batch of productionBatches) {
+      try {
+        if (!batch || !batch.id) {
+          console.warn('Invalid production batch data:', batch);
+          continue;
+        }
+        
+        // Handle both camelCase and snake_case field names
+        const startDate = batch.startDate || batch.start_date;
+        const completionDate = batch.completionDate || batch.completion_date;
+        const estimatedCompletionDate = batch.estimatedCompletionDate || batch.estimated_completion_date;
+        const recipeName = batch.recipeName || batch.recipe_name || t('common.unknown');
+        const quantity = parseFloat(batch.quantity || '0');
+        
+        // Production start date
+        if (startDate) {
+          try {
             const startDateTime = new Date(startDate);
-            calendarEvents.push({
-              id: `production-start-${batch.id}`,
-              title: `${t('calendar.productionStart')}: ${recipeName}`,
-              start: startDateTime,
-              end: startDateTime,
-              type: 'production',
-              productionBatchId: batch.id,
-              productionStage: 'start',
-              recipeName: recipeName,
-              productionQuantity: quantity,
-              customerName: recipeName // Reusing customerName field for display
-            });
+            if (!isNaN(startDateTime.getTime())) {
+              events.push({
+                id: `production-start-${batch.id}`,
+                title: `${t('calendar.productionStart')}: ${recipeName}`,
+                start: startDateTime,
+                end: startDateTime,
+                type: 'production',
+                productionBatchId: batch.id,
+                productionStage: 'start',
+                recipeName: recipeName,
+                productionQuantity: quantity,
+                customerName: recipeName // Reusing customerName field for display
+              });
+            }
+          } catch (startErr) {
+            console.error('Error processing production start date', startErr);
           }
-          
-          // Production completion date
-          if (completionDate) {
-            const completionDateTime = new Date(completionDate);
-            calendarEvents.push({
-              id: `production-complete-${batch.id}`,
-              title: `${t('calendar.productionComplete')}: ${recipeName}`,
-              start: completionDateTime,
-              end: completionDateTime,
-              type: 'production',
-              productionBatchId: batch.id,
-              productionStage: 'complete',
-              recipeName: recipeName,
-              productionQuantity: quantity,
-              customerName: recipeName // Reusing customerName field for display
-            });
-          }
-          
-          // Estimated completion date (if not completed yet)
-          if (estimatedCompletionDate && !completionDate) {
-            const estimatedDateTime = new Date(estimatedCompletionDate);
-            calendarEvents.push({
-              id: `production-estimated-${batch.id}`,
-              title: `${t('calendar.productionEstimated')}: ${recipeName}`,
-              start: estimatedDateTime,
-              end: estimatedDateTime,
-              type: 'production',
-              productionBatchId: batch.id,
-              productionStage: 'estimated',
-              recipeName: recipeName,
-              productionQuantity: quantity,
-              customerName: recipeName // Reusing customerName field for display
-            });
-          }
-        } catch (err) {
-          console.error('Error processing production batch for calendar:', err, batch);
         }
-      });
-    } // End of production batches processing
+        
+        // Production completion date
+        if (completionDate) {
+          try {
+            const completionDateTime = new Date(completionDate);
+            if (!isNaN(completionDateTime.getTime())) {
+              events.push({
+                id: `production-complete-${batch.id}`,
+                title: `${t('calendar.productionComplete')}: ${recipeName}`,
+                start: completionDateTime,
+                end: completionDateTime,
+                type: 'production',
+                productionBatchId: batch.id,
+                productionStage: 'complete',
+                recipeName: recipeName,
+                productionQuantity: quantity,
+                customerName: recipeName // Reusing customerName field for display
+              });
+            }
+          } catch (completeErr) {
+            console.error('Error processing production completion date', completeErr);
+          }
+        }
+        
+        // Estimated completion date (if not completed yet)
+        if (estimatedCompletionDate && !completionDate) {
+          try {
+            const estimatedDateTime = new Date(estimatedCompletionDate);
+            if (!isNaN(estimatedDateTime.getTime())) {
+              events.push({
+                id: `production-estimated-${batch.id}`,
+                title: `${t('calendar.productionEstimated')}: ${recipeName}`,
+                start: estimatedDateTime,
+                end: estimatedDateTime,
+                type: 'production',
+                productionBatchId: batch.id,
+                productionStage: 'estimated',
+                recipeName: recipeName,
+                productionQuantity: quantity,
+                customerName: recipeName // Reusing customerName field for display
+              });
+            }
+          } catch (estimateErr) {
+            console.error('Error processing estimated completion date', estimateErr);
+          }
+        }
+      } catch (err) {
+        console.error('Error processing production batch for calendar:', err, batch?.id);
+      }
+    }
     
-    return calendarEvents;
+    return events;
+  };
+
+  // Combine all events
+  const events = useMemo<CalendarEvent[]>(() => {
+    let allEvents: CalendarEvent[] = [];
+    
+    try {
+      // Process orders
+      const orderEvents = createOrderEvents(orders);
+      allEvents = [...allEvents, ...orderEvents];
+      
+      // Process call logs
+      const callEvents = createCallEvents(callLogs);
+      allEvents = [...allEvents, ...callEvents];
+      
+      // Process payments
+      const paymentEvents = createPaymentEvents(payments, invoices);
+      allEvents = [...allEvents, ...paymentEvents];
+      
+      // Process inventory events
+      const inventoryEventsList = createInventoryEvents(inventoryEvents);
+      allEvents = [...allEvents, ...inventoryEventsList];
+      
+      // Process production batches
+      const productionEvents = createProductionEvents(productionBatches);
+      allEvents = [...allEvents, ...productionEvents];
+    } catch (error) {
+      console.error('Error creating calendar events:', error);
+    }
+    
+    return allEvents;
   }, [orders, callLogs, payments, invoices, inventoryEvents, productionBatches, t]);
 
   // Filter events based on the selected tab
@@ -450,7 +571,6 @@ const CalendarPage: React.FC = () => {
   // Get upcoming events for the sidebar
   const upcomingEvents = useMemo(() => {
     if (!events || !Array.isArray(events) || events.length === 0) {
-      // No events available for upcoming events sidebar
       return [];
     }
     
@@ -462,6 +582,7 @@ const CalendarPage: React.FC = () => {
       return events
         .filter(event => {
           if (!event || !event.start) return false;
+          
           try {
             // Make sure we have a valid start date
             let eventStart: Date;
@@ -470,7 +591,6 @@ const CalendarPage: React.FC = () => {
             } else if (typeof event.start === 'string') {
               eventStart = new Date(event.start);
             } else {
-              // Skip events with invalid start dates
               return false;
             }
             
@@ -481,7 +601,7 @@ const CalendarPage: React.FC = () => {
             
             return eventStart >= now && eventStart <= nextWeek;
           } catch (err) {
-            console.error("Error filtering event:", err, event);
+            console.error("Error filtering event:", err);
             return false;
           }
         })
@@ -777,171 +897,33 @@ const CalendarPage: React.FC = () => {
                       </>
                     )}
                   </div>
-
-                  <div className="h-[500px] md:h-[600px]">
-                    {filteredEvents && filteredEvents.length > 0 ? (
-                      <BigCalendar
-                        localizer={localizer}
-                        events={filteredEvents}
-                        startAccessor="start"
-                        endAccessor="end"
-                        style={{ height: '100%' }}
-                        eventPropGetter={eventStyleGetter}
-                        views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
-                        view={calendarView}
-                        onView={(view) => setCalendarView(view)}
-                        onSelectEvent={handleEventClick}
-                        components={{
-                          toolbar: props => (
-                            <div className="flex flex-col space-y-3 mb-4">
-                              <div className="flex items-center justify-between">
-                                <div className="flex gap-1">
-                                  <button 
-                                    type="button" 
-                                    onClick={() => props.onNavigate('PREV')}
-                                    className="inline-flex items-center justify-center h-7 w-7 text-xs font-medium rounded-md border border-input bg-background hover:bg-accent"
-                                  >
-                                    <ChevronLeft className="h-3 w-3" />
-                                  </button>
-                                  <button 
-                                    type="button" 
-                                    onClick={() => props.onNavigate('NEXT')}
-                                    className="inline-flex items-center justify-center h-7 w-7 text-xs font-medium rounded-md border border-input bg-background hover:bg-accent"
-                                  >
-                                    <ChevronRight className="h-3 w-3" />
-                                  </button>
-                                  <button 
-                                    type="button" 
-                                    onClick={() => props.onNavigate('TODAY')}
-                                    className="inline-flex items-center justify-center h-7 px-2 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 ml-1"
-                                  >
-                                    {t('calendar.controls.today')}
-                                  </button>
-                                </div>
-                                <span className="text-xs sm:text-sm font-medium">
-                                  {moment(props.date).format('MMMM YYYY')}
-                                </span>
-                              </div>
-                              
-                              <div className="grid grid-cols-4 gap-1">
-                                <button 
-                                  type="button" 
-                                  onClick={() => props.onView('month')}
-                                  className={`inline-flex items-center justify-center h-7 px-1 text-[10px] sm:text-xs font-medium rounded-md ${props.view === 'month' 
-                                    ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-                                    : 'border border-input bg-background hover:bg-accent'
-                                  }`}
-                                >
-                                  {t('calendar.controls.month')}
-                                </button>
-                                <button 
-                                  type="button" 
-                                  onClick={() => props.onView('week')}
-                                  className={`inline-flex items-center justify-center h-7 px-1 text-[10px] sm:text-xs font-medium rounded-md ${props.view === 'week' 
-                                    ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-                                    : 'border border-input bg-background hover:bg-accent'
-                                  }`}
-                                >
-                                  {t('calendar.controls.week')}
-                                </button>
-                                <button 
-                                  type="button" 
-                                  onClick={() => props.onView('day')}
-                                  className={`inline-flex items-center justify-center h-7 px-1 text-[10px] sm:text-xs font-medium rounded-md ${props.view === 'day' 
-                                    ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-                                    : 'border border-input bg-background hover:bg-accent'
-                                  }`}
-                                >
-                                  {t('calendar.controls.day')}
-                                </button>
-                                <button 
-                                  type="button" 
-                                  onClick={() => props.onView('agenda')}
-                                  className={`inline-flex items-center justify-center h-7 px-1 text-[10px] sm:text-xs font-medium rounded-md ${props.view === 'agenda' 
-                                    ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-                                    : 'border border-input bg-background hover:bg-accent'
-                                  }`}
-                                >
-                                  {t('calendar.controls.agenda')}
-                                </button>
-                              </div>
-                            </div>
-                          )
-                        }}
-                        onNavigate={(date) => setSelectedDate(date)}
-                        date={selectedDate}
-                        popup
-                        messages={{
-                          next: t('calendar.controls.next'),
-                          previous: t('calendar.controls.previous'),
-                          today: t('calendar.controls.today'),
-                          month: t('calendar.controls.month'),
-                          week: t('calendar.controls.week'),
-                          day: t('calendar.controls.day'),
-                          agenda: t('calendar.controls.agenda'),
-                          date: t('calendar.controls.date'),
-                          time: t('calendar.controls.time'),
-                          event: t('calendar.controls.event'),
-                          noEventsInRange: t('calendar.controls.noEventsInRange'),
-                        }}
-                        tooltipAccessor={(event: any) => {
-                          try {
-                            if (!event || !event.type) return '';
-                            
-                            const customerName = event.customerName || t('common.unknown');
-                            
-                            if (event.type === 'call') {
-                              return `${customerName} - ${event.callDetails || t('calendar.noCallDetails')}`;
-                            } else if (event.type === 'payment') {
-                              const supplierName = event.supplierName || customerName;
-                              if (event.callbackRequired) {
-                                return `${supplierName} - ${t('supplierPayments.callbackRequired')}: ${t('common.yes')}`;
-                              }
-                              const amount = typeof event.paymentAmount === 'number' ? 
-                                event.paymentAmount.toFixed(2) : 
-                                (event.paymentAmount || '');
-                              return `${supplierName} - ${t('supplierPayments.amount')}: ${amount}`;
-                            } else if (event.type === 'inventory') {
-                              const productName = event.productName || customerName;
-                              let inventoryTypeText = t('inventory.adjustment');
-                              if (event.inventoryType === 'restock') {
-                                inventoryTypeText = t('inventory.restock');
-                              } else if (event.inventoryType === 'audit') {
-                                inventoryTypeText = t('inventory.audit');
-                              }
-                              return `${productName} - ${inventoryTypeText}`;
-                            } else if (event.type === 'production') {
-                              const recipeName = event.recipeName || customerName;
-                              let stageText = t('production.estimatedCompletion');
-                              if (event.productionStage === 'start') {
-                                stageText = t('production.started');
-                              } else if (event.productionStage === 'complete') {
-                                stageText = t('production.completed');
-                              }
-                              return `${recipeName} - ${stageText} - ${t('production.quantity')}: ${event.productionQuantity || '0'}`;
-                            }
-                            // Default for orders
-                            return `${customerName} - ${event.orderNumber || ''}`;
-                          } catch (err) {
-                            console.error('Error generating tooltip:', err);
-                            return '';
-                          }
-                        }}
-                      />
-                    ) : (
-                      <div className="h-full flex items-center justify-center flex-col space-y-4">
-                        <CalendarIcon className="h-12 w-12 text-muted-foreground" />
-                        <p className="text-lg text-muted-foreground text-center">
-                          {t('calendar.noEventsForFilter')}
-                        </p>
-                        <p className="text-sm text-muted-foreground text-center">
-                          {filterView !== 'all' 
-                            ? t('calendar.tryDifferentFilter')
-                            : t('calendar.noEventsAvailable')
-                          }
-                        </p>
-                      </div>
-                    )}
+                  <div className="h-[600px]">
+                    <BigCalendar
+                      localizer={localizer}
+                      events={filteredEvents}
+                      startAccessor="start"
+                      endAccessor="end"
+                      style={{ height: '100%' }}
+                      defaultView={calendarView}
+                      views={['month', 'week', 'day', 'agenda']}
+                      onSelectEvent={handleEventClick}
+                      eventPropGetter={eventStyleGetter}
+                      date={selectedDate}
+                      onNavigate={setSelectedDate}
+                      messages={{
+                        today: t('calendar.today'),
+                        previous: t('calendar.previous'),
+                        next: t('calendar.next'),
+                        month: t('calendar.month'),
+                        week: t('calendar.week'),
+                        day: t('calendar.day'),
+                        agenda: t('calendar.agenda'),
+                        date: t('calendar.date'),
+                        time: t('calendar.time'),
+                        event: t('calendar.event'),
+                        noEventsInRange: t('calendar.noEvents'),
+                      }}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -949,373 +931,306 @@ const CalendarPage: React.FC = () => {
           </Tabs>
         </div>
         
-        <div className="space-y-4">
+        <div>
           <Card>
             <CardHeader>
-              <CardTitle>{t('calendar.upcomingEvents')}</CardTitle>
-              <CardDescription>{t('calendar.today')}</CardDescription>
+              <CardTitle className="text-lg">{t('calendar.upcomingEvents')}</CardTitle>
+              <CardDescription>{t('calendar.nextSevenDays')}</CardDescription>
             </CardHeader>
-            <CardContent className="h-[300px] md:h-[400px] overflow-auto">
+            <CardContent>
               {upcomingEvents.length > 0 ? (
-                <ul className="space-y-3">
+                <div className="space-y-4">
                   {upcomingEvents.map((event) => (
-                    <li key={event.id} className="flex flex-col space-y-1">
-                      <div 
-                        className="p-3 border rounded-md cursor-pointer hover:bg-accent transition-colors"
-                        onClick={() => handleEventClick(event)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            {event.type === 'created' && (
-                              <Badge className="bg-[#4F46E5]">{t('calendar.orderCreated')}</Badge>
-                            )}
-                            {event.type === 'shipped' && (
-                              <Badge className="bg-[#10B981]">{t('calendar.orderShipped')}</Badge>
-                            )}
-                            {event.type === 'estimated' && (
-                              <Badge className="bg-[#8B5CF6]">{t('calendar.estimatedShipping')}</Badge>
-                            )}
-                            {event.type === 'call' && event.isFollowUp && (
-                              <Badge className="bg-[#F43F5E]">{t('calendar.followUpCall')}</Badge>
-                            )}
-                            {event.type === 'call' && !event.isFollowUp && (
-                              <Badge className="bg-[#F59E0B]">{t('calendar.scheduledCall')}</Badge>
-                            )}
-                            {event.type === 'payment' && !event.callbackRequired && (
-                              <Badge className="bg-[#14B8A6]">{t('calendar.payment')}</Badge>
-                            )}
-                            {event.type === 'payment' && event.callbackRequired && (
-                              <Badge className="bg-[#EC4899]">{t('calendar.paymentCallback')}</Badge>
-                            )}
-                            {event.type === 'inventory' && (
-                              <Badge className="bg-[#06B6D4]">{t('calendar.inventory')}</Badge>
-                            )}
-                            {event.type === 'production' && event.productionStage === 'start' && (
-                              <Badge className="bg-[#2563EB]">{t('calendar.productionStart')}</Badge>
-                            )}
-                            {event.type === 'production' && event.productionStage === 'complete' && (
-                              <Badge className="bg-[#16A34A]">{t('calendar.productionComplete')}</Badge>
-                            )}
-                            {event.type === 'production' && event.productionStage === 'estimated' && (
-                              <Badge className="bg-[#7C3AED]">{t('calendar.productionEstimated')}</Badge>
-                            )}
-                            <span className="text-sm font-medium">{getRelativeDate(event.start)}</span>
-                          </div>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div className="mt-2">
-                          <div className="flex items-start space-x-2">
-                            <User className="h-4 w-4 text-muted-foreground mt-0.5" />
-                            <span className="text-sm">{event.customerName}</span>
-                          </div>
-                          {event.orderNumber && (
-                            <div className="flex items-start space-x-2 mt-1">
-                              <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
-                              <span className="text-sm">{event.orderNumber}</span>
-                            </div>
-                          )}
-                          {event.callDetails && (
-                            <div className="flex items-start space-x-2 mt-1">
-                              <Phone className="h-4 w-4 text-muted-foreground mt-0.5" />
-                              <span className="text-sm truncate">{event.callDetails}</span>
-                            </div>
-                          )}
-                          
-                          {/* Payment specific info */}
-                          {event.type === 'payment' && event.paymentAmount && (
-                            <div className="flex items-start space-x-2 mt-1">
-                              <DollarSign className="h-4 w-4 text-muted-foreground mt-0.5" />
-                              <span className="text-sm">{typeof event.paymentAmount === 'number' ? event.paymentAmount.toFixed(2) : event.paymentAmount}</span>
-                            </div>
-                          )}
-                          
-                          {/* Inventory specific info */}
-                          {event.type === 'inventory' && event.inventoryType && (
-                            <div className="flex items-start space-x-2 mt-1">
-                              <Package className="h-4 w-4 text-muted-foreground mt-0.5" />
-                              <span className="text-sm">
-                                {event.inventoryType === 'restock' && t('inventory.restock')}
-                                {event.inventoryType === 'audit' && t('inventory.audit')}
-                                {event.inventoryType === 'adjustment' && t('inventory.adjustment')}
-                              </span>
-                            </div>
-                          )}
-                          
-                          {/* Production specific info */}
-                          {event.type === 'production' && event.productionQuantity && (
-                            <div className="flex items-start space-x-2 mt-1">
-                              <Factory className="h-4 w-4 text-muted-foreground mt-0.5" />
-                              <span className="text-sm">{t('production.quantity')}: {event.productionQuantity}</span>
-                            </div>
-                          )}
-                          <div className="flex items-start space-x-2 mt-1">
-                            <Clock className="h-4 w-4 text-muted-foreground mt-0.5" />
-                            <span className="text-sm">{moment(event.start).format('h:mm A')}</span>
-                          </div>
+                    <div 
+                      key={event.id} 
+                      className="border rounded-md p-3 cursor-pointer hover:bg-muted transition-colors"
+                      onClick={() => handleEventClick(event)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center space-x-2">
+                          {event.type === 'created' && <Package className="h-4 w-4 text-[#4F46E5]" />}
+                          {event.type === 'shipped' && <Package className="h-4 w-4 text-[#10B981]" />}
+                          {event.type === 'estimated' && <Package className="h-4 w-4 text-[#8B5CF6]" />}
+                          {event.type === 'call' && <Phone className="h-4 w-4 text-[#F59E0B]" />}
+                          {event.type === 'payment' && <DollarSign className="h-4 w-4 text-[#14B8A6]" />}
+                          {event.type === 'inventory' && <Tag className="h-4 w-4 text-[#06B6D4]" />}
+                          {event.type === 'production' && <Factory className="h-4 w-4 text-[#2563EB]" />}
+                          <div className="flex-1 font-medium">{event.title}</div>
                         </div>
                       </div>
-                    </li>
+                      <div className="mt-2 flex items-center text-xs text-muted-foreground">
+                        <CalendarIcon className="mr-1 h-3 w-3" />
+                        <time dateTime={event.start.toISOString()}>
+                          {getRelativeDate(event.start)}, {event.start.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' })}
+                        </time>
+                        <Clock className="ml-3 mr-1 h-3 w-3" />
+                        <time dateTime={event.start.toISOString()}>
+                          {event.start.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}
+                        </time>
+                      </div>
+                    </div>
                   ))}
-                </ul>
+                </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full">
-                  <CalendarIcon className="h-10 w-10 text-muted-foreground" />
-                  <p className="mt-2 text-muted-foreground">{t('calendar.noUpcomingEvents')}</p>
+                <div className="text-muted-foreground text-center py-6">
+                  <CalendarIcon className="mx-auto h-12 w-12 opacity-20 mb-2" />
+                  <p>{t('calendar.noUpcomingEvents')}</p>
                 </div>
               )}
             </CardContent>
-            <CardFooter>
-              <Button className="w-full" variant="outline" onClick={handleNewCallLog}>
-                {t('calendar.newCallLog')}
-              </Button>
-            </CardFooter>
           </Card>
         </div>
       </div>
-      
-      {/* Event Details Modal */}
+
+      {/* Event details modal */}
       <Dialog open={isEventModalOpen} onOpenChange={setIsEventModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{t('calendar.viewEventDetails')}</DialogTitle>
+            <DialogTitle>
+              {selectedEvent?.title || t('calendar.eventDetails')}
+            </DialogTitle>
             <DialogDescription>
-              {selectedEvent?.title}
+              {selectedEvent?.start.toLocaleDateString(i18n.language, { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+              {' '}
+              {selectedEvent?.start.toLocaleTimeString(i18n.language, { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              })}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{t('calendar.eventType')}</span>
-                {selectedEvent?.type === 'created' && (
-                  <Badge className="bg-[#4F46E5]">{t('calendar.orderCreated')}</Badge>
-                )}
-                {selectedEvent?.type === 'shipped' && (
-                  <Badge className="bg-[#10B981]">{t('calendar.orderShipped')}</Badge>
-                )}
-                {selectedEvent?.type === 'estimated' && (
-                  <Badge className="bg-[#8B5CF6]">{t('calendar.estimatedShipping')}</Badge>
-                )}
-                {selectedEvent?.type === 'call' && selectedEvent?.isFollowUp && (
-                  <Badge className="bg-[#F43F5E]">{t('calendar.followUpCall')}</Badge>
-                )}
-                {selectedEvent?.type === 'call' && !selectedEvent?.isFollowUp && (
-                  <Badge className="bg-[#F59E0B]">{t('calendar.scheduledCall')}</Badge>
-                )}
-                {selectedEvent?.type === 'payment' && !selectedEvent?.callbackRequired && (
-                  <Badge className="bg-[#14B8A6]">{t('calendar.payment')}</Badge>
-                )}
-                {selectedEvent?.type === 'payment' && selectedEvent?.callbackRequired && (
-                  <Badge className="bg-[#EC4899]">{t('calendar.paymentCallback')}</Badge>
-                )}
-                {selectedEvent?.type === 'inventory' && (
-                  <Badge className="bg-[#06B6D4]">{t('calendar.inventory')}</Badge>
-                )}
-                {selectedEvent?.type === 'production' && selectedEvent?.productionStage === 'start' && (
-                  <Badge className="bg-[#2563EB]">{t('calendar.productionStart')}</Badge>
-                )}
-                {selectedEvent?.type === 'production' && selectedEvent?.productionStage === 'complete' && (
-                  <Badge className="bg-[#16A34A]">{t('calendar.productionComplete')}</Badge>
-                )}
-                {selectedEvent?.type === 'production' && selectedEvent?.productionStage === 'estimated' && (
-                  <Badge className="bg-[#7C3AED]">{t('calendar.productionEstimated')}</Badge>
-                )}
-              </div>
-              
-              <Separator />
-              
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{t('calendar.customer')}</span>
-                <span className="text-sm">{selectedEvent?.customerName}</span>
-              </div>
-              
-              <Separator />
-              
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{t('calendar.date')}</span>
-                <span className="text-sm">
-                  {selectedEvent?.start ? moment(selectedEvent.start).format('MMMM Do YYYY, h:mm a') : ''}
-                </span>
-              </div>
-              
-              {selectedEvent?.orderNumber && (
+              {selectedEvent?.type === 'call' && (
                 <>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{t('calendar.orderNumber')}</span>
-                    <span className="text-sm">{selectedEvent.orderNumber}</span>
+                  <div className="flex items-start">
+                    <User className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium">{t('common.customer')}</p>
+                      <p className="text-sm text-muted-foreground">{selectedEvent.customerName}</p>
+                    </div>
+                  </div>
+                  
+                  {selectedEvent.callDetails && (
+                    <div className="flex items-start">
+                      <FileText className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium">{t('common.details')}</p>
+                        <p className="text-sm text-muted-foreground">{selectedEvent.callDetails}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-start">
+                    <Phone className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium">{t('common.callType')}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedEvent.isFollowUp 
+                          ? t('calendar.followUpCall') 
+                          : t('calendar.scheduledCall')}
+                      </p>
+                    </div>
                   </div>
                 </>
               )}
               
-              {selectedEvent?.callDetails && (
+              {(selectedEvent?.type === 'created' || selectedEvent?.type === 'shipped' || selectedEvent?.type === 'estimated') && (
                 <>
-                  <Separator />
-                  <div>
-                    <span className="text-sm font-medium">{t('calendar.details')}</span>
-                    <p className="text-sm mt-1">{selectedEvent.callDetails}</p>
+                  <div className="flex items-start">
+                    <FileText className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium">{t('orders.orderNumber')}</p>
+                      <p className="text-sm text-muted-foreground">{selectedEvent.orderNumber}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start">
+                    <User className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium">{t('common.customer')}</p>
+                      <p className="text-sm text-muted-foreground">{selectedEvent.customerName}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start">
+                    <Package className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium">{t('common.eventType')}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedEvent.type === 'created' && t('calendar.orderCreated')}
+                        {selectedEvent.type === 'shipped' && t('calendar.orderShipped')}
+                        {selectedEvent.type === 'estimated' && t('calendar.estimatedShipping')}
+                      </p>
+                    </div>
                   </div>
                 </>
               )}
               
-              {/* Payment details */}
               {selectedEvent?.type === 'payment' && (
                 <>
-                  <Separator />
-                  <div>
-                    <span className="text-sm font-medium">{t('supplierPayments.supplier')}</span>
-                    <p className="text-sm mt-1">{selectedEvent.supplierName}</p>
+                  <div className="flex items-start">
+                    <User className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium">{t('suppliers.supplier')}</p>
+                      <p className="text-sm text-muted-foreground">{selectedEvent.supplierName}</p>
+                    </div>
                   </div>
                   
                   {selectedEvent.paymentAmount && (
-                    <>
-                      <Separator />
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">{t('supplierPayments.amount')}</span>
-                        <span className="text-sm">{typeof selectedEvent.paymentAmount === 'number' ? selectedEvent.paymentAmount.toFixed(2) : selectedEvent.paymentAmount}</span>
+                    <div className="flex items-start">
+                      <DollarSign className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium">{t('suppliers.amount')}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Intl.NumberFormat(i18n.language, { 
+                            style: 'currency', 
+                            currency: 'EUR' 
+                          }).format(selectedEvent.paymentAmount)}
+                        </p>
                       </div>
-                    </>
+                    </div>
                   )}
                   
                   {selectedEvent.callbackRequired && (
-                    <>
-                      <Separator />
+                    <div className="flex items-start">
+                      <Phone className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
                       <div>
-                        <span className="text-sm font-medium">{t('supplierPayments.callbackRequired')}</span>
-                        <p className="text-sm mt-1">{t('common.yes')}</p>
-                        
+                        <p className="font-medium">{t('suppliers.callbackRequired')}</p>
                         {selectedEvent.callbackDate && (
-                          <div className="mt-2">
-                            <span className="text-sm font-medium">{t('supplierPayments.callbackDate')}</span>
-                            <p className="text-sm mt-1">
-                              {moment(selectedEvent.callbackDate).format('MMMM Do YYYY')}
-                            </p>
-                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {selectedEvent.callbackDate.toLocaleDateString(i18n.language)}
+                          </p>
                         )}
-                        
                         {selectedEvent.callbackNotes && (
-                          <div className="mt-2">
-                            <span className="text-sm font-medium">{t('supplierPayments.callbackNotes')}</span>
-                            <p className="text-sm mt-1">{selectedEvent.callbackNotes}</p>
-                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">{selectedEvent.callbackNotes}</p>
                         )}
                       </div>
-                    </>
+                    </div>
                   )}
                 </>
               )}
               
-              {/* Inventory details */}
               {selectedEvent?.type === 'inventory' && (
                 <>
-                  <Separator />
-                  <div>
-                    <span className="text-sm font-medium">{t('inventory.product')}</span>
-                    <p className="text-sm mt-1">{selectedEvent.productName}</p>
+                  <div className="flex items-start">
+                    <Tag className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium">{t('inventory.product')}</p>
+                      <p className="text-sm text-muted-foreground">{selectedEvent.productName}</p>
+                    </div>
                   </div>
                   
-                  <Separator />
-                  <div>
-                    <span className="text-sm font-medium">{t('inventory.eventType')}</span>
-                    <p className="text-sm mt-1">
-                      {selectedEvent.inventoryType === 'restock' && t('inventory.restock')}
-                      {selectedEvent.inventoryType === 'audit' && t('inventory.audit')}
-                      {selectedEvent.inventoryType === 'adjustment' && t('inventory.adjustment')}
-                    </p>
-                  </div>
+                  {selectedEvent.inventoryType && (
+                    <div className="flex items-start">
+                      <Package className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium">{t('inventory.eventType')}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedEvent.inventoryType === 'restock' && t('inventory.restock')}
+                          {selectedEvent.inventoryType === 'audit' && t('inventory.audit')}
+                          {selectedEvent.inventoryType === 'adjustment' && t('inventory.adjustment')}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
               
-              {/* Production details */}
               {selectedEvent?.type === 'production' && (
                 <>
-                  <Separator />
-                  <div>
-                    <span className="text-sm font-medium">{t('production.recipe')}</span>
-                    <p className="text-sm mt-1">{selectedEvent.recipeName}</p>
+                  <div className="flex items-start">
+                    <Factory className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium">{t('production.recipe')}</p>
+                      <p className="text-sm text-muted-foreground">{selectedEvent.recipeName}</p>
+                    </div>
                   </div>
                   
                   {selectedEvent.productionQuantity && (
-                    <>
-                      <Separator />
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">{t('production.quantity')}</span>
-                        <span className="text-sm">{selectedEvent.productionQuantity}</span>
+                    <div className="flex items-start">
+                      <Package className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium">{t('production.quantity')}</p>
+                        <p className="text-sm text-muted-foreground">{selectedEvent.productionQuantity}</p>
                       </div>
-                    </>
+                    </div>
                   )}
                   
-                  <Separator />
-                  <div>
-                    <span className="text-sm font-medium">{t('production.stage')}</span>
-                    <p className="text-sm mt-1">
-                      {selectedEvent.productionStage === 'start' && t('production.started')}
-                      {selectedEvent.productionStage === 'complete' && t('production.completed')}
-                      {selectedEvent.productionStage === 'estimated' && t('production.estimatedCompletion')}
-                    </p>
-                  </div>
+                  {selectedEvent.productionStage && (
+                    <div className="flex items-start">
+                      <Clock className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium">{t('production.stage')}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedEvent.productionStage === 'start' && t('production.started')}
+                          {selectedEvent.productionStage === 'complete' && t('production.completed')}
+                          {selectedEvent.productionStage === 'estimated' && t('production.estimated')}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>
           </div>
           
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            {/* Order related buttons */}
-            {(selectedEvent?.type === 'created' || selectedEvent?.type === 'shipped' || selectedEvent?.type === 'estimated') && (
-              <Button type="button" onClick={handleViewOrder}>
-                {t('calendar.viewOrder')}
-              </Button>
-            )}
+          <DialogFooter className="flex justify-between sm:justify-between">
+            <Button variant="outline" onClick={() => setIsEventModalOpen(false)}>
+              {t('common.close')}
+            </Button>
             
-            {/* Call related buttons */}
-            {selectedEvent?.type === 'call' && (
-              <Button type="button" onClick={handleViewCall}>
-                {t('calendar.viewCall')}
-              </Button>
-            )}
-            
-            {/* Payment related buttons */}
-            {selectedEvent?.type === 'payment' && selectedEvent.paymentId && (
-              <Button type="button" onClick={() => {
-                navigate(`/supplier-payments/${selectedEvent.paymentId}`);
-                setIsEventModalOpen(false);
-              }}>
-                {t('supplierPayments.viewPayment')}
-              </Button>
-            )}
-            
-            {/* Inventory related buttons */}
-            {selectedEvent?.type === 'inventory' && selectedEvent.productId && (
-              <Button type="button" onClick={() => {
-                navigate(`/products/${selectedEvent.productId}`);
-                setIsEventModalOpen(false);
-              }}>
-                {t('inventory.viewProduct')}
-              </Button>
-            )}
-            
-            {/* Production related buttons */}
-            {selectedEvent?.type === 'production' && selectedEvent.productionBatchId && (
-              <Button type="button" onClick={() => {
-                navigate(`/production/batches/${selectedEvent.productionBatchId}`);
-                setIsEventModalOpen(false);
-              }}>
-                {t('production.viewBatch')}
-              </Button>
-            )}
-            
-            {/* Common buttons */}
-            {selectedEvent?.type !== 'inventory' && selectedEvent?.type !== 'production' && (
-              <Button type="button" variant="outline" onClick={handleViewCustomer}>
-                {t('calendar.viewCustomer')}
-              </Button>
-            )}
-            
-            <DialogClose asChild>
-              <Button type="button" variant="secondary">
-                {t('calendar.close')}
-              </Button>
-            </DialogClose>
+            <div className="flex space-x-2">
+              {/* Show relevant action buttons based on event type */}
+              {selectedEvent?.type === 'call' && (
+                <>
+                  <Button onClick={handleViewCall}>
+                    {t('callLogs.viewCall')}
+                  </Button>
+                  <Button variant="secondary" onClick={handleNewCallLog}>
+                    {t('callLogs.newCall')}
+                  </Button>
+                </>
+              )}
+              
+              {(selectedEvent?.type === 'created' || selectedEvent?.type === 'shipped' || selectedEvent?.type === 'estimated') && (
+                <Button onClick={handleViewOrder}>
+                  {t('orders.viewOrder')}
+                </Button>
+              )}
+              
+              {selectedEvent?.type === 'payment' && (
+                <Button onClick={() => {
+                  navigate('/supplier-payments');
+                  setIsEventModalOpen(false);
+                }}>
+                  {t('suppliers.viewPayments')}
+                </Button>
+              )}
+              
+              {selectedEvent?.type === 'inventory' && selectedEvent.productId && (
+                <Button onClick={() => {
+                  navigate(`/inventory/products/${selectedEvent.productId}`);
+                  setIsEventModalOpen(false);
+                }}>
+                  {t('inventory.viewProduct')}
+                </Button>
+              )}
+              
+              {selectedEvent?.type === 'production' && selectedEvent.productionBatchId && (
+                <Button onClick={() => {
+                  navigate(`/production/batches/${selectedEvent.productionBatchId}`);
+                  setIsEventModalOpen(false);
+                }}>
+                  {t('production.viewBatch')}
+                </Button>
+              )}
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
