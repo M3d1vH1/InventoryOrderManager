@@ -308,7 +308,10 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       // Calculate backoff delay based on attempt count
       const delay = getBackoffDelay(reconnectAttempts);
       
-      console.log(`Attempting to reconnect in ${Math.round(delay)}ms (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+      // Only log in development environment to reduce console noise
+      if (process.env.NODE_ENV === 'development') {
+        console.debug(`WebSocket reconnection scheduled in ${Math.round(delay)}ms`);
+      }
       
       // Schedule reconnection
       reconnectTimeout = window.setTimeout(() => {
@@ -348,7 +351,10 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         
         // Connection opened
         socket.addEventListener('open', (event) => {
-          console.log('WebSocket connected');
+          // Use less aggressive logging to reduce console noise in production
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('WebSocket connected silently');
+          }
           updateLastMessageTime();
           
           // Reset reconnect attempts on successful connection
@@ -521,7 +527,9 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
           // Always attempt to reconnect with exponential backoff
           // But reset the counter if we've been trying for too long
           if (reconnectAttempts >= maxReconnectAttempts) {
-            console.log('Maximum reconnect attempts reached, resetting counter but continuing with maximum delay');
+            if (process.env.NODE_ENV === 'development') {
+              console.debug('Maximum reconnect attempts reached, continuing with slower reconnect attempts');
+            }
             reconnectAttempts = Math.floor(maxReconnectAttempts / 2); // Reset to half to continue but with longer delays
           }
           
@@ -529,7 +537,9 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
           if (navigator.onLine) {
             restartConnection();
           } else {
-            console.log('Device offline, pausing reconnection attempts until back online');
+            if (process.env.NODE_ENV === 'development') {
+              console.debug('Network offline, pausing WebSocket reconnection until connection is restored');
+            }
             // We'll try again when online status changes
           }
         });
@@ -558,12 +568,16 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       if (navigator.onLine) {
         // Network is back online, try to reconnect
         if (isSocketClosed()) {
-          console.log('Network reconnected, reestablishing WebSocket connection');
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('Network reconnected, silently reestablishing WebSocket connection');
+          }
           reconnectAttempts = 0; // Reset reconnect attempts on network change
           setupWebSocket();
         }
       } else {
-        console.log('Network offline, WebSocket reconnection will be paused');
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('Network offline, WebSocket reconnection will be paused');
+        }
         // We'll allow the existing socket to run its course and handle reconnect when back online
       }
     };
@@ -573,7 +587,9 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       if (document.visibilityState === 'visible') {
         // If the page becomes visible and the socket is closed, reconnect
         if (isSocketClosed()) {
-          console.log('Page visible, reconnecting WebSocket');
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('Page visibility changed, silently reconnecting WebSocket');
+          }
           reconnectAttempts = 0; // Reset reconnect attempts on visibility change
           setupWebSocket();
         } else if (isSocketOpen()) {
