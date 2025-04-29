@@ -245,147 +245,190 @@ const CalendarPage: React.FC = () => {
     }
     
     // Add supplier payment events
-    if (payments && Array.isArray(payments)) {
+    if (payments && Array.isArray(payments) && payments.length > 0) {
       payments.forEach((payment: any) => {
-        // Handle both snake_case and camelCase field names
-        const paymentDate = new Date(payment.paymentDate || payment.payment_date);
-        const invoiceId = payment.invoiceId || payment.invoice_id;
-        const callbackRequired = payment.callbackRequired || payment.callback_required || false;
-        const callbackDate = payment.callbackDate || payment.callback_date;
-        const callbackNotes = payment.callbackNotes || payment.callback_notes || '';
-        
-        // Get supplier name from related invoice and supplier
-        let supplierName = t('common.unknown');
-        if (invoices && Array.isArray(invoices)) {
-          const relatedInvoice = invoices.find((invoice: any) => 
-            invoice.id === invoiceId
-          );
-          
-          if (relatedInvoice) {
-            supplierName = relatedInvoice.supplierName || relatedInvoice.supplier_name || t('common.unknown');
+        try {
+          // Make sure payment has required fields
+          if (!payment || !payment.id) {
+            console.warn('Invalid payment data:', payment);
+            return; // Skip this payment
           }
-        }
-        
-        // Payment event
-        calendarEvents.push({
-          id: `payment-${payment.id}`,
-          title: `${t('calendar.payment')}: ${supplierName}`,
-          start: paymentDate,
-          end: paymentDate,
-          type: 'payment',
-          customerName: supplierName, // Required field in CalendarEvent type
-          supplierName: supplierName,
-          paymentId: payment.id,
-          paymentAmount: payment.amount,
-          callbackRequired: callbackRequired,
-          callbackDate: callbackDate ? new Date(callbackDate) : undefined,
-          callbackNotes: callbackNotes
-        });
-        
-        // Add callback event if required
-        if (callbackRequired && callbackDate) {
-          const callbackDateObj = new Date(callbackDate);
+            
+          // Handle both snake_case and camelCase field names
+          const paymentDate = payment.paymentDate || payment.payment_date;
+          if (!paymentDate) {
+            console.warn('Payment missing date:', payment);
+            return; // Skip this payment
+          }
+          
+          const paymentDateObj = new Date(paymentDate);
+          const invoiceId = payment.invoiceId || payment.invoice_id;
+          const callbackRequired = payment.callbackRequired || payment.callback_required || false;
+          const callbackDate = payment.callbackDate || payment.callback_date;
+          const callbackNotes = payment.callbackNotes || payment.callback_notes || '';
+          
+          // Get supplier name from related invoice and supplier
+          let supplierName = t('common.unknown');
+          if (invoices && Array.isArray(invoices) && invoices.length > 0) {
+            const relatedInvoice = invoices.find((invoice: any) => 
+              invoice && invoice.id === invoiceId
+            );
+            
+            if (relatedInvoice) {
+              supplierName = relatedInvoice.supplierName || relatedInvoice.supplier_name || t('common.unknown');
+            }
+          }
+          
+          // Payment event
           calendarEvents.push({
-            id: `payment-callback-${payment.id}`,
-            title: `${t('calendar.paymentCallback')}: ${supplierName}`,
-            start: callbackDateObj,
-            end: callbackDateObj,
+            id: `payment-${payment.id}`,
+            title: `${t('calendar.payment')}: ${supplierName}`,
+            start: paymentDateObj,
+            end: paymentDateObj,
             type: 'payment',
             customerName: supplierName, // Required field in CalendarEvent type
             supplierName: supplierName,
             paymentId: payment.id,
-            callbackRequired: true,
-            callbackDate: callbackDateObj,
+            paymentAmount: parseFloat(payment.amount || '0'),
+            callbackRequired: callbackRequired,
+            callbackDate: callbackDate ? new Date(callbackDate) : undefined,
             callbackNotes: callbackNotes
           });
+          
+          // Add callback event if required
+          if (callbackRequired && callbackDate) {
+            const callbackDateObj = new Date(callbackDate);
+            calendarEvents.push({
+              id: `payment-callback-${payment.id}`,
+              title: `${t('calendar.paymentCallback')}: ${supplierName}`,
+              start: callbackDateObj,
+              end: callbackDateObj,
+              type: 'payment',
+              customerName: supplierName, // Required field in CalendarEvent type
+              supplierName: supplierName,
+              paymentId: payment.id,
+              callbackRequired: true,
+              callbackDate: callbackDateObj,
+              callbackNotes: callbackNotes
+            });
+          }
+        } catch (err) {
+          console.error('Error processing payment for calendar:', err, payment);
         }
       });
+    } else {
+      console.log('No supplier payments available for calendar');
     }
     
     // Add inventory events
-    if (inventoryEvents && Array.isArray(inventoryEvents)) {
+    if (inventoryEvents && Array.isArray(inventoryEvents) && inventoryEvents.length > 0) {
       inventoryEvents.forEach((event: any) => {
-        const eventDate = new Date(event.date);
+        try {
+          // Make sure event has required fields
+          if (!event || !event.id || !event.date) {
+            console.warn('Invalid inventory event data:', event);
+            return; // Skip this event
+          }
         
-        // Check if we have camelCase or snake_case fields
-        const productName = event.productName || event.product_name || t('common.unknown');
-        const eventType = event.eventType || event.event_type;
-        const productId = event.productId || event.product_id;
-        
-        calendarEvents.push({
-          id: `inventory-${event.id}`,
-          title: `${t('calendar.inventory')}: ${productName}`,
-          start: eventDate,
-          end: eventDate,
-          type: 'inventory',
-          inventoryType: eventType,
-          productId: productId,
-          productName: productName,
-          customerName: productName // Reusing customerName field for consistent rendering
-        });
+          const eventDate = new Date(event.date);
+          
+          // Check if we have camelCase or snake_case fields
+          const productName = event.productName || event.product_name || t('common.unknown');
+          const eventType = event.eventType || event.event_type;
+          const productId = event.productId || event.product_id;
+          
+          calendarEvents.push({
+            id: `inventory-${event.id}`,
+            title: `${t('calendar.inventory')}: ${productName}`,
+            start: eventDate,
+            end: eventDate,
+            type: 'inventory',
+            inventoryType: eventType,
+            productId: productId,
+            productName: productName,
+            customerName: productName // Reusing customerName field for consistent rendering
+          });
+        } catch (err) {
+          console.error('Error processing inventory event for calendar:', err, event);
+        }
       });
+    } else {
+      console.log('No inventory events available for calendar');
     }
     
     // Add production batch events
-    if (productionBatches && Array.isArray(productionBatches)) {
+    if (productionBatches && Array.isArray(productionBatches) && productionBatches.length > 0) {
       productionBatches.forEach((batch: any) => {
-        // Handle both camelCase and snake_case field names
-        const startDate = batch.startDate || batch.start_date;
-        const completionDate = batch.completionDate || batch.completion_date;
-        const estimatedCompletionDate = batch.estimatedCompletionDate || batch.estimated_completion_date;
-        const recipeName = batch.recipeName || batch.recipe_name || t('common.unknown');
-        
-        // Production start date
-        if (startDate) {
-          const startDateTime = new Date(startDate);
-          calendarEvents.push({
-            id: `production-start-${batch.id}`,
-            title: `${t('calendar.productionStart')}: ${recipeName}`,
-            start: startDateTime,
-            end: startDateTime,
-            type: 'production',
-            productionBatchId: batch.id,
-            productionStage: 'start',
-            recipeName: recipeName,
-            productionQuantity: batch.quantity,
-            customerName: recipeName // Reusing customerName field for display
-          });
-        }
-        
-        // Production completion date
-        if (completionDate) {
-          const completionDateTime = new Date(completionDate);
-          calendarEvents.push({
-            id: `production-complete-${batch.id}`,
-            title: `${t('calendar.productionComplete')}: ${recipeName}`,
-            start: completionDateTime,
-            end: completionDateTime,
-            type: 'production',
-            productionBatchId: batch.id,
-            productionStage: 'complete',
-            recipeName: recipeName,
-            productionQuantity: batch.quantity,
-            customerName: recipeName // Reusing customerName field for display
-          });
-        }
-        
-        // Estimated completion date (if not completed yet)
-        if (estimatedCompletionDate && !completionDate) {
-          const estimatedDateTime = new Date(estimatedCompletionDate);
-          calendarEvents.push({
-            id: `production-estimated-${batch.id}`,
-            title: `${t('calendar.productionEstimated')}: ${recipeName}`,
-            start: estimatedDateTime,
-            end: estimatedDateTime,
-            type: 'production',
-            productionBatchId: batch.id,
-            productionStage: 'estimated',
-            recipeName: recipeName,
-            productionQuantity: batch.quantity,
-            customerName: recipeName // Reusing customerName field for display
-          });
+        try {
+          // Make sure batch has required fields
+          if (!batch || !batch.id) {
+            console.warn('Invalid production batch data:', batch);
+            return; // Skip this batch
+          }
+          
+          // Handle both camelCase and snake_case field names
+          const startDate = batch.startDate || batch.start_date;
+          const completionDate = batch.completionDate || batch.completion_date;
+          const estimatedCompletionDate = batch.estimatedCompletionDate || batch.estimated_completion_date;
+          const recipeName = batch.recipeName || batch.recipe_name || t('common.unknown');
+          const quantity = parseFloat(batch.quantity || '0');
+          
+          // Production start date
+          if (startDate) {
+            const startDateTime = new Date(startDate);
+            calendarEvents.push({
+              id: `production-start-${batch.id}`,
+              title: `${t('calendar.productionStart')}: ${recipeName}`,
+              start: startDateTime,
+              end: startDateTime,
+              type: 'production',
+              productionBatchId: batch.id,
+              productionStage: 'start',
+              recipeName: recipeName,
+              productionQuantity: quantity,
+              customerName: recipeName // Reusing customerName field for display
+            });
+          }
+          
+          // Production completion date
+          if (completionDate) {
+            const completionDateTime = new Date(completionDate);
+            calendarEvents.push({
+              id: `production-complete-${batch.id}`,
+              title: `${t('calendar.productionComplete')}: ${recipeName}`,
+              start: completionDateTime,
+              end: completionDateTime,
+              type: 'production',
+              productionBatchId: batch.id,
+              productionStage: 'complete',
+              recipeName: recipeName,
+              productionQuantity: quantity,
+              customerName: recipeName // Reusing customerName field for display
+            });
+          }
+          
+          // Estimated completion date (if not completed yet)
+          if (estimatedCompletionDate && !completionDate) {
+            const estimatedDateTime = new Date(estimatedCompletionDate);
+            calendarEvents.push({
+              id: `production-estimated-${batch.id}`,
+              title: `${t('calendar.productionEstimated')}: ${recipeName}`,
+              start: estimatedDateTime,
+              end: estimatedDateTime,
+              type: 'production',
+              productionBatchId: batch.id,
+              productionStage: 'estimated',
+              recipeName: recipeName,
+              productionQuantity: quantity,
+              customerName: recipeName // Reusing customerName field for display
+            });
+          }
+        } catch (err) {
+          console.error('Error processing production batch for calendar:', err, batch);
         }
       });
+    } else {
+      console.log('No production batches available for calendar');
     }
     
     return calendarEvents;
