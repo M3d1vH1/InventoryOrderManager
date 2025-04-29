@@ -34,7 +34,7 @@ const localizer = momentLocalizer(moment);
 // Full screen calendar component
 const FullCalendar = ({ title, icon, events, color, onClose }) => {
   const { t, i18n } = useTranslation();
-  const [view, setView] = useState('month');
+  const [view, setView] = useState('day');
   const [_, navigate] = useLocation();
   const { toast } = useToast();
   
@@ -107,6 +107,8 @@ const FullCalendar = ({ title, icon, events, color, onClose }) => {
             startAccessor="start"
             endAccessor="end"
             style={{ height: 'calc(85vh - 120px)', width: '100%' }}
+            min={new Date(new Date().setHours(9, 0, 0))}
+            max={new Date(new Date().setHours(17, 0, 0))}
             view={view}
             onView={setView}
             views={['month', 'week', 'day', 'agenda']}
@@ -183,7 +185,7 @@ const MiniCalendar = ({ title, icon, events, color, onNavigate, onExpand = () =>
           </CardDescription>
         </CardHeader>
         <CardContent className="p-2">
-          <div className="h-[200px] cursor-pointer" onClick={handleExpand}>
+          <div className="h-[calc(20vh_+_60px)] min-h-[200px] max-h-[300px] w-full cursor-pointer" onClick={handleExpand}>
             <Calendar
               localizer={localizer}
               events={events || []}
@@ -199,6 +201,8 @@ const MiniCalendar = ({ title, icon, events, color, onNavigate, onExpand = () =>
                 dayFormat: (date, culture, localizer) =>
                   localizer.format(date, 'ddd', culture),
               }}
+              min={new Date(new Date().setHours(9, 0, 0))}
+              max={new Date(new Date().setHours(17, 0, 0))}
               messages={{
                 noEventsInRange: t('calendar.noEvents'),
               }}
@@ -554,7 +558,7 @@ const SimpleCalendar = () => {
         </div>
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {/* Top row: Orders and Payments */}
         <MiniCalendar 
           title={t('calendar.orders')}
@@ -589,16 +593,14 @@ const SimpleCalendar = () => {
           onNavigate={navigateToCalls}
         />
         
-        {/* Bottom row: Production (takes full width) */}
-        <div className="md:col-span-2">
-          <MiniCalendar 
-            title={t('calendar.production')}
-            icon={<Factory className="h-5 w-5 text-purple-600" />}
-            events={productionEvents}
-            color="purple"
-            onNavigate={navigateToProduction}
-          />
-        </div>
+        {/* Production calendar */}
+        <MiniCalendar 
+          title={t('calendar.production')}
+          icon={<Factory className="h-5 w-5 text-purple-600" />}
+          events={productionEvents}
+          color="purple"
+          onNavigate={navigateToProduction}
+        />
       </div>
     </div>
   );
