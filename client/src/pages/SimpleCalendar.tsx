@@ -292,7 +292,7 @@ const SimpleCalendar = () => {
           if (!isNaN(orderDate.getTime())) {
             events.push({
               id: `order-${order.id}`,
-              title: `${t('calendar.orderCreated')}: ${order.orderNumber || ''}`,
+              title: `${order.orderNumber || ''} - ${order.customerName || t('common.unknown')}`,
               start: orderDate,
               end: orderDate,
               allDay: false,
@@ -307,7 +307,7 @@ const SimpleCalendar = () => {
             if (!isNaN(shippingDate.getTime())) {
               events.push({
                 id: `order-shipped-${order.id}`,
-                title: `${t('calendar.orderShipped')}: ${order.orderNumber || ''}`,
+                title: `${order.orderNumber || ''} - ${order.customerName || t('common.unknown')} (${t('calendar.shipped')})`,
                 start: shippingDate,
                 end: shippingDate,
                 allDay: false,
@@ -323,7 +323,7 @@ const SimpleCalendar = () => {
             if (!isNaN(deliveryDate.getTime())) {
               events.push({
                 id: `order-delivered-${order.id}`,
-                title: `${t('calendar.orderDelivered')}: ${order.orderNumber || ''}`,
+                title: `${order.orderNumber || ''} - ${order.customerName || t('common.unknown')} (${t('calendar.delivered')})`,
                 start: deliveryDate,
                 end: deliveryDate,
                 allDay: false,
