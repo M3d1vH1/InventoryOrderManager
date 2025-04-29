@@ -304,6 +304,7 @@ const SimpleCalendar = () => {
           if (!isNaN(orderDate.getTime())) {
             events.push({
               id: `order-${order.id}`,
+              // Simplify title to just show order number and customer name
               title: `${order.orderNumber || ''} - ${order.customerName || t('common.unknown')}`,
               start: orderDate,
               end: orderDate,
