@@ -44,23 +44,9 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-// Custom FormMessage component to handle translation keys
-const TranslatedFormMessage = ({ fieldName }: { fieldName: string }) => {
-  const { t } = useTranslation();
-  return (
-    <FormMessage 
-      className="text-sm font-medium text-destructive"
-      // This is a workaround since the type of FormMessage component doesn't support render prop
-      // @ts-ignore
-      render={({ message }: { message?: string }) => {
-        if (!message) return null;
-        return message.includes('supplierPayments.') 
-          ? <p className="text-sm font-medium text-destructive">{t(message)}</p>
-          : <p className="text-sm font-medium text-destructive">{message}</p>;
-      }} 
-    />
-  );
-};
+// Note: We don't need a custom FormMessage component anymore since we're using the Zod errorMap
+// to handle translation of error messages. The errorMap will translate any message
+// that includes 'supplierPayments.' prefix.
 
 // Define validation schema for invoice form - using translation keys for error messages
 const invoiceFormSchema = z.object({
@@ -264,7 +250,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
                     <FormControl>
                       <Input placeholder={t('supplierPayments.invoice.invoiceNumberPlaceholder')} {...field} />
                     </FormControl>
-                    <TranslatedFormMessage fieldName="invoiceNumber" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
