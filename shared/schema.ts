@@ -1315,7 +1315,6 @@ export const supplierPayments = pgTable("supplier_payments", {
   callbackNotes: text("callback_notes"),
   callbackCompleted: boolean("callback_completed").default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  createdById: integer("created_by_id").notNull().references(() => users.id),
 });
 
 export const insertSupplierPaymentSchema = createInsertSchema(supplierPayments)
@@ -1333,7 +1332,6 @@ export const insertSupplierPaymentSchema = createInsertSchema(supplierPayments)
     callbackDate: z.string().optional().transform(val => val ? new Date(val) : undefined),
     callbackNotes: z.string().optional(),
     callbackCompleted: z.boolean().default(false),
-    createdById: z.number(),
   });
 
 export type InsertSupplierPayment = z.infer<typeof insertSupplierPaymentSchema>;
