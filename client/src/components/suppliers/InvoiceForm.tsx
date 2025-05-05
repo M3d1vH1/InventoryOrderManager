@@ -48,12 +48,17 @@ import { cn } from "@/lib/utils";
 const TranslatedFormMessage = ({ fieldName }: { fieldName: string }) => {
   const { t } = useTranslation();
   return (
-    <FormMessage render={({ message }) => {
-      if (!message) return null;
-      return message.includes('supplierPayments.') 
-        ? <p className="text-sm font-medium text-destructive">{t(message)}</p>
-        : <p className="text-sm font-medium text-destructive">{message}</p>;
-    }} />
+    <FormMessage 
+      className="text-sm font-medium text-destructive"
+      // This is a workaround since the type of FormMessage component doesn't support render prop
+      // @ts-ignore
+      render={({ message }: { message?: string }) => {
+        if (!message) return null;
+        return message.includes('supplierPayments.') 
+          ? <p className="text-sm font-medium text-destructive">{t(message)}</p>
+          : <p className="text-sm font-medium text-destructive">{message}</p>;
+      }} 
+    />
   );
 };
 
@@ -96,10 +101,19 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
+  // Custom error message handler for Zod validation
+  const customErrorMap: z.ZodErrorMap = (issue, ctx) => {
+    // Check if the error message is a translation key and translate it
+    if (issue.message && issue.message.includes('supplierPayments.')) {
+      return { message: t(issue.message) };
+    }
+    // Use the default error map for other errors
+    return { message: ctx.defaultError };
+  };
+
   // Initialize form with invoice data or defaults
   const form = useForm<InvoiceFormValues>({
-    resolver: zodResolver(invoiceFormSchema),
-    context: { t }, // Pass the translation function to the resolver context
+    resolver: zodResolver(invoiceFormSchema, { errorMap: customErrorMap }),
     defaultValues: {
       invoiceNumber: '',
       supplierId: '',
@@ -250,7 +264,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
                     <FormControl>
                       <Input placeholder={t('supplierPayments.invoice.invoiceNumberPlaceholder')} {...field} />
                     </FormControl>
-                    <FormMessage />
+                    <TranslatedFormMessage fieldName="invoiceNumber" />
                   </FormItem>
                 )}
               />
