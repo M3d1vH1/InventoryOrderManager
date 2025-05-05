@@ -1213,7 +1213,7 @@ export const suppliers = pgTable("suppliers", {
   country: text("country"),
   vatNumber: text("vat_number"),
   paymentTerms: text("payment_terms"), // e.g., "Net 30", "Net 60"
-  bankAccountInfo: text("bank_account_info"),
+  bankAccount: text("bank_account"), // Changed to match database column name
   notes: text("notes"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -1233,7 +1233,7 @@ export const insertSupplierSchema = createInsertSchema(suppliers)
     country: z.string().optional(),
     vatNumber: z.string().optional(),
     paymentTerms: z.string().optional(),
-    bankAccountInfo: z.string().optional(),
+    bankAccount: z.string().optional(), // Changed to match database column name
     notes: z.string().optional(),
     isActive: z.boolean().default(true),
   });
