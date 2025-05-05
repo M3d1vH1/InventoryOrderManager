@@ -236,7 +236,7 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                     <FormControl>
                       <Input
                         type="email"
-                        placeholder={t('supplierPayments.supplier.email')}
+                        placeholder={t('supplierPayments.supplier.emailPlaceholder')}
                         {...field}
                         value={field.value || ''}
                       />
@@ -254,7 +254,7 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                   <FormItem>
                     <FormLabel>{t('supplierPayments.supplier.phone')}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t('supplierPayments.supplier.phone')} {...field} />
+                      <Input placeholder={t('supplierPayments.supplier.phonePlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -270,7 +270,7 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                     <FormLabel>{t('supplierPayments.supplier.paymentTerms')}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder={t('supplierPayments.supplier.paymentTerms')}
+                        placeholder={t('supplierPayments.supplier.paymentTermsPlaceholder')}
                         {...field}
                       />
                     </FormControl>
@@ -288,7 +288,7 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                     <FormLabel>{t('supplierPayments.supplier.bankAccount')}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder={t('supplierPayments.supplier.bankAccount')}
+                        placeholder={t('supplierPayments.supplier.bankAccountPlaceholder')}
                         {...field}
                       />
                     </FormControl>
@@ -305,7 +305,7 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                   <FormItem>
                     <FormLabel>{t('supplierPayments.supplier.address')}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t('supplierPayments.supplier.address')} {...field} />
+                      <Input placeholder={t('supplierPayments.supplier.addressPlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -320,7 +320,7 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                   <FormItem>
                     <FormLabel>{t('supplierPayments.supplier.city')}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t('supplierPayments.supplier.city')} {...field} />
+                      <Input placeholder={t('supplierPayments.supplier.cityPlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -335,7 +335,7 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                   <FormItem>
                     <FormLabel>{t('supplierPayments.supplier.state')}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t('supplierPayments.supplier.state')} {...field} />
+                      <Input placeholder={t('supplierPayments.supplier.statePlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -350,7 +350,7 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                   <FormItem>
                     <FormLabel>{t('supplierPayments.supplier.postalCode')}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t('supplierPayments.supplier.postalCode')} {...field} />
+                      <Input placeholder={t('supplierPayments.supplier.postalCodePlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -365,7 +365,7 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                   <FormItem>
                     <FormLabel>{t('supplierPayments.supplier.country')}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t('supplierPayments.supplier.country')} {...field} />
+                      <Input placeholder={t('supplierPayments.supplier.countryPlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -401,7 +401,7 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                   <FormLabel>{t('supplierPayments.supplier.notes')}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder={t('supplierPayments.supplier.notes')}
+                      placeholder={t('supplierPayments.supplier.notesPlaceholder')}
                       className="min-h-[80px]"
                       {...field}
                     />
