@@ -27,12 +27,12 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Loader } from 'lucide-react';
 
-// Define validation schema for supplier form
+// Define validation schema for supplier form with translation keys for errors
 const supplierFormSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
+  name: z.string().min(2, { message: 'supplierPayments.supplier.errors.nameRequired' }),
   contactPerson: z.string().optional(),
   vatNumber: z.string().optional(),
-  email: z.string().email().optional().nullable(),
+  email: z.string().email({ message: 'supplierPayments.supplier.errors.invalidEmail' }).optional().nullable(),
   phone: z.string().optional(),
   address: z.string().optional(),
   city: z.string().optional(),
@@ -58,9 +58,19 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Custom error message handler for Zod validation
+  const customErrorMap: z.ZodErrorMap = (issue, ctx) => {
+    // Check if the error message is a translation key and translate it
+    if (issue.message && issue.message.includes('supplierPayments.')) {
+      return { message: t(issue.message) };
+    }
+    // Use the default error map for other errors
+    return { message: ctx.defaultError };
+  };
+
   // Initialize form with supplier data or defaults
   const form = useForm<SupplierFormValues>({
-    resolver: zodResolver(supplierFormSchema),
+    resolver: zodResolver(supplierFormSchema, { errorMap: customErrorMap }),
     defaultValues: {
       name: '',
       contactPerson: '',
@@ -179,7 +189,7 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                   <FormItem>
                     <FormLabel>{t('supplierPayments.supplier.name')}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t('supplierPayments.supplier.name')} {...field} />
+                      <Input placeholder={t('supplierPayments.supplier.namePlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -194,7 +204,7 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                   <FormItem>
                     <FormLabel>{t('supplierPayments.supplier.contactPerson')}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t('supplierPayments.supplier.contactPerson')} {...field} />
+                      <Input placeholder={t('supplierPayments.supplier.contactPersonPlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -209,7 +219,7 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                   <FormItem>
                     <FormLabel>{t('supplierPayments.supplier.vatNumber')}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t('supplierPayments.supplier.vatNumber')} {...field} />
+                      <Input placeholder={t('supplierPayments.supplier.vatNumberPlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
