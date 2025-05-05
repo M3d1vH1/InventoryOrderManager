@@ -15,8 +15,7 @@ router.use(isAuthenticated);
 // Supplier validation schemas
 const insertSupplierSchema = createInsertSchema(suppliers).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true
+  createdAt: true
 });
 
 const updateSupplierSchema = insertSupplierSchema.partial();
