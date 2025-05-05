@@ -41,6 +41,7 @@ const supplierFormSchema = z.object({
   country: z.string().optional(),
   notes: z.string().optional(),
   paymentTerms: z.string().optional(),
+  bankAccount: z.string().optional(),
   isActive: z.boolean().default(true),
 });
 
@@ -73,6 +74,7 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
       country: '',
       notes: '',
       paymentTerms: '',
+      bankAccount: '',
       isActive: true,
     },
   });
@@ -93,6 +95,7 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
         country: supplier.country || '',
         notes: supplier.notes || '',
         paymentTerms: supplier.paymentTerms || '',
+        bankAccount: supplier.bankAccount || '',
         isActive: supplier.isActive ?? true,
       });
     } else {
@@ -109,6 +112,7 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
         country: '',
         notes: '',
         paymentTerms: '',
+        bankAccount: '',
         isActive: true,
       });
     }

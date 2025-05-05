@@ -1589,7 +1589,7 @@
       "notes": "Notes",
       "isActive": "Active Supplier",
       "paymentTerms": "Payment Terms",
-      "bankAccountInfo": "Bank Account Information",
+      "bankAccount": "Bank Account Information",
       "created": "Supplier Created",
       "createdDescription": "Supplier has been created successfully",
       "updated": "Supplier Updated",
