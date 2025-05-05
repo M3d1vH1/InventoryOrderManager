@@ -62,7 +62,7 @@ const TranslatedFormMessage = ({ fieldName }: { fieldName: string }) => {
   );
 };
 
-// Define validation schema for invoice form - we'll apply translations when using the schema
+// Define validation schema for invoice form - using translation keys for error messages
 const invoiceFormSchema = z.object({
   invoiceNumber: z.string().min(1, { message: 'supplierPayments.invoice.errors.invoiceNumberRequired' }),
   supplierId: z.string().min(1, { message: 'supplierPayments.invoice.errors.supplierRequired' }),
