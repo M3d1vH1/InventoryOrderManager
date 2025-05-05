@@ -23,8 +23,7 @@ const updateSupplierSchema = insertSupplierSchema.partial();
 // Invoice validation schemas
 const insertInvoiceSchema = createInsertSchema(invoices).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true
+  createdAt: true
 });
 
 const updateInvoiceSchema = insertInvoiceSchema.partial();
@@ -32,8 +31,7 @@ const updateInvoiceSchema = insertInvoiceSchema.partial();
 // Payment validation schemas
 const insertPaymentSchema = createInsertSchema(payments).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true
+  createdAt: true
 });
 
 const updatePaymentSchema = insertPaymentSchema.partial();

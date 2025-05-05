@@ -1255,40 +1255,36 @@ export const supplierInvoices = pgTable("supplier_invoices", {
   id: serial("id").primaryKey(),
   invoiceNumber: text("invoice_number").notNull(),
   supplierId: integer("supplier_id").notNull().references(() => suppliers.id),
-  invoiceDate: date("invoice_date").notNull(),
+  issueDate: date("issue_date").notNull(),  // Changed to match database column name
   dueDate: date("due_date").notNull(),
   amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
-  paidAmount: numeric("paid_amount", { precision: 10, scale: 2 }).default("0"),
+  paidAmount: numeric("paid_amount", { precision: 10, scale: 2 }),
   status: invoiceStatusEnum("status").notNull().default('pending'),
   description: text("description"),
   notes: text("notes"),
   attachmentPath: text("attachment_path"),
   attachment: text("attachment"),
-  isRecurring: boolean("is_recurring").default(false),
-  recurringCycle: integer("recurring_cycle"), // Days between recurring invoices
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  createdById: integer("created_by_id").notNull().references(() => users.id),
-  lastUpdated: timestamp("last_updated"),
-  updatedById: integer("updated_by_id").references(() => users.id),
+  attachmentUrl: text("attachment_url"),  // Added to match database column
+  invoiceDate: date("invoice_date"), // Optional column in the database
+  createdAt: timestamp("created_at").notNull().defaultNow()
 });
 
 export const insertSupplierInvoiceSchema = createInsertSchema(supplierInvoices)
-  .omit({ id: true, createdAt: true, lastUpdated: true, updatedById: true })
+  .omit({ id: true, createdAt: true })
   .extend({
     invoiceNumber: z.string().min(1, { message: "Invoice number is required" }),
     supplierId: z.number(),
-    invoiceDate: z.string().min(1).transform(val => new Date(val)),
+    issueDate: z.string().min(1).transform(val => new Date(val)),
     dueDate: z.string().min(1).transform(val => new Date(val)),
     amount: z.number().min(0.01, { message: "Amount must be greater than 0" }),
-    paidAmount: z.number().min(0).default(0),
+    paidAmount: z.number().min(0).optional(),
     status: z.enum(['pending', 'paid', 'partially_paid', 'overdue', 'cancelled']).default('pending'),
     description: z.string().optional(),
     notes: z.string().optional(),
     attachmentPath: z.string().optional(),
     attachment: z.string().optional(),
-    isRecurring: z.boolean().default(false),
-    recurringCycle: z.number().optional(),
-    createdById: z.number(),
+    attachmentUrl: z.string().optional(),
+    invoiceDate: z.string().optional().transform(val => val ? new Date(val) : undefined)
   });
 
 export type InsertSupplierInvoice = z.infer<typeof insertSupplierInvoiceSchema>;
