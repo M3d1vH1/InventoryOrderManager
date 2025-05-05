@@ -268,6 +268,24 @@ export const SupplierForm = ({ isOpen, onClose, supplier }: SupplierFormProps) =
                   </FormItem>
                 )}
               />
+              
+              {/* Bank Account field */}
+              <FormField
+                control={form.control}
+                name="bankAccount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('supplierPayments.supplier.bankAccount')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t('supplierPayments.supplier.bankAccount')}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               {/* Address field */}
               <FormField
