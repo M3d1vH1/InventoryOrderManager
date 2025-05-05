@@ -44,23 +44,36 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-// Define validation schema for invoice form
+// Custom FormMessage component to handle translation keys
+const TranslatedFormMessage = ({ fieldName }: { fieldName: string }) => {
+  const { t } = useTranslation();
+  return (
+    <FormMessage render={({ message }) => {
+      if (!message) return null;
+      return message.includes('supplierPayments.') 
+        ? <p className="text-sm font-medium text-destructive">{t(message)}</p>
+        : <p className="text-sm font-medium text-destructive">{message}</p>;
+    }} />
+  );
+};
+
+// Define validation schema for invoice form - we'll apply translations when using the schema
 const invoiceFormSchema = z.object({
-  invoiceNumber: z.string().min(1, { message: 'Invoice number is required' }),
-  supplierId: z.string().min(1, { message: 'Supplier is required' }),
+  invoiceNumber: z.string().min(1, { message: 'supplierPayments.invoice.errors.invoiceNumberRequired' }),
+  supplierId: z.string().min(1, { message: 'supplierPayments.invoice.errors.supplierRequired' }),
   invoiceDate: z.date({
-    required_error: "Invoice date is required",
+    required_error: "supplierPayments.invoice.errors.invoiceDateRequired",
   }),
   dueDate: z.date({
-    required_error: "Due date is required",
+    required_error: "supplierPayments.invoice.errors.dueDateRequired",
   }),
-  amount: z.string().min(1, { message: 'Amount is required' })
+  amount: z.string().min(1, { message: 'supplierPayments.invoice.errors.amountRequired' })
     .refine(val => !isNaN(parseFloat(val)), {
-      message: 'Amount must be a valid number',
+      message: 'supplierPayments.invoice.errors.invalidAmount',
     }),
   paidAmount: z.string()
     .refine(val => !isNaN(parseFloat(val)) && parseFloat(val) >= 0, {
-      message: 'Paid amount must be a valid number',
+      message: 'supplierPayments.invoice.errors.invalidPaidAmount',
     }),
   status: z.enum(['pending', 'paid', 'partially_paid', 'overdue', 'cancelled']),
   isRecurring: z.boolean().default(false),
@@ -86,6 +99,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
   // Initialize form with invoice data or defaults
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceFormSchema),
+    context: { t }, // Pass the translation function to the resolver context
     defaultValues: {
       invoiceNumber: '',
       supplierId: '',
