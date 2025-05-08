@@ -634,15 +634,18 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                       // If selected invoice has reference, use it as placeholder
                       const invoiceReference = selectedInvoice?.reference || selectedInvoice?.reference_number;
                       const placeholder = invoiceReference
-                        ? t('supplierPayments.payment.useInvoiceReference', { ref: invoiceReference })
-                        : t('supplierPayments.payment.referencePlaceholder');
+                        ? invoiceReference
+                        : 'RF000000000';
                       
                       return (
                         <FormItem>
-                          <FormLabel>{t('supplierPayments.payment.reference')}</FormLabel>
+                          <FormLabel>RF {t('supplierPayments.payment.reference')}</FormLabel>
                           <FormControl>
                             <Input placeholder={placeholder} {...field} />
                           </FormControl>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {t('supplierPayments.payment.rfHelperText')}
+                          </p>
                           <FormMessage />
                         </FormItem>
                       );
