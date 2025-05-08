@@ -91,10 +91,20 @@ export const InvoiceList = () => {
   // Filter invoices based on search query and status
   const filteredInvoices = invoices.filter((invoice: any) => {
     const query = searchQuery.toLowerCase();
+    
+    // Handle both naming conventions (camelCase and snake_case)
+    const invoiceNumber = (invoice.invoice_number || invoice.invoiceNumber || '').toLowerCase();
+    const supplierName = (
+      invoice.supplier_name || 
+      getSupplierName(invoice.supplier_id || invoice.supplierId) || 
+      ''
+    ).toLowerCase();
+    const notes = (invoice.notes || '').toLowerCase();
+    
     const matchesSearch = 
-      invoice.invoiceNumber?.toLowerCase().includes(query) ||
-      getSupplierName(invoice.supplierId)?.toLowerCase().includes(query) ||
-      invoice.notes?.toLowerCase().includes(query);
+      invoiceNumber.includes(query) ||
+      supplierName.includes(query) ||
+      notes.includes(query);
     
     if (filterStatus === 'all') {
       return matchesSearch;
@@ -241,19 +251,20 @@ export const InvoiceList = () => {
                   ) : (
                     filteredInvoices.map((invoice: any) => (
                       <TableRow key={invoice.id}>
-                        <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
-                        <TableCell>{getSupplierName(invoice.supplierId)}</TableCell>
-                        <TableCell>{formatDate(invoice.invoiceDate)}</TableCell>
-                        <TableCell>{formatDate(invoice.dueDate)}</TableCell>
-                        <TableCell>{formatCurrency(invoice.amount)}</TableCell>
-                        <TableCell>{formatCurrency(invoice.paidAmount || 0)}</TableCell>
+                        <TableCell className="font-medium">{invoice.invoice_number || invoice.invoiceNumber}</TableCell>
+                        <TableCell>{invoice.supplier_name || getSupplierName(invoice.supplier_id || invoice.supplierId)}</TableCell>
+                        <TableCell>{formatDate(invoice.invoice_date || invoice.invoiceDate)}</TableCell>
+                        <TableCell>{formatDate(invoice.due_date || invoice.dueDate)}</TableCell>
+                        <TableCell>{formatCurrency(parseFloat(invoice.amount))}</TableCell>
+                        <TableCell>{formatCurrency(parseFloat(invoice.paid_amount || invoice.paidAmount || 0))}</TableCell>
                         <TableCell>
                           <Badge 
                             variant={getStatusBadgeVariant(invoice.status)}
                             className="flex w-fit items-center gap-1"
                           >
                             {getStatusIcon(invoice.status)}
-                            {t(`supplierPayments.invoice.status${invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}`)}
+                            {t(`supplierPayments.invoice.status${invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}`, 
+                               {defaultValue: invoice.status}) /* Add defaultValue as fallback */}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
