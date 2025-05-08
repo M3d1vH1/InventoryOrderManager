@@ -188,6 +188,12 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
         if (!payment) {
           const unpaidAmount = getUnpaidAmount(invoiceId);
           form.setValue('amount', unpaidAmount.toString());
+          
+          // Automatically set reference from invoice if available
+          const invoiceReference = invoice.reference || invoice.reference_number;
+          if (invoiceReference) {
+            form.setValue('reference', invoiceReference);
+          }
         }
         
         // If supplier not set, set it from the invoice
