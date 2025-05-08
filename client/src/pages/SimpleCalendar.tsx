@@ -458,17 +458,51 @@ const SimpleCalendar = () => {
             continue;
           }
           
+          // Determine background color based on call type and follow-up status
+          let backgroundColor = '#8b5cf6'; // Default purple for call events
+          
+          // Color code based on call type
+          if (call.callType === 'inbound') {
+            backgroundColor = '#8b5cf6'; // purple-500
+          } else if (call.callType === 'outbound') {
+            backgroundColor = '#3b82f6'; // blue-500
+          } else if (call.callType === 'missed') {
+            backgroundColor = '#ef4444'; // red-500
+          } else if (call.callType === 'scheduled') {
+            backgroundColor = '#f59e0b'; // amber-500
+          }
+          
+          // Highlight follow-up calls with a different color
+          if (call.needsFollowup) {
+            backgroundColor = '#ec4899'; // pink-500
+          }
+          
+          // Create consistent resource object with all needed properties
+          const resource = {
+            id: callId,
+            type: 'call',
+            callId: callId,
+            customerId: call.customerId,
+            customerName: call.customerName,
+            subject: call.subject,
+            callType: call.callType,
+            needsFollowup: call.needsFollowup,
+            followupDate: call.followupDate,
+            notes: call.notes,
+            duration: call.duration,
+            priority: call.priority,
+            ...call
+          };
+          
           events.push({
             id: `call-${callId}`,
             title: (call.subject || call.customerName || t('common.unknown')).slice(0, 50),
             start,
             end: start,
             allDay: false,
-            resource: {
-              id: callId,
-              ...call
-            },
-            backgroundColor: '#8b5cf6' // purple-500 for call events
+            resource,
+            backgroundColor,
+            borderColor: call.needsFollowup ? '#be185d' : undefined // Darker border for follow-up tasks
           });
         }
       }

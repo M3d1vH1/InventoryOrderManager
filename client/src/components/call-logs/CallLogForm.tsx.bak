@@ -62,6 +62,7 @@ const callLogFormSchema = z.object({
     email: z.string().email('Invalid email').optional().or(z.literal('')),
     address: z.string().optional(),
     city: z.string().optional(),
+    // Simplified prospective customer fields - source field removed
   }).optional(),
   callDate: z.date({
     required_error: 'Please select a date and time',
@@ -485,20 +486,17 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                 name="customerId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('callLogs.form.customer')}<span className="text-red-500">*</span></FormLabel>
-                    <Select
-                      onValueChange={(value) => field.onChange(Number(value))}
-                      value={field.value ? String(field.value) : undefined}
-                    >
+                    <FormLabel>{t('callLogs.form.customer')}</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(Number(value))} value={field.value?.toString()}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={t('callLogs.form.selectCustomer')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {customers && customers.map((customer: any) => (
-                          <SelectItem key={customer.id} value={String(customer.id)}>
-                            {customer.name || customer.companyName || customer.email || t('common.unknown')}
+                        {customers?.map((customer: any) => (
+                          <SelectItem key={customer.id} value={customer.id.toString()}>
+                            {customer.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -509,56 +507,58 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
               />
             )}
 
-            {/* Prospective Customer Selection (conditional) */}
+            {/* Prospective Customer Selection or Creation (conditional) */}
             {customerType === 'prospective' && (
               <>
-                <FormField
-                  control={form.control}
-                  name="prospectiveCustomerId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('callLogs.form.prospectiveCustomer')}</FormLabel>
-                      <Select
-                        onValueChange={handleProspectiveCustomerChange}
-                        value={isNewProspect ? 'new' : field.value ? String(field.value) : undefined}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={t('callLogs.form.selectProspectiveCustomer')} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="new">
-                            <div className="flex items-center">
-                              <UserPlus className="mr-2 h-4 w-4" />
-                              <span>{t('callLogs.form.newProspectiveCustomer')}</span>
-                            </div>
-                          </SelectItem>
-                          <Separator className="my-2" />
-                          {prospectiveCustomers && prospectiveCustomers.map((prospect: any) => (
-                            <SelectItem key={prospect.id} value={String(prospect.id)}>
-                              {prospect.name || prospect.companyName || prospect.email || t('common.unknown')}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <FormItem>
+                  <FormLabel>{t('callLogs.form.prospectiveCustomerSelect')}</FormLabel>
+                  <Select 
+                    onValueChange={handleProspectiveCustomerChange} 
+                    value={isNewProspect ? 'new' : form.getValues('prospectiveCustomerId')?.toString()}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('callLogs.form.selectProspectiveCustomer')} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="new">{t('callLogs.form.createNewProspect')}</SelectItem>
+                      {prospectiveCustomers?.map((customer: any) => (
+                        <SelectItem key={customer.id} value={customer.id.toString()}>
+                          {customer.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
 
                 {/* New Prospective Customer Form (conditional) */}
                 {isNewProspect && (
-                  <Card className="mt-2">
-                    <CardContent className="pt-4">
+                  <Card className="border-primary/20">
+                    <CardContent className="p-4 space-y-4 mt-4">
+                      <div className="flex items-center gap-2 border-b pb-2 mb-2">
+                        <UserPlus className="h-5 w-5 text-primary" />
+                        <h3 className="text-lg font-medium">{t('callLogs.form.newProspectDetails')}</h3>
+                      </div>
+                      
+                      <div className="bg-muted/30 p-3 rounded-md flex items-center gap-2 mb-2">
+                        <Info className="h-4 w-4 text-primary" />
+                        <p className="text-sm">{t('callLogs.form.prospectiveCustomerInfo')}</p>
+                      </div>
+                      
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Name */}
+                        {/* Basic Information Section */}
+                        <div className="col-span-1 md:col-span-2 border-b pb-2">
+                          <h4 className="text-sm font-medium text-muted-foreground mb-2">{t('callLogs.form.basicInformation')}</h4>
+                        </div>
+                        
                         <FormField
                           control={form.control}
                           name="newProspectiveCustomer.name"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>{t('callLogs.form.name')}<span className="text-red-500">*</span></FormLabel>
+                              <FormLabel>{t('callLogs.form.prospectName')}<span className="text-red-500">*</span></FormLabel>
                               <FormControl>
                                 <Input placeholder={t('callLogs.form.enterName')} {...field} value={field.value || ''} />
                               </FormControl>
@@ -566,8 +566,6 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                             </FormItem>
                           )}
                         />
-                        
-                        {/* Company Name */}
                         <FormField
                           control={form.control}
                           name="newProspectiveCustomer.companyName"
@@ -575,14 +573,18 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                             <FormItem>
                               <FormLabel>{t('callLogs.form.companyName')}</FormLabel>
                               <FormControl>
-                                <Input placeholder={t('callLogs.form.enterCompanyName')} {...field} value={field.value || ''} />
+                                <Input placeholder={t('callLogs.form.enterCompany')} {...field} value={field.value || ''} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
                         
-                        {/* Phone */}
+                        {/* Contact Information Section */}
+                        <div className="col-span-1 md:col-span-2 border-b pb-2 mt-2">
+                          <h4 className="text-sm font-medium text-muted-foreground mb-2">{t('callLogs.form.contactInformation')}</h4>
+                        </div>
+                        
                         <FormField
                           control={form.control}
                           name="newProspectiveCustomer.phone"
@@ -596,8 +598,6 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                             </FormItem>
                           )}
                         />
-                        
-                        {/* Email */}
                         <FormField
                           control={form.control}
                           name="newProspectiveCustomer.email"
@@ -605,7 +605,7 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                             <FormItem>
                               <FormLabel>{t('callLogs.form.email')}</FormLabel>
                               <FormControl>
-                                <Input placeholder={t('callLogs.form.enterEmail')} {...field} value={field.value || ''} />
+                                <Input type="email" placeholder={t('callLogs.form.enterEmail')} {...field} value={field.value || ''} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -724,14 +724,11 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                           selected={field.value}
                           onSelect={(date) => {
                             if (date) {
+                              // Preserve time part if date already has a value
                               const newDate = new Date(date);
                               if (field.value) {
                                 newDate.setHours(field.value.getHours());
                                 newDate.setMinutes(field.value.getMinutes());
-                              } else {
-                                const now = new Date();
-                                newDate.setHours(now.getHours());
-                                newDate.setMinutes(now.getMinutes());
                               }
                               field.onChange(newDate);
                             }
@@ -800,6 +797,8 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                 </FormItem>
               )}
             />
+
+
 
             {/* Outcome Tracking Section */}
             <div className="border rounded-md p-4 mb-4">
@@ -883,159 +882,76 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                     </FormItem>
                   )}
                 />
-                
-                {needsFollowup && (
-                  <FormField
-                    control={form.control}
-                    name="followupType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('callLogs.form.followupType', 'Follow-up Type')}</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder={t('callLogs.form.selectFollowupType', 'Select type')} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="call">{t('callLogs.form.followupTypes.call', 'Phone Call')}</SelectItem>
-                            <SelectItem value="email">{t('callLogs.form.followupTypes.email', 'Email')}</SelectItem>
-                            <SelectItem value="meeting">{t('callLogs.form.followupTypes.meeting', 'Meeting')}</SelectItem>
-                            <SelectItem value="other">{t('callLogs.form.followupTypes.other', 'Other')}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
               </div>
               
+              {/* Followup Date (conditional) */}
               {needsFollowup && (
-                <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    {/* Followup Date */}
-                    <FormField
-                      control={form.control}
-                      name="followupDate"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>{t('callLogs.form.followupDate', 'Follow-up Date')}<span className="text-red-500">*</span></FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant="outline"
-                                  className="w-full pl-3 text-left font-normal"
-                                >
-                                  {field.value ? (
-                                    format(field.value, 'PPP HH:mm')
-                                  ) : (
-                                    <span className="text-muted-foreground">
-                                      {t('callLogs.form.pickDate', 'Pick a date')}
-                                    </span>
-                                  )}
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={(date) => {
-                                  if (date) {
-                                    const newDate = new Date(date);
-                                    if (field.value) {
-                                      newDate.setHours(field.value.getHours());
-                                      newDate.setMinutes(field.value.getMinutes());
-                                    } else {
-                                      const now = new Date();
-                                      newDate.setHours(now.getHours());
-                                      newDate.setMinutes(now.getMinutes());
-                                    }
-                                    field.onChange(newDate);
-                                  }
-                                }}
-                                initialFocus
-                              />
-                              <div className="p-3 border-t border-border">
-                                <Input
-                                  type="time"
-                                  value={field.value ? 
-                                    `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : 
-                                    '12:00'}
-                                  onChange={(e) => {
-                                    const [hours, minutes] = e.target.value.split(':').map(Number);
-                                    const newDate = new Date(field.value || new Date());
-                                    newDate.setHours(hours);
-                                    newDate.setMinutes(minutes);
-                                    field.onChange(newDate);
-                                  }}
-                                />
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    {/* Assigned To (if users are available) */}
-                    {users && users.length > 0 && (
-                      <FormField
-                        control={form.control}
-                        name="assignedToId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t('callLogs.form.assignTo', 'Assign To')}</FormLabel>
-                            <Select 
-                              onValueChange={(value) => field.onChange(Number(value))} 
-                              value={field.value ? String(field.value) : undefined}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder={t('callLogs.form.selectAssignee', 'Select assignee')} />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {users.map((user: any) => (
-                                  <SelectItem key={user.id} value={String(user.id)}>
-                                    {user.name || user.username}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                  </div>
-                  
-                  {/* Follow-up Reminder */}
-                  <div className="mt-4">
-                    <FormField
-                      control={form.control}
-                      name="followupReminder"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                          <div className="space-y-0.5">
-                            <FormLabel>{t('callLogs.form.followupReminder', 'Send Reminder')}</FormLabel>
-                            <p className="text-sm text-muted-foreground">
-                              {t('callLogs.form.followupReminderDescription', 'Send a notification before the follow-up')}
-                            </p>
-                          </div>
+                <FormField
+                  control={form.control}
+                  name="followupDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>{t('callLogs.form.followupDate')}<span className="text-red-500">*</span></FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
                           <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
+                            <Button
+                              variant="outline"
+                              className="w-full pl-3 text-left font-normal"
+                            >
+                              {field.value ? (
+                                format(field.value, 'PPP HH:mm')
+                              ) : (
+                                <span className="text-muted-foreground">
+                                  {t('callLogs.form.pickDate')}
+                                </span>
+                              )}
+                            </Button>
                           </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={(date) => {
+                              if (date) {
+                                // Preserve time part if date already has a value
+                                const newDate = new Date(date);
+                                if (field.value) {
+                                  newDate.setHours(field.value.getHours());
+                                  newDate.setMinutes(field.value.getMinutes());
+                                } else {
+                                  // Default to current time
+                                  const now = new Date();
+                                  newDate.setHours(now.getHours());
+                                  newDate.setMinutes(now.getMinutes());
+                                }
+                                field.onChange(newDate);
+                              }
+                            }}
+                            initialFocus
+                          />
+                          <div className="p-3 border-t border-border">
+                            <Input
+                              type="time"
+                              value={field.value ? 
+                                `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : 
+                                '12:00'}
+                              onChange={(e) => {
+                                const [hours, minutes] = e.target.value.split(':').map(Number);
+                                const newDate = new Date(field.value || new Date());
+                                newDate.setHours(hours);
+                                newDate.setMinutes(minutes);
+                                field.onChange(newDate);
+                              }}
+                            />
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               )}
             </div>
 
