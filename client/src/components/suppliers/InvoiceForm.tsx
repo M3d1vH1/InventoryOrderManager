@@ -475,6 +475,24 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
                 )}
               />
 
+              {/* Reference / RF Number field */}
+              <FormField
+                control={form.control}
+                name="reference"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('supplierPayments.invoice.reference', 'Reference/RF Number')}</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder={t('supplierPayments.invoice.referencePlaceholder', 'Enter reference or RF number')} 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               {/* Status field */}
               <FormField
                 control={form.control}
