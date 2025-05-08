@@ -167,6 +167,7 @@ export const InvoiceList = () => {
   };
 
   const handleEditClick = (invoice: any) => {
+    console.log("Editing invoice:", invoice);
     setSelectedInvoice(invoice);
     setIsFormOpen(true);
   };
