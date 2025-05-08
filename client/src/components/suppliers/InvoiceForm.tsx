@@ -162,23 +162,44 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
   // Save invoice mutation
   const saveInvoiceMutation = useMutation({
     mutationFn: async (data: any) => {
-      if (invoice) {
-        // Update existing invoice
-        return apiRequest({
-          url: `/api/supplier-payments/invoices/${invoice.id}`,
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-      } else {
-        // Create new invoice
-        return apiRequest({
-          url: '/api/supplier-payments/invoices',
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
+      // Create request options
+      const requestOptions = {
+        method: invoice ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      };
+
+      // Construct the URL
+      const endpoint = invoice 
+        ? `/api/supplier-payments/invoices/${invoice.id}` 
+        : '/api/supplier-payments/invoices';
+
+      // Make the request using fetch for better error handling
+      const response = await fetch(endpoint, requestOptions);
+      
+      if (!response.ok) {
+        // Try to get detailed error message from response
+        let errorDetails;
+        try {
+          errorDetails = await response.json();
+        } catch (e) {
+          // If we can't parse the error, use status text
+          throw new Error(`${response.status}: ${response.statusText}`);
+        }
+        
+        // Throw error with details from the server if available
+        if (errorDetails && errorDetails.error) {
+          throw new Error(
+            typeof errorDetails.error === 'string' 
+              ? errorDetails.error 
+              : JSON.stringify(errorDetails.error)
+          );
+        }
+        
+        throw new Error(`${response.status}: ${response.statusText}`);
       }
+      
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -190,6 +211,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
       onClose();
     },
     onError: (error: any) => {
+      console.error("Invoice save error:", error);
       toast({
         title: t('common.error'),
         description: error.message || t('supplierPayments.invoice.saveError'),
@@ -217,15 +239,22 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
 
   // Form submission handler
   const onSubmit = (data: InvoiceFormValues) => {
+    // Format date objects to ISO strings for API
+    const invoiceDate = data.invoiceDate ? data.invoiceDate.toISOString().split('T')[0] : undefined;
+    const dueDate = data.dueDate ? data.dueDate.toISOString().split('T')[0] : undefined;
+    
     // Convert string values to numbers
     const formattedData = {
       ...data,
+      invoiceDate: invoiceDate,  // Send as ISO date string
+      dueDate: dueDate,          // Send as ISO date string
       supplierId: parseInt(data.supplierId),
       amount: parseFloat(data.amount),
       paidAmount: parseFloat(data.paidAmount || '0'),
       recurringCycle: data.isRecurring && data.recurringCycle ? parseInt(data.recurringCycle) : undefined,
     };
 
+    console.log("Submitting invoice data:", formattedData);
     saveInvoiceMutation.mutate(formattedData);
   };
 
