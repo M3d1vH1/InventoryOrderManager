@@ -134,6 +134,48 @@ export function setupAuth(app: Express) {
     res.json(safeUser);
   });
 
+  // Development-only auto-login endpoint
+  app.get('/api/dev-login', async (req, res) => {
+    // Only available in development mode
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(404).json({ message: 'Not found' });
+    }
+
+    try {
+      // Get the admin user
+      const users = await storage.getAllUsers();
+      const adminUser = users.find(user => user.role === 'admin');
+
+      if (!adminUser) {
+        return res.status(500).json({ 
+          message: 'No admin user found. Try restarting the server to create default admin.' 
+        });
+      }
+
+      // Log the user in
+      req.login(adminUser, (err) => {
+        if (err) {
+          return res.status(500).json({ message: 'Login failed', error: err.message });
+        }
+
+        // Don't send password in response
+        const { password, ...safeUser } = adminUser;
+        
+        return res.json({ 
+          success: true, 
+          message: 'Auto-login successful',
+          user: safeUser
+        });
+      });
+    } catch (error: any) {
+      console.error('Dev login error:', error);
+      res.status(500).json({ 
+        message: 'Auto-login failed', 
+        error: error.message 
+      });
+    }
+  });
+
   // Default admin user creation (if no admin exists)
   createDefaultAdminUser();
 }
