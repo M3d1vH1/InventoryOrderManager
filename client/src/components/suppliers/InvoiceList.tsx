@@ -263,8 +263,8 @@ export const InvoiceList = () => {
                             className="flex w-fit items-center gap-1"
                           >
                             {getStatusIcon(invoice.status)}
-                            {t(`supplierPayments.invoice.status${invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}`, 
-                               {defaultValue: invoice.status}) /* Add defaultValue as fallback */}
+                            {t(`supplierPayments.invoice.statuses.${invoice.status}`, 
+                               {defaultValue: invoice.status}) /* Use correct translation path with fallback */}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
