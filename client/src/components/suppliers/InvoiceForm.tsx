@@ -67,6 +67,7 @@ const invoiceFormSchema = z.object({
     .refine(val => !isNaN(parseFloat(val)) && parseFloat(val) >= 0, {
       message: 'supplierPayments.invoice.errors.invalidPaidAmount',
     }),
+  reference: z.string().optional(), // Added RF number field for payments
   status: z.enum(['pending', 'paid', 'partially_paid', 'overdue', 'cancelled']),
   isRecurring: z.boolean().default(false),
   recurringCycle: z.string().optional(),
@@ -108,6 +109,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
       dueDate: new Date(),
       amount: '0',
       paidAmount: '', // Start with empty paid amount to allow user to specify or leave blank
+      reference: '', // RF number for payments reference
       status: 'pending',
       isRecurring: false,
       recurringCycle: '',
@@ -126,6 +128,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
         dueDate: invoice.dueDate ? new Date(invoice.dueDate) : new Date(),
         amount: invoice.amount?.toString() || '0',
         paidAmount: invoice.paidAmount ? invoice.paidAmount.toString() : '',
+        reference: invoice.reference || '', // Added RF number field
         status: invoice.status || 'pending',
         isRecurring: invoice.isRecurring || false,
         recurringCycle: invoice.recurringCycle?.toString() || '',
@@ -140,6 +143,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
         dueDate: new Date(),
         amount: '0',
         paidAmount: '', // Empty string to allow clearing the paid amount
+        reference: '', // Added RF number field
         status: 'pending',
         isRecurring: false,
         recurringCycle: '',
@@ -268,6 +272,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
       dueDate: data.dueDate,        // Send full Date object, schema will handle it
       amount: data.amount,          // Schema will handle number coercion
       paidAmount: paidAmount,       // Allow undefined to be passed through
+      reference: data.reference || '', // RF number for payment reference
       status: data.status,
       notes: data.notes || '',
       attachmentPath: data.attachmentPath || '',
