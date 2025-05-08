@@ -32,8 +32,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader } from 'lucide-react';
-import { CalendarIcon } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader, CalendarIcon, Euro, FileText, Info } from 'lucide-react';
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -41,9 +42,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 // Define validation schema for payment form
 const paymentFormSchema = z.object({
+  supplierId: z.string().min(1, { message: 'Supplier is required' }),
   invoiceId: z.string().min(1, { message: 'Invoice is required' }),
   paymentDate: z.date({
     required_error: "Payment date is required",
@@ -72,6 +76,8 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [step, setStep] = useState<'supplier' | 'invoice'>(payment ? 'invoice' : 'supplier');
+  const [filteredInvoices, setFilteredInvoices] = useState<any[]>([]);
   
   // Payment methods
   const paymentMethods = [
@@ -87,6 +93,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentFormSchema),
     defaultValues: {
+      supplierId: '',
       invoiceId: '',
       paymentDate: new Date(),
       amount: '',
@@ -107,55 +114,81 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
     return Math.max(0, totalAmount - paidAmount);
   };
 
-  // Get formatted invoice options with supplier name and unpaid amount
-  const getInvoiceOptions = () => {
-    return invoices
-      .filter(invoice => 
-        invoice.status === 'pending' || 
-        invoice.status === 'partially_paid' || 
-        invoice.status === 'overdue' ||
-        (payment && payment.invoiceId === invoice.id)
-      )
-      .map(invoice => {
-        const supplier = suppliers.find(s => s.id === invoice.supplierId);
-        const supplierName = supplier ? supplier.name : 'Unknown';
-        const unpaidAmount = getUnpaidAmount(invoice.id);
-        
-        // Format currency for display
-        const formattedUnpaid = new Intl.NumberFormat('el-GR', {
-          style: 'currency',
-          currency: 'EUR',
-        }).format(unpaidAmount);
-        
-        return {
-          id: invoice.id,
-          label: `${invoice.invoiceNumber} - ${supplierName} (${formattedUnpaid})`,
-          unpaidAmount
-        };
-      });
+  // Get payment percentage for an invoice
+  const getPaymentPercentage = (invoice: any) => {
+    if (!invoice) return 0;
+    const totalAmount = invoice.amount || 0;
+    if (totalAmount === 0) return 0;
+    
+    const paidAmount = invoice.paidAmount || 0;
+    return Math.min(100, Math.round((paidAmount / totalAmount) * 100));
+  };
+  
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('el-GR', {
+      style: 'currency',
+      currency: 'EUR',
+    }).format(amount);
   };
 
-  // Watch for invoice changes to set default amount
+  // Watch for supplier and invoice changes
+  const watchedSupplierId = form.watch('supplierId');
   const watchedInvoiceId = form.watch('invoiceId');
   
+  // Filter invoices by supplier
   useEffect(() => {
-    if (watchedInvoiceId && !payment) {
+    if (watchedSupplierId) {
+      const supplierIdNum = parseInt(watchedSupplierId);
+      const filtered = invoices.filter(invoice => 
+        invoice.supplierId === supplierIdNum && 
+        (invoice.status === 'pending' || 
+         invoice.status === 'partially_paid' || 
+         invoice.status === 'overdue')
+      );
+      setFilteredInvoices(filtered);
+      
+      // If there's only one invoice, automatically select it
+      if (filtered.length === 1 && !payment) {
+        form.setValue('invoiceId', filtered[0].id.toString());
+      }
+    } else {
+      setFilteredInvoices([]);
+    }
+  }, [watchedSupplierId, invoices, form, payment]);
+  
+  // Update selected invoice and set default amount when invoice changes
+  useEffect(() => {
+    if (watchedInvoiceId) {
       const invoiceId = parseInt(watchedInvoiceId);
       const invoice = invoices.find(inv => inv.id === invoiceId);
       if (invoice) {
         setSelectedInvoice(invoice);
         
-        // Set default amount to unpaid amount
-        const unpaidAmount = getUnpaidAmount(invoiceId);
-        form.setValue('amount', unpaidAmount.toString());
+        // Set default amount to unpaid amount if not editing
+        if (!payment) {
+          const unpaidAmount = getUnpaidAmount(invoiceId);
+          form.setValue('amount', unpaidAmount.toString());
+        }
+        
+        // If supplier not set, set it from the invoice
+        if (!watchedSupplierId && invoice.supplierId) {
+          form.setValue('supplierId', invoice.supplierId.toString());
+        }
       }
+    } else {
+      setSelectedInvoice(null);
     }
-  }, [watchedInvoiceId, invoices, form, payment]);
+  }, [watchedInvoiceId, invoices, form, payment, watchedSupplierId]);
 
   // Reset form when payment changes
   useEffect(() => {
     if (payment) {
+      const invoice = invoices.find(inv => inv.id === payment.invoiceId);
+      const supplierId = invoice?.supplierId?.toString() || '';
+      
       form.reset({
+        supplierId: supplierId,
         invoiceId: payment.invoiceId?.toString() || '',
         paymentDate: payment.paymentDate ? new Date(payment.paymentDate) : new Date(),
         amount: payment.amount?.toString() || '',
@@ -164,12 +197,13 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
         notes: payment.notes || '',
       });
       
-      const invoice = invoices.find(inv => inv.id === payment.invoiceId);
       if (invoice) {
         setSelectedInvoice(invoice);
+        setStep('invoice');
       }
     } else {
       form.reset({
+        supplierId: '',
         invoiceId: '',
         paymentDate: new Date(),
         amount: '',
@@ -178,6 +212,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
         notes: '',
       });
       setSelectedInvoice(null);
+      setStep('supplier');
     }
   }, [payment, form, invoices]);
 
@@ -231,9 +266,26 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
     savePaymentMutation.mutate(formattedData);
   };
 
+  // Go to next step (from supplier to invoice)
+  const goToInvoiceStep = () => {
+    if (watchedSupplierId) {
+      setStep('invoice');
+    } else {
+      form.setError('supplierId', { 
+        type: 'manual', 
+        message: t('supplierPayments.payment.supplierRequired') 
+      });
+    }
+  };
+
+  // Go back to supplier step
+  const goToSupplierStep = () => {
+    setStep('supplier');
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {payment ? t('supplierPayments.payment.edit') : t('supplierPayments.payment.create')}
@@ -242,180 +294,361 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Invoice field - required */}
-            <FormField
-              control={form.control}
-              name="invoiceId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('supplierPayments.payment.invoice')}</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('supplierPayments.payment.selectInvoice')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {getInvoiceOptions().map((option) => (
-                        <SelectItem key={option.id} value={option.id.toString()}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Step: Select Supplier */}
+            {step === 'supplier' && (
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="supplierId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('supplierPayments.payment.supplier')}</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('supplierPayments.payment.selectSupplier')} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {suppliers
+                            .filter(s => s.isActive !== false)
+                            .map((supplier) => (
+                              <SelectItem key={supplier.id} value={supplier.id.toString()}>
+                                {supplier.name}
+                              </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            {/* Payment Date field - required */}
-            <FormField
-              control={form.control}
-              name="paymentDate"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>{t('supplierPayments.payment.paymentDate')}</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>{t('supplierPayments.payment.selectDate')}</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) =>
-                          date > new Date() || date < new Date("1900-01-01")
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Amount field - required */}
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('supplierPayments.payment.amount')}</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      min="0.01" 
-                      step="0.01"
-                      placeholder={t('supplierPayments.payment.amountPlaceholder')} 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Payment Method field - required */}
-            <FormField
-              control={form.control}
-              name="paymentMethod"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('supplierPayments.payment.paymentMethod')}</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('supplierPayments.payment.selectPaymentMethod')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {paymentMethods.map((method) => (
-                        <SelectItem key={method} value={method}>
-                          {method}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Reference field */}
-            <FormField
-              control={form.control}
-              name="reference"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('supplierPayments.payment.reference')}</FormLabel>
-                  <FormControl>
-                    <Input placeholder={t('supplierPayments.payment.referencePlaceholder')} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Notes field */}
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('supplierPayments.payment.notes')}</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder={t('supplierPayments.payment.notesPlaceholder')}
-                      className="min-h-[80px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                disabled={savePaymentMutation.isPending}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button type="submit" disabled={savePaymentMutation.isPending}>
-                {savePaymentMutation.isPending && (
-                  <Loader className="mr-2 h-4 w-4 animate-spin" />
+                {/* Show unpaid invoices summary for selected supplier */}
+                {watchedSupplierId && filteredInvoices.length > 0 && (
+                  <Card>
+                    <CardContent className="pt-4">
+                      <h3 className="text-sm font-medium mb-2">
+                        {t('supplierPayments.payment.unpaidInvoices', { count: filteredInvoices.length })}
+                      </h3>
+                      <ul className="space-y-2">
+                        {filteredInvoices.slice(0, 3).map(invoice => (
+                          <li key={invoice.id} className="text-sm">
+                            <div className="flex justify-between">
+                              <span>{invoice.invoiceNumber}</span>
+                              <span className="font-semibold">
+                                {formatCurrency(getUnpaidAmount(invoice.id))}
+                              </span>
+                            </div>
+                          </li>
+                        ))}
+                        {filteredInvoices.length > 3 && (
+                          <li className="text-sm text-muted-foreground">
+                            {t('supplierPayments.payment.moreInvoices', { count: filteredInvoices.length - 3 })}
+                          </li>
+                        )}
+                      </ul>
+                    </CardContent>
+                  </Card>
                 )}
-                {payment ? t('common.update') : t('common.create')}
-              </Button>
-            </DialogFooter>
+
+                {watchedSupplierId && filteredInvoices.length === 0 && (
+                  <div className="text-sm text-muted-foreground p-4 bg-muted rounded-md">
+                    {t('supplierPayments.payment.noUnpaidInvoices')}
+                  </div>
+                )}
+
+                <div className="flex justify-end space-x-2 mt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onClose}
+                  >
+                    {t('common.cancel')}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    onClick={goToInvoiceStep}
+                    disabled={!watchedSupplierId || filteredInvoices.length === 0}
+                  >
+                    {t('common.next')}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step: Fill payment details */}
+            {step === 'invoice' && (
+              <div className="space-y-4">
+                {!payment && (
+                  <div className="flex items-center mb-4">
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      className="text-sm p-0 h-auto" 
+                      onClick={goToSupplierStep}
+                    >
+                      ← {t('supplierPayments.payment.backToSupplier')}
+                    </Button>
+                  </div>
+                )}
+
+                {/* Invoice field - required */}
+                <FormField
+                  control={form.control}
+                  name="invoiceId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('supplierPayments.payment.invoice')}</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('supplierPayments.payment.selectInvoice')} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {filteredInvoices.map((invoice) => (
+                            <SelectItem key={invoice.id} value={invoice.id.toString()}>
+                              {invoice.invoiceNumber} - {formatCurrency(getUnpaidAmount(invoice.id))}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Selected Invoice Details */}
+                {selectedInvoice && (
+                  <Card className="bg-muted/40">
+                    <CardContent className="pt-4 pb-3">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="text-sm font-medium">
+                            {selectedInvoice.invoiceNumber}
+                          </h3>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(selectedInvoice.issueDate), "PPP")}
+                          </p>
+                        </div>
+                        <Badge variant={
+                          selectedInvoice.status === 'pending' ? 'outline' :
+                          selectedInvoice.status === 'partially_paid' ? 'secondary' :
+                          selectedInvoice.status === 'overdue' ? 'destructive' : 'default'
+                        }>
+                          {t(`supplierPayments.invoice.status.${selectedInvoice.status}`)}
+                        </Badge>
+                      </div>
+
+                      {/* Payment progress */}
+                      <div className="space-y-1 mb-3">
+                        <div className="flex justify-between text-xs">
+                          <span>{t('supplierPayments.payment.paymentProgress')}</span>
+                          <span>{getPaymentPercentage(selectedInvoice)}%</span>
+                        </div>
+                        <Progress value={getPaymentPercentage(selectedInvoice)} className="h-2" />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm">
+                        <div className="flex items-center gap-1">
+                          <Euro className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{t('supplierPayments.payment.totalAmount')}:</span>
+                        </div>
+                        <div className="text-right">
+                          {formatCurrency(selectedInvoice.amount || 0)}
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <Euro className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{t('supplierPayments.payment.remainingAmount')}:</span>
+                        </div>
+                        <div className="text-right font-semibold">
+                          {formatCurrency(getUnpaidAmount(selectedInvoice.id))}
+                        </div>
+
+                        {selectedInvoice.reference && (
+                          <>
+                            <div className="flex items-center gap-1">
+                              <FileText className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium">{t('supplierPayments.invoice.reference')}:</span>
+                            </div>
+                            <div className="text-right font-mono text-xs">
+                              {selectedInvoice.reference}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <Separator className="my-2" />
+
+                {/* Payment Details Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Payment Date field - required */}
+                  <FormField
+                    control={form.control}
+                    name="paymentDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>{t('supplierPayments.payment.paymentDate')}</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>{t('supplierPayments.payment.selectDate')}</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) =>
+                                date > new Date() || date < new Date("1900-01-01")
+                              }
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Amount field - required */}
+                  <FormField
+                    control={form.control}
+                    name="amount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('supplierPayments.payment.amount')}</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="0.01" 
+                            step="0.01"
+                            placeholder={t('supplierPayments.payment.amountPlaceholder')} 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Payment Method field - required */}
+                  <FormField
+                    control={form.control}
+                    name="paymentMethod"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('supplierPayments.payment.paymentMethod')}</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={t('supplierPayments.payment.selectPaymentMethod')} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {paymentMethods.map((method) => (
+                              <SelectItem key={method} value={method}>
+                                {t(`supplierPayments.payment.methods.${method.toLowerCase().replace(' ', '_')}`) || method}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Reference field */}
+                  <FormField
+                    control={form.control}
+                    name="reference"
+                    render={({ field }) => {
+                      // If selected invoice has reference, use it as placeholder
+                      const placeholder = selectedInvoice?.reference
+                        ? t('supplierPayments.payment.useInvoiceReference', { ref: selectedInvoice.reference })
+                        : t('supplierPayments.payment.referencePlaceholder');
+                      
+                      return (
+                        <FormItem>
+                          <FormLabel>{t('supplierPayments.payment.reference')}</FormLabel>
+                          <FormControl>
+                            <Input placeholder={placeholder} {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
+                  />
+                </div>
+
+                {/* Notes field */}
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('supplierPayments.payment.notes')}</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder={t('supplierPayments.payment.notesPlaceholder')}
+                          className="min-h-[80px]"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onClose}
+                    disabled={savePaymentMutation.isPending}
+                  >
+                    {t('common.cancel')}
+                  </Button>
+                  <Button type="submit" disabled={savePaymentMutation.isPending}>
+                    {savePaymentMutation.isPending && (
+                      <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    {payment ? t('common.update') : t('common.create')}
+                  </Button>
+                </DialogFooter>
+              </div>
+            )}
           </form>
         </Form>
       </DialogContent>
