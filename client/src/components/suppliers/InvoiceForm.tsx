@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -235,6 +236,11 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
           <DialogTitle>
             {invoice ? t('supplierPayments.invoice.edit') : t('supplierPayments.invoice.create')}
           </DialogTitle>
+          <DialogDescription>
+            {invoice 
+              ? t('supplierPayments.invoice.editDescription', 'Update invoice information') 
+              : t('supplierPayments.invoice.createDescription', 'Enter new invoice details')}
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
