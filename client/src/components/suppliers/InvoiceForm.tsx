@@ -110,7 +110,8 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
       dueDate: new Date(),
       amount: '0',
       paidAmount: '', // Start with empty paid amount to allow user to specify or leave blank
-      reference: '', // RF number for payments reference
+      reference: '', // General reference field
+      rfNumber: '', // Specific RF number field for payments
       status: 'pending',
       isRecurring: false,
       recurringCycle: '',
@@ -131,10 +132,11 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
       const dueDate = invoice.due_date || invoice.dueDate || new Date();
       const amount = invoice.amount || '0';
       const paidAmount = invoice.paid_amount || invoice.paidAmount || '';
-      const reference = invoice.reference || invoice.referenceNumber || '';
+      const reference = invoice.reference || '';
+      const rfNumber = invoice.rf_number || invoice.rfNumber || '';
       
       console.log("Extracted invoice properties:", {
-        invoiceNumber, supplierId, invoiceDate, dueDate, amount, paidAmount, reference
+        invoiceNumber, supplierId, invoiceDate, dueDate, amount, paidAmount, reference, rfNumber
       });
       
       form.reset({
@@ -144,7 +146,8 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
         dueDate: dueDate ? new Date(dueDate) : new Date(),
         amount: amount?.toString() || '0',
         paidAmount: paidAmount ? paidAmount.toString() : '',
-        reference: reference, // RF number field
+        reference: reference, // General reference field
+        rfNumber: rfNumber, // Specific RF number field
         status: invoice.status || 'pending',
         isRecurring: invoice.isRecurring || false,
         recurringCycle: invoice.recurringCycle?.toString() || '',
@@ -159,7 +162,8 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
         dueDate: new Date(),
         amount: '0',
         paidAmount: '', // Empty string to allow clearing the paid amount
-        reference: '', // Added RF number field
+        reference: '', // General reference field
+        rfNumber: '', // Specific RF number field
         status: 'pending',
         isRecurring: false,
         recurringCycle: '',
@@ -288,7 +292,8 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
       dueDate: data.dueDate,        // Send full Date object, schema will handle it
       amount: data.amount,          // Schema will handle number coercion
       paidAmount: paidAmount,       // Allow undefined to be passed through
-      reference: data.reference || '', // RF number for payment reference
+      reference: data.reference || '', // General reference field
+      rfNumber: data.rfNumber || '', // Specific RF number field for payments
       status: data.status,
       notes: data.notes || '',
       attachmentPath: data.attachmentPath || '',
@@ -491,16 +496,34 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
                 )}
               />
 
-              {/* Reference / RF Number field */}
+              {/* General Reference field */}
               <FormField
                 control={form.control}
                 name="reference"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('supplierPayments.invoice.reference', 'Reference/RF Number')}</FormLabel>
+                    <FormLabel>{t('supplierPayments.invoice.reference', 'Reference')}</FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder={t('supplierPayments.invoice.referencePlaceholder', 'Enter reference or RF number')} 
+                        placeholder={t('supplierPayments.invoice.referencePlaceholder', 'Enter general reference')} 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {/* RF Number field - specific for payments */}
+              <FormField
+                control={form.control}
+                name="rfNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('supplierPayments.invoice.rfNumber', 'RF Number')}</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder={t('supplierPayments.invoice.rfNumberPlaceholder', 'Enter RF payment reference')} 
                         {...field} 
                       />
                     </FormControl>
