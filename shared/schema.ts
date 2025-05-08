@@ -1273,11 +1273,16 @@ export const insertSupplierInvoiceSchema = createInsertSchema(supplierInvoices)
   .omit({ id: true, createdAt: true })
   .extend({
     invoiceNumber: z.string().min(1, { message: "Invoice number is required" }),
-    // Accept both number and string, but coerce to number for database
-    supplierId: z.union([
-      z.number(),
-      z.string().transform(val => parseInt(val)),
-    ]),
+    // Use preprocess to handle supplier ID transformation consistently
+    supplierId: z.preprocess(
+      (val) => {
+        // Handle string conversion
+        if (typeof val === 'string') return parseInt(val);
+        // Keep as number if already a number
+        return val;
+      },
+      z.number().int().positive()
+    ),
     // Accept both object dates and ISO strings for issueDate - using union
     issueDate: z.union([
       z.date(),
@@ -1297,18 +1302,29 @@ export const insertSupplierInvoiceSchema = createInsertSchema(supplierInvoices)
       z.number().transform(val => new Date(val)),
       z.undefined()
     ]).optional(),
-    // Handle amount as string or number, but coerce to number
-    amount: z.union([
-      z.number().min(0.01, { message: "Amount must be greater than 0" }),
-      z.string().transform(val => parseFloat(val)),
-    ]),
+    // Use preprocess for consistent amount handling
+    amount: z.preprocess(
+      (val) => {
+        // Handle string conversion
+        if (typeof val === 'string') return parseFloat(val);
+        // Keep as number if already a number
+        return val;
+      },
+      z.number().min(0.01, { message: "Amount must be greater than 0" })
+    ),
     // Allow paidAmount to be number, string, or undefined
-    paidAmount: z.union([
-      z.number().min(0),
-      z.string().transform(val => val === "" ? undefined : parseFloat(val)),
-      z.null(),
-      z.undefined()
-    ]).optional(),
+    // Fixed to correctly handle the type transformation required by database
+    paidAmount: z.preprocess(
+      (val) => {
+        // Handle empty string, null, or undefined
+        if (val === "" || val === null || val === undefined) return null;
+        // Convert string to number if it's a string
+        if (typeof val === 'string') return parseFloat(val);
+        // Keep it as is if it's already a number
+        return val;
+      },
+      z.number().min(0).nullable().optional()
+    ),
     status: z.enum(['pending', 'paid', 'partially_paid', 'overdue', 'cancelled']).default('pending'),
     description: z.string().optional(),
     notes: z.string().optional(),
@@ -1350,22 +1366,32 @@ export const supplierPayments = pgTable("supplier_payments", {
 export const insertSupplierPaymentSchema = createInsertSchema(supplierPayments)
   .omit({ id: true, createdAt: true })
   .extend({
-    // Support both string and number type for invoiceId
-    invoiceId: z.union([
-      z.number(),
-      z.string().transform(val => parseInt(val)),
-    ]),
+    // Use preprocess for consistent invoiceId handling
+    invoiceId: z.preprocess(
+      (val) => {
+        // Handle string conversion
+        if (typeof val === 'string') return parseInt(val);
+        // Keep as number if already a number
+        return val;
+      },
+      z.number().int().positive()
+    ),
     // Accept multiple date formats
     paymentDate: z.union([
       z.date(),
       z.string().min(1).transform(val => new Date(val)),
       z.number().transform(val => new Date(val))
     ]),
-    // Support both string and number for amount
-    amount: z.union([
-      z.number().min(0.01, { message: "Amount must be greater than 0" }),
-      z.string().transform(val => parseFloat(val)),
-    ]),
+    // Use preprocess for consistent amount handling in payments
+    amount: z.preprocess(
+      (val) => {
+        // Handle string conversion
+        if (typeof val === 'string') return parseFloat(val);
+        // Keep as number if already a number
+        return val;
+      },
+      z.number().min(0.01, { message: "Amount must be greater than 0" })
+    ),
     paymentMethod: z.enum(['bank_transfer', 'check', 'credit_card', 'cash', 'other']),
     referenceNumber: z.string().optional(),
     reference: z.string().optional(),
