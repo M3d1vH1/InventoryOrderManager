@@ -126,6 +126,38 @@ function broadcastMessage(message: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Development-only auto-login endpoint to help with testing
+  if (process.env.NODE_ENV !== 'production') {
+    app.get('/api/dev-login', async (req, res) => {
+      try {
+        // Get the default admin user
+        const adminUser = await storage.getUserByUsername('admin');
+        
+        if (!adminUser) {
+          return res.status(404).json({ error: 'Admin user not found' });
+        }
+        
+        // Log the user in by setting up the session
+        req.login(adminUser, (err) => {
+          if (err) {
+            console.error('Session login error:', err);
+            return res.status(500).json({ error: 'Login failed' });
+          }
+          
+          // Return success with user info (exclude password)
+          const { password, ...userInfo } = adminUser;
+          return res.json({ 
+            success: true, 
+            message: 'Development auto-login successful', 
+            user: userInfo 
+          });
+        });
+      } catch (error) {
+        console.error('Dev login error:', error);
+        res.status(500).json({ error: 'Auto-login failed' });
+      }
+    });
+  }
   // Set APP_URL with a fallback
   if (!process.env.APP_URL) {
     process.env.APP_URL = 'https://warehouse-management-system.replit.app';

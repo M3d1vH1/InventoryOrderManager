@@ -3,6 +3,7 @@ import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { DevAutoLogin } from "@/components/DevAutoLogin";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import Orders from "@/pages/Orders";
@@ -180,6 +181,8 @@ function App() {
           <SidebarProvider>
             <Layout />
             <Toaster />
+            {/* Add our development auto-login component */}
+            {import.meta.env.DEV && <DevAutoLogin />}
           </SidebarProvider>
         </NotificationProvider>
       </AuthProvider>
