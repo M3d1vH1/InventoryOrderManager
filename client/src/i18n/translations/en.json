@@ -1707,6 +1707,8 @@
       "referenceNumber": "Reference Number",
       "referencePlaceholder": "Enter reference number",
       "useInvoiceReference": "Use invoice reference: {{ref}}",
+      "referenceRF": "Reference (RF Number)",
+      "rfHelperText": "Automatically populated from the invoice when available",
       "notes": "Notes",
       "notesPlaceholder": "Add payment notes",
       "create": "Create Payment",
