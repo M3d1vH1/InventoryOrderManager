@@ -55,6 +55,12 @@ export const InvoiceList = () => {
     queryKey: ['/api/supplier-payments/suppliers'],
     retry: 1,
   });
+  
+  // Helper to get supplier name by ID - moved earlier in the code to fix hoisting issue
+  const getSupplierName = (supplierId: number) => {
+    const supplier = suppliers.find((s: any) => s.id === supplierId);
+    return supplier ? supplier.name : 'Unknown';
+  };
 
   // Delete invoice mutation
   const deleteInvoiceMutation = useMutation({
@@ -96,12 +102,6 @@ export const InvoiceList = () => {
     
     return matchesSearch && invoice.status === filterStatus;
   });
-
-  // Helper to get supplier name by ID
-  const getSupplierName = (supplierId: number) => {
-    const supplier = suppliers.find((s: any) => s.id === supplierId);
-    return supplier ? supplier.name : 'Unknown';
-  };
 
   // Get badge variant based on invoice status
   const getStatusBadgeVariant = (status: string): "default" | "destructive" | "outline" | "secondary" => {
