@@ -243,14 +243,19 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
     const invoiceDate = data.invoiceDate ? data.invoiceDate.toISOString().split('T')[0] : undefined;
     const dueDate = data.dueDate ? data.dueDate.toISOString().split('T')[0] : undefined;
     
-    // Convert string values to numbers
+    // Convert string values to numbers and map the fields to correct schema names
     const formattedData = {
-      ...data,
-      invoiceDate: invoiceDate,  // Send as ISO date string
-      dueDate: dueDate,          // Send as ISO date string
+      invoiceNumber: data.invoiceNumber,
       supplierId: parseInt(data.supplierId),
+      issueDate: invoiceDate,    // Map to issueDate (required in schema)
+      invoiceDate: invoiceDate,  // Keep for backward compatibility
+      dueDate: dueDate,          // Send as ISO date string
       amount: parseFloat(data.amount),
       paidAmount: parseFloat(data.paidAmount || '0'),
+      status: data.status,
+      notes: data.notes || '',
+      attachmentPath: data.attachmentPath || '',
+      isRecurring: data.isRecurring,
       recurringCycle: data.isRecurring && data.recurringCycle ? parseInt(data.recurringCycle) : undefined,
     };
 
