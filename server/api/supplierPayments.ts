@@ -207,34 +207,14 @@ router.post('/invoices', async (req, res) => {
   try {
     console.log("Invoice creation request data:", JSON.stringify(req.body, null, 2));
     
-    // Fix data format issues before validation
-    const preparedData = {
-      ...req.body,
-      // Ensure supplierId is a number
-      supplierId: typeof req.body.supplierId === 'string' 
-        ? parseInt(req.body.supplierId, 10) 
-        : req.body.supplierId,
-      
-      // Ensure amount is a number
-      amount: typeof req.body.amount === 'string' 
-        ? parseFloat(req.body.amount) 
-        : req.body.amount,
-      
-      // Handle paidAmount specially to allow undefined/null values
-      paidAmount: req.body.paidAmount === '' || req.body.paidAmount === null || req.body.paidAmount === undefined
-        ? undefined
-        : typeof req.body.paidAmount === 'string'
-          ? parseFloat(req.body.paidAmount)
-          : req.body.paidAmount
-    };
-
-    console.log("Prepared data before validation:", JSON.stringify(preparedData, null, 2));
+    // Since we're now using z.coerce in the schema, we don't need to manually convert types
+    // The schema will handle the conversion for us
     
-    // Try to parse the data with the schema
+    // Try to parse the data with the schema directly
     let data;
     try {
-      // Validate against the schema
-      data = insertInvoiceSchema.parse(preparedData);
+      // Validate against the schema - it will now handle type coercion
+      data = insertInvoiceSchema.parse(req.body);
     } catch (validationError: any) {
       console.error("Invoice validation error:", validationError);
       if (validationError instanceof z.ZodError) {
@@ -431,7 +411,28 @@ router.get('/payments/:id', async (req, res) => {
 // Create a new payment
 router.post('/payments', async (req, res) => {
   try {
-    const data = insertPaymentSchema.parse(req.body);
+    console.log("Payment creation request data:", JSON.stringify(req.body, null, 2));
+    
+    // Validate with schema that now handles type coercion
+    let data;
+    try {
+      data = insertPaymentSchema.parse(req.body);
+    } catch (validationError: any) {
+      console.error("Payment validation error:", validationError);
+      if (validationError instanceof z.ZodError) {
+        // Log detailed validation errors
+        validationError.errors.forEach((err, index) => {
+          console.error(`Validation error ${index + 1}:`, JSON.stringify(err, null, 2));
+        });
+        
+        return res.status(400).json({ 
+          error: 'Validation error', 
+          details: validationError.errors,
+          message: validationError.message
+        });
+      }
+      throw validationError;
+    }
     
     // Ensure invoice exists
     const invoice = await storage.getSupplierInvoice(data.invoiceId);
@@ -444,41 +445,119 @@ router.post('/payments', async (req, res) => {
       data.createdById = req.user.id;
     }
 
-    // Create the payment
-    const newPayment = await storage.createSupplierPayment(data);
+    console.log("Validated payment data:", JSON.stringify(data, null, 2));
     
-    // Update the invoice's paidAmount
-    const invoicePayments = await storage.getSupplierPaymentsByInvoice(data.invoiceId);
-    const totalPaid = invoicePayments.reduce((sum, payment) => sum + payment.amount, 0);
-    
-    // Determine the new status based on payment amount
-    let newStatus = invoice.status;
-    if (totalPaid >= invoice.amount) {
-      newStatus = 'paid';
-    } else if (totalPaid > 0) {
-      newStatus = 'partially_paid';
+    // Create the payment with a direct SQL query to bypass ORM issues
+    try {
+      const client = await pool.connect();
+      try {
+        const result = await client.query(
+          `INSERT INTO supplier_payments 
+            (invoice_id, payment_date, amount, payment_method, reference_number, notes, receipt_path) 
+           VALUES 
+            ($1, $2, $3, $4, $5, $6, $7) 
+           RETURNING *`,
+          [
+            data.invoiceId,
+            data.paymentDate,
+            data.amount,
+            data.paymentMethod,
+            data.referenceNumber || null,
+            data.notes || null,
+            data.receiptPath || null
+          ]
+        );
+        
+        console.log("Created payment:", JSON.stringify(result.rows[0], null, 2));
+        
+        // Update the invoice's paidAmount with a separate query
+        const paymentsResult = await client.query(
+          `SELECT SUM(amount) as total_paid 
+           FROM supplier_payments 
+           WHERE invoice_id = $1`,
+          [data.invoiceId]
+        );
+        
+        const totalPaid = parseFloat(paymentsResult.rows[0].total_paid || 0);
+        
+        // Get invoice amount for comparison
+        const invoiceResult = await client.query(
+          `SELECT amount FROM supplier_invoices WHERE id = $1`,
+          [data.invoiceId]
+        );
+        
+        const invoiceAmount = parseFloat(invoiceResult.rows[0].amount);
+        
+        // Determine the new status based on payment amount
+        let newStatus = invoice.status;
+        if (totalPaid >= invoiceAmount) {
+          newStatus = 'paid';
+        } else if (totalPaid > 0) {
+          newStatus = 'partially_paid';
+        }
+        
+        // Update invoice status and paid_amount
+        await client.query(
+          `UPDATE supplier_invoices 
+           SET status = $1, paid_amount = $2 
+           WHERE id = $3`,
+          [newStatus, totalPaid, data.invoiceId]
+        );
+        
+        res.status(201).json(result.rows[0]);
+      } finally {
+        client.release();
+      }
+    } catch (dbError: any) {
+      console.error("Database error creating payment:", dbError);
+      throw new Error(`Database error: ${dbError.message}`);
     }
-    
-    await storage.updateInvoiceStatus(data.invoiceId, newStatus);
-    
-    res.status(201).json(newPayment);
   } catch (error: any) {
+    console.error("Payment creation error:", error);
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res.status(400).json({ 
+        error: 'Validation error', 
+        details: error.errors,
+        message: error.message
+      });
     }
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ 
+      error: error.message || 'Unknown server error',
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
 // Update a payment
 router.patch('/payments/:id', async (req, res) => {
   try {
+    console.log("Payment update request data:", JSON.stringify(req.body, null, 2));
+    
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid payment ID' });
     }
-
-    const data = updatePaymentSchema.parse(req.body);
+    
+    // Validate data with schema that now handles coercion
+    let data;
+    try {
+      data = updatePaymentSchema.parse(req.body);
+    } catch (validationError: any) {
+      console.error("Payment update validation error:", validationError);
+      if (validationError instanceof z.ZodError) {
+        // Log detailed validation errors
+        validationError.errors.forEach((err, index) => {
+          console.error(`Validation error ${index + 1}:`, JSON.stringify(err, null, 2));
+        });
+        
+        return res.status(400).json({ 
+          error: 'Validation error', 
+          details: validationError.errors,
+          message: validationError.message
+        });
+      }
+      throw validationError;
+    }
     
     // Check if payment exists
     const payment = await storage.getSupplierPayment(id);
@@ -493,28 +572,109 @@ router.patch('/payments/:id', async (req, res) => {
         return res.status(400).json({ error: 'Invoice not found' });
       }
     }
-
-    // Update the payment
-    const updatedPayment = await storage.updateSupplierPayment(id, data);
     
-    // If the payment amount was changed or invoice was changed, update the invoice(s)
-    if (data.amount !== undefined || data.invoiceId !== undefined) {
-      // Update the original invoice if the invoice ID was changed
-      if (data.invoiceId !== undefined && data.invoiceId !== payment.invoiceId) {
-        await updateInvoicePaidAmount(payment.invoiceId);
+    console.log("Validated payment update data:", JSON.stringify(data, null, 2));
+    
+    // Update the payment with a direct SQL query
+    try {
+      const client = await pool.connect();
+      try {
+        // Build the update query dynamically based on provided fields
+        const updateFields = [];
+        const queryParams = [];
+        let paramCounter = 1;
+        
+        if (data.invoiceId !== undefined) {
+          updateFields.push(`invoice_id = $${paramCounter++}`);
+          queryParams.push(data.invoiceId);
+        }
+        
+        if (data.paymentDate !== undefined) {
+          updateFields.push(`payment_date = $${paramCounter++}`);
+          queryParams.push(data.paymentDate);
+        }
+        
+        if (data.amount !== undefined) {
+          updateFields.push(`amount = $${paramCounter++}`);
+          queryParams.push(data.amount);
+        }
+        
+        if (data.paymentMethod !== undefined) {
+          updateFields.push(`payment_method = $${paramCounter++}`);
+          queryParams.push(data.paymentMethod);
+        }
+        
+        if (data.referenceNumber !== undefined) {
+          updateFields.push(`reference_number = $${paramCounter++}`);
+          queryParams.push(data.referenceNumber);
+        }
+        
+        if (data.notes !== undefined) {
+          updateFields.push(`notes = $${paramCounter++}`);
+          queryParams.push(data.notes);
+        }
+        
+        if (data.receiptPath !== undefined) {
+          updateFields.push(`receipt_path = $${paramCounter++}`);
+          queryParams.push(data.receiptPath);
+        }
+        
+        if (updateFields.length === 0) {
+          return res.status(400).json({ error: 'No fields to update' });
+        }
+        
+        // Add the payment ID as the last parameter
+        queryParams.push(id);
+        
+        // Execute the update query
+        const query = `
+          UPDATE supplier_payments 
+          SET ${updateFields.join(', ')}
+          WHERE id = $${paramCounter}
+          RETURNING *
+        `;
+        
+        const result = await client.query(query, queryParams);
+        
+        if (result.rows.length === 0) {
+          return res.status(404).json({ error: 'Payment not found' });
+        }
+        
+        console.log("Updated payment:", JSON.stringify(result.rows[0], null, 2));
+        
+        // If the payment amount was changed or invoice was changed, update the invoice(s)
+        if (data.amount !== undefined || data.invoiceId !== undefined) {
+          // Update the original invoice if the invoice ID was changed
+          if (data.invoiceId !== undefined && data.invoiceId !== payment.invoiceId) {
+            await updateInvoicePaidAmount(payment.invoiceId);
+          }
+          
+          // Update the current invoice
+          const currentInvoiceId = data.invoiceId || payment.invoiceId;
+          await updateInvoicePaidAmount(currentInvoiceId);
+        }
+        
+        res.json(result.rows[0]);
+      } finally {
+        client.release();
       }
-      
-      // Update the current invoice
-      const currentInvoiceId = data.invoiceId || payment.invoiceId;
-      await updateInvoicePaidAmount(currentInvoiceId);
+    } catch (dbError: any) {
+      console.error("Database error updating payment:", dbError);
+      throw new Error(`Database error: ${dbError.message}`);
     }
-    
-    res.json(updatedPayment);
   } catch (error: any) {
+    console.error("Payment update error:", error);
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res.status(400).json({ 
+        error: 'Validation error', 
+        details: error.errors,
+        message: error.message
+      });
     }
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ 
+      error: error.message || 'Unknown server error',
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
