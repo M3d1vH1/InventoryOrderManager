@@ -1273,7 +1273,11 @@ export const insertSupplierInvoiceSchema = createInsertSchema(supplierInvoices)
   .omit({ id: true, createdAt: true })
   .extend({
     invoiceNumber: z.string().min(1, { message: "Invoice number is required" }),
-    supplierId: z.coerce.number(),
+    // Accept both number and string, but coerce to number for database
+    supplierId: z.union([
+      z.number(),
+      z.string().transform(val => parseInt(val)),
+    ]),
     // Accept both object dates and ISO strings for issueDate - using union
     issueDate: z.union([
       z.date(),
@@ -1293,10 +1297,16 @@ export const insertSupplierInvoiceSchema = createInsertSchema(supplierInvoices)
       z.number().transform(val => new Date(val)),
       z.undefined()
     ]).optional(),
-    amount: z.coerce.number().min(0.01, { message: "Amount must be greater than 0" }),
+    // Handle amount as string or number, but coerce to number
+    amount: z.union([
+      z.number().min(0.01, { message: "Amount must be greater than 0" }),
+      z.string().transform(val => parseFloat(val)),
+    ]),
+    // Allow paidAmount to be number, string, or undefined
     paidAmount: z.union([
-      z.coerce.number().min(0),
+      z.number().min(0),
       z.string().transform(val => val === "" ? undefined : parseFloat(val)),
+      z.null(),
       z.undefined()
     ]).optional(),
     status: z.enum(['pending', 'paid', 'partially_paid', 'overdue', 'cancelled']).default('pending'),
@@ -1340,14 +1350,22 @@ export const supplierPayments = pgTable("supplier_payments", {
 export const insertSupplierPaymentSchema = createInsertSchema(supplierPayments)
   .omit({ id: true, createdAt: true })
   .extend({
-    invoiceId: z.coerce.number(),
+    // Support both string and number type for invoiceId
+    invoiceId: z.union([
+      z.number(),
+      z.string().transform(val => parseInt(val)),
+    ]),
     // Accept multiple date formats
     paymentDate: z.union([
       z.date(),
       z.string().min(1).transform(val => new Date(val)),
       z.number().transform(val => new Date(val))
     ]),
-    amount: z.coerce.number().min(0.01, { message: "Amount must be greater than 0" }),
+    // Support both string and number for amount
+    amount: z.union([
+      z.number().min(0.01, { message: "Amount must be greater than 0" }),
+      z.string().transform(val => parseFloat(val)),
+    ]),
     paymentMethod: z.enum(['bank_transfer', 'check', 'credit_card', 'cash', 'other']),
     referenceNumber: z.string().optional(),
     reference: z.string().optional(),
