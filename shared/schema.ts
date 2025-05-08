@@ -1262,7 +1262,8 @@ export const supplierInvoices = pgTable("supplier_invoices", {
   status: invoiceStatusEnum("status").notNull().default('pending'),
   description: text("description"),
   notes: text("notes"),
-  reference: text("reference"),  // Added RF number field for payments reference
+  reference: text("reference"),  // General reference field
+  rfNumber: text("rf_number"),   // Specific RF number field for payments
   attachmentPath: text("attachment_path"),
   attachment: text("attachment"),
   attachmentUrl: text("attachment_url"),  // Added to match database column
@@ -1329,7 +1330,8 @@ export const insertSupplierInvoiceSchema = createInsertSchema(supplierInvoices)
     status: z.enum(['pending', 'paid', 'partially_paid', 'overdue', 'cancelled']).default('pending'),
     description: z.string().optional(),
     notes: z.string().optional(),
-    reference: z.string().optional(), // Added reference field (RF number) for payments
+    reference: z.string().optional(), // General reference field
+    rfNumber: z.string().optional(),  // Specific RF number field for payments
     attachmentPath: z.string().optional(),
     attachment: z.string().optional(),
     attachmentUrl: z.string().optional(),

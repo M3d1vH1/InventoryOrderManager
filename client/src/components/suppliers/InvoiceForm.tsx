@@ -67,7 +67,8 @@ const invoiceFormSchema = z.object({
     .refine(val => !isNaN(parseFloat(val)) && parseFloat(val) >= 0, {
       message: 'supplierPayments.invoice.errors.invalidPaidAmount',
     }),
-  reference: z.string().optional(), // Added RF number field for payments
+  reference: z.string().optional(), // General reference field
+  rfNumber: z.string().optional(), // Specific RF number field for payments
   status: z.enum(['pending', 'paid', 'partially_paid', 'overdue', 'cancelled']),
   isRecurring: z.boolean().default(false),
   recurringCycle: z.string().optional(),
