@@ -207,13 +207,42 @@ router.post('/invoices', async (req, res) => {
   try {
     console.log("Invoice creation request data:", JSON.stringify(req.body, null, 2));
     
-    // Try to parse the data
+    // Fix data format issues before validation
+    const preparedData = {
+      ...req.body,
+      // Ensure supplierId is a number
+      supplierId: typeof req.body.supplierId === 'string' 
+        ? parseInt(req.body.supplierId, 10) 
+        : req.body.supplierId,
+      
+      // Ensure amount is a number
+      amount: typeof req.body.amount === 'string' 
+        ? parseFloat(req.body.amount) 
+        : req.body.amount,
+      
+      // Handle paidAmount specially to allow undefined/null values
+      paidAmount: req.body.paidAmount === '' || req.body.paidAmount === null || req.body.paidAmount === undefined
+        ? undefined
+        : typeof req.body.paidAmount === 'string'
+          ? parseFloat(req.body.paidAmount)
+          : req.body.paidAmount
+    };
+
+    console.log("Prepared data before validation:", JSON.stringify(preparedData, null, 2));
+    
+    // Try to parse the data with the schema
     let data;
     try {
-      data = insertInvoiceSchema.parse(req.body);
+      // Validate against the schema
+      data = insertInvoiceSchema.parse(preparedData);
     } catch (validationError: any) {
       console.error("Invoice validation error:", validationError);
       if (validationError instanceof z.ZodError) {
+        // Log detailed validation errors
+        validationError.errors.forEach((err, index) => {
+          console.error(`Validation error ${index + 1}:`, JSON.stringify(err, null, 2));
+        });
+        
         return res.status(400).json({ 
           error: 'Validation error', 
           details: validationError.errors,
@@ -229,17 +258,40 @@ router.post('/invoices', async (req, res) => {
       return res.status(400).json({ error: 'Supplier not found' });
     }
 
-    // Initialize paidAmount if not provided
-    if (data.paidAmount === undefined) {
-      data.paidAmount = 0;
-    }
-
     console.log("Validated invoice data:", JSON.stringify(data, null, 2));
     
-    // Create the invoice
-    const newInvoice = await storage.createSupplierInvoice(data);
-    console.log("Created invoice:", JSON.stringify(newInvoice, null, 2));
-    res.status(201).json(newInvoice);
+    // Create the invoice with a direct SQL query to bypass any ORM issues
+    try {
+      const client = await pool.connect();
+      try {
+        const result = await client.query(
+          `INSERT INTO supplier_invoices 
+            (invoice_number, supplier_id, issue_date, due_date, amount, paid_amount, status, notes, attachment_path) 
+           VALUES 
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+           RETURNING *`,
+          [
+            data.invoiceNumber,
+            data.supplierId,
+            data.issueDate,
+            data.dueDate,
+            data.amount,
+            data.paidAmount === undefined ? null : data.paidAmount,
+            data.status,
+            data.notes || null,
+            data.attachmentPath || null
+          ]
+        );
+        
+        console.log("Created invoice:", JSON.stringify(result.rows[0], null, 2));
+        res.status(201).json(result.rows[0]);
+      } finally {
+        client.release();
+      }
+    } catch (dbError: any) {
+      console.error("Database error creating invoice:", dbError);
+      throw new Error(`Database error: ${dbError.message}`);
+    }
   } catch (error: any) {
     console.error("Invoice creation error:", error);
     if (error instanceof z.ZodError) {

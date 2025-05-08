@@ -107,7 +107,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
       invoiceDate: new Date(),
       dueDate: new Date(),
       amount: '0',
-      paidAmount: '0',
+      paidAmount: '', // Start with empty paid amount to allow user to specify or leave blank
       status: 'pending',
       isRecurring: false,
       recurringCycle: '',
@@ -125,7 +125,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
         invoiceDate: invoice.invoiceDate ? new Date(invoice.invoiceDate) : new Date(),
         dueDate: invoice.dueDate ? new Date(invoice.dueDate) : new Date(),
         amount: invoice.amount?.toString() || '0',
-        paidAmount: invoice.paidAmount?.toString() || '0',
+        paidAmount: invoice.paidAmount ? invoice.paidAmount.toString() : '',
         status: invoice.status || 'pending',
         isRecurring: invoice.isRecurring || false,
         recurringCycle: invoice.recurringCycle?.toString() || '',
@@ -139,7 +139,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
         invoiceDate: new Date(),
         dueDate: new Date(),
         amount: '0',
-        paidAmount: '0',
+        paidAmount: '', // Empty string to allow clearing the paid amount
         status: 'pending',
         isRecurring: false,
         recurringCycle: '',
@@ -228,11 +228,20 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
   // Update status when amount or paidAmount changes
   useEffect(() => {
     const amount = parseFloat(watchedAmount || '0');
-    const paidAmount = parseFloat(watchedPaidAmount || '0');
-    if (!isNaN(amount) && !isNaN(paidAmount)) {
-      const calculatedStatus = calculateStatus(amount, paidAmount);
-      if (calculatedStatus !== form.getValues('status')) {
-        form.setValue('status', calculatedStatus as any);
+    
+    // Only calculate status if paidAmount is not empty
+    if (watchedPaidAmount !== '' && watchedPaidAmount !== undefined && watchedPaidAmount !== null) {
+      const paidAmount = parseFloat(watchedPaidAmount || '0');
+      if (!isNaN(amount) && !isNaN(paidAmount)) {
+        const calculatedStatus = calculateStatus(amount, paidAmount);
+        if (calculatedStatus !== form.getValues('status')) {
+          form.setValue('status', calculatedStatus as any);
+        }
+      }
+    } else {
+      // Reset status to pending if paidAmount is empty
+      if (form.getValues('status') === 'paid' || form.getValues('status') === 'partially_paid') {
+        form.setValue('status', 'pending');
       }
     }
   }, [watchedAmount, watchedPaidAmount, form]);
