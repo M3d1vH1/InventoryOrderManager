@@ -96,11 +96,11 @@ export async function getInventoryChangesByType(req: Request, res: Response) {
     const changeType = req.params.type;
     
     // Validate change type
-    if (!inventoryChangeTypeEnum.enumValues.includes(changeType)) {
+    if (!inventoryChangeTypeEnum.enumValues.includes(changeType as any)) {
       return res.status(400).json({ message: 'Invalid change type' });
     }
     
-    const changes = await storage.getInventoryChangesByType(changeType);
+    const changes = await storage.getInventoryChangesByType(changeType as any);
     return res.json(changes);
   } catch (error) {
     console.error('Error getting inventory changes by type:', error);

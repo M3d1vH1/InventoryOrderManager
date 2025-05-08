@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { storage } from '../storage.postgresql';
+import { storage } from '../storage';
 import { isAuthenticated } from '../auth';
 import PDFDocument from 'pdfkit';
 import * as PDFKit from 'pdfkit';

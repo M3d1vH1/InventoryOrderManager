@@ -1,4 +1,4 @@
-import { storage } from '../storage.postgresql';
+import { storage } from '../storage';
 import fs from 'fs';
 import path from 'path';
 import { initStorage } from '../storage.postgresql';
@@ -35,7 +35,7 @@ async function fixProductImages() {
       console.log(`Image file not found for product ${product.id} (${product.name}): ${fullPath}`);
       
       // Update the product to remove the image path
-      await storage.updateProduct(product.id, { imagePath: null });
+      await storage.updateProduct(product.id, { imagePath: '' });
       fixedCount++;
     }
   }
