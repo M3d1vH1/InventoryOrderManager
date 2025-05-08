@@ -248,9 +248,8 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
 
   // Form submission handler
   const onSubmit = (data: InvoiceFormValues) => {
-    // Format date objects to ISO strings for API
-    const invoiceDate = data.invoiceDate ? data.invoiceDate.toISOString().split('T')[0] : undefined;
-    const dueDate = data.dueDate ? data.dueDate.toISOString().split('T')[0] : undefined;
+    // Send the Date objects directly - our updated schema can handle them
+    // We also keep the full Date objects for more accurate date handling
     
     // Handle paidAmount to set to undefined if it's blank or null, also handle string to number conversion
     let paidAmount = undefined;
@@ -259,18 +258,21 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
     }
     
     // Convert string values to numbers and map the fields to correct schema names
+    // Map invoiceDate to both invoiceDate and issueDate fields to avoid confusion
+    // between client and server naming
     const formattedData = {
       invoiceNumber: data.invoiceNumber,
-      supplierId: parseInt(data.supplierId),
-      issueDate: invoiceDate,    // Map to issueDate (required in schema)
-      dueDate: dueDate,          // Send as ISO date string
-      amount: parseFloat(data.amount),
-      paidAmount: paidAmount,    // Allow undefined to be passed through
+      supplierId: data.supplierId, // Now schema handles string-to-number coercion
+      issueDate: data.invoiceDate,  // Send full Date object, schema will handle it
+      invoiceDate: data.invoiceDate, // Also send as invoiceDate
+      dueDate: data.dueDate,        // Send full Date object, schema will handle it
+      amount: data.amount,          // Schema will handle number coercion
+      paidAmount: paidAmount,       // Allow undefined to be passed through
       status: data.status,
       notes: data.notes || '',
       attachmentPath: data.attachmentPath || '',
       isRecurring: data.isRecurring,
-      recurringCycle: data.isRecurring && data.recurringCycle ? parseInt(data.recurringCycle) : undefined,
+      recurringCycle: data.isRecurring && data.recurringCycle ? data.recurringCycle : undefined,
     };
 
     console.log("Submitting invoice data:", formattedData);

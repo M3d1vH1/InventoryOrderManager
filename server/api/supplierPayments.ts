@@ -205,10 +205,15 @@ router.get('/invoices/:id', async (req, res) => {
 // Create a new invoice
 router.post('/invoices', async (req, res) => {
   try {
-    console.log("Invoice creation request data:", JSON.stringify(req.body, null, 2));
+    // Log the original request with custom formatting to avoid Date object serialization issues
+    console.log("Invoice creation request data - Raw:", req.body);
     
-    // Since we're now using z.coerce in the schema, we don't need to manually convert types
-    // The schema will handle the conversion for us
+    // Raw types before validation (for debugging)
+    console.log("Date types:", {
+      issueDate: req.body.issueDate ? typeof req.body.issueDate : 'undefined',
+      invoiceDate: req.body.invoiceDate ? typeof req.body.invoiceDate : 'undefined',
+      dueDate: req.body.dueDate ? typeof req.body.dueDate : 'undefined'
+    });
     
     // Try to parse the data with the schema directly
     let data;
@@ -238,28 +243,42 @@ router.post('/invoices', async (req, res) => {
       return res.status(400).json({ error: 'Supplier not found' });
     }
 
-    console.log("Validated invoice data:", JSON.stringify(data, null, 2));
+    // Format dates for database query since we can't directly log Date objects
+    const formattedDates = {
+      issueDate: data.issueDate instanceof Date ? data.issueDate.toISOString() : 'not a date',
+      dueDate: data.dueDate instanceof Date ? data.dueDate.toISOString() : 'not a date',
+      invoiceDate: data.invoiceDate instanceof Date ? data.invoiceDate.toISOString() : 'not a date'
+    };
+    
+    console.log("Validated data dates:", formattedDates);
     
     // Create the invoice with a direct SQL query to bypass any ORM issues
     try {
       const client = await pool.connect();
       try {
+        // For SQL dates, format the Date objects to YYYY-MM-DD
+        const formatSqlDate = (date: Date) => {
+          return date.toISOString().split('T')[0];
+        };
+        
         const result = await client.query(
           `INSERT INTO supplier_invoices 
-            (invoice_number, supplier_id, issue_date, due_date, amount, paid_amount, status, notes, attachment_path) 
+            (invoice_number, supplier_id, issue_date, due_date, amount, paid_amount, status, notes, attachment_path, invoice_date) 
            VALUES 
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
            RETURNING *`,
           [
             data.invoiceNumber,
             data.supplierId,
-            data.issueDate,
-            data.dueDate,
+            formatSqlDate(data.issueDate),
+            formatSqlDate(data.dueDate),
             data.amount,
             data.paidAmount === undefined ? null : data.paidAmount,
             data.status,
             data.notes || null,
-            data.attachmentPath || null
+            data.attachmentPath || null,
+            // Include invoice_date if provided
+            data.invoiceDate ? formatSqlDate(data.invoiceDate) : null
           ]
         );
         
@@ -451,6 +470,18 @@ router.post('/payments', async (req, res) => {
     try {
       const client = await pool.connect();
       try {
+        // For SQL dates, format the Date objects to YYYY-MM-DD
+        const formatSqlDate = (date: Date) => {
+          return date.toISOString().split('T')[0];
+        };
+        
+        // Format dates for debugging
+        const formattedDates = {
+          paymentDate: data.paymentDate instanceof Date ? data.paymentDate.toISOString() : 'not a date',
+          callbackDate: data.callbackDate instanceof Date ? data.callbackDate?.toISOString() : 'not a date/undefined'
+        };
+        console.log("Payment date info:", formattedDates);
+        
         const result = await client.query(
           `INSERT INTO supplier_payments 
             (invoice_id, payment_date, amount, payment_method, reference_number, notes, receipt_path) 
@@ -459,7 +490,7 @@ router.post('/payments', async (req, res) => {
            RETURNING *`,
           [
             data.invoiceId,
-            data.paymentDate,
+            formatSqlDate(data.paymentDate),
             data.amount,
             data.paymentMethod,
             data.referenceNumber || null,
@@ -589,9 +620,14 @@ router.patch('/payments/:id', async (req, res) => {
           queryParams.push(data.invoiceId);
         }
         
+        // For SQL dates, format the Date objects to YYYY-MM-DD
+        const formatSqlDate = (date: Date) => {
+          return date.toISOString().split('T')[0];
+        };
+        
         if (data.paymentDate !== undefined) {
           updateFields.push(`payment_date = $${paramCounter++}`);
-          queryParams.push(data.paymentDate);
+          queryParams.push(formatSqlDate(data.paymentDate));
         }
         
         if (data.amount !== undefined) {
