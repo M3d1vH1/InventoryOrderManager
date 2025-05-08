@@ -144,8 +144,19 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
       const supplierIdNum = parseInt(watchedSupplierId);
       const filtered = invoices.filter(invoice => {
         // Handle both snake_case and camelCase field names
-        const invoiceSupplierID = invoice.supplier_id || invoice.supplierId;
+        const invoiceSupplierID = invoice.supplier_id || invoice.supplierId || invoice.supplierId;
         const invoiceStatus = invoice.status;
+        
+        // Debug log for field names
+        console.log('Invoice fields:', { 
+          id: invoice.id, 
+          supplierId: invoice.supplierId, 
+          supplier_id: invoice.supplier_id,
+          status: invoice.status, 
+          invoice_number: invoice.invoice_number,
+          invoiceNumber: invoice.invoiceNumber,
+          matchesSupplier: invoiceSupplierID === supplierIdNum
+        });
                 
         return invoiceSupplierID === supplierIdNum && 
           (invoiceStatus === 'pending' || 
@@ -180,8 +191,11 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
         }
         
         // If supplier not set, set it from the invoice
-        if (!watchedSupplierId && invoice.supplierId) {
-          form.setValue('supplierId', invoice.supplierId.toString());
+        if (!watchedSupplierId) {
+          const invoiceSupplierId = invoice.supplier_id || invoice.supplierId;
+          if (invoiceSupplierId) {
+            form.setValue('supplierId', invoiceSupplierId.toString());
+          }
         }
       }
     } else {
@@ -193,7 +207,16 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
   useEffect(() => {
     if (payment) {
       const invoice = invoices.find(inv => inv.id === payment.invoiceId);
-      const supplierId = invoice?.supplierId?.toString() || '';
+      // Handle both field name formats (snake_case and camelCase)
+      const supplierId = invoice?.supplier_id?.toString() || invoice?.supplierId?.toString() || '';
+      
+      console.log('Reset form with payment:', { 
+        payment, 
+        invoice, 
+        supplierId,
+        invoice_supplier_id: invoice?.supplier_id,
+        invoice_supplierId: invoice?.supplierId
+      });
       
       form.reset({
         supplierId: supplierId,
@@ -347,7 +370,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                         {filteredInvoices.slice(0, 3).map(invoice => (
                           <li key={invoice.id} className="text-sm">
                             <div className="flex justify-between">
-                              <span>{invoice.invoiceNumber}</span>
+                              <span>{invoice.invoice_number || invoice.invoiceNumber}</span>
                               <span className="font-semibold">
                                 {formatCurrency(getUnpaidAmount(invoice.id))}
                               </span>
@@ -442,10 +465,10 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <h3 className="text-sm font-medium">
-                            {selectedInvoice.invoiceNumber}
+                            {selectedInvoice.invoice_number || selectedInvoice.invoiceNumber}
                           </h3>
                           <p className="text-xs text-muted-foreground">
-                            {format(new Date(selectedInvoice.issueDate), "PPP")}
+                            {format(new Date(selectedInvoice.issue_date || selectedInvoice.issueDate), "PPP")}
                           </p>
                         </div>
                         <Badge variant={
@@ -453,7 +476,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                           selectedInvoice.status === 'partially_paid' ? 'secondary' :
                           selectedInvoice.status === 'overdue' ? 'destructive' : 'default'
                         }>
-                          {t(`supplierPayments.invoice.status.${selectedInvoice.status}`)}
+                          {t(`supplierPayments.invoice.statuses.${selectedInvoice.status}`)}
                         </Badge>
                       </div>
 
@@ -483,14 +506,14 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                           {formatCurrency(getUnpaidAmount(selectedInvoice.id))}
                         </div>
 
-                        {selectedInvoice.reference && (
+                        {(selectedInvoice.reference || selectedInvoice.reference_number) && (
                           <>
                             <div className="flex items-center gap-1">
                               <FileText className="h-4 w-4 text-muted-foreground" />
                               <span className="font-medium">{t('supplierPayments.invoice.reference')}:</span>
                             </div>
                             <div className="text-right font-mono text-xs">
-                              {selectedInvoice.reference}
+                              {selectedInvoice.reference || selectedInvoice.reference_number}
                             </div>
                           </>
                         )}
@@ -603,8 +626,9 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                     name="reference"
                     render={({ field }) => {
                       // If selected invoice has reference, use it as placeholder
-                      const placeholder = selectedInvoice?.reference
-                        ? t('supplierPayments.payment.useInvoiceReference', { ref: selectedInvoice.reference })
+                      const invoiceReference = selectedInvoice?.reference || selectedInvoice?.reference_number;
+                      const placeholder = invoiceReference
+                        ? t('supplierPayments.payment.useInvoiceReference', { ref: invoiceReference })
                         : t('supplierPayments.payment.referencePlaceholder');
                       
                       return (
