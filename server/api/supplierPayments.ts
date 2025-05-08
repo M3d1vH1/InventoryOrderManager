@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { storage } from '../storage';
 import { isAuthenticated } from '../auth';
 import { createInsertSchema } from 'drizzle-zod';
-import { suppliers, supplierInvoices as invoices, supplierPayments as payments } from '@shared/schema';
+import { suppliers, supplierInvoices as invoices, supplierPayments as payments, 
+         insertSupplierInvoiceSchema, insertSupplierPaymentSchema } from '@shared/schema';
 import { subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { pool } from '../db';
 
@@ -20,20 +21,12 @@ const insertSupplierSchema = createInsertSchema(suppliers).omit({
 
 const updateSupplierSchema = insertSupplierSchema.partial();
 
-// Invoice validation schemas
-const insertInvoiceSchema = createInsertSchema(invoices).omit({
-  id: true,
-  createdAt: true
-});
-
+// Use the enhanced schema from shared/schema.ts instead of local definition
+const insertInvoiceSchema = insertSupplierInvoiceSchema;
 const updateInvoiceSchema = insertInvoiceSchema.partial();
 
-// Payment validation schemas
-const insertPaymentSchema = createInsertSchema(payments).omit({
-  id: true,
-  createdAt: true
-});
-
+// Use the enhanced schema from shared/schema.ts instead of local definition
+const insertPaymentSchema = insertSupplierPaymentSchema;
 const updatePaymentSchema = insertPaymentSchema.partial();
 
 // ===== SUPPLIER ROUTES =====
