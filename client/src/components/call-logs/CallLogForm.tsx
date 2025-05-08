@@ -818,7 +818,7 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">{t('callLogs.form.outcome.none', 'None')}</SelectItem>
+                        <SelectItem value="none">{t('callLogs.form.outcome.none', 'None')}</SelectItem>
                         <SelectItem value="order_placed">{t('callLogs.form.outcome.orderPlaced', 'Order Placed')}</SelectItem>
                         <SelectItem value="info_requested">{t('callLogs.form.outcome.infoRequested', 'Information Requested')}</SelectItem>
                         <SelectItem value="issue_resolved">{t('callLogs.form.outcome.issueResolved', 'Issue Resolved')}</SelectItem>
