@@ -108,19 +108,21 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
     const invoice = invoices.find(inv => inv.id === invoiceId);
     if (!invoice) return 0;
     
-    // Calculate unpaid amount
-    const totalAmount = invoice.amount || 0;
-    const paidAmount = invoice.paidAmount || 0;
+    // Calculate unpaid amount - handle both field name types (snake_case and camelCase)
+    const totalAmount = parseFloat(invoice.amount) || 0;
+    const paidAmount = parseFloat(invoice.paid_amount || invoice.paidAmount || 0);
     return Math.max(0, totalAmount - paidAmount);
   };
 
   // Get payment percentage for an invoice
   const getPaymentPercentage = (invoice: any) => {
     if (!invoice) return 0;
-    const totalAmount = invoice.amount || 0;
+    
+    // Handle both field name types (snake_case and camelCase)
+    const totalAmount = parseFloat(invoice.amount) || 0;
     if (totalAmount === 0) return 0;
     
-    const paidAmount = invoice.paidAmount || 0;
+    const paidAmount = parseFloat(invoice.paid_amount || invoice.paidAmount || 0);
     return Math.min(100, Math.round((paidAmount / totalAmount) * 100));
   };
   
@@ -140,12 +142,18 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
   useEffect(() => {
     if (watchedSupplierId) {
       const supplierIdNum = parseInt(watchedSupplierId);
-      const filtered = invoices.filter(invoice => 
-        invoice.supplierId === supplierIdNum && 
-        (invoice.status === 'pending' || 
-         invoice.status === 'partially_paid' || 
-         invoice.status === 'overdue')
-      );
+      const filtered = invoices.filter(invoice => {
+        // Handle both snake_case and camelCase field names
+        const invoiceSupplierID = invoice.supplier_id || invoice.supplierId;
+        const invoiceStatus = invoice.status;
+                
+        return invoiceSupplierID === supplierIdNum && 
+          (invoiceStatus === 'pending' || 
+           invoiceStatus === 'partially_paid' || 
+           invoiceStatus === 'overdue');
+      });
+      
+      console.log("Filtered invoices for supplier:", supplierIdNum, filtered);
       setFilteredInvoices(filtered);
       
       // If there's only one invoice, automatically select it
@@ -417,7 +425,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                         <SelectContent>
                           {filteredInvoices.map((invoice) => (
                             <SelectItem key={invoice.id} value={invoice.id.toString()}>
-                              {invoice.invoiceNumber} - {formatCurrency(getUnpaidAmount(invoice.id))}
+                              {invoice.invoice_number || invoice.invoiceNumber} - {formatCurrency(getUnpaidAmount(invoice.id))}
                             </SelectItem>
                           ))}
                         </SelectContent>
