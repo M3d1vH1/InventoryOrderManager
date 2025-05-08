@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { storage } from '../storage.postgresql';
+import { storage } from '../storage';
 import { inventoryChangeTypeEnum } from '@shared/schema';
 
 /**

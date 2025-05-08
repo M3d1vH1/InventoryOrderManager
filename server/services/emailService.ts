@@ -3,7 +3,7 @@ import * as handlebars from 'handlebars';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { storage } from '../storage.postgresql';
+import { storage } from '../storage';
 import { Order, Customer } from '@shared/schema';
 
 // Get the directory name in ES modules

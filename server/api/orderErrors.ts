@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { storage } from '../storage.postgresql';
+import { storage } from '../storage';
 import { z } from 'zod';
 import { orderQualityTypeEnum, InsertOrderQuality } from '../../shared/schema';
 
