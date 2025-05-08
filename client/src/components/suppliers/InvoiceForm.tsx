@@ -121,14 +121,29 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
   // Reset form when invoice changes
   useEffect(() => {
     if (invoice) {
+      console.log("Invoice data received for edit:", invoice);
+      
+      // Log property access attempts for debugging
+      const invoiceNumber = invoice.invoice_number || invoice.invoiceNumber || '';
+      const supplierId = invoice.supplier_id || invoice.supplierId || '';
+      const invoiceDate = invoice.invoice_date || invoice.invoiceDate || new Date();
+      const dueDate = invoice.due_date || invoice.dueDate || new Date();
+      const amount = invoice.amount || '0';
+      const paidAmount = invoice.paid_amount || invoice.paidAmount || '';
+      const reference = invoice.reference || invoice.referenceNumber || '';
+      
+      console.log("Extracted invoice properties:", {
+        invoiceNumber, supplierId, invoiceDate, dueDate, amount, paidAmount, reference
+      });
+      
       form.reset({
-        invoiceNumber: invoice.invoiceNumber || '',
-        supplierId: invoice.supplierId?.toString() || '',
-        invoiceDate: invoice.invoiceDate ? new Date(invoice.invoiceDate) : new Date(),
-        dueDate: invoice.dueDate ? new Date(invoice.dueDate) : new Date(),
-        amount: invoice.amount?.toString() || '0',
-        paidAmount: invoice.paidAmount ? invoice.paidAmount.toString() : '',
-        reference: invoice.reference || '', // Added RF number field
+        invoiceNumber: invoiceNumber,
+        supplierId: supplierId.toString(),
+        invoiceDate: invoiceDate ? new Date(invoiceDate) : new Date(),
+        dueDate: dueDate ? new Date(dueDate) : new Date(),
+        amount: amount?.toString() || '0',
+        paidAmount: paidAmount ? paidAmount.toString() : '',
+        reference: reference, // RF number field
         status: invoice.status || 'pending',
         isRecurring: invoice.isRecurring || false,
         recurringCycle: invoice.recurringCycle?.toString() || '',
