@@ -205,7 +205,23 @@ router.get('/invoices/:id', async (req, res) => {
 // Create a new invoice
 router.post('/invoices', async (req, res) => {
   try {
-    const data = insertInvoiceSchema.parse(req.body);
+    console.log("Invoice creation request data:", JSON.stringify(req.body, null, 2));
+    
+    // Try to parse the data
+    let data;
+    try {
+      data = insertInvoiceSchema.parse(req.body);
+    } catch (validationError: any) {
+      console.error("Invoice validation error:", validationError);
+      if (validationError instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: 'Validation error', 
+          details: validationError.errors,
+          message: validationError.message
+        });
+      }
+      throw validationError;
+    }
     
     // Ensure supplier exists
     const supplier = await storage.getSupplier(data.supplierId);
@@ -218,14 +234,25 @@ router.post('/invoices', async (req, res) => {
       data.paidAmount = 0;
     }
 
+    console.log("Validated invoice data:", JSON.stringify(data, null, 2));
+    
     // Create the invoice
     const newInvoice = await storage.createSupplierInvoice(data);
+    console.log("Created invoice:", JSON.stringify(newInvoice, null, 2));
     res.status(201).json(newInvoice);
   } catch (error: any) {
+    console.error("Invoice creation error:", error);
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res.status(400).json({ 
+        error: 'Validation error', 
+        details: error.errors,
+        message: error.message
+      });
     }
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ 
+      error: error.message || 'Unknown server error',
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 

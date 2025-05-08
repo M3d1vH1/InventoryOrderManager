@@ -243,15 +243,20 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
     const invoiceDate = data.invoiceDate ? data.invoiceDate.toISOString().split('T')[0] : undefined;
     const dueDate = data.dueDate ? data.dueDate.toISOString().split('T')[0] : undefined;
     
+    // Handle paidAmount to set to undefined if it's blank or null, also handle string to number conversion
+    let paidAmount = undefined;
+    if (data.paidAmount !== null && data.paidAmount !== '' && data.paidAmount !== undefined) {
+      paidAmount = parseFloat(data.paidAmount.toString());
+    }
+    
     // Convert string values to numbers and map the fields to correct schema names
     const formattedData = {
       invoiceNumber: data.invoiceNumber,
       supplierId: parseInt(data.supplierId),
       issueDate: invoiceDate,    // Map to issueDate (required in schema)
-      invoiceDate: invoiceDate,  // Keep for backward compatibility
       dueDate: dueDate,          // Send as ISO date string
       amount: parseFloat(data.amount),
-      paidAmount: parseFloat(data.paidAmount || '0'),
+      paidAmount: paidAmount,    // Allow undefined to be passed through
       status: data.status,
       notes: data.notes || '',
       attachmentPath: data.attachmentPath || '',
@@ -446,7 +451,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
                         step="0.01"
                         placeholder={t('supplierPayments.invoice.paidAmountPlaceholder')} 
                         {...field} 
-                        value={field.value || '0'}
+                        // Remove the default value display to allow clearing the field
                       />
                     </FormControl>
                     <FormMessage />
