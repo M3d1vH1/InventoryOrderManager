@@ -1744,6 +1744,8 @@
       "selectInvoice": "Select an invoice",
       "selectDate": "Select date",
       "selectPaymentMethod": "Select payment method",
+      "bankAccount": "Bank Account",
+      "bankAccountPlaceholder": "Enter bank account details",
       "paymentProgress": "Payment Progress",
       "totalAmount": "Total Amount",
       "remainingAmount": "Remaining Amount",
