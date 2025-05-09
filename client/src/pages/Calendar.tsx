@@ -414,17 +414,15 @@ const CalendarPage: React.FC = () => {
         const isOverdue = status === 'overdue';
         
         let title = '';
-        let eventType: 'payment' | 'estimated' | 'created' = 'created';
         
         if (isPaid) {
           title = `${t('calendar.invoicePaid')}: ${invoiceNumber}`;
-          eventType = 'payment';
         } else if (isOverdue) {
           title = `${t('calendar.invoiceOverdue')}: ${invoiceNumber}`;
-          eventType = 'estimated';
+        } else if (isPartiallyPaid) {
+          title = `${t('calendar.invoicePartiallyPaid')}: ${invoiceNumber}`;
         } else {
           title = `${t('calendar.invoiceDue')}: ${invoiceNumber}`;
-          eventType = 'created';
         }
         
         events.push({
@@ -432,7 +430,7 @@ const CalendarPage: React.FC = () => {
           title: title,
           start: dueDateObj,
           end: dueDateObj,
-          type: eventType,
+          type: 'payment', // Always use payment type to ensure we can identify invoice events
           customerName: supplierName, // Required field in CalendarEvent
           supplierName: supplierName,
           invoiceNumber: invoiceNumber,
@@ -632,10 +630,17 @@ const CalendarPage: React.FC = () => {
       case 'calls':
         return events.filter(event => event.type === 'call');
       case 'payments':
-        // Include both payment and invoice events in the payments tab
+        // Only include actual payments (not invoices)
         return events.filter(event => 
-          event.type === 'payment' || 
-          (event.invoiceNumber && event.supplierName)
+          event.type === 'payment' && 
+          !(event.invoiceNumber && event.supplierName)
+        );
+      case 'invoices':
+        // Only include invoice events
+        return events.filter(event => 
+          event.type === 'payment' && 
+          event.invoiceNumber && 
+          event.supplierName
         );
       case 'inventory':
         return events.filter(event => event.type === 'inventory');
@@ -945,11 +950,12 @@ const CalendarPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2">
           <Tabs value={filterView} onValueChange={setFilterView} className="w-full">
-            <TabsList className="grid grid-cols-6 gap-1 w-full mb-4">
+            <TabsList className="grid grid-cols-7 gap-1 w-full mb-4">
               <TabsTrigger value="all" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.allEvents')}</TabsTrigger>
               <TabsTrigger value="orders" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.orders')}</TabsTrigger>
               <TabsTrigger value="calls" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.calls')}</TabsTrigger>
               <TabsTrigger value="payments" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.payments')}</TabsTrigger>
+              <TabsTrigger value="invoices" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.invoices')}</TabsTrigger>
               <TabsTrigger value="inventory" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.inventory')}</TabsTrigger>
               <TabsTrigger value="production" className="px-1 py-1 h-auto text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{t('calendar.production')}</TabsTrigger>
             </TabsList>
@@ -976,8 +982,10 @@ const CalendarPage: React.FC = () => {
                       <>
                         <Badge className="bg-[#14B8A6]">{t('calendar.payment')}</Badge>
                         <Badge className="bg-[#EC4899]">{t('calendar.paymentCallback')}</Badge>
-                        <Badge className="bg-[#0EA5E9]">{t('calendar.invoice')}</Badge>
                       </>
+                    )}
+                    {(filterView === 'all' || filterView === 'invoices') && (
+                      <Badge className="bg-[#0EA5E9]">{t('calendar.invoice')}</Badge>
                     )}
                     {(filterView === 'all' || filterView === 'inventory') && (
                       <Badge className="bg-[#06B6D4]">{t('calendar.inventory')}</Badge>
