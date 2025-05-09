@@ -489,12 +489,29 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                     <FormLabel>{t('callLogs.form.customer')}<span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                       <Combobox
-                        options={(customers || []).map((customer: any) => ({
-                          value: customer.id,
-                          label: customer.name || customer.companyName || customer.email || t('common.unknown')
-                        }))}
+                        options={(customers || []).map((customer: any) => {
+                          // Clean up and prepare label
+                          const label = customer.name || customer.companyName || customer.email || t('common.unknown')
+                          
+                          // Add special debug info for ΑΚΤΗ customer (for debugging only)
+                          if (label.includes('ΑΚΤΗ')) {
+                            console.log('Found ΑΚΤΗ customer in data source:', {
+                              id: customer.id,
+                              label,
+                              customer
+                            })
+                          }
+                          
+                          return {
+                            value: customer.id,
+                            label: label
+                          }
+                        })}
                         value={field.value}
-                        onChange={(value) => field.onChange(Number(value))}
+                        onChange={(value) => {
+                          console.log('Customer selected:', value)
+                          field.onChange(Number(value))
+                        }}
                         placeholder={t('callLogs.form.selectCustomer')}
                         emptyText={t('common.noCustomersFound')}
                         notFoundText={t('common.noMatchingCustomersFound')}
@@ -521,10 +538,23 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                             <Combobox
                               options={[
                                 { value: 'new', label: `+ ${t('callLogs.form.newProspectiveCustomer')}` },
-                                ...(prospectiveCustomers || []).map((prospect: any) => ({
-                                  value: prospect.id,
-                                  label: prospect.name || prospect.companyName || prospect.email || t('common.unknown')
-                                }))
+                                ...(prospectiveCustomers || []).map((prospect: any) => {
+                                  const label = prospect.name || prospect.companyName || prospect.email || t('common.unknown')
+                                  
+                                  // Add special debug info for ΑΚΤΗ customer (for debugging only)
+                                  if (label.includes('ΑΚΤΗ')) {
+                                    console.log('Found ΑΚΤΗ prospective customer in data source:', {
+                                      id: prospect.id,
+                                      label,
+                                      prospect
+                                    })
+                                  }
+                                  
+                                  return {
+                                    value: prospect.id,
+                                    label: label
+                                  }
+                                })
                               ]}
                               value={isNewProspect ? 'new' : field.value}
                               onChange={(value) => {
