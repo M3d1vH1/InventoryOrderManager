@@ -308,15 +308,22 @@ const OrderForm = ({
   
   // Function to set shipping company and billing company from customer data
   const setShippingCompanyFromCustomer = (customer: Customer) => {
+    console.log('Customer data received:', customer);
+    
     let shippingCompany = '';
     
     // Use preferred shipping company if available
     if (customer.preferredShippingCompany) {
       shippingCompany = customer.preferredShippingCompany;
+      console.log('Using preferred shipping company:', shippingCompany);
     } 
     // Otherwise use the regular shipping company if available
     else if (customer.shippingCompany) {
       shippingCompany = customer.shippingCompany;
+      console.log('Using regular shipping company:', shippingCompany);
+    }
+    else {
+      console.log('No shipping company found in customer data');
     }
     
     if (shippingCompany) {
@@ -328,6 +335,9 @@ const OrderForm = ({
     if (customer.billingCompany) {
       form.setValue('billingCompany', customer.billingCompany);
       console.log(`Set billing company to ${customer.billingCompany} from customer data`);
+    }
+    else {
+      console.log('No billing company found in customer data');
     }
   };
 
