@@ -654,11 +654,10 @@ const CalendarPage: React.FC = () => {
           !(event.invoiceNumber && event.supplierName)
         );
       case 'invoices':
-        // Only include invoice events
+        // Include both payment-based invoices and dedicated invoice events
         return events.filter(event => 
-          event.type === 'payment' && 
-          event.invoiceNumber && 
-          event.supplierName
+          (event.type === 'payment' && event.invoiceNumber && event.supplierName) ||
+          event.type === 'invoice'
         );
       case 'inventory':
         return events.filter(event => event.type === 'inventory');
@@ -836,6 +835,22 @@ const CalendarPage: React.FC = () => {
           } else {
             backgroundColor = '#14B8A6'; // Teal for regular payments
             borderLeft = '3px solid #0F766E';
+          }
+          break;
+        case 'invoice':
+          // Style dedicated invoice events
+          if (event.invoiceStatus === 'overdue' || event.isOverdue) {
+            backgroundColor = '#EF4444'; // Red for overdue invoices
+            borderLeft = '3px solid #B91C1C';
+          } else if (event.invoiceStatus === 'paid' || event.isPaid) {
+            backgroundColor = '#10B981'; // Green for paid invoices
+            borderLeft = '3px solid #059669';
+          } else if (event.invoiceStatus === 'partially_paid' || event.isPartiallyPaid) {
+            backgroundColor = '#F59E0B'; // Amber for partially paid invoices
+            borderLeft = '3px solid #D97706';
+          } else {
+            backgroundColor = '#0EA5E9'; // Sky blue for pending invoices
+            borderLeft = '3px solid #0284C7';
           }
           break;
         case 'inventory':
@@ -1335,6 +1350,74 @@ const CalendarPage: React.FC = () => {
                 </>
               )}
               
+              {selectedEvent?.type === 'invoice' && (
+                <>
+                  <div className="flex items-start">
+                    <User className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium">{t('suppliers.supplier')}</p>
+                      <p className="text-sm text-muted-foreground">{selectedEvent.supplierName}</p>
+                    </div>
+                  </div>
+                  
+                  {selectedEvent.invoiceNumber && (
+                    <div className="flex items-start">
+                      <FileText className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium">{t('supplierPayments.payment.invoice')}</p>
+                        <p className="text-sm text-muted-foreground">{selectedEvent.invoiceNumber}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {selectedEvent.invoiceAmount && (
+                    <div className="flex items-start">
+                      <DollarSign className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium">{t('suppliers.amount')}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Intl.NumberFormat(i18n.language, { 
+                            style: 'currency', 
+                            currency: 'EUR' 
+                          }).format(selectedEvent.invoiceAmount)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {selectedEvent.paidAmount > 0 && (
+                    <div className="flex items-start">
+                      <DollarSign className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium">{t('supplierPayments.payment.paidAmount')}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Intl.NumberFormat(i18n.language, { 
+                            style: 'currency', 
+                            currency: 'EUR' 
+                          }).format(selectedEvent.paidAmount)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {selectedEvent.invoiceStatus && (
+                    <div className="flex items-start">
+                      <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium">{t('supplierPayments.payment.status')}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedEvent.invoiceStatus === 'pending' && t('supplierPayments.statuses.pending')}
+                          {selectedEvent.invoiceStatus === 'paid' && t('supplierPayments.statuses.paid')}
+                          {selectedEvent.invoiceStatus === 'partially_paid' && t('supplierPayments.statuses.partiallyPaid')}
+                          {selectedEvent.invoiceStatus === 'overdue' && t('supplierPayments.statuses.overdue')}
+                          {selectedEvent.invoiceStatus === 'cancelled' && t('supplierPayments.statuses.cancelled')}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+              
               {selectedEvent?.type === 'production' && (
                 <>
                   <div className="flex items-start">
@@ -1432,6 +1515,15 @@ const CalendarPage: React.FC = () => {
                   setIsEventModalOpen(false);
                 }}>
                   {t('production.viewBatch')}
+                </Button>
+              )}
+              
+              {selectedEvent?.type === 'invoice' && selectedEvent.invoiceId && (
+                <Button onClick={() => {
+                  navigate(`/supplier-payments/invoices/${selectedEvent.invoiceId}`);
+                  setIsEventModalOpen(false);
+                }}>
+                  {t('suppliers.viewInvoice')}
                 </Button>
               )}
             </div>
