@@ -819,9 +819,20 @@ const CalendarPage: React.FC = () => {
             backgroundColor = '#EC4899'; // Pink for payment callbacks
             borderLeft = '3px solid #BE185D';
           } else if (event.invoiceNumber && event.supplierName && !event.callbackRequired) {
-            // This is an invoice event
-            backgroundColor = '#0EA5E9'; // Sky blue for invoice events
-            borderLeft = '3px solid #0284C7';
+            // This is an invoice event using payment type
+            if (event.invoiceStatus === 'overdue') {
+              backgroundColor = '#EF4444'; // Red for overdue invoices
+              borderLeft = '3px solid #B91C1C';
+            } else if (event.invoiceStatus === 'paid') {
+              backgroundColor = '#10B981'; // Green for paid invoices
+              borderLeft = '3px solid #059669';
+            } else if (event.invoiceStatus === 'partially_paid') {
+              backgroundColor = '#F59E0B'; // Amber for partially paid invoices
+              borderLeft = '3px solid #D97706';
+            } else {
+              backgroundColor = '#0EA5E9'; // Sky blue for pending invoices
+              borderLeft = '3px solid #0284C7';
+            }
           } else {
             backgroundColor = '#14B8A6'; // Teal for regular payments
             borderLeft = '3px solid #0F766E';
