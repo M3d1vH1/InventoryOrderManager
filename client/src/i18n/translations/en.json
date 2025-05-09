@@ -1746,6 +1746,8 @@
       "selectPaymentMethod": "Select payment method",
       "bankAccount": "Bank Account",
       "bankAccountPlaceholder": "Enter bank account details",
+      "company": "Company",
+      "companyPlaceholder": "Enter company name",
       "paymentProgress": "Payment Progress",
       "totalAmount": "Total Amount",
       "remainingAmount": "Remaining Amount",

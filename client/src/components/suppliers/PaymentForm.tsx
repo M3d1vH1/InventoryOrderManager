@@ -686,6 +686,30 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                     )}
                   />
 
+                  {/* Company field - optional */}
+                  <FormField
+                    control={form.control}
+                    name="company"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('supplierPayments.payment.company', 'Company')}</FormLabel>
+                        <FormControl>
+                          <div className="flex">
+                            <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground">
+                              <Building2 className="h-4 w-4" />
+                            </span>
+                            <Input 
+                              className="rounded-l-none"
+                              placeholder={t('supplierPayments.payment.companyPlaceholder', 'Enter company name')} 
+                              {...field} 
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   {/* Reference field */}
                   <FormField
                     control={form.control}
