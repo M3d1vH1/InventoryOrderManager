@@ -122,8 +122,19 @@ export function Combobox({
       // Calculate priority:
       let priority = 0;
       
+      // ULTRA HIGH PRIORITY: exact match for ΑΚΤΗ
+      // If searching for "ακτη" and option has "ΑΚΤΗ" (regardless of case)
+      if (lowerQuery.includes('ακτ') && lowerLabel.includes('ακτ')) {
+        // Give highest priority to exact matches for ΑΚΤΗ
+        priority = 1000;
+        
+        // Even higher if it starts with ΑΚΤΗ
+        if (lowerLabel.startsWith('ακτ')) {
+          priority = 2000;
+        }
+      }
       // Highest priority: starts with the exact query
-      if (lowerLabel.startsWith(lowerQuery)) {
+      else if (lowerLabel.startsWith(lowerQuery)) {
         priority = 100;
       }
       // High priority: contains the exact query as a word
@@ -133,10 +144,6 @@ export function Combobox({
       // Medium priority: contains the exact query somewhere
       else if (lowerLabel.includes(lowerQuery)) {
         priority = 60;
-      }
-      // Special case for ΑΚΤΗ
-      else if (lowerQuery.includes('ακτ') && lowerLabel.includes('ακτ')) {
-        priority = 90; // Very high priority for ΑΚΤΗ matches
       }
       // Low priority: fuzzy match
       else {
@@ -148,6 +155,11 @@ export function Combobox({
     
     // Sort by priority (highest first)
     matches.sort((a, b) => b.priority - a.priority);
+    
+    // Debug sorting for ΑΚΤΗ
+    if (lowerQuery.includes('ακτ')) {
+      console.log('Sorted matches:', matches.map(m => `${m.option.label} (priority: ${m.priority})`));
+    }
     
     // Return just the sorted options
     return matches.map(match => match.option);
