@@ -11,6 +11,7 @@ import ProductSearch from "@/components/products/ProductSearch";
 import { format } from "date-fns";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
+import { Combobox } from "@/components/ui/combobox";
 
 import {
   Form,
