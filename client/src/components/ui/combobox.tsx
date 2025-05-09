@@ -4,6 +4,13 @@ import { Check, ChevronsUpDown, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command"
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -82,65 +89,22 @@ export function Combobox({
   popoverContentClassName,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
-  const [searchQuery, setSearchQuery] = React.useState("")
-  const inputRef = React.useRef<HTMLInputElement>(null)
-  const listboxRef = React.useRef<HTMLDivElement>(null)
-
+  
   // Find the selected option
   const selectedOption = React.useMemo(() => {
     return options.find((option) => option.value === value)
   }, [options, value])
-  
-  // Filter options using our fuzzy matching algorithm
-  const filteredOptions = React.useMemo(() => {
-    if (!searchQuery) return options;
-    
-    // Special case debugging for ΑΚΤΗ search
-    if (searchQuery.toLowerCase().includes('ακτ')) {
-      console.log('Searching for ΑΚΤΗ with query:', searchQuery);
-      
-      // Find all options containing "ΑΚΤΗ"
-      const aktiOptions = options.filter(option => 
-        option.label.toLowerCase().includes('ακτ')
-      );
-      
-      if (aktiOptions.length > 0) {
-        console.log('Found ΑΚΤΗ options:', aktiOptions);
-      } else {
-        console.log('No ΑΚΤΗ options found in available options');
-      }
-    }
-    
-    return options.filter(option => fuzzyMatch(option.label, searchQuery));
-  }, [options, searchQuery]);
 
-  // Handle scrolling in dropdown
-  React.useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      if (listboxRef.current && listboxRef.current.contains(e.target as Node)) {
-        e.preventDefault();
-        listboxRef.current.scrollTop += e.deltaY;
-      }
-    };
-
-    const listbox = listboxRef.current;
-    if (listbox) {
-      listbox.addEventListener('wheel', handleWheel, { passive: false });
-    }
-
-    return () => {
-      if (listbox) {
-        listbox.removeEventListener('wheel', handleWheel);
-      }
-    };
-  }, [open]);
+  // Custom command filter function that uses our fuzzy matching
+  const commandFilter = React.useCallback((value: string, search: string) => {
+    return fuzzyMatch(value, search);
+  }, []);
 
   return (
-    <div className={cn("relative w-full", className)}>      
+    <div className={cn("relative w-full", className)}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
-            type="button"
             variant="outline"
             role="combobox"
             aria-expanded={open}
@@ -150,13 +114,6 @@ export function Combobox({
               triggerClassName
             )}
             disabled={disabled}
-            onClick={() => {
-              setOpen(!open);
-              if (!open) {
-                // Focus the input when opening
-                setTimeout(() => inputRef.current?.focus(), 10);
-              }
-            }}
           >
             {value && selectedOption
               ? selectedOption.label
@@ -165,58 +122,40 @@ export function Combobox({
           </Button>
         </PopoverTrigger>
         <PopoverContent 
-          className={cn("p-0 w-full", popoverContentClassName)} 
+          className={cn("p-0", popoverContentClassName)} 
           align="start"
+          side="bottom"
           sideOffset={5}
         >
-          <div className="flex items-center border-b px-3">
-            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-            <input
-              ref={inputRef}
-              className="flex h-11 w-full bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-              placeholder={placeholder}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          
-          {filteredOptions.length === 0 ? (
-            <div className="py-6 text-center text-sm text-muted-foreground">
-              {searchQuery === "" ? emptyText : notFoundText}
-            </div>
-          ) : (
-            <div 
-              ref={listboxRef}
-              className="max-h-[200px] overflow-auto py-1"
-              style={{ scrollBehavior: 'smooth' }}
-              tabIndex={-1}
-            >
-              {filteredOptions.map((option) => (
-                <div
+          <Command filter={commandFilter}>
+            <CommandInput placeholder={placeholder} className="h-9" />
+            <CommandEmpty>
+              {notFoundText}
+            </CommandEmpty>
+            <CommandGroup className="max-h-[200px] overflow-auto">
+              {options.map((option) => (
+                <CommandItem
                   key={option.value}
-                  className={cn(
-                    "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
-                    "hover:bg-accent hover:text-accent-foreground",
-                    value === option.value && "bg-accent text-accent-foreground"
-                  )}
-                  onClick={() => {
-                    onChange(option.value);
-                    setOpen(false);
+                  value={option.label}
+                  onSelect={() => {
+                    onChange(option.value)
+                    setOpen(false)
                   }}
+                  className="cursor-pointer"
                 >
+                  {option.label}
                   <Check
                     className={cn(
-                      "mr-2 h-4 w-4",
+                      "ml-auto h-4 w-4",
                       value === option.value ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  {option.label}
-                </div>
+                </CommandItem>
               ))}
-            </div>
-          )}
+            </CommandGroup>
+          </Command>
         </PopoverContent>
       </Popover>
     </div>
-  );
+  )
 }
