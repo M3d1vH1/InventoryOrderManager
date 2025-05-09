@@ -821,33 +821,45 @@ const OrderForm = ({
                         ) : (
                           <div>
                             <Combobox
-                              options={(customers || []).map(customer => ({
-                                value: customer.name, // Use just the name as the value
-                                label: customer.name,
-                                // Store the ID in a hidden attribute for internal use only
-                                id: customer.id
-                              }))}
+                              options={(customers || []).map(customer => {
+                                // Make sure customer name doesn't contain ID format (ID:Name)
+                                const displayName = customer.name.includes(':') 
+                                  ? customer.name.split(':')[1].trim() 
+                                  : customer.name;
+                                
+                                return {
+                                  value: displayName, // Use clean name as the value
+                                  label: displayName, // Display clean name without ID
+                                  // Store the ID in a hidden attribute for internal use only
+                                  id: customer.id,
+                                  rawName: customer.name // Keep original name for reference
+                                };
+                              })}
                               value={field.value || ""}
                               onChange={(value) => {
                                 console.log('Customer selected via Combobox:', value);
                                 
-                                // The value is now just the customer name
+                                // The value is already the clean name
                                 const customerName = value.toString();
                                 
-                                // Make sure customerName doesn't contain ID format (ID:Name)
+                                // Always make sure there's no ID prefix (defensive)
                                 const cleanedCustomerName = customerName.includes(':') 
                                   ? customerName.split(':')[1].trim() 
                                   : customerName;
                                 
-                                console.log('Cleaned customer name for dropdown selection:', cleanedCustomerName);
+                                console.log('Final cleaned customer name for form:', cleanedCustomerName);
                                 
                                 // Update the form field with just the clean name
                                 field.onChange(cleanedCustomerName);
                                 
-                                // Find the customer by name (using either format to be safe)
-                                const selectedCustomer = customers?.find(c => 
-                                  c.name === customerName || c.name === cleanedCustomerName
-                                );
+                                // Find the customer by name (using all possible formats to be safe)
+                                const selectedCustomer = customers?.find(c => {
+                                  const cName = c.name.includes(':') 
+                                    ? c.name.split(':')[1].trim() 
+                                    : c.name;
+                                  
+                                  return cName === cleanedCustomerName || c.name === cleanedCustomerName;
+                                });
                                 
                                 // If we have a matched customer, look for their previous orders to get area info
                                 if (selectedCustomer) {
