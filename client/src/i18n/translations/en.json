@@ -22,7 +22,7 @@
     "days": "days",
     "callLogs": "Call Logs",
     "sales": "Sales",
-    "supplierPayments": "Supplier Payments"
+    "supplierPayments": "Payments"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -1576,7 +1576,7 @@
     "noHistoryAvailable": "No inventory history available"
   },
   "supplierPayments": {
-    "title": "Supplier Payments",
+    "title": "Payments",
     "description": "Manage payments to suppliers",
     "dashboard": "Payment Dashboard",
     "suppliers": "Suppliers",

@@ -18,7 +18,7 @@
     "orderPicking": "Συλλογή Παραγγελιών",
     "view": "Προβολή",
     "update": "Ενημέρωση",
-    "supplierPayments": "Πληρωμές Προμηθευτών",
+    "supplierPayments": "Πληρωμές",
     "search": "Αναζήτηση",
     "filter": "Φίλτρο",
     "actions": "Ενέργειες",
@@ -1744,7 +1744,7 @@
     }
   },
   "supplierPayments": {
-    "title": "Πληρωμές Προμηθευτών",
+    "title": "Πληρωμές",
     "description": "Διαχείριση πληρωμών προς προμηθευτές",
     "dashboard": "Πίνακας Πληρωμών",
     "suppliers": "Προμηθευτές",
