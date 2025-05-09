@@ -57,6 +57,7 @@ const paymentFormSchema = z.object({
       message: 'Amount must be a positive number',
     }),
   paymentMethod: z.string().min(1, { message: 'Payment method is required' }),
+  bankAccount: z.string().optional(),
   referenceNumber: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -98,6 +99,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
       paymentDate: new Date(),
       amount: '',
       paymentMethod: '',
+      bankAccount: '',
       referenceNumber: '',
       notes: '',
     },
