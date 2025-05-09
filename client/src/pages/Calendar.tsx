@@ -5,8 +5,10 @@ import moment from 'moment';
 import 'moment/locale/el';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useSidebar } from '@/context/SidebarContext';
+import { useUser } from '@/context/UserContext';
 import { PageHeader } from '@/components/common/PageHeader';
 import { useLocation } from 'wouter';
 import {
@@ -104,6 +106,7 @@ const CalendarPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { toast } = useToast();
   const { setCurrentPage } = useSidebar();
+  const { user } = useUser();
   const [filterView, setFilterView] = useState('all');
   const [calendarView, setCalendarView] = useState<any>(Views.MONTH);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -149,23 +152,24 @@ const CalendarPage: React.FC = () => {
   
   // Manual fetch for debugging purposes
   useEffect(() => {
-    // Direct fetch to check if API endpoint is accessible
-    fetch('/api/supplier-payments/invoices')
-      .then(response => {
-        console.log('Direct fetch invoice status:', response.status);
-        return response.json();
-      })
-      .then(data => {
-        console.log('Direct fetch invoices result:', data);
-        // If no invoices are found but API works, we'll create some sample events for testing
-        if (Array.isArray(data) && data.length === 0) {
-          console.log('No invoices found in the database');
-        }
-      })
-      .catch(error => {
-        console.error('Direct fetch invoice error:', error);
-      });
-  }, []);
+    // Only run this if we have a valid user session (authenticated)
+    if (user && user.id) {
+      // Use apiRequest helper that includes credentials
+      apiRequest('/api/supplier-payments/invoices')
+        .then(data => {
+          console.log('API request invoices result:', data);
+          // If no invoices are found but API works, we'll log that information
+          if (Array.isArray(data) && data.length === 0) {
+            console.log('No invoices found in the database');
+          }
+        })
+        .catch(error => {
+          console.error('API request invoice error:', error);
+        });
+    } else {
+      console.log('Skipping manual invoice fetch - user not authenticated yet');
+    }
+  }, [user]);
   
   // Log the supplier invoices when they change
   useEffect(() => {
