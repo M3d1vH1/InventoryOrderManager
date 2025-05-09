@@ -119,44 +119,66 @@ export const PaymentList = () => {
   const filteredPayments = payments.filter((payment: any) => {
     const query = searchQuery.toLowerCase();
     
-    // Get invoice for this payment
-    const invoice = invoices.find((inv: any) => inv.id === payment.invoiceId);
+    // Get invoice for this payment - try both camelCase and snake_case property names
+    const invoice = invoices.find((inv: any) => 
+      inv.id === (payment.invoiceId || payment.invoice_id)
+    );
     
-    // Get supplier for this payment
+    // Get supplier for this payment - try both camelCase and snake_case property names
     const supplier = invoice 
-      ? suppliers.find((s: any) => s.id === invoice.supplierId)
+      ? suppliers.find((s: any) => 
+          s.id === (invoice.supplierId || invoice.supplier_id)
+        )
       : null;
     
+    // Handle reference field (which might be stored as either reference or referenceNumber)
+    const referenceValue = payment.reference || payment.referenceNumber || payment.reference_number;
+    
     const matchesSearch = 
-      (payment.reference ? payment.reference.toLowerCase().includes(query) : false) ||
+      (referenceValue ? referenceValue.toLowerCase().includes(query) : false) ||
       (payment.notes ? payment.notes.toLowerCase().includes(query) : false) ||
-      (payment.paymentMethod ? payment.paymentMethod.toLowerCase().includes(query) : false) ||
+      (payment.paymentMethod || payment.payment_method ? (payment.paymentMethod || payment.payment_method).toLowerCase().includes(query) : false) ||
       (payment.company ? payment.company.toLowerCase().includes(query) : false) ||
       (supplier && supplier.name ? supplier.name.toLowerCase().includes(query) : false) ||
-      (invoice && invoice.invoiceNumber ? invoice.invoiceNumber.toLowerCase().includes(query) : false);
+      (invoice && (invoice.invoiceNumber || invoice.invoice_number) ? 
+        (invoice.invoiceNumber || invoice.invoice_number).toLowerCase().includes(query) : false);
     
     if (filterSupplier === 'all') {
       return matchesSearch;
     }
     
+    // Handle either camelCase or snake_case property names
     return matchesSearch && 
       invoice && 
-      invoice.supplierId.toString() === filterSupplier;
+      (invoice.supplierId?.toString() === filterSupplier || 
+       invoice.supplier_id?.toString() === filterSupplier);
   });
 
   // Get supplier name for a payment
   const getSupplierForPayment = (payment: any) => {
-    const invoice = invoices.find((inv: any) => inv.id === payment.invoiceId);
-    if (!invoice) return 'Unknown';
+    // Check if the payment has a valid invoiceId
+    if (!payment.invoiceId) return '-';
     
-    const supplier = suppliers.find((s: any) => s.id === invoice.supplierId);
-    return supplier ? supplier.name : 'Unknown';
+    // Try to match by invoice_id first (snake_case from backend)
+    const invoice = invoices.find((inv: any) => 
+      (inv.id === payment.invoiceId) || (inv.id === payment.invoice_id)
+    );
+    if (!invoice) return '-';
+    
+    // Try to match by supplierId first, fallback to supplier_id (snake_case from backend)
+    const supplier = suppliers.find((s: any) => 
+      (s.id === invoice.supplierId) || (s.id === invoice.supplier_id)
+    );
+    return supplier ? supplier.name : '-';
   };
 
   // Get invoice number for a payment
   const getInvoiceNumber = (invoiceId: number) => {
+    if (!invoiceId) return '-';
+    
     const invoice = invoices.find((inv: any) => inv.id === invoiceId);
-    return invoice ? invoice.invoiceNumber : 'Unknown';
+    // Try invoiceNumber first, fallback to invoice_number (snake_case from backend)
+    return invoice ? (invoice.invoiceNumber || invoice.invoice_number || '-') : '-';
   };
 
   const formatDate = (dateString: string) => {
@@ -299,15 +321,15 @@ export const PaymentList = () => {
                   ) : (
                     filteredPayments.map((payment: any) => (
                       <TableRow key={payment.id}>
-                        <TableCell>{formatDate(payment.paymentDate)}</TableCell>
+                        <TableCell>{formatDate(payment.paymentDate || payment.payment_date)}</TableCell>
                         <TableCell>{getSupplierForPayment(payment)}</TableCell>
-                        <TableCell>{getInvoiceNumber(payment.invoiceId)}</TableCell>
+                        <TableCell>{getInvoiceNumber(payment.invoiceId || payment.invoice_id)}</TableCell>
                         <TableCell>{payment.company || '-'}</TableCell>
                         <TableCell>{formatCurrency(payment.amount)}</TableCell>
                         <TableCell>
-                          {getPaymentMethodBadge(payment.paymentMethod)}
+                          {getPaymentMethodBadge(payment.paymentMethod || payment.payment_method)}
                         </TableCell>
-                        <TableCell>{payment.reference || '-'}</TableCell>
+                        <TableCell>{payment.reference || payment.referenceNumber || payment.reference_number || '-'}</TableCell>
                         <TableCell className="text-right">
                           <Button
                             variant="ghost"
