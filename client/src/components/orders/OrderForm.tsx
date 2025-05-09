@@ -717,7 +717,10 @@ const OrderForm = ({
                             placeholder={t('orders.form.typeCustomerName')}
                             className="h-12 text-base"
                             value={field.value}
-                            onValueChange={field.onChange}
+                            onValueChange={(value) => {
+                              console.log('Input value changed to:', value);
+                              field.onChange(value);
+                            }}
                             disabled={isLoadingCustomers}
                           />
                           {field.value.length > 0 && (
@@ -748,15 +751,13 @@ const OrderForm = ({
                                   .map(customer => (
                                     <CommandItem
                                       key={customer.id}
-                                      value={customer.name}
                                       className="h-10 text-base"
-                                      onSelect={(value) => {
-                                        field.onChange(value);
+                                      onSelect={() => {
+                                        console.log('Customer selected:', customer.name);
+                                        field.onChange(customer.name);
                                         
-                                        // Get the matched customer to retrieve area info from previous orders
-                                        const selectedCustomer = customers?.find(c => 
-                                          c.name.toLowerCase() === value.toLowerCase()
-                                        );
+                                        // Direct reference to the customer object instead of searching again
+                                        const selectedCustomer = customer;
                                         
                                         // If we have a matched customer, look for their previous orders to get area info
                                         if (selectedCustomer) {
