@@ -1,11 +1,14 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle, Clock, AlertCircle, DollarSign, Calendar, CreditCard, ArrowUpDown, Activity } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle, DollarSign, Calendar, CreditCard, ArrowUpDown, Activity, X } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { format, parseISO, isValid, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths } from 'date-fns';
 import { useState, useEffect } from 'react';
 import { el } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 // Types for the summary data
 interface PaymentSummary {
@@ -151,6 +154,19 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
   // Get events for a specific day
   const getEventsForDay = (day: Date) => {
     return calendarEvents.filter(event => isSameDay(event.date, day));
+  };
+  
+  // State for selected day events and modal
+  const [selectedDayEvents, setSelectedDayEvents] = useState<PaymentCalendarEvent[]>([]);
+  const [isDayEventsModalOpen, setIsDayEventsModalOpen] = useState(false);
+  
+  // Handle day click to show events
+  const handleDayClick = (day: Date) => {
+    const events = getEventsForDay(day);
+    if (events.length > 0) {
+      setSelectedDayEvents(events);
+      setIsDayEventsModalOpen(true);
+    }
   };
 
   return (
@@ -349,7 +365,9 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
                     ${hasPaymentEvent ? 'border-green-500/50 bg-green-50/30 dark:bg-green-950/10' : ''}
                     ${hasDueEvent ? 'border-amber-500/50 bg-amber-50/30 dark:bg-amber-950/10' : ''}
                     ${!hasPaymentEvent && !hasDueEvent ? 'border-border/30' : ''}
+                    ${dayEvents.length > 0 ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}
                   `}
+                  onClick={dayEvents.length > 0 ? () => handleDayClick(day) : undefined}
                 >
                   <div className="text-right text-xs mb-1">
                     {format(day, 'd')}
@@ -391,6 +409,76 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
           </div>
         </CardFooter>
       </Card>
+      
+      {/* Day Events Modal */}
+      <Dialog open={isDayEventsModalOpen} onOpenChange={setIsDayEventsModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>
+                {selectedDayEvents.length > 0 ? format(selectedDayEvents[0].date, 'PPP', { locale: i18n.language === 'el' ? el : undefined }) : ''}
+              </span>
+              <Badge variant="outline" className="ml-2">
+                {selectedDayEvents.length} {selectedDayEvents.length === 1 ? t('calendar.event') : t('calendar.events')}
+              </Badge>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto">
+            {selectedDayEvents.map((event, index) => (
+              <div 
+                key={index} 
+                className={`p-3 rounded-md space-y-2
+                  ${event.type === 'payment' ? 'bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900' : ''}
+                  ${event.type === 'due' ? 'bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900' : ''}
+                `}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {event.type === 'payment' ? (
+                      <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    ) : (
+                      <Calendar className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    )}
+                    <span className="font-medium">
+                      {event.title}
+                    </span>
+                  </div>
+                  <Badge variant={event.type === 'payment' ? 'default' : 'secondary'}>
+                    {event.type === 'payment' 
+                      ? t('supplierPayments.payment.paymentMade')
+                      : t('supplierPayments.payment.paymentDue')
+                    }
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">{t('supplierPayments.payment.supplier')}</p>
+                    <p className="font-medium">{event.supplierName}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">{t('supplierPayments.payment.amount')}</p>
+                    <p className={`font-medium ${event.type === 'payment' ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                      {formatCurrency(event.amount)}
+                    </p>
+                  </div>
+                  {event.invoiceNumber && (
+                    <div className="col-span-2">
+                      <p className="text-muted-foreground">{t('supplierPayments.payment.invoice')}</p>
+                      <p className="font-medium">{event.invoiceNumber}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDayEventsModalOpen(false)}>
+              {t('common.close')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

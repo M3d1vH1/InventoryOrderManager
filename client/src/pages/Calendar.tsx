@@ -375,6 +375,77 @@ const CalendarPage: React.FC = () => {
     return events;
   };
 
+  // Process invoice events
+  const createInvoiceEvents = (invoices: any[] | undefined): CalendarEvent[] => {
+    const events: CalendarEvent[] = [];
+    
+    if (!invoices || !Array.isArray(invoices)) {
+      return events;
+    }
+    
+    for (const invoice of invoices) {
+      try {
+        if (!invoice || !invoice.id) {
+          console.warn('Invalid invoice data:', invoice);
+          continue;
+        }
+        
+        // Handle both snake_case and camelCase field names
+        const dueDate = invoice.dueDate || invoice.due_date || invoice.invoiceDate || invoice.invoice_date;
+        const status = invoice.status || 'pending';
+        let supplierName = invoice.supplierName || invoice.supplier_name || t('common.unknown');
+        const invoiceNumber = invoice.invoiceNumber || invoice.invoice_number || `#${invoice.id}`;
+        const amount = parseFloat(invoice.amount || '0');
+        
+        if (!dueDate) {
+          console.warn('Invoice missing date:', invoice);
+          continue;
+        }
+        
+        const dueDateObj = new Date(dueDate);
+        if (isNaN(dueDateObj.getTime())) {
+          console.warn('Invalid invoice date:', dueDate);
+          continue;
+        }
+        
+        // Create different events based on invoice status
+        const isPaid = status === 'paid';
+        const isPartiallyPaid = status === 'partially_paid';
+        const isOverdue = status === 'overdue';
+        
+        let title = '';
+        let eventType: 'payment' | 'estimated' | 'created' = 'created';
+        
+        if (isPaid) {
+          title = `${t('calendar.invoicePaid')}: ${invoiceNumber}`;
+          eventType = 'payment';
+        } else if (isOverdue) {
+          title = `${t('calendar.invoiceOverdue')}: ${invoiceNumber}`;
+          eventType = 'estimated';
+        } else {
+          title = `${t('calendar.invoiceDue')}: ${invoiceNumber}`;
+          eventType = 'created';
+        }
+        
+        events.push({
+          id: `invoice-${invoice.id}`,
+          title: title,
+          start: dueDateObj,
+          end: dueDateObj,
+          type: eventType,
+          customerName: supplierName, // Required field in CalendarEvent
+          supplierName: supplierName,
+          invoiceNumber: invoiceNumber,
+          paymentAmount: amount
+        });
+      } catch (err) {
+        console.error('Error processing invoice for calendar:', err, invoice?.id);
+      }
+    }
+    
+    return events;
+  };
+
   // Process inventory events
   const createInventoryEvents = (inventoryEvents: any[] | undefined): CalendarEvent[] => {
     const events: CalendarEvent[] = [];
@@ -535,6 +606,10 @@ const CalendarPage: React.FC = () => {
       const paymentEvents = createPaymentEvents(payments, invoices);
       allEvents = [...allEvents, ...paymentEvents];
       
+      // Process invoices
+      const invoiceEvents = createInvoiceEvents(invoices);
+      allEvents = [...allEvents, ...invoiceEvents];
+      
       // Process inventory events
       const inventoryEventsList = createInventoryEvents(inventoryEvents);
       allEvents = [...allEvents, ...inventoryEventsList];
@@ -557,7 +632,11 @@ const CalendarPage: React.FC = () => {
       case 'calls':
         return events.filter(event => event.type === 'call');
       case 'payments':
-        return events.filter(event => event.type === 'payment');
+        // Include both payment and invoice events in the payments tab
+        return events.filter(event => 
+          event.type === 'payment' || 
+          (event.invoiceNumber && event.supplierName)
+        );
       case 'inventory':
         return events.filter(event => event.type === 'inventory');
       case 'production':
@@ -716,6 +795,10 @@ const CalendarPage: React.FC = () => {
           if (event.callbackRequired) {
             backgroundColor = '#EC4899'; // Pink for payment callbacks
             borderLeft = '3px solid #BE185D';
+          } else if (event.invoiceNumber && event.supplierName && !event.callbackRequired) {
+            // This is an invoice event
+            backgroundColor = '#0EA5E9'; // Sky blue for invoice events
+            borderLeft = '3px solid #0284C7';
           } else {
             backgroundColor = '#14B8A6'; // Teal for regular payments
             borderLeft = '3px solid #0F766E';
