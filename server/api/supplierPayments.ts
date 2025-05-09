@@ -141,18 +141,35 @@ router.delete('/suppliers/:id', async (req, res) => {
 
 // ===== INVOICE ROUTES =====
 
-// Get all invoices
+// Get all invoices - public route for calendar integration
 router.get('/invoices', async (req, res) => {
   console.log('[API] GET /supplier-payments/invoices - Fetching all invoices');
+  
+  // IMPORTANT: This route is accessible without authentication specifically
+  // to allow calendar integrations to work properly
   try {
     // Use direct SQL query to bypass schema issues
     const client = await pool.connect();
     try {
+      // Add more detailed query with snake_case to camelCase field renaming
+      // to make it easier to use in calendar integrations
       const result = await client.query(`
-        SELECT si.*, s.name as supplier_name
+        SELECT 
+          si.id,
+          si.invoice_number AS "invoiceNumber",
+          si.supplier_id AS "supplierId",
+          si.issue_date AS "issueDate",
+          si.due_date AS "dueDate",
+          si.amount,
+          si.status,
+          COALESCE(si.paid_amount, 0) AS "paidAmount",
+          si.invoice_date AS "invoiceDate",
+          s.name AS "supplierName"
         FROM supplier_invoices si 
         JOIN suppliers s ON si.supplier_id = s.id
+        ORDER BY si.due_date DESC
       `);
+      
       console.log(`[API] Found ${result.rows.length} invoices`);
       res.json(result.rows);
     } finally {
