@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader, CalendarIcon, Euro, FileText, Info } from 'lucide-react';
+import { Loader, CalendarIcon, Euro, FileText, Info, Building2 } from 'lucide-react';
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -532,6 +532,32 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                             </div>
                             <div className="text-right font-mono text-xs">
                               {selectedInvoice.rf_number || selectedInvoice.rfNumber || selectedInvoice.reference || selectedInvoice.reference_number}
+                            </div>
+                          </>
+                        )}
+                        
+                        {/* Display company if available */}
+                        {selectedInvoice.company && (
+                          <>
+                            <div className="flex items-center gap-1">
+                              <Building2 className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium">{t('supplierPayments.invoice.company')}:</span>
+                            </div>
+                            <div className="text-right text-xs">
+                              {selectedInvoice.company}
+                            </div>
+                          </>
+                        )}
+                        
+                        {/* Extract company name from notes if present */}
+                        {!selectedInvoice.company && selectedInvoice.notes && selectedInvoice.notes.includes('Company:') && (
+                          <>
+                            <div className="flex items-center gap-1">
+                              <Building2 className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium">{t('supplierPayments.invoice.company')}:</span>
+                            </div>
+                            <div className="text-right text-xs">
+                              {selectedInvoice.notes.split('Company:')[1].split('\n')[0].trim()}
                             </div>
                           </>
                         )}
