@@ -38,13 +38,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Combobox } from '@/components/ui/combobox';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
-import { Combobox } from '@/components/ui/combobox';
 
 // Define the form schema
 const callLogFormSchema = z.object({
@@ -536,7 +536,17 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                                 if (value === 'new') {
                                   handleProspectiveCustomerChange('new');
                                 } else {
-                                  handleProspectiveCustomerChange(value);
+                                  // Convert to number if it's a prospective customer ID
+                                  if (value !== 'new' && typeof value === 'string') {
+                                    const numericValue = parseInt(value, 10);
+                                    if (!isNaN(numericValue)) {
+                                      handleProspectiveCustomerChange(numericValue);
+                                    } else {
+                                      handleProspectiveCustomerChange(value);
+                                    }
+                                  } else {
+                                    handleProspectiveCustomerChange(value);
+                                  }
                                 }
                               }}
                               placeholder={t('callLogs.form.selectProspectiveCustomer')}
