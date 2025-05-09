@@ -126,28 +126,38 @@ const CalendarPage: React.FC = () => {
   const { data: orders, isLoading: ordersLoading, isError: ordersError } = useQuery<Order[]>({
     queryKey: ['/api/orders'],
     retry: 1,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5, // 5 minutes,
+    enabled: !!user && !!user.id,
+    queryFn: () => apiRequest('/api/orders')
   });
 
   // Fetch call logs
   const { data: callLogs, isLoading: callsLoading, isError: callsError } = useQuery<CallLog[]>({
     queryKey: ['/api/call-logs'],
     retry: 1,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5, // 5 minutes,
+    enabled: !!user && !!user.id,
+    queryFn: () => apiRequest('/api/call-logs')
   });
   
   // Fetch supplier payments
   const { data: payments, isLoading: paymentsLoading, isError: paymentsError } = useQuery({
     queryKey: ['/api/supplier-payments/payments'],
     retry: 1,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5, // 5 minutes,
+    enabled: !!user && !!user.id,
+    queryFn: () => apiRequest('/api/supplier-payments/payments')
   });
   
   // Fetch supplier invoices
   const { data: invoices, isLoading: invoicesLoading, isError: invoicesError, refetch: refetchInvoices } = useQuery({
     queryKey: ['/api/supplier-payments/invoices'],
     retry: 1,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5, // 5 minutes,
+    // Only run query when user is authenticated for invoices specifically
+    enabled: !!user && !!user.id,
+    // Add the direct apiRequest function for special auth handling
+    queryFn: () => apiRequest('/api/supplier-payments/invoices')
   });
   
   // Manual fetch for debugging purposes
@@ -183,14 +193,18 @@ const CalendarPage: React.FC = () => {
   const { data: inventoryEvents, isLoading: inventoryLoading, isError: inventoryError } = useQuery({
     queryKey: ['/api/inventory/events'],
     retry: 1,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5, // 5 minutes,
+    enabled: !!user && !!user.id,
+    queryFn: () => apiRequest('/api/inventory/events')
   });
 
   // Fetch production batches
   const { data: productionBatches, isLoading: productionLoading, isError: productionError } = useQuery({
     queryKey: ['/api/production/batches'],
     retry: 1,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5, // 5 minutes,
+    enabled: !!user && !!user.id,
+    queryFn: () => apiRequest('/api/production/batches')
   });
 
   // Process orders to calendar events
