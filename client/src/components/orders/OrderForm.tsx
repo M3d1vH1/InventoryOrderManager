@@ -34,6 +34,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { PackageOpen, AlertTriangle, ShoppingCart, Plus, Trash2, ArrowLeft, X, Loader2, Check, 
          Package, Calendar, TruckIcon, Clipboard, Grid, Grid3X3, Layers, Tag, Filter, Search } from "lucide-react";
+import { Combobox } from "@/components/ui/combobox";
 
 interface Customer {
   id: number;
