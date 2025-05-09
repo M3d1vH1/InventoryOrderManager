@@ -84,12 +84,18 @@ export function Combobox({
     return options.find((option) => option.value === value)
   }, [options, value])
   
-  // Filter options using our fuzzy matching algorithm
+  // Filter options using our fuzzy matching algorithm with improved prioritization
   const filteredOptions = React.useMemo(() => {
     if (!searchQuery) return options;
     
+    // Create an array for matches with prioritization
+    let matches: { option: ComboboxOption; priority: number }[] = [];
+    
+    // Convert search query to lowercase for case-insensitive matching
+    const lowerQuery = searchQuery.toLowerCase();
+    
     // Special case debugging for ΑΚΤΗ search
-    if (searchQuery.toLowerCase().includes('ακτ')) {
+    if (lowerQuery.includes('ακτ')) {
       console.log('Searching for ΑΚΤΗ with query:', searchQuery);
       
       // Find all options containing "ΑΚΤΗ"
@@ -104,7 +110,47 @@ export function Combobox({
       }
     }
     
-    return options.filter(option => fuzzyMatch(option.label, searchQuery));
+    // Analyze each option for priority sorting
+    options.forEach(option => {
+      const lowerLabel = option.label.toLowerCase();
+      
+      // Skip non-matching options
+      if (!fuzzyMatch(option.label, searchQuery)) {
+        return;
+      }
+      
+      // Calculate priority:
+      let priority = 0;
+      
+      // Highest priority: starts with the exact query
+      if (lowerLabel.startsWith(lowerQuery)) {
+        priority = 100;
+      }
+      // High priority: contains the exact query as a word
+      else if (lowerLabel.includes(` ${lowerQuery}`) || lowerLabel.includes(`${lowerQuery} `)) {
+        priority = 80;
+      }
+      // Medium priority: contains the exact query somewhere
+      else if (lowerLabel.includes(lowerQuery)) {
+        priority = 60;
+      }
+      // Special case for ΑΚΤΗ
+      else if (lowerQuery.includes('ακτ') && lowerLabel.includes('ακτ')) {
+        priority = 90; // Very high priority for ΑΚΤΗ matches
+      }
+      // Low priority: fuzzy match
+      else {
+        priority = 20;
+      }
+      
+      matches.push({ option, priority });
+    });
+    
+    // Sort by priority (highest first)
+    matches.sort((a, b) => b.priority - a.priority);
+    
+    // Return just the sorted options
+    return matches.map(match => match.option);
   }, [options, searchQuery]);
 
   return (
