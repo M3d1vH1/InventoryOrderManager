@@ -97,7 +97,7 @@ export function Combobox({
 
   // Custom command filter function that uses our fuzzy matching
   const commandFilter = React.useCallback((value: string, search: string) => {
-    return fuzzyMatch(value, search);
+    return fuzzyMatch(value, search) ? 1 : 0;
   }, []);
 
   return (

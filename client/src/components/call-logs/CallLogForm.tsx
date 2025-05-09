@@ -485,7 +485,7 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                 control={form.control}
                 name="customerId"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex flex-col space-y-1.5">
                     <FormLabel>{t('callLogs.form.customer')}<span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                       <Combobox
@@ -509,12 +509,13 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                         })}
                         value={field.value}
                         onChange={(value) => {
-                          console.log('Customer selected:', value)
+                          console.log('Customer selected with ID:', value)
                           field.onChange(Number(value))
                         }}
                         placeholder={t('callLogs.form.selectCustomer')}
                         emptyText={t('common.noCustomersFound')}
                         notFoundText={t('common.noMatchingCustomersFound')}
+                        popoverContentClassName="w-[300px]"
                       />
                     </FormControl>
                     <FormMessage />
@@ -558,6 +559,7 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                               ]}
                               value={isNewProspect ? 'new' : field.value}
                               onChange={(value) => {
+                                console.log('Prospective customer selected:', value);
                                 if (value === 'new') {
                                   handleProspectiveCustomerChange('new');
                                 } else {
@@ -567,6 +569,7 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                               placeholder={t('callLogs.form.selectProspectiveCustomer')}
                               emptyText={t('common.noProspectiveCustomersFound')}
                               notFoundText={t('common.noMatchingProspectiveCustomersFound')}
+                              popoverContentClassName="w-[300px]"
                             />
                           </FormControl>
                         </div>
