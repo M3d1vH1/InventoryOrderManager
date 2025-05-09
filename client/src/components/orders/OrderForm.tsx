@@ -274,12 +274,27 @@ const OrderForm = ({
     if (isEditMode && initialData) {
       console.log("Resetting form with initialData in edit mode");
       
+      // Clean up the customer name if it has ID prefix (format: "ID:Name")
+      let customerName = initialData.customerName || "";
+      if (customerName.includes(':')) {
+        customerName = customerName.split(':')[1].trim();
+        console.log("Cleaned up customer name:", customerName);
+      }
+      
+      // Format dates properly from ISO to YYYY-MM-DD for form inputs
+      const orderDate = initialData.orderDate ? format(new Date(initialData.orderDate), "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
+      const estimatedShippingDate = initialData.estimatedShippingDate 
+        ? format(new Date(initialData.estimatedShippingDate), "yyyy-MM-dd") 
+        : format(new Date(new Date().setDate(new Date().getDate() + 5)), "yyyy-MM-dd");
+      
+      console.log("Formatted dates for form:", { orderDate, estimatedShippingDate });
+      
       // Reset the form with the initialData
       form.reset({
-        customerName: initialData.customerName,
+        customerName: customerName,
         area: initialData.area || "",
-        orderDate: initialData.orderDate,
-        estimatedShippingDate: initialData.estimatedShippingDate || format(new Date(new Date().setDate(new Date().getDate() + 5)), "yyyy-MM-dd"),
+        orderDate: orderDate,
+        estimatedShippingDate: estimatedShippingDate,
         priority: initialData.priority || 'medium',
         notes: initialData.notes || "",
         shippingCompany: initialData.shippingCompany || "",
@@ -627,12 +642,19 @@ const OrderForm = ({
       // Get current form values to ensure we have the latest
       const currentValues = form.getValues();
       
+      // Clean up the customer name if it contains ID prefix
+      let customerName = currentValues.customerName;
+      if (customerName && customerName.includes(':')) {
+        customerName = customerName.split(':')[1].trim();
+        console.log("Cleaned up customer name for update:", customerName);
+      }
+      
       // Send only the data that the server expects
       return apiRequest({
         url: `/api/orders/${id}`,
         method: 'PATCH',
         body: JSON.stringify({
-          customerName: currentValues.customerName,
+          customerName: customerName,
           area: currentValues.area,
           orderDate: currentValues.orderDate,
           notes: currentValues.notes,
