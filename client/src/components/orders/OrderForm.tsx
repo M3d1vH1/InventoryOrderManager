@@ -713,60 +713,58 @@ const OrderForm = ({
                     <FormLabel className="text-base font-medium">{t('orders.form.customer')}</FormLabel>
                     <div className="relative">
                       <FormControl>
-                        <Select 
-                          onValueChange={(value) => {
-                            console.log('Customer selected:', value);
-                            field.onChange(value);
-                            
-                            // Get the matched customer to retrieve area info from previous orders
-                            const selectedCustomer = customers?.find(c => 
-                              c.name === value
-                            );
-                            
-                            // If we have a matched customer, look for their previous orders to get area info
-                            if (selectedCustomer) {
-                              fetchCustomerAreaFromPreviousOrders(value);
-                              
-                              // Set the shipping company from the customer data
-                              setShippingCompanyFromCustomer(selectedCustomer);
-                            }
-                          }}
-                          value={field.value}
-                        >
-                          <SelectTrigger className="h-12 text-base">
-                            <SelectValue placeholder={t('orders.form.typeCustomerName')} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {isLoadingCustomers ? (
-                              <div className="flex items-center justify-center p-4">
-                                <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                              </div>
-                            ) : (
-                              <>
-                                {(customers || []).map(customer => (
-                                  <SelectItem
-                                    key={customer.id}
-                                    value={customer.name}
-                                    className="h-10 text-base"
-                                  >
-                                    {customer.name}
-                                  </SelectItem>
-                                ))}
+                        <div className="flex flex-col space-y-2 w-full">
+                          <Combobox
+                            options={(customers || []).map((customer) => ({
+                              value: customer.name,
+                              label: customer.name
+                            }))}
+                            value={field.value || ""}
+                            onChange={(value) => {
+                              console.log('Customer selected:', value);
+                              if (typeof value === 'string') {
+                                field.onChange(value);
                                 
-                                <Button 
-                                  onClick={() => {
-                                    setCurrentSearchValue(field.value || '');
-                                    customerForm.setValue('name', field.value || '');
-                                    setIsNewCustomerDialogOpen(true);
-                                  }}
-                                  className="h-10 text-base w-full mt-2"
-                                >
-                                  <Plus className="h-4 w-4 mr-2" /> {t('orders.form.createNewCustomer')}
-                                </Button>
-                              </>
-                            )}
-                          </SelectContent>
-                        </Select>
+                                // Get the matched customer to retrieve area info from previous orders
+                                const selectedCustomer = customers?.find(c => 
+                                  c.name === value
+                                );
+                                
+                                // If we have a matched customer, look for their previous orders to get area info
+                                if (selectedCustomer) {
+                                  fetchCustomerAreaFromPreviousOrders(value);
+                                  
+                                  // Set the shipping company from the customer data
+                                  setShippingCompanyFromCustomer(selectedCustomer);
+                                }
+                              }
+                            }}
+                            placeholder={t('orders.form.typeCustomerName')}
+                            emptyText={t('common.noOptions')}
+                            notFoundText={t('common.noResults')}
+                            className="w-full"
+                            triggerClassName="h-12 text-base"
+                          />
+                          
+                          <Button 
+                            type="button"
+                            onClick={() => {
+                              setCurrentSearchValue(field.value || '');
+                              customerForm.setValue('name', field.value || '');
+                              setIsNewCustomerDialogOpen(true);
+                            }}
+                            className="h-10 text-base w-full"
+                            variant="outline"
+                          >
+                            <Plus className="h-4 w-4 mr-2" /> {t('orders.form.createNewCustomer')}
+                          </Button>
+                          
+                          {isLoadingCustomers && (
+                            <div className="flex items-center justify-center p-4">
+                              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                            </div>
+                          )}
+                        </div>
                       </FormControl>
                     </div>
                     <FormMessage />
