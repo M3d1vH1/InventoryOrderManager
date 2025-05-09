@@ -31,7 +31,7 @@ export default function SupplierPayments() {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">{t('supplierPayments.title')}</h1>
+      <h1 className="text-2xl font-bold mb-6">{t('supplierPayments.title') || "Payments"}</h1>
 
       <Tabs defaultValue="dashboard" className="w-full">
         <TabsList className="mb-4">

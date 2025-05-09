@@ -256,15 +256,15 @@ const Sidebar = () => {
                 </li>
                 
                 <li className="mb-1">
-                  <Link href="/supplier-payments" onClick={() => setCurrentPage("Supplier Payments")}>
+                  <Link href="/supplier-payments" onClick={() => setCurrentPage("Payments")}>
                     <button 
                       className={`flex items-center w-full p-2 text-left rounded ${isActive("/supplier-payments") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
-                      title={t('supplierPayments.title') || "Supplier Payments"}
+                      title={t('supplierPayments.title') || "Payments"}
                     >
                       <span className="flex items-center w-5 h-5">
                         <FaMoneyBillWave size={16} />
                       </span>
-                      {isSidebarOpen && <span className="ml-2">{t('supplierPayments.title') || "Supplier Payments"}</span>}
+                      {isSidebarOpen && <span className="ml-2">{t('supplierPayments.title') || "Payments"}</span>}
                     </button>
                   </Link>
                 </li>
