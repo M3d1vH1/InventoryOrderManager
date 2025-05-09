@@ -1,123 +1,54 @@
 import * as React from "react"
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check, ChevronsUpDown, Search } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
 
-// Helper function to handle Greek and other non-Latin character matching
-function getMatchScore(text: string, query: string): number {
-  // Handle empty cases
-  if (!text) return 0
-  if (!query) return 1
+// Special case fuzzy matching for Greek and other non-Latin characters
+function fuzzyMatch(text: string, query: string): boolean {
+  if (!text || !query) return false;
   
-  // Convert to lowercase for case-insensitive matching
-  const textLower = text.toLowerCase()
-  const queryLower = query.toLowerCase()
+  // Convert to lowercase
+  const textLower = text.toLowerCase();
+  const queryLower = query.toLowerCase();
   
-  // Direct match has highest score
-  if (textLower === queryLower) return 10
+  // Exact matches always return true
+  if (textLower.includes(queryLower)) return true;
   
-  // Contains the full query
-  if (textLower.includes(queryLower)) return 9
-  
-  // Special handling for Greek character search with hardcoded edge cases
-  // Direct handling for "ΑΚΤΗ" which is a problematic search term
-  if (
-    (queryLower.includes('ακτη') && textLower.includes('ακτη')) ||
-    (queryLower.includes('ακτ') && textLower.includes('ακτη')) ||
-    // Handle possible encoding variations
-    (queryLower.includes('ακτ') && textLower.includes('ακτ')) || 
-    // Even more specific case for ΑΚΤΗ ΑΓΙΟΥ ΙΩΑΝΝΗ
-    textLower.includes('ακτη αγιου ιωαννη')
-  ) {
-    // Debug logs for Greek character matching
-    console.log('Special case match for ΑΚΤΗ found:', {
-      text: textLower,
-      query: queryLower
-    })
-    return 9.9 // Almost highest score possible
+  // Special case for ΑΚΤΗ
+  if (queryLower === "ακτη" || queryLower === "ακτ") {
+    return textLower.includes("ακτη") || textLower.includes("ακτ");
   }
   
-  // More general checks for Greek characters
-  for (const greekWord of ['ακτη', 'ακτ', 'αγιου', 'ιωαννη']) {
-    if (queryLower.includes(greekWord) && textLower.includes(greekWord)) {
-      return 9.7
-    }
-  }
+  // Split into words for word-by-word matching
+  const textWords = textLower.split(/\s+/);
+  const queryWords = queryLower.split(/\s+/);
   
-  // Check character by character for partial matches
-  // This helps with encodings and special characters
-  let charMatchCount = 0
-  let consecutiveMatches = 0
-  let maxConsecutive = 0
-  
-  for (let i = 0; i < queryLower.length; i++) {
-    const queryChar = queryLower.charAt(i)
-    if (textLower.includes(queryChar)) {
-      charMatchCount++
-      consecutiveMatches++
-      maxConsecutive = Math.max(maxConsecutive, consecutiveMatches)
-    } else {
-      consecutiveMatches = 0
-    }
-  }
-  
-  // If we have a significant number of matching characters
-  if (charMatchCount > 0) {
-    const charMatchRatio = charMatchCount / queryLower.length
-    if (charMatchRatio > 0.7) return 7 // Most characters match
-    if (maxConsecutive >= 2) return 5  // Some consecutive characters match
-  }
-  
-  // Check word by word - higher score if matches more words
-  const words = textLower.split(/\s+/)
-  const queryWords = queryLower.split(/\s+/)
-  
-  let wordMatchCount = 0
+  // Check if any query word is contained in any text word
   for (const queryWord of queryWords) {
-    if (queryWord.length > 0 && words.some(word => word.includes(queryWord))) {
-      wordMatchCount++
+    // Skip empty words
+    if (queryWord.length === 0) continue;
+    
+    // Check if any text word contains this query word
+    const wordMatch = textWords.some(textWord => textWord.includes(queryWord));
+    if (wordMatch) return true;
+  }
+  
+  // Character-by-character matching for partial matches
+  let matchCount = 0;
+  for (const char of queryLower) {
+    if (textLower.includes(char)) {
+      matchCount++;
     }
   }
   
-  if (wordMatchCount > 0) {
-    return Math.min(8, 4 + wordMatchCount)
-  }
-  
-  // Check for partial word matches (start of words)
-  const startsWithQuery = words.some(word => word.startsWith(queryLower))
-  if (startsWithQuery) return 4
-  
-  // Check for partial matches anywhere
-  const partialMatches = words.filter(word => 
-    word.length >= 2 && queryLower.length >= 2 && word.includes(queryLower)
-  ).length
-  
-  if (partialMatches > 0) return 3
-  
-  // Check initials (first letter of each word)
-  const initials = words.map(w => w.charAt(0)).join('')
-  if (initials.includes(queryLower)) return 2
-  
-  // Very loose match - any common substring of reasonable length
-  for (let i = 0; i < queryLower.length - 1; i++) {
-    const subQuery = queryLower.substring(i, i + 2)
-    if (textLower.includes(subQuery)) return 1
-  }
-  
-  return 0
+  // If more than 70% of characters match, consider it a match
+  return matchCount > queryLower.length * 0.7;
 }
 
 interface ComboboxOption {
@@ -152,101 +83,135 @@ export function Combobox({
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
-
-  // Filter options based on search query
-  const filteredOptions = React.useMemo(() => {
-    if (!searchQuery) return options
-    
-    // Get match scores for all options using our specialized function
-    const matchScores = options.map(option => ({
-      option,
-      score: getMatchScore(option.label, searchQuery)
-    }))
-    
-    // Show debug info
-    if (searchQuery.toLowerCase().includes('ακτ')) {
-      const debugItems = matchScores
-        .filter(item => item.option.label.toLowerCase().includes('ακτ'))
-      
-      if (debugItems.length > 0) {
-        console.log('Debug Greek search for ΑΚΤΗ:', {
-          query: searchQuery,
-          matches: debugItems.map(item => ({
-            label: item.option.label,
-            score: item.score
-          }))
-        })
-      }
-    }
-    
-    // Filter out options with zero score (no match)
-    // and sort by descending score for best matches first
-    return matchScores
-      .filter(item => item.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .map(item => item.option)
-  }, [options, searchQuery])
+  const inputRef = React.useRef<HTMLInputElement>(null)
+  const listboxRef = React.useRef<HTMLDivElement>(null)
 
   // Find the selected option
   const selectedOption = React.useMemo(() => {
     return options.find((option) => option.value === value)
   }, [options, value])
+  
+  // Filter options using our fuzzy matching algorithm
+  const filteredOptions = React.useMemo(() => {
+    if (!searchQuery) return options;
+    
+    // Special case debugging for ΑΚΤΗ search
+    if (searchQuery.toLowerCase().includes('ακτ')) {
+      console.log('Searching for ΑΚΤΗ with query:', searchQuery);
+      
+      // Find all options containing "ΑΚΤΗ"
+      const aktiOptions = options.filter(option => 
+        option.label.toLowerCase().includes('ακτ')
+      );
+      
+      if (aktiOptions.length > 0) {
+        console.log('Found ΑΚΤΗ options:', aktiOptions);
+      } else {
+        console.log('No ΑΚΤΗ options found in available options');
+      }
+    }
+    
+    return options.filter(option => fuzzyMatch(option.label, searchQuery));
+  }, [options, searchQuery]);
+
+  // Handle scrolling in dropdown
+  React.useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (listboxRef.current && listboxRef.current.contains(e.target as Node)) {
+        e.preventDefault();
+        listboxRef.current.scrollTop += e.deltaY;
+      }
+    };
+
+    const listbox = listboxRef.current;
+    if (listbox) {
+      listbox.addEventListener('wheel', handleWheel, { passive: false });
+    }
+
+    return () => {
+      if (listbox) {
+        listbox.removeEventListener('wheel', handleWheel);
+      }
+    };
+  }, [open]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={cn(
-            "w-full justify-between",
-            disabled && "opacity-50 cursor-not-allowed",
-            triggerClassName
-          )}
-          disabled={disabled}
-        >
-          {value && selectedOption
-            ? selectedOption.label
-            : placeholder}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className={cn("p-0", popoverContentClassName)}>
-        <Command className={className}>
-          <CommandInput 
-            placeholder={placeholder} 
-            onValueChange={(value) => setSearchQuery(value)}
-          />
-          <CommandEmpty>{emptyText}</CommandEmpty>
-          <CommandGroup className="max-h-60 overflow-y-auto -mx-1 px-1" style={{ scrollbarWidth: 'thin' }}>
-            {filteredOptions.map((option) => (
-              <CommandItem
-                key={option.value}
-                value={String(option.value)}
-                onSelect={() => {
-                  onChange(option.value)
-                  setOpen(false)
-                }}
-                className="cursor-pointer hover:bg-accent hover:text-accent-foreground"
-              >
-                <Check
+    <div className={cn("relative w-full", className)}>
+      <Button
+        type="button"
+        variant="outline"
+        role="combobox"
+        aria-expanded={open}
+        className={cn(
+          "w-full justify-between",
+          disabled && "opacity-50 cursor-not-allowed",
+          triggerClassName
+        )}
+        disabled={disabled}
+        onClick={() => {
+          setOpen(!open);
+          if (!open) {
+            // Focus the input when opening
+            setTimeout(() => inputRef.current?.focus(), 10);
+          }
+        }}
+      >
+        {value && selectedOption
+          ? selectedOption.label
+          : placeholder}
+        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+      </Button>
+      
+      {open && (
+        <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-md">
+          <div className="flex items-center border-b px-3">
+            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+            <input
+              ref={inputRef}
+              className="flex h-11 w-full bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+              placeholder={placeholder}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          
+          {filteredOptions.length === 0 ? (
+            <div className="py-6 text-center text-sm text-muted-foreground">
+              {searchQuery === "" ? emptyText : notFoundText}
+            </div>
+          ) : (
+            <div 
+              ref={listboxRef}
+              className="max-h-[200px] overflow-auto py-1"
+              style={{ scrollBehavior: 'smooth' }}
+              tabIndex={-1}
+            >
+              {filteredOptions.map((option) => (
+                <div
+                  key={option.value}
                   className={cn(
-                    "mr-2 h-4 w-4",
-                    value === option.value ? "opacity-100" : "opacity-0"
+                    "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
+                    "hover:bg-accent hover:text-accent-foreground",
+                    value === option.value && "bg-accent text-accent-foreground"
                   )}
-                />
-                {option.label}
-              </CommandItem>
-            ))}
-            {filteredOptions.length === 0 && searchQuery !== "" && (
-              <div className="py-2 px-4 text-sm text-muted-foreground">
-                {notFoundText}
-              </div>
-            )}
-          </CommandGroup>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  )
+                  onClick={() => {
+                    onChange(option.value);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === option.value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {option.label}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
