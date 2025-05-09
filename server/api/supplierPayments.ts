@@ -488,9 +488,9 @@ router.post('/payments', async (req, res) => {
         
         const result = await client.query(
           `INSERT INTO supplier_payments 
-            (invoice_id, payment_date, amount, payment_method, reference_number, notes, receipt_path, company, reference, bank_account) 
+            (invoice_id, payment_date, amount, payment_method, reference_number, notes, receipt_path, company, reference) 
            VALUES 
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
            RETURNING *`,
           [
             data.invoiceId,
@@ -501,8 +501,7 @@ router.post('/payments', async (req, res) => {
             data.notes || null,
             data.receiptPath || null,
             data.company || null,
-            data.reference || null,
-            data.bankAccount || null
+            data.reference || null
           ]
         );
         
@@ -670,11 +669,6 @@ router.patch('/payments/:id', async (req, res) => {
         if (data.reference !== undefined) {
           updateFields.push(`reference = $${paramCounter++}`);
           queryParams.push(data.reference);
-        }
-        
-        if (data.bankAccount !== undefined) {
-          updateFields.push(`bank_account = $${paramCounter++}`);
-          queryParams.push(data.bankAccount);
         }
         
         if (updateFields.length === 0) {

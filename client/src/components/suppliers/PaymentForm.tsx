@@ -313,8 +313,9 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
   // Form submission handler
   const onSubmit = (data: PaymentFormValues) => {
     // Convert string values to numbers and ensure payment method is in the correct format
+    const { bankAccount, ...paymentData } = data;
     const formattedData = {
-      ...data,
+      ...paymentData,
       invoiceId: parseInt(data.invoiceId),
       amount: parseFloat(data.amount),
       // Make sure paymentMethod is in the correct enum format (snake_case)
