@@ -44,6 +44,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
+import { Combobox } from '@/components/ui/combobox';
 
 // Define the form schema
 const callLogFormSchema = z.object({
@@ -486,23 +487,19 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('callLogs.form.customer')}<span className="text-red-500">*</span></FormLabel>
-                    <Select
-                      onValueChange={(value) => field.onChange(Number(value))}
-                      value={field.value ? String(field.value) : undefined}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('callLogs.form.selectCustomer')} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {customers && customers.map((customer: any) => (
-                          <SelectItem key={customer.id} value={String(customer.id)}>
-                            {customer.name || customer.companyName || customer.email || t('common.unknown')}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Combobox
+                        options={(customers || []).map((customer: any) => ({
+                          value: customer.id,
+                          label: customer.name || customer.companyName || customer.email || t('common.unknown')
+                        }))}
+                        value={field.value}
+                        onChange={(value) => field.onChange(Number(value))}
+                        placeholder={t('callLogs.form.selectCustomer')}
+                        emptyText={t('common.noCustomersFound')}
+                        notFoundText={t('common.noMatchingCustomersFound')}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -518,30 +515,41 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>{t('callLogs.form.prospectiveCustomer')}</FormLabel>
-                      <Select
-                        onValueChange={handleProspectiveCustomerChange}
-                        value={isNewProspect ? 'new' : field.value ? String(field.value) : undefined}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={t('callLogs.form.selectProspectiveCustomer')} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="new">
-                            <div className="flex items-center">
-                              <UserPlus className="mr-2 h-4 w-4" />
-                              <span>{t('callLogs.form.newProspectiveCustomer')}</span>
-                            </div>
-                          </SelectItem>
-                          <Separator className="my-2" />
-                          {prospectiveCustomers && prospectiveCustomers.map((prospect: any) => (
-                            <SelectItem key={prospect.id} value={String(prospect.id)}>
-                              {prospect.name || prospect.companyName || prospect.email || t('common.unknown')}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex items-center space-x-2">
+                        <div className="flex-grow">
+                          <FormControl>
+                            <Combobox
+                              options={[
+                                { value: 'new', label: `+ ${t('callLogs.form.newProspectiveCustomer')}` },
+                                ...(prospectiveCustomers || []).map((prospect: any) => ({
+                                  value: prospect.id,
+                                  label: prospect.name || prospect.companyName || prospect.email || t('common.unknown')
+                                }))
+                              ]}
+                              value={isNewProspect ? 'new' : field.value}
+                              onChange={(value) => {
+                                if (value === 'new') {
+                                  handleProspectiveCustomerChange('new');
+                                } else {
+                                  handleProspectiveCustomerChange(String(value));
+                                }
+                              }}
+                              placeholder={t('callLogs.form.selectProspectiveCustomer')}
+                              emptyText={t('common.noProspectiveCustomersFound')}
+                              notFoundText={t('common.noMatchingProspectiveCustomersFound')}
+                            />
+                          </FormControl>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleProspectiveCustomerChange('new')}
+                          title={t('callLogs.form.newProspectiveCustomer')}
+                        >
+                          <UserPlus className="h-4 w-4" />
+                        </Button>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
