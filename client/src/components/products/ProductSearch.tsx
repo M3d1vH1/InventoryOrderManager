@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Box, QrCode, MapPin, Tag, Plus, Ban, Search, X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Box, QrCode, MapPin, Tag, Plus, Ban, Search, X, ChevronLeft, ChevronRight, Loader2, Package } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 interface Product {
@@ -280,6 +280,12 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
                             <div className="text-sm text-slate-500">
                               <QrCode className="h-4 w-4 inline-block mr-1" />
                               {product.barcode}
+                            </div>
+                          )}
+                          {product.unitsPerBox && (
+                            <div className="text-sm text-slate-500">
+                              <Package className="h-4 w-4 inline-block mr-1" />
+                              {t('products.unitsPerBox_count', { count: product.unitsPerBox })}
                             </div>
                           )}
                         </div>
