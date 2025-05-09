@@ -819,6 +819,26 @@ router.get('/summary', async (req, res) => {
           payment_date < date_trunc('month', CURRENT_DATE) + interval '1 month'
       `);
       
+      // Get all invoices for calendar display
+      const invoicesResult = await client.query(`
+        SELECT 
+          i.id,
+          i.invoice_number as "invoiceNumber",
+          s.name as "supplierName",
+          i.amount,
+          COALESCE(i.paid_amount, 0) as "paidAmount",
+          i.due_date as "dueDate",
+          i.status
+        FROM 
+          supplier_invoices i
+        JOIN 
+          suppliers s ON i.supplier_id = s.id
+        WHERE 
+          i.status IN ('pending', 'partially_paid', 'overdue', 'paid')
+        ORDER BY 
+          i.due_date ASC
+      `);
+
       const dashboardSummary = {
         totalOutstanding: parseFloat(pendingResult.rows[0].total_pending) + parseFloat(overdueResult.rows[0].total_overdue),
         totalPaid: parseFloat(totalPaidResult.rows[0].total_paid),
@@ -827,7 +847,8 @@ router.get('/summary', async (req, res) => {
         dueWithin30Days: parseFloat(pendingResult.rows[0].total_pending),
         paymentCompletion: 0, // We'll calculate this below
         upcomingPayments: [], // We'll add this below
-        recentPayments: recentPaymentsResult.rows
+        recentPayments: recentPaymentsResult.rows,
+        invoices: invoicesResult.rows // Add all invoices for the calendar
       };
       
       // Calculate payment completion - ensure we correctly handle null paid_amount values
