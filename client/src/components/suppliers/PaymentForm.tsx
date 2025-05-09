@@ -98,7 +98,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
       paymentDate: new Date(),
       amount: '',
       paymentMethod: '',
-      reference: '',
+      referenceNumber: '',
       notes: '',
     },
   });
@@ -192,12 +192,12 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
           // Automatically set reference from invoice if available
           const invoiceRfNumber = invoice.rf_number || invoice.rfNumber;
           if (invoiceRfNumber) {
-            form.setValue('reference', invoiceRfNumber);
+            form.setValue('referenceNumber', invoiceRfNumber);
           } else {
             // Fallback to old reference field format
             const invoiceReference = invoice.reference || invoice.reference_number;
             if (invoiceReference) {
-              form.setValue('reference', invoiceReference);
+              form.setValue('referenceNumber', invoiceReference);
             }
           }
         }
@@ -236,7 +236,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
         paymentDate: payment.paymentDate ? new Date(payment.paymentDate) : new Date(),
         amount: payment.amount?.toString() || '',
         paymentMethod: payment.paymentMethod || '',
-        reference: payment.reference || '',
+        referenceNumber: payment.referenceNumber || payment.reference || '',
         notes: payment.notes || '',
       });
       
@@ -251,7 +251,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
         paymentDate: new Date(),
         amount: '',
         paymentMethod: '',
-        reference: '',
+        referenceNumber: '',
         notes: '',
       });
       setSelectedInvoice(null);
@@ -635,7 +635,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                   {/* Reference field */}
                   <FormField
                     control={form.control}
-                    name="reference"
+                    name="referenceNumber"
                     render={({ field }) => {
                       // If selected invoice has RF number or reference, use it as placeholder
                       const invoiceRfNumber = selectedInvoice?.rf_number || selectedInvoice?.rfNumber;
