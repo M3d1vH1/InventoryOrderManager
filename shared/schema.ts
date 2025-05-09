@@ -1366,6 +1366,7 @@ export const supplierPayments = pgTable("supplier_payments", {
   callbackNotes: text("callback_notes"),
   callbackCompleted: boolean("callback_completed").default(false),
   bankAccount: text("bank_account"), // Which bank account the payment was made from
+  company: text("company"), // Company information for the payment
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -1414,6 +1415,7 @@ export const insertSupplierPaymentSchema = createInsertSchema(supplierPayments)
     callbackNotes: z.string().optional(),
     callbackCompleted: z.boolean().default(false),
     bankAccount: z.string().optional(), // Which bank account the payment was made from
+    company: z.string().optional() // Company information for the payment
   });
 
 export type InsertSupplierPayment = z.infer<typeof insertSupplierPaymentSchema>;
