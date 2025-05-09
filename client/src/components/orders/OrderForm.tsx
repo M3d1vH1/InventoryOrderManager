@@ -283,9 +283,11 @@ const OrderForm = ({
       }
       
       const orders = await response.json();
+      console.log(`Found ${orders.length} previous orders for customer ${customerName}`);
       
       // If there are previous orders with area information, use the most recent one
       const ordersWithArea = orders.filter((order: any) => order.area && order.area.trim() !== '');
+      console.log(`Found ${ordersWithArea.length} orders with area information`);
       
       if (ordersWithArea.length > 0) {
         // Sort by date descending to get the most recent order first
@@ -294,12 +296,21 @@ const OrderForm = ({
         );
         
         const mostRecentArea = ordersWithArea[0].area;
+        console.log(`Most recent area found: ${mostRecentArea}`);
         
-        // Set the area in the form
-        if (mostRecentArea && form.getValues('area') === '') {
-          form.setValue('area', mostRecentArea);
+        // Set the area in the form with a slight delay to ensure form is ready
+        setTimeout(() => {
+          // Set the area in the form regardless of current value to ensure consistency
+          form.setValue('area', mostRecentArea, { 
+            shouldDirty: true,
+            shouldTouch: true,
+            shouldValidate: true 
+          });
           console.log(`Set area to ${mostRecentArea} from customer's most recent order`);
-        }
+          
+          // Force form state update
+          form.trigger();
+        }, 100);
       }
     } catch (error) {
       console.error('Error fetching customer area from previous orders:', error);
@@ -326,19 +337,33 @@ const OrderForm = ({
       console.log('No shipping company found in customer data');
     }
     
-    if (shippingCompany) {
-      form.setValue('shippingCompany', shippingCompany);
-      console.log(`Set shipping company to ${shippingCompany} from customer data`);
-    }
-    
-    // Set billing company if available in customer data
-    if (customer.billingCompany) {
-      form.setValue('billingCompany', customer.billingCompany);
-      console.log(`Set billing company to ${customer.billingCompany} from customer data`);
-    }
-    else {
-      console.log('No billing company found in customer data');
-    }
+    // Force form reset to make sure changes take effect
+    setTimeout(() => {
+      if (shippingCompany) {
+        form.setValue('shippingCompany', shippingCompany, { 
+          shouldDirty: true,
+          shouldTouch: true,
+          shouldValidate: true 
+        });
+        console.log(`Set shipping company to ${shippingCompany} from customer data`);
+      }
+      
+      // Set billing company if available in customer data
+      if (customer.billingCompany) {
+        form.setValue('billingCompany', customer.billingCompany, { 
+          shouldDirty: true,
+          shouldTouch: true,
+          shouldValidate: true 
+        });
+        console.log(`Set billing company to ${customer.billingCompany} from customer data`);
+      }
+      else {
+        console.log('No billing company found in customer data');
+      }
+      
+      // Force form state update
+      form.trigger();
+    }, 100);
   };
 
   // Define a state for unshipped items warning
@@ -722,60 +747,57 @@ const OrderForm = ({
                     <FormLabel className="text-base font-medium">{t('orders.form.customer')}</FormLabel>
                     <div className="relative">
                       <FormControl>
-                        <Select 
-                          onValueChange={(value) => {
-                            console.log('Customer selected:', value);
-                            field.onChange(value);
-                            
-                            // Get the matched customer to retrieve area info from previous orders
-                            const selectedCustomer = customers?.find(c => 
-                              c.name === value
-                            );
-                            
-                            // If we have a matched customer, look for their previous orders to get area info
-                            if (selectedCustomer) {
-                              fetchCustomerAreaFromPreviousOrders(value);
-                              
-                              // Set the shipping company from the customer data
-                              setShippingCompanyFromCustomer(selectedCustomer);
-                            }
-                          }}
-                          value={field.value}
-                        >
-                          <SelectTrigger className="h-12 text-base">
-                            <SelectValue placeholder={t('orders.form.typeCustomerName')} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {isLoadingCustomers ? (
-                              <div className="flex items-center justify-center p-4">
-                                <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                              </div>
-                            ) : (
-                              <>
-                                {(customers || []).map(customer => (
-                                  <SelectItem
-                                    key={customer.id}
-                                    value={customer.name}
-                                    className="h-10 text-base"
-                                  >
-                                    {customer.name}
-                                  </SelectItem>
-                                ))}
+                        {isLoadingCustomers ? (
+                          <div className="border rounded-md p-3 h-12 flex items-center justify-center">
+                            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                          </div>
+                        ) : (
+                          <div>
+                            <Combobox
+                              options={(customers || []).map(customer => ({
+                                value: customer.name,
+                                label: customer.name
+                              }))}
+                              value={field.value}
+                              onChange={(value) => {
+                                console.log('Customer selected via Combobox:', value);
+                                // Update the form field with the string value
+                                field.onChange(value.toString());
                                 
-                                <Button 
-                                  onClick={() => {
-                                    setCurrentSearchValue(field.value || '');
-                                    customerForm.setValue('name', field.value || '');
-                                    setIsNewCustomerDialogOpen(true);
-                                  }}
-                                  className="h-10 text-base w-full mt-2"
-                                >
-                                  <Plus className="h-4 w-4 mr-2" /> {t('orders.form.createNewCustomer')}
-                                </Button>
-                              </>
-                            )}
-                          </SelectContent>
-                        </Select>
+                                // Get the matched customer to retrieve area info from previous orders
+                                const selectedCustomer = customers?.find(c => 
+                                  c.name === value.toString()
+                                );
+                                
+                                // If we have a matched customer, look for their previous orders to get area info
+                                if (selectedCustomer) {
+                                  fetchCustomerAreaFromPreviousOrders(value.toString());
+                                  
+                                  // Set the shipping company from the customer data
+                                  setShippingCompanyFromCustomer(selectedCustomer);
+                                }
+                              }}
+                              placeholder={t('orders.form.typeCustomerName')}
+                              emptyText={t('common.noCustomersFound') || "No customers found."}
+                              notFoundText={t('common.noCustomersMatchSearch') || "No customer matched your search."}
+                              triggerClassName="h-12 text-base"
+                            />
+                            <div className="mt-2">
+                              <Button 
+                                type="button"
+                                onClick={() => {
+                                  setCurrentSearchValue(field.value || '');
+                                  customerForm.setValue('name', field.value || '');
+                                  setIsNewCustomerDialogOpen(true);
+                                }}
+                                variant="outline"
+                                className="h-10 text-base w-full"
+                              >
+                                <Plus className="h-4 w-4 mr-2" /> {t('orders.form.createNewCustomer')}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </FormControl>
                     </div>
                     <FormMessage />
