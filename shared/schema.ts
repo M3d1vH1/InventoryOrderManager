@@ -1268,7 +1268,6 @@ export const supplierInvoices = pgTable("supplier_invoices", {
   attachment: text("attachment"),
   attachmentUrl: text("attachment_url"),  // Added to match database column
   invoiceDate: date("invoice_date"), // Optional column in the database
-  companyId: text("company_id"), // Which company the invoice is for
   createdAt: timestamp("created_at").notNull().defaultNow()
 });
 
@@ -1336,7 +1335,7 @@ export const insertSupplierInvoiceSchema = createInsertSchema(supplierInvoices)
     attachmentPath: z.string().optional(),
     attachment: z.string().optional(),
     attachmentUrl: z.string().optional(),
-    companyId: z.string().optional(), // Which company the invoice is for
+    company: z.string().optional() // For UI purposes only, not stored in DB
   });
 
 export type InsertSupplierInvoice = z.infer<typeof insertSupplierInvoiceSchema>;

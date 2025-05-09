@@ -245,9 +245,11 @@ router.post('/invoices', async (req, res) => {
     
     console.log("Validated data dates:", formattedDates);
     
-    // Convert the company field to companyId if needed
-    if (data.company && !data.companyId) {
-      data.companyId = data.company;
+    // Store the company name in notes field if provided
+    if (data.company && !data.notes) {
+      data.notes = `Company: ${data.company}`;
+    } else if (data.company) {
+      data.notes = `${data.notes}\nCompany: ${data.company}`;
     }
     
     // Create the invoice with a direct SQL query to bypass any ORM issues
