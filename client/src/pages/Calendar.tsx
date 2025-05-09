@@ -976,6 +976,7 @@ const CalendarPage: React.FC = () => {
                       <>
                         <Badge className="bg-[#14B8A6]">{t('calendar.payment')}</Badge>
                         <Badge className="bg-[#EC4899]">{t('calendar.paymentCallback')}</Badge>
+                        <Badge className="bg-[#0EA5E9]">{t('calendar.invoice')}</Badge>
                       </>
                     )}
                     {(filterView === 'all' || filterView === 'inventory') && (
@@ -1044,7 +1045,8 @@ const CalendarPage: React.FC = () => {
                           {event.type === 'shipped' && <Package className="h-4 w-4 text-[#10B981]" />}
                           {event.type === 'estimated' && <Package className="h-4 w-4 text-[#8B5CF6]" />}
                           {event.type === 'call' && <Phone className="h-4 w-4 text-[#F59E0B]" />}
-                          {event.type === 'payment' && <DollarSign className="h-4 w-4 text-[#14B8A6]" />}
+                          {event.type === 'payment' && event.invoiceNumber && event.supplierName && <FileText className="h-4 w-4 text-[#0EA5E9]" />}
+                          {event.type === 'payment' && !(event.invoiceNumber && event.supplierName) && <DollarSign className="h-4 w-4 text-[#14B8A6]" />}
                           {event.type === 'inventory' && <Tag className="h-4 w-4 text-[#06B6D4]" />}
                           {event.type === 'production' && <Factory className="h-4 w-4 text-[#2563EB]" />}
                           <div className="flex-1 font-medium">{event.title}</div>
@@ -1189,6 +1191,16 @@ const CalendarPage: React.FC = () => {
                     </div>
                   )}
                   
+                  {selectedEvent.invoiceNumber && (
+                    <div className="flex items-start">
+                      <FileText className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium">{t('supplierPayments.payment.invoice')}</p>
+                        <p className="text-sm text-muted-foreground">{selectedEvent.invoiceNumber}</p>
+                      </div>
+                    </div>
+                  )}
+                  
                   {selectedEvent.callbackRequired && (
                     <div className="flex items-start">
                       <Phone className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
@@ -1297,12 +1309,23 @@ const CalendarPage: React.FC = () => {
               )}
               
               {selectedEvent?.type === 'payment' && (
-                <Button onClick={() => {
-                  navigate('/supplier-payments');
-                  setIsEventModalOpen(false);
-                }}>
-                  {t('suppliers.viewPayments')}
-                </Button>
+                <>
+                  {selectedEvent.invoiceNumber ? (
+                    <Button onClick={() => {
+                      navigate(`/supplier-payments/invoices${selectedEvent.id ? `/${selectedEvent.id.toString().replace('invoice-', '')}` : ''}`);
+                      setIsEventModalOpen(false);
+                    }}>
+                      {t('suppliers.viewInvoice')}
+                    </Button>
+                  ) : (
+                    <Button onClick={() => {
+                      navigate('/supplier-payments');
+                      setIsEventModalOpen(false);
+                    }}>
+                      {t('suppliers.viewPayments')}
+                    </Button>
+                  )}
+                </>
               )}
               
               {selectedEvent?.type === 'inventory' && selectedEvent.productId && (
