@@ -59,6 +59,7 @@ const paymentFormSchema = z.object({
   paymentMethod: z.string().min(1, { message: 'Payment method is required' }),
   bankAccount: z.string().optional(),
   referenceNumber: z.string().optional(),
+  company: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -101,6 +102,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
       paymentMethod: '',
       bankAccount: '',
       referenceNumber: '',
+      company: '',
       notes: '',
     },
   });
@@ -240,6 +242,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
         paymentMethod: payment.paymentMethod || '',
         bankAccount: payment.bankAccount || '',
         referenceNumber: payment.referenceNumber || payment.reference || '',
+        company: payment.company || '',
         notes: payment.notes || '',
       });
       
@@ -256,6 +259,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
         paymentMethod: '',
         bankAccount: '',
         referenceNumber: '',
+        company: '',
         notes: '',
       });
       setSelectedInvoice(null);
@@ -711,6 +715,27 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                     }}
                   />
                 </div>
+
+                {/* Company field */}
+                <FormField
+                  control={form.control}
+                  name="company"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('supplierPayments.payment.company')}</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input 
+                            placeholder={t('supplierPayments.payment.companyPlaceholder')}
+                            {...field} 
+                          />
+                          <Building2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 {/* Notes field */}
                 <FormField
