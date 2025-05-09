@@ -756,24 +756,23 @@ const OrderForm = ({
                           <div>
                             <Combobox
                               options={(customers || []).map(customer => ({
-                                value: `${customer.id}:${customer.name}`, // Use ID+name as the value
-                                label: customer.name
+                                value: customer.name, // Use just the name as the value
+                                // Store the ID in a hidden attribute for internal use only
+                                id: customer.id
                               }))}
                               value={field.value || ""}
                               onChange={(value) => {
                                 console.log('Customer selected via Combobox:', value);
                                 
-                                // Extract the customer name from value (format: "id:name")
-                                const customerName = value.toString().split(':')[1] || value.toString();
+                                // The value is now just the customer name
+                                const customerName = value.toString();
                                 
-                                // Update the form field with the full value (id:name)
+                                // Update the form field with just the name
                                 field.onChange(value);
                                 
-                                // Get the matched customer to retrieve area info from previous orders
-                                // Extract the ID from the format "id:name"
-                                const selectedId = value.toString().split(':')[0];
+                                // Find the customer by name
                                 const selectedCustomer = customers?.find(c => 
-                                  c.id === parseInt(selectedId, 10) || c.name === customerName
+                                  c.name === customerName
                                 );
                                 
                                 // If we have a matched customer, look for their previous orders to get area info
@@ -794,10 +793,8 @@ const OrderForm = ({
                               <Button 
                                 type="button"
                                 onClick={() => {
-                                  // Extract customer name if in id:name format
-                                  const customerName = field.value && field.value.toString().includes(':') 
-                                    ? field.value.toString().split(':')[1]
-                                    : (field.value || '');
+                                  // The field.value is now directly the customer name
+                                  const customerName = field.value || '';
                                     
                                   setCurrentSearchValue(customerName);
                                   customerForm.setValue('name', customerName);
