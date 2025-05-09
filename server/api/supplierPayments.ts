@@ -245,13 +245,6 @@ router.post('/invoices', async (req, res) => {
     
     console.log("Validated data dates:", formattedDates);
     
-    // Store the company name in notes field if provided
-    if (data.company && !data.notes) {
-      data.notes = `Company: ${data.company}`;
-    } else if (data.company) {
-      data.notes = `${data.notes}\nCompany: ${data.company}`;
-    }
-    
     // Create the invoice with a direct SQL query to bypass any ORM issues
     try {
       const client = await pool.connect();
@@ -263,9 +256,9 @@ router.post('/invoices', async (req, res) => {
         
         const result = await client.query(
           `INSERT INTO supplier_invoices 
-            (invoice_number, supplier_id, issue_date, due_date, amount, paid_amount, status, notes, attachment_path, invoice_date, reference, rf_number) 
+            (invoice_number, supplier_id, issue_date, due_date, amount, paid_amount, status, notes, attachment_path, invoice_date, reference, rf_number, company) 
            VALUES 
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
            RETURNING *`,
           [
             data.invoiceNumber,
@@ -282,7 +275,9 @@ router.post('/invoices', async (req, res) => {
             // Include reference if provided
             data.reference || null,
             // Include RF Number if provided
-            data.rfNumber || null
+            data.rfNumber || null,
+            // Include company name
+            data.company || null
           ]
         );
         
@@ -470,6 +465,11 @@ router.post('/payments', async (req, res) => {
 
     console.log("Validated payment data:", JSON.stringify(data, null, 2));
     
+    // Get company field from the invoice if not provided in the payment data
+    if (!data.company && invoice.company) {
+      data.company = invoice.company;
+    }
+
     // Create the payment with a direct SQL query to bypass ORM issues
     try {
       const client = await pool.connect();
@@ -488,9 +488,9 @@ router.post('/payments', async (req, res) => {
         
         const result = await client.query(
           `INSERT INTO supplier_payments 
-            (invoice_id, payment_date, amount, payment_method, reference_number, notes, receipt_path) 
+            (invoice_id, payment_date, amount, payment_method, reference_number, notes, receipt_path, company, reference, bank_account) 
            VALUES 
-            ($1, $2, $3, $4, $5, $6, $7) 
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
            RETURNING *`,
           [
             data.invoiceId,
@@ -499,7 +499,10 @@ router.post('/payments', async (req, res) => {
             data.paymentMethod,
             data.referenceNumber || null,
             data.notes || null,
-            data.receiptPath || null
+            data.receiptPath || null,
+            data.company || null,
+            data.reference || null,
+            data.bankAccount || null
           ]
         );
         
@@ -657,6 +660,21 @@ router.patch('/payments/:id', async (req, res) => {
         if (data.receiptPath !== undefined) {
           updateFields.push(`receipt_path = $${paramCounter++}`);
           queryParams.push(data.receiptPath);
+        }
+        
+        if (data.company !== undefined) {
+          updateFields.push(`company = $${paramCounter++}`);
+          queryParams.push(data.company);
+        }
+        
+        if (data.reference !== undefined) {
+          updateFields.push(`reference = $${paramCounter++}`);
+          queryParams.push(data.reference);
+        }
+        
+        if (data.bankAccount !== undefined) {
+          updateFields.push(`bank_account = $${paramCounter++}`);
+          queryParams.push(data.bankAccount);
         }
         
         if (updateFields.length === 0) {

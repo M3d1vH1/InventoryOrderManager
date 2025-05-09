@@ -1268,6 +1268,7 @@ export const supplierInvoices = pgTable("supplier_invoices", {
   attachment: text("attachment"),
   attachmentUrl: text("attachment_url"),  // Added to match database column
   invoiceDate: date("invoice_date"), // Optional column in the database
+  company: text("company"),         // Company name the invoice is billed to
   createdAt: timestamp("created_at").notNull().defaultNow()
 });
 
