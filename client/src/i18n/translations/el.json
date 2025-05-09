@@ -1961,6 +1961,8 @@
       "selectInvoice": "Επιλέξτε τιμολόγιο",
       "selectDate": "Επιλέξτε ημερομηνία",
       "selectPaymentMethod": "Επιλέξτε τρόπο πληρωμής",
+      "bankAccount": "Τραπεζικός Λογαριασμός",
+      "bankAccountPlaceholder": "Εισάγετε στοιχεία τραπεζικού λογαριασμού",
       "methods": {
         "bankTransfer": "Τραπεζική Μεταφορά",
         "bank_transfer": "Τραπεζική Μεταφορά",

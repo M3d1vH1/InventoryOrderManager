@@ -764,16 +764,16 @@ router.get('/summary', async (req, res) => {
         LIMIT 10
       `);
       
-      // Get pending invoices amount
+      // Get pending invoices amount - ensure we correctly handle null paid_amount values
       const pendingResult = await client.query(`
-        SELECT COALESCE(SUM(amount - paid_amount), 0) as total_pending
+        SELECT COALESCE(SUM(amount - COALESCE(paid_amount, 0)), 0) as total_pending
         FROM supplier_invoices
-        WHERE status = 'pending'
+        WHERE status = 'pending' OR status = 'partially_paid'
       `);
       
-      // Get overdue invoices amount
+      // Get overdue invoices amount - ensure we correctly handle null paid_amount values
       const overdueResult = await client.query(`
-        SELECT COALESCE(SUM(amount - paid_amount), 0) as total_overdue
+        SELECT COALESCE(SUM(amount - COALESCE(paid_amount, 0)), 0) as total_overdue
         FROM supplier_invoices
         WHERE status = 'overdue'
       `);
@@ -804,11 +804,11 @@ router.get('/summary', async (req, res) => {
         recentPayments: recentPaymentsResult.rows
       };
       
-      // Calculate payment completion
+      // Calculate payment completion - ensure we correctly handle null paid_amount values
       const totalInvoicesResult = await client.query(`
         SELECT 
           COALESCE(SUM(amount), 0) as total_amount,
-          COALESCE(SUM(paid_amount), 0) as total_paid_amount
+          COALESCE(SUM(COALESCE(paid_amount, 0)), 0) as total_paid_amount
         FROM 
           supplier_invoices
         WHERE 
