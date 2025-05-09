@@ -1655,6 +1655,7 @@
         "existing": "Υπάρχων Πελάτης",
         "prospective": "Πιθανός Πελάτης"
       },
+      "existingCustomer": "Υπάρχων Πελάτης",
       "customer": "Πελάτης",
       "searchCustomer": "Αναζήτηση πελάτη...",
       "noCustomerFound": "Δεν βρέθηκε πελάτης",
