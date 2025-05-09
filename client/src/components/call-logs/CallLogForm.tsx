@@ -488,36 +488,21 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                   <FormItem className="flex flex-col space-y-1.5">
                     <FormLabel>{t('callLogs.form.customer')}<span className="text-red-500">*</span></FormLabel>
                     <FormControl>
-                      <select
-                        className="w-full h-10 px-3 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                      <Combobox
+                        options={(customers || []).map((customer: any) => ({
+                          value: customer.id,
+                          label: customer.name || customer.companyName || customer.email || t('common.unknown')
+                        }))}
                         value={field.value || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          console.log('Customer selected with ID:', value);
+                        onChange={(value) => {
+                          console.log('Customer selected with Combobox ID:', value);
                           field.onChange(value ? Number(value) : undefined);
                         }}
-                      >
-                        <option value="">{t('callLogs.form.selectCustomer')}</option>
-                        {(customers || []).map((customer: any) => {
-                          // Clean up and prepare label
-                          const label = customer.name || customer.companyName || customer.email || t('common.unknown');
-                          
-                          // Add special debug info for ΑΚΤΗ customer (for debugging only)
-                          if (label.includes('ΑΚΤΗ')) {
-                            console.log('Found ΑΚΤΗ customer in select element:', {
-                              id: customer.id,
-                              label,
-                              customer
-                            });
-                          }
-                          
-                          return (
-                            <option key={customer.id} value={customer.id}>
-                              {label}
-                            </option>
-                          );
-                        })}
-                      </select>
+                        placeholder={t('callLogs.form.selectCustomer')}
+                        emptyText={t('common.noOptions')}
+                        notFoundText={t('common.noResults')}
+                        className="w-full"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -537,40 +522,28 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                       <div className="flex items-center space-x-2">
                         <div className="flex-grow">
                           <FormControl>
-                            <select
-                              className="w-full h-10 px-3 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                            <Combobox
+                              options={[
+                                { value: 'new', label: `+ ${t('callLogs.form.newProspectiveCustomer')}` },
+                                ...(prospectiveCustomers || []).map((prospect: any) => ({
+                                  value: prospect.id,
+                                  label: prospect.name || prospect.companyName || prospect.email || t('common.unknown')
+                                }))
+                              ]}
                               value={isNewProspect ? 'new' : field.value || ""}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                console.log('Prospective customer selected:', value);
+                              onChange={(value) => {
+                                console.log('Prospective customer selected with Combobox:', value);
                                 if (value === 'new') {
                                   handleProspectiveCustomerChange('new');
                                 } else {
                                   handleProspectiveCustomerChange(value);
                                 }
                               }}
-                            >
-                              <option value="">{t('callLogs.form.selectProspectiveCustomer')}</option>
-                              <option value="new">{`+ ${t('callLogs.form.newProspectiveCustomer')}`}</option>
-                              {(prospectiveCustomers || []).map((prospect: any) => {
-                                const label = prospect.name || prospect.companyName || prospect.email || t('common.unknown');
-                                
-                                // Add special debug info for ΑΚΤΗ customer (for debugging only)
-                                if (label.includes('ΑΚΤΗ')) {
-                                  console.log('Found ΑΚΤΗ prospective customer in select:', {
-                                    id: prospect.id,
-                                    label,
-                                    prospect
-                                  });
-                                }
-                                
-                                return (
-                                  <option key={prospect.id} value={prospect.id}>
-                                    {label}
-                                  </option>
-                                );
-                              })}
-                            </select>
+                              placeholder={t('callLogs.form.selectProspectiveCustomer')}
+                              emptyText={t('common.noOptions')}
+                              notFoundText={t('common.noResults')}
+                              className="w-full"
+                            />
                           </FormControl>
                         </div>
                         <Button
