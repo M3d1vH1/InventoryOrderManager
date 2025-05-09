@@ -756,23 +756,27 @@ const OrderForm = ({
                           <div>
                             <Combobox
                               options={(customers || []).map(customer => ({
-                                value: customer.name,
+                                value: `${customer.id}:${customer.name}`, // Use ID+name as the value
                                 label: customer.name
                               }))}
                               value={field.value}
                               onChange={(value) => {
                                 console.log('Customer selected via Combobox:', value);
-                                // Update the form field with the string value
-                                field.onChange(value.toString());
+                                
+                                // Extract the customer name from value (format: "id:name")
+                                const customerName = value.toString().split(':')[1] || value.toString();
+                                
+                                // Update the form field with just the customer name
+                                field.onChange(customerName);
                                 
                                 // Get the matched customer to retrieve area info from previous orders
                                 const selectedCustomer = customers?.find(c => 
-                                  c.name === value.toString()
+                                  c.name === customerName
                                 );
                                 
                                 // If we have a matched customer, look for their previous orders to get area info
                                 if (selectedCustomer) {
-                                  fetchCustomerAreaFromPreviousOrders(value.toString());
+                                  fetchCustomerAreaFromPreviousOrders(customerName);
                                   
                                   // Set the shipping company from the customer data
                                   setShippingCompanyFromCustomer(selectedCustomer);

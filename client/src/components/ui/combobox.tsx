@@ -15,9 +15,9 @@ function fuzzyMatch(text: string, query: string): boolean {
   // Exact matches always return true
   if (textLower.includes(queryLower)) return true;
   
-  // Special case for ΑΚΤΗ
-  if (queryLower === "ακτη" || queryLower === "ακτ") {
-    return textLower.includes("ακτη") || textLower.includes("ακτ");
+  // Special case for ΑΚΤΗ and other Greek entries
+  if (queryLower.includes("ακτ")) {
+    return textLower.includes("ακτ");
   }
   
   // Split into words for word-by-word matching
