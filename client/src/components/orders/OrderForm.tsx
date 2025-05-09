@@ -244,6 +244,13 @@ const OrderForm = ({
     }
   });
 
+  // Log the incoming initialData for debugging
+  useEffect(() => {
+    if (isEditMode && initialData) {
+      console.log("OrderForm initialData in edit mode:", initialData);
+    }
+  }, [initialData, isEditMode]);
+
   const form = useForm<OrderFormValues>({
     resolver: zodResolver(orderFormSchema),
     defaultValues: {
@@ -261,6 +268,29 @@ const OrderForm = ({
       })) || []
     }
   });
+  
+  // Reset form with initialData when in edit mode
+  useEffect(() => {
+    if (isEditMode && initialData) {
+      console.log("Resetting form with initialData in edit mode");
+      
+      // Reset the form with the initialData
+      form.reset({
+        customerName: initialData.customerName,
+        area: initialData.area || "",
+        orderDate: initialData.orderDate,
+        estimatedShippingDate: initialData.estimatedShippingDate || format(new Date(new Date().setDate(new Date().getDate() + 5)), "yyyy-MM-dd"),
+        priority: initialData.priority || 'medium',
+        notes: initialData.notes || "",
+        shippingCompany: initialData.shippingCompany || "",
+        billingCompany: initialData.billingCompany || "",
+        items: initialData.items?.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity
+        })) || []
+      });
+    }
+  }, [form, initialData, isEditMode]);
 
   // Initialize orderItems from initialData if provided
   useEffect(() => {
@@ -579,9 +609,11 @@ const OrderForm = ({
         throw new Error("Order update cancelled by user");
       }
       
-      // Log the items again right before sending
+      // Log the values and items being sent
+      console.log("Form values before update:", values);
       console.log("Items being sent in update API request:", values.items);
       console.log("orderItems length before sending update:", orderItems.length);
+      console.log("Current form state:", form.getValues());
       
       // Make sure we're sending all the items from our orderItems state
       // Create a copy of the form values but replace items with our orderItems state
@@ -592,19 +624,23 @@ const OrderForm = ({
       
       console.log("Final items to send in update:", itemsToSend);
       
+      // Get current form values to ensure we have the latest
+      const currentValues = form.getValues();
+      
       // Send only the data that the server expects
       return apiRequest({
         url: `/api/orders/${id}`,
         method: 'PATCH',
         body: JSON.stringify({
-          customerName: values.customerName,
-          area: values.area,
-          notes: values.notes,
+          customerName: currentValues.customerName,
+          area: currentValues.area,
+          orderDate: currentValues.orderDate,
+          notes: currentValues.notes,
           items: itemsToSend, // Use our directly mapped items from state
-          estimatedShippingDate: values.estimatedShippingDate,
-          priority: values.priority,
-          shippingCompany: values.shippingCompany,
-          billingCompany: values.billingCompany,
+          estimatedShippingDate: currentValues.estimatedShippingDate,
+          priority: currentValues.priority,
+          shippingCompany: currentValues.shippingCompany,
+          billingCompany: currentValues.billingCompany,
           updatedById: user.id
         }),
         headers: {

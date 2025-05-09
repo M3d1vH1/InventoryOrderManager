@@ -1252,12 +1252,15 @@ A 1
                 </div>
               ) : (
                 // Edit mode with OrderForm
-                <OrderForm 
-                  initialData={orderDetails}
-                  isEditMode={true}
-                  onCancel={handleCloseDialog}
-                  onSuccess={handleCloseDialog}
-                />
+                <>
+                  {console.log("Order details being passed to OrderForm:", orderDetails)}
+                  <OrderForm 
+                    initialData={orderDetails}
+                    isEditMode={true}
+                    onCancel={handleCloseDialog}
+                    onSuccess={handleCloseDialog}
+                  />
+                </>
               )}
               
               <DialogFooter className="flex justify-between sm:justify-between gap-2">
