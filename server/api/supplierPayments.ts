@@ -143,6 +143,7 @@ router.delete('/suppliers/:id', async (req, res) => {
 
 // Get all invoices
 router.get('/invoices', async (req, res) => {
+  console.log('[API] GET /supplier-payments/invoices - Fetching all invoices');
   try {
     // Use direct SQL query to bypass schema issues
     const client = await pool.connect();
@@ -152,11 +153,13 @@ router.get('/invoices', async (req, res) => {
         FROM supplier_invoices si 
         JOIN suppliers s ON si.supplier_id = s.id
       `);
+      console.log(`[API] Found ${result.rows.length} invoices`);
       res.json(result.rows);
     } finally {
       client.release();
     }
   } catch (error: any) {
+    console.error('[API] Error fetching invoices:', error);
     res.status(500).json({ error: error.message });
   }
 });

@@ -141,15 +141,35 @@ const CalendarPage: React.FC = () => {
   });
   
   // Fetch supplier invoices
-  const { data: invoices, isLoading: invoicesLoading, isError: invoicesError } = useQuery({
+  const { data: invoices, isLoading: invoicesLoading, isError: invoicesError, refetch: refetchInvoices } = useQuery({
     queryKey: ['/api/supplier-payments/invoices'],
     retry: 1,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
   
+  // Manual fetch for debugging purposes
+  useEffect(() => {
+    // Direct fetch to check if API endpoint is accessible
+    fetch('/api/supplier-payments/invoices')
+      .then(response => {
+        console.log('Direct fetch invoice status:', response.status);
+        return response.json();
+      })
+      .then(data => {
+        console.log('Direct fetch invoices result:', data);
+        // If no invoices are found but API works, we'll create some sample events for testing
+        if (Array.isArray(data) && data.length === 0) {
+          console.log('No invoices found in the database');
+        }
+      })
+      .catch(error => {
+        console.error('Direct fetch invoice error:', error);
+      });
+  }, []);
+  
   // Log the supplier invoices when they change
   useEffect(() => {
-    console.log('Supplier invoices data:', invoices);
+    console.log('Supplier invoices data from useQuery:', invoices);
     if (invoicesError) {
       console.error('Error loading supplier invoices:', invoicesError);
     }
