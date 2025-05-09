@@ -67,6 +67,7 @@ const invoiceFormSchema = z.object({
     .refine(val => !isNaN(parseFloat(val)) && parseFloat(val) >= 0, {
       message: 'supplierPayments.invoice.errors.invalidPaidAmount',
     }),
+  companyId: z.string().optional(), // Which company the invoice is for
   reference: z.string().optional(), // General reference field
   rfNumber: z.string().optional(), // Specific RF number field for payments
   status: z.enum(['pending', 'paid', 'partially_paid', 'overdue', 'cancelled']),
@@ -110,6 +111,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
       dueDate: new Date(),
       amount: '0',
       paidAmount: '', // Start with empty paid amount to allow user to specify or leave blank
+      companyId: '', // Which company the invoice is for
       reference: '', // General reference field
       rfNumber: '', // Specific RF number field for payments
       status: 'pending',
@@ -134,9 +136,10 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
       const paidAmount = invoice.paid_amount || invoice.paidAmount || '';
       const reference = invoice.reference || '';
       const rfNumber = invoice.rf_number || invoice.rfNumber || '';
+      const companyId = invoice.company_id || invoice.companyId || '';
       
       console.log("Extracted invoice properties:", {
-        invoiceNumber, supplierId, invoiceDate, dueDate, amount, paidAmount, reference, rfNumber
+        invoiceNumber, supplierId, invoiceDate, dueDate, amount, paidAmount, reference, rfNumber, companyId
       });
       
       form.reset({
@@ -146,6 +149,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
         dueDate: dueDate ? new Date(dueDate) : new Date(),
         amount: amount?.toString() || '0',
         paidAmount: paidAmount ? paidAmount.toString() : '',
+        companyId: companyId ? companyId.toString() : '',
         reference: reference, // General reference field
         rfNumber: rfNumber, // Specific RF number field
         status: invoice.status || 'pending',
@@ -162,6 +166,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
         dueDate: new Date(),
         amount: '0',
         paidAmount: '', // Empty string to allow clearing the paid amount
+        companyId: '', // Empty company ID
         reference: '', // General reference field
         rfNumber: '', // Specific RF number field
         status: 'pending',
@@ -292,6 +297,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
       dueDate: data.dueDate,        // Send full Date object, schema will handle it
       amount: data.amount,          // Schema will handle number coercion
       paidAmount: paidAmount,       // Allow undefined to be passed through
+      companyId: data.companyId || '', // Which company the invoice is for
       reference: data.reference || '', // General reference field
       rfNumber: data.rfNumber || '', // Specific RF number field for payments
       status: data.status,
