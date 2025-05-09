@@ -264,14 +264,16 @@ const OrderForm = ({
 
   // Initialize orderItems from initialData if provided
   useEffect(() => {
-    if (initialData?.items && initialData.items.length > 0 && orderItems.length === 0) {
+    if (initialData?.items && initialData.items.length > 0) {
+      // Always set order items from initialData when in edit mode
+      console.log("Initializing orderItems from initialData:", initialData.items);
       setOrderItems(initialData.items.map(item => ({
         productId: item.productId,
         product: item.product,
         quantity: item.quantity
       })));
     }
-  }, [initialData]);
+  }, [initialData, isEditMode]);
   
   // Function to fetch and set the area from a customer's previous orders
   const fetchCustomerAreaFromPreviousOrders = async (customerName: string) => {
@@ -482,18 +484,20 @@ const OrderForm = ({
   useEffect(() => {
     // Update form items field when orderItems changes
     console.log("orderItems changed, updating form items", orderItems);
-    const formattedItems = orderItems.map(item => ({
-      productId: item.productId,
-      quantity: item.quantity
-    }));
-    console.log("Setting form items value to:", formattedItems);
-    form.setValue('items', formattedItems);
-    
-    // Verify that the items are set correctly
-    setTimeout(() => {
-      const currentItems = form.getValues('items');
-      console.log("Current form items after update:", currentItems);
-    }, 100);
+    if (orderItems.length > 0) {
+      const formattedItems = orderItems.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity
+      }));
+      console.log("Setting form items value to:", formattedItems);
+      form.setValue('items', formattedItems);
+      
+      // Verify that the items are set correctly
+      setTimeout(() => {
+        const currentItems = form.getValues('items');
+        console.log("Current form items after update:", currentItems);
+      }, 100);
+    }
   }, [orderItems, form]);
 
   const createOrderMutation = useMutation({
@@ -621,17 +625,20 @@ const OrderForm = ({
       queryClient.invalidateQueries({ queryKey: ['/api/orders/recent'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
+      
       // Clear form and state
       form.reset();
       setOrderItems([]);
       
       // Navigate back to orders list after successful update
-      window.location.href = "/orders";
-      
-      // Call onSuccess callback if provided
-      if (onSuccess) {
-        onSuccess();
-      }
+      // Using setTimeout to ensure state is reset before navigation
+      setTimeout(() => {
+        window.location.href = "/orders";
+      }, 300);
     },
     onError: (error) => {
       // Check if it's a user cancellation
