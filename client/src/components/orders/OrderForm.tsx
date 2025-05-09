@@ -712,69 +712,60 @@ const OrderForm = ({
                     <FormLabel className="text-base font-medium">{t('orders.form.customer')}</FormLabel>
                     <div className="relative">
                       <FormControl>
-                        <Command className="rounded-lg border border-input">
-                          <CommandInput
-                            placeholder={t('orders.form.typeCustomerName')}
-                            className="h-12 text-base"
-                            value={field.value}
-                            onValueChange={(value) => {
-                              console.log('Input value changed to:', value);
-                              field.onChange(value);
-                            }}
-                            disabled={isLoadingCustomers}
-                          />
-                          {field.value.length > 0 && (
-                            <CommandList>
-                              <CommandEmpty className="py-4 text-center">
-                                <p className="mb-3 text-base">{t('orders.form.noCustomersFound')}</p>
+                        <Select 
+                          onValueChange={(value) => {
+                            console.log('Customer selected:', value);
+                            field.onChange(value);
+                            
+                            // Get the matched customer to retrieve area info from previous orders
+                            const selectedCustomer = customers?.find(c => 
+                              c.name === value
+                            );
+                            
+                            // If we have a matched customer, look for their previous orders to get area info
+                            if (selectedCustomer) {
+                              fetchCustomerAreaFromPreviousOrders(value);
+                              
+                              // Set the shipping company from the customer data
+                              setShippingCompanyFromCustomer(selectedCustomer);
+                            }
+                          }}
+                          value={field.value}
+                        >
+                          <SelectTrigger className="h-12 text-base">
+                            <SelectValue placeholder={t('orders.form.typeCustomerName')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {isLoadingCustomers ? (
+                              <div className="flex items-center justify-center p-4">
+                                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                              </div>
+                            ) : (
+                              <>
+                                {(customers || []).map(customer => (
+                                  <SelectItem
+                                    key={customer.id}
+                                    value={customer.name}
+                                    className="h-10 text-base"
+                                  >
+                                    {customer.name}
+                                  </SelectItem>
+                                ))}
+                                
                                 <Button 
                                   onClick={() => {
-                                    setCurrentSearchValue(field.value);
-                                    customerForm.setValue('name', field.value);
+                                    setCurrentSearchValue(field.value || '');
+                                    customerForm.setValue('name', field.value || '');
                                     setIsNewCustomerDialogOpen(true);
                                   }}
-                                  className="h-10 text-base"
+                                  className="h-10 text-base w-full mt-2"
                                 >
-                                  <Plus className="h-4 w-4 mr-2" /> {t('orders.form.create')} "{field.value}"
+                                  <Plus className="h-4 w-4 mr-2" /> {t('orders.form.createNewCustomer')}
                                 </Button>
-                              </CommandEmpty>
-                              <CommandGroup>
-                                {customers
-                                  ?.filter(customer => {
-                                    // Use normalization to properly handle Greek characters and other Unicode characters
-                                    const normalizedCustomerName = customer.name.normalize('NFD');
-                                    const normalizedSearch = field.value.normalize('NFD');
-                                    
-                                    // Now create a case-insensitive search (more reliable than toLowerCase() for Greek)
-                                    return normalizedCustomerName.toLocaleLowerCase().includes(normalizedSearch.toLocaleLowerCase());
-                                  })
-                                  .map(customer => (
-                                    <CommandItem
-                                      key={customer.id}
-                                      className="h-10 text-base"
-                                      onSelect={() => {
-                                        console.log('Customer selected:', customer.name);
-                                        field.onChange(customer.name);
-                                        
-                                        // Direct reference to the customer object instead of searching again
-                                        const selectedCustomer = customer;
-                                        
-                                        // If we have a matched customer, look for their previous orders to get area info
-                                        if (selectedCustomer) {
-                                          fetchCustomerAreaFromPreviousOrders(customer.name);
-                                          
-                                          // Set the shipping company from the customer data
-                                          setShippingCompanyFromCustomer(selectedCustomer);
-                                        }
-                                      }}
-                                    >
-                                      {customer.name}
-                                    </CommandItem>
-                                  ))}
-                              </CommandGroup>
-                            </CommandList>
-                          )}
-                        </Command>
+                              </>
+                            )}
+                          </SelectContent>
+                        </Select>
                       </FormControl>
                     </div>
                     <FormMessage />
