@@ -22,12 +22,14 @@ import SimpleCalendar from "@/pages/SimpleCalendar";
 import InventoryPredictions from "@/pages/InventoryPredictions";
 import Production from "@/pages/Production";
 import SupplierPayments from "@/pages/SupplierPayments";
+import CalendarTest from "@/pages/CalendarTest";
 import Login from "@/pages/Login";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { SidebarProvider } from "@/context/SidebarContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { NotificationProvider } from "@/context/NotificationContext";
+import { UserProvider } from "@/context/UserContext";
 import { useTranslation } from 'react-i18next';
 import './i18n'; // Import i18n setup explicitly
 
@@ -84,6 +86,7 @@ function AuthenticatedRouter() {
       <Route path="/call-logs" component={CallLogs} />
       <Route path="/call-logs/:id" component={CallLogs} />
       <Route path="/calendar" component={SimpleCalendar} />
+      <Route path="/calendar-test" component={CalendarTest} />
       <Route path="/inventory-predictions" component={InventoryPredictions} />
       <Route path="/production" component={Production} />
       <Route path="/supplier-payments" component={SupplierPayments} />
@@ -177,14 +180,16 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <NotificationProvider>
-          <SidebarProvider>
-            <Layout />
-            <Toaster />
-            {/* Add our development auto-login component */}
-            {import.meta.env.DEV && <DevAutoLogin />}
-          </SidebarProvider>
-        </NotificationProvider>
+        <UserProvider>
+          <NotificationProvider>
+            <SidebarProvider>
+              <Layout />
+              <Toaster />
+              {/* Add our development auto-login component */}
+              {import.meta.env.DEV && <DevAutoLogin />}
+            </SidebarProvider>
+          </NotificationProvider>
+        </UserProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
