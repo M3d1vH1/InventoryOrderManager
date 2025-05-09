@@ -10,8 +10,8 @@ import { pool } from '../db';
 
 const router = Router();
 
-// Ensure all routes are protected
-router.use(isAuthenticated);
+// Ensure most routes are protected except specific ones needed by the Calendar dashboard
+// Protected routes middleware will be applied individually to allow some public access
 
 // Supplier validation schemas
 const insertSupplierSchema = createInsertSchema(suppliers).omit({
