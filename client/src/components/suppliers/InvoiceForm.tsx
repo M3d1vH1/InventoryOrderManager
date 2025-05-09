@@ -317,7 +317,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {invoice ? t('supplierPayments.invoice.edit') : t('supplierPayments.invoice.create')}
@@ -330,8 +330,8 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 py-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Invoice Number field - required */}
               <FormField
                 control={form.control}
@@ -615,7 +615,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
                   control={form.control}
                   name="recurringCycle"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="col-span-1 sm:col-span-2">
                       <FormLabel>{t('supplierPayments.invoice.recurringCycle')}</FormLabel>
                       <FormControl>
                         <Input 
@@ -642,7 +642,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
                   <FormControl>
                     <Textarea
                       placeholder={t('supplierPayments.invoice.notesPlaceholder')}
-                      className="min-h-[80px]"
+                      className="min-h-[60px]"
                       {...field}
                     />
                   </FormControl>
@@ -651,16 +651,21 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
               )}
             />
 
-            <DialogFooter>
+            <DialogFooter className="flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0 pt-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
                 disabled={saveInvoiceMutation.isPending}
+                className="flex-1 sm:flex-none"
               >
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" disabled={saveInvoiceMutation.isPending}>
+              <Button 
+                type="submit" 
+                disabled={saveInvoiceMutation.isPending}
+                className="flex-1 sm:flex-none"
+              >
                 {saveInvoiceMutation.isPending && (
                   <Loader className="mr-2 h-4 w-4 animate-spin" />
                 )}
