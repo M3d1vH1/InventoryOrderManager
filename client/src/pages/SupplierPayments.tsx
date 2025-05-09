@@ -17,10 +17,17 @@ export default function SupplierPayments() {
   const { toast } = useToast();
 
   // Load payment summary for dashboard
-  const { data: paymentSummary, isLoading } = useQuery({
+  const { data: paymentSummary, isLoading, error } = useQuery({
     queryKey: ['/api/supplier-payments/summary'],
     retry: 1,
   });
+  
+  // Log the payment summary data for debugging
+  console.log('Payment summary data:', paymentSummary);
+  
+  if (error) {
+    console.error('Error loading payment summary:', error);
+  }
 
   return (
     <div className="container mx-auto p-4">
