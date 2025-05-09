@@ -834,12 +834,19 @@ const OrderForm = ({
                                 // The value is now just the customer name
                                 const customerName = value.toString();
                                 
-                                // Update the form field with just the name
-                                field.onChange(value);
+                                // Make sure customerName doesn't contain ID format (ID:Name)
+                                const cleanedCustomerName = customerName.includes(':') 
+                                  ? customerName.split(':')[1].trim() 
+                                  : customerName;
                                 
-                                // Find the customer by name
+                                console.log('Cleaned customer name for dropdown selection:', cleanedCustomerName);
+                                
+                                // Update the form field with just the clean name
+                                field.onChange(cleanedCustomerName);
+                                
+                                // Find the customer by name (using either format to be safe)
                                 const selectedCustomer = customers?.find(c => 
-                                  c.name === customerName
+                                  c.name === customerName || c.name === cleanedCustomerName
                                 );
                                 
                                 // If we have a matched customer, look for their previous orders to get area info
