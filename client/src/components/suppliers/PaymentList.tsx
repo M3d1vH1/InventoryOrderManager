@@ -43,21 +43,47 @@ export const PaymentList = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
+  
+  // Define types for our data
+  type Supplier = {
+    id: number;
+    name: string;
+    [key: string]: any;
+  };
+  
+  type Invoice = {
+    id: number;
+    invoiceNumber: string;
+    supplierId: number;
+    [key: string]: any;
+  };
+  
+  type Payment = {
+    id: number;
+    invoiceId: number;
+    paymentDate: string;
+    amount: number | string;
+    paymentMethod: string;
+    reference?: string | null;
+    notes?: string | null;
+    company?: string | null;
+    [key: string]: any;
+  };
 
   // Fetch all payments
-  const { data: payments = [], isLoading: isLoadingPayments } = useQuery({
+  const { data: payments = [], isLoading: isLoadingPayments } = useQuery<Payment[]>({
     queryKey: ['/api/supplier-payments/payments'],
     retry: 1,
   });
 
   // Fetch all suppliers for dropdown
-  const { data: suppliers = [], isLoading: isLoadingSuppliers } = useQuery({
+  const { data: suppliers = [], isLoading: isLoadingSuppliers } = useQuery<Supplier[]>({
     queryKey: ['/api/supplier-payments/suppliers'],
     retry: 1,
   });
 
   // Fetch all invoices for dropdown in form
-  const { data: invoices = [], isLoading: isLoadingInvoices } = useQuery({
+  const { data: invoices = [], isLoading: isLoadingInvoices } = useQuery<Invoice[]>({
     queryKey: ['/api/supplier-payments/invoices'],
     retry: 1,
   });
@@ -102,12 +128,12 @@ export const PaymentList = () => {
       : null;
     
     const matchesSearch = 
-      payment.reference?.toLowerCase().includes(query) ||
-      payment.notes?.toLowerCase().includes(query) ||
-      payment.paymentMethod?.toLowerCase().includes(query) ||
-      payment.company?.toLowerCase().includes(query) ||
-      (supplier && supplier.name.toLowerCase().includes(query)) ||
-      (invoice && invoice.invoiceNumber.toLowerCase().includes(query));
+      (payment.reference ? payment.reference.toLowerCase().includes(query) : false) ||
+      (payment.notes ? payment.notes.toLowerCase().includes(query) : false) ||
+      (payment.paymentMethod ? payment.paymentMethod.toLowerCase().includes(query) : false) ||
+      (payment.company ? payment.company.toLowerCase().includes(query) : false) ||
+      (supplier && supplier.name ? supplier.name.toLowerCase().includes(query) : false) ||
+      (invoice && invoice.invoiceNumber ? invoice.invoiceNumber.toLowerCase().includes(query) : false);
     
     if (filterSupplier === 'all') {
       return matchesSearch;
@@ -154,12 +180,15 @@ export const PaymentList = () => {
     let icon;
     let variant: "default" | "secondary" | "destructive" | "outline" = "default";
     
-    switch (method.toLowerCase()) {
+    const methodLower = method && typeof method === 'string' ? method.toLowerCase() : '';
+    switch (methodLower) {
       case 'credit card':
+      case 'credit_card':
         icon = <CreditCard className="h-4 w-4" />;
         variant = "default";
         break;
       case 'bank transfer':
+      case 'bank_transfer':
         icon = <Receipt className="h-4 w-4" />;
         variant = "secondary";
         break;
@@ -310,8 +339,8 @@ export const PaymentList = () => {
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         payment={selectedPayment}
-        invoices={invoices}
-        suppliers={suppliers}
+        invoices={invoices as any[]}
+        suppliers={suppliers as any[]}
       />
 
       {/* Delete Confirmation Dialog */}
