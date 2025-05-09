@@ -761,7 +761,7 @@ const OrderForm = ({
                                         
                                         // If we have a matched customer, look for their previous orders to get area info
                                         if (selectedCustomer) {
-                                          fetchCustomerAreaFromPreviousOrders(value);
+                                          fetchCustomerAreaFromPreviousOrders(customer.name);
                                           
                                           // Set the shipping company from the customer data
                                           setShippingCompanyFromCustomer(selectedCustomer);
