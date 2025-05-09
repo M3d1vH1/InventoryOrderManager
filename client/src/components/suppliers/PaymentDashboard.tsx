@@ -105,51 +105,63 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
   useEffect(() => {
     if (!summary) return;
 
+    console.log('Processing dashboard summary:', summary);
+    console.log('Invoices array:', summary.invoices);
+    
     const events: PaymentCalendarEvent[] = [];
 
     // Add recent payments to calendar
-    summary.recentPayments.forEach(payment => {
-      try {
-        const paymentDate = parseISO(payment.paymentDate);
-        if (isValid(paymentDate)) {
-          events.push({
-            date: paymentDate,
-            type: 'payment',
-            amount: payment.amount,
-            title: t('supplierPayments.payment.paymentMade'),
-            supplierName: payment.supplierName,
-            invoiceNumber: payment.invoiceNumber
-          });
+    if (summary.recentPayments && Array.isArray(summary.recentPayments)) {
+      summary.recentPayments.forEach(payment => {
+        try {
+          const paymentDate = parseISO(payment.paymentDate);
+          if (isValid(paymentDate)) {
+            events.push({
+              date: paymentDate,
+              type: 'payment',
+              amount: payment.amount,
+              title: t('supplierPayments.payment.paymentMade'),
+              supplierName: payment.supplierName,
+              invoiceNumber: payment.invoiceNumber
+            });
+          }
+        } catch (error) {
+          console.error('Error parsing payment date:', error);
         }
-      } catch (error) {
-        console.error('Error parsing payment date:', error);
-      }
-    });
+      });
+    }
 
     // Add upcoming due dates to calendar
-    summary.upcomingPayments.forEach(payment => {
-      try {
-        const dueDate = parseISO(payment.dueDate);
-        if (isValid(dueDate)) {
-          events.push({
-            date: dueDate,
-            type: 'due',
-            amount: payment.remainingAmount,
-            title: t('supplierPayments.payment.paymentDue'),
-            supplierName: payment.supplierName,
-            invoiceNumber: payment.invoiceNumber
-          });
+    if (summary.upcomingPayments && Array.isArray(summary.upcomingPayments)) {
+      summary.upcomingPayments.forEach(payment => {
+        try {
+          const dueDate = parseISO(payment.dueDate);
+          if (isValid(dueDate)) {
+            events.push({
+              date: dueDate,
+              type: 'due',
+              amount: payment.remainingAmount,
+              title: t('supplierPayments.payment.paymentDue'),
+              supplierName: payment.supplierName,
+              invoiceNumber: payment.invoiceNumber
+            });
+          }
+        } catch (error) {
+          console.error('Error parsing due date:', error);
         }
-      } catch (error) {
-        console.error('Error parsing due date:', error);
-      }
-    });
+      });
+    }
 
     // Add invoices to calendar
     if (summary.invoices && Array.isArray(summary.invoices)) {
+      console.log('Processing invoices for calendar, found:', summary.invoices.length);
+      
       summary.invoices.forEach(invoice => {
         try {
+          console.log('Processing invoice:', invoice);
           const dueDate = parseISO(invoice.dueDate);
+          console.log('Invoice due date parsed:', dueDate, 'Valid:', isValid(dueDate));
+          
           if (isValid(dueDate)) {
             const isPaid = invoice.status === 'paid';
             const isPartiallyPaid = invoice.status === 'partially_paid';
@@ -166,10 +178,17 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
               title = t('supplierPayments.invoice.due');
             }
 
+            console.log('Creating invoice event:', {
+              date: dueDate,
+              type: 'invoice',
+              title,
+              status: invoice.status
+            });
+
             events.push({
               date: dueDate,
               type: 'invoice',
-              amount: invoice.amount - invoice.paidAmount,
+              amount: Number(invoice.amount) - Number(invoice.paidAmount),
               title: title,
               supplierName: invoice.supplierName,
               invoiceNumber: invoice.invoiceNumber,
@@ -180,11 +199,12 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
             });
           }
         } catch (error) {
-          console.error('Error parsing invoice due date:', error);
+          console.error('Error processing invoice for calendar:', error, invoice);
         }
       });
     }
 
+    console.log('Total calendar events created:', events.length);
     setCalendarEvents(events);
   }, [summary, t]);
 
