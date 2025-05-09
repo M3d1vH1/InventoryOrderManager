@@ -136,34 +136,39 @@ export function Combobox({
   }, [open]);
 
   return (
-    <div className={cn("relative w-full", className)}>
-      <Button
-        type="button"
-        variant="outline"
-        role="combobox"
-        aria-expanded={open}
-        className={cn(
-          "w-full justify-between",
-          disabled && "opacity-50 cursor-not-allowed",
-          triggerClassName
-        )}
-        disabled={disabled}
-        onClick={() => {
-          setOpen(!open);
-          if (!open) {
-            // Focus the input when opening
-            setTimeout(() => inputRef.current?.focus(), 10);
-          }
-        }}
-      >
-        {value && selectedOption
-          ? selectedOption.label
-          : placeholder}
-        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-      </Button>
-      
-      {open && (
-        <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-md">
+    <div className={cn("relative w-full", className)}>      
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className={cn(
+              "w-full justify-between",
+              disabled && "opacity-50 cursor-not-allowed",
+              triggerClassName
+            )}
+            disabled={disabled}
+            onClick={() => {
+              setOpen(!open);
+              if (!open) {
+                // Focus the input when opening
+                setTimeout(() => inputRef.current?.focus(), 10);
+              }
+            }}
+          >
+            {value && selectedOption
+              ? selectedOption.label
+              : placeholder}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent 
+          className={cn("p-0 w-full", popoverContentClassName)} 
+          align="start"
+          sideOffset={5}
+        >
           <div className="flex items-center border-b px-3">
             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
             <input
@@ -210,8 +215,8 @@ export function Combobox({
               ))}
             </div>
           )}
-        </div>
-      )}
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

@@ -66,6 +66,8 @@
     "selectDate": "Επιλέξτε ημερομηνία",
     "noOptionsMessage": "Δεν βρέθηκαν επιλογές",
     "noDataAvailable": "Δεν υπάρχουν διαθέσιμα δεδομένα",
+    "noCustomersFound": "Δεν βρέθηκαν πελάτες",
+    "noMatchingCustomersFound": "Δεν βρέθηκαν αντίστοιχοι πελάτες",
     "select": "Επιλογή",
     "selectAll": "Επιλογή όλων",
     "clearSelection": "Καθαρισμός επιλογής",
