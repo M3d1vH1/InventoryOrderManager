@@ -748,10 +748,10 @@ const CalendarPage: React.FC = () => {
         console.log(`Filtered call events: ${result.length}`);
         break;
       case 'payments':
-        // Only include actual payments (not invoices)
+        // Include both actual payments and invoice-related payments
         result = events.filter(event => 
-          event.type === 'payment' && 
-          !(event.invoiceNumber && event.supplierName)
+          (event.type === 'payment') || // All payment events
+          (event.type === 'invoice')    // All invoice events too
         );
         console.log(`Filtered payment events: ${result.length}`);
         break;
