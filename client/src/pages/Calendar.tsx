@@ -1023,19 +1023,19 @@ const CalendarPage: React.FC = () => {
           }
           break;
         case 'invoice':
-          // Style dedicated invoice events
+          // Style dedicated invoice events with enhanced visual treatment 
           if (event.invoiceStatus === 'overdue' || event.isOverdue) {
             backgroundColor = '#EF4444'; // Red for overdue invoices
-            borderLeft = '3px solid #B91C1C';
+            borderLeft = '4px solid #B91C1C';
           } else if (event.invoiceStatus === 'paid' || event.isPaid) {
             backgroundColor = '#10B981'; // Green for paid invoices
-            borderLeft = '3px solid #059669';
+            borderLeft = '4px solid #059669';
           } else if (event.invoiceStatus === 'partially_paid' || event.isPartiallyPaid) {
             backgroundColor = '#F59E0B'; // Amber for partially paid invoices
-            borderLeft = '3px solid #D97706';
+            borderLeft = '4px solid #D97706';
           } else {
             backgroundColor = '#0EA5E9'; // Sky blue for pending invoices
-            borderLeft = '3px solid #0284C7';
+            borderLeft = '4px solid #0284C7';
           }
           break;
         case 'inventory':
