@@ -204,6 +204,11 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
               form.setValue('referenceNumber', invoiceReference);
             }
           }
+          
+          // Set company name from invoice
+          if (invoice.company) {
+            form.setValue('company', invoice.company);
+          }
         }
         
         // If supplier not set, set it from the invoice

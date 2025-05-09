@@ -105,6 +105,7 @@ export const PaymentList = () => {
       payment.reference?.toLowerCase().includes(query) ||
       payment.notes?.toLowerCase().includes(query) ||
       payment.paymentMethod?.toLowerCase().includes(query) ||
+      payment.company?.toLowerCase().includes(query) ||
       (supplier && supplier.name.toLowerCase().includes(query)) ||
       (invoice && invoice.invoiceNumber.toLowerCase().includes(query));
     
