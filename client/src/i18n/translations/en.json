@@ -1647,6 +1647,7 @@
       "isRecurring": "Recurring Invoice",
       "recurringCycle": "Recurring Cycle (Days)",
       "recurringCyclePlaceholder": "Enter days between recurring invoices",
+      "referenceSection": "References & Identifiers",
       "create": "Create Invoice",
       "edit": "Edit Invoice",
       "update": "Update Invoice",

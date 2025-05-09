@@ -820,22 +820,21 @@ router.get('/summary', async (req, res) => {
       
       dashboardSummary.paymentCompletion = totalAmount > 0 ? (totalPaidAmount / totalAmount) * 100 : 0;
       
-      // Get upcoming payments
+      // Get upcoming payments - include payments due in the next 60 days to populate the calendar
       const upcomingPaymentsResult = await client.query(`
         SELECT 
           i.id,
           i.invoice_number as "invoiceNumber",
           s.name as "supplierName",
-          i.amount - i.paid_amount as "remainingAmount",
+          i.amount - COALESCE(i.paid_amount, 0) as "remainingAmount",
           i.due_date as "dueDate"
         FROM 
           supplier_invoices i
         JOIN 
           suppliers s ON i.supplier_id = s.id
         WHERE 
-          i.status IN ('pending', 'partially_paid') AND
-          i.due_date > CURRENT_DATE AND
-          i.due_date <= CURRENT_DATE + interval '30 days'
+          i.status IN ('pending', 'partially_paid', 'overdue') AND
+          i.due_date <= CURRENT_DATE + interval '60 days'
         ORDER BY 
           i.due_date ASC
       `);
