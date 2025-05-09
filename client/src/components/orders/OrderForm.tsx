@@ -757,16 +757,9 @@ const OrderForm = ({
                             <Combobox
                               options={(customers || []).map(customer => ({
                                 value: `${customer.id}:${customer.name}`, // Use ID+name as the value
-                                label: customer.name,
-                                displayValue: customer.name // Make sure the display value is just the name
+                                label: customer.name
                               }))}
                               value={field.value || ""}
-                              displayValue={
-                                // Extract just the name part to display in the input field
-                                field.value && field.value.toString().includes(':') 
-                                  ? field.value.toString().split(':')[1]
-                                  : field.value
-                              }
                               onChange={(value) => {
                                 console.log('Customer selected via Combobox:', value);
                                 

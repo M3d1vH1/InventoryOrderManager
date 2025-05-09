@@ -180,10 +180,12 @@ export function Combobox({
         disabled={disabled}
         onClick={() => setOpen(!open)}
       >
-        {value && selectedOption
-          ? selectedOption.label
-          : placeholder}
-        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        <span className="truncate mr-2 text-sm">
+          {value && selectedOption
+            ? selectedOption.label
+            : placeholder}
+        </span>
+        <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
       </Button>
       
       {open && (
