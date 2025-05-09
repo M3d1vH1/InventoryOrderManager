@@ -190,9 +190,15 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
           form.setValue('amount', unpaidAmount.toString());
           
           // Automatically set reference from invoice if available
-          const invoiceReference = invoice.reference || invoice.reference_number;
-          if (invoiceReference) {
-            form.setValue('reference', invoiceReference);
+          const invoiceRfNumber = invoice.rf_number || invoice.rfNumber;
+          if (invoiceRfNumber) {
+            form.setValue('reference', invoiceRfNumber);
+          } else {
+            // Fallback to old reference field format
+            const invoiceReference = invoice.reference || invoice.reference_number;
+            if (invoiceReference) {
+              form.setValue('reference', invoiceReference);
+            }
           }
         }
         
@@ -512,14 +518,14 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                           {formatCurrency(getUnpaidAmount(selectedInvoice.id))}
                         </div>
 
-                        {(selectedInvoice.reference || selectedInvoice.reference_number) && (
+                        {(selectedInvoice.rf_number || selectedInvoice.rfNumber || selectedInvoice.reference || selectedInvoice.reference_number) && (
                           <>
                             <div className="flex items-center gap-1">
                               <FileText className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">{t('supplierPayments.invoice.reference')}:</span>
+                              <span className="font-medium">{t('supplierPayments.invoice.rfNumber')}:</span>
                             </div>
                             <div className="text-right font-mono text-xs">
-                              {selectedInvoice.reference || selectedInvoice.reference_number}
+                              {selectedInvoice.rf_number || selectedInvoice.rfNumber || selectedInvoice.reference || selectedInvoice.reference_number}
                             </div>
                           </>
                         )}
