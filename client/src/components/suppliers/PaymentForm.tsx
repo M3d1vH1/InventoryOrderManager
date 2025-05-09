@@ -238,6 +238,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
         paymentDate: payment.paymentDate ? new Date(payment.paymentDate) : new Date(),
         amount: payment.amount?.toString() || '',
         paymentMethod: payment.paymentMethod || '',
+        bankAccount: payment.bankAccount || '',
         referenceNumber: payment.referenceNumber || payment.reference || '',
         notes: payment.notes || '',
       });
@@ -253,6 +254,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
         paymentDate: new Date(),
         amount: '',
         paymentMethod: '',
+        bankAccount: '',
         referenceNumber: '',
         notes: '',
       });
@@ -631,6 +633,24 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                             ))}
                           </SelectContent>
                         </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Bank Account field - optional */}
+                  <FormField
+                    control={form.control}
+                    name="bankAccount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('supplierPayments.payment.bankAccount', 'Bank Account')}</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder={t('supplierPayments.payment.bankAccountPlaceholder', 'Enter bank account')} 
+                            {...field} 
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
