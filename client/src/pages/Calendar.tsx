@@ -154,67 +154,59 @@ const CalendarPage: React.FC = () => {
     queryKey: ['/api/supplier-payments/invoices'],
     retry: 3, // Increase retry attempts for better resilience
     staleTime: 1000 * 60 * 5, // 5 minutes,
-    // Only run query when user is authenticated for invoices specifically
-    enabled: !!user && !!user.id,
-    // Add the direct apiRequest function for special auth handling
-    queryFn: () => apiRequest('/api/supplier-payments/invoices')
+    // IMPORTANT: This endpoint is now public, so we can enable it regardless of auth status
+    enabled: true,
+    // Use direct fetch instead of apiRequest since this is now a public endpoint
+    queryFn: async () => {
+      const response = await fetch('/api/supplier-payments/invoices');
+      if (!response.ok) {
+        throw new Error(`Invoice API responded with status: ${response.status}`);
+      }
+      return response.json();
+    }
   });
   
   // Direct fetch for invoices with backup SQL approach - this ensures we get invoice data one way or another
   const [rawInvoiceData, setRawInvoiceData] = useState<any[]>([]);
   
   useEffect(() => {
-    // Only run this if we have a valid user session (authenticated)
-    if (user && user.id) {
-      console.log('Starting direct invoice fetch for calendar...');
-      
-      // Try direct SQL endpoint first (more reliable, bypasses some middleware)
-      fetch('/api/supplier-payments/invoices', {
-        credentials: 'include', // Important for session cookies
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
+    // We always fetch invoices now since it's a public endpoint
+    console.log('Starting direct invoice fetch for calendar...');
+    
+    // Use simple fetch without credentials since this is now a public endpoint
+    fetch('/api/supplier-payments/invoices', {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`API responded with status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('Direct fetch invoices result:', data);
+        // Store the raw invoice data for processing
+        if (Array.isArray(data)) {
+          setRawInvoiceData(data);
+          console.log(`Successfully loaded ${data.length} invoices for calendar`);
+        } else {
+          console.warn('Invoice data is not an array:', data);
+          setRawInvoiceData([]);
         }
       })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`API responded with status: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then(data => {
-          console.log('Direct fetch invoices result:', data);
-          // Store the raw invoice data for processing
-          if (Array.isArray(data)) {
-            setRawInvoiceData(data);
-            console.log(`Successfully loaded ${data.length} invoices for calendar`);
-          } else {
-            console.warn('Invoice data is not an array:', data);
-            setRawInvoiceData([]);
-          }
-        })
-        .catch(error => {
-          console.error('Direct fetch invoice error, falling back to apiRequest:', error);
-          
-          // Fallback to apiRequest if direct fetch fails
-          apiRequest('/api/supplier-payments/invoices')
-            .then(apiData => {
-              console.log('Fallback API request invoices result:', apiData);
-              setRawInvoiceData(Array.isArray(apiData) ? apiData : []);
-            })
-            .catch(apiError => {
-              console.error('Both direct fetch and apiRequest failed for invoices:', apiError);
-              toast({
-                title: t('common.error'),
-                description: t('calendar.errorLoadingInvoices'),
-                variant: 'destructive',
-              });
-            });
+      .catch(error => {
+        console.error('Direct fetch invoice error:', error);
+        // Show toast for user feedback
+        toast({
+          title: t('common.error'),
+          description: t('calendar.errorLoadingInvoices'),
+          variant: 'destructive',
         });
-    } else {
-      console.log('Skipping manual invoice fetch - user not authenticated yet');
-    }
-  }, [user, toast, t]);
+      });
+  }, [toast, t]);
   
   // Log the supplier invoices when they change
   useEffect(() => {
@@ -1578,7 +1570,7 @@ const CalendarPage: React.FC = () => {
                     </div>
                   )}
                   
-                  {selectedEvent.paidAmount > 0 && (
+                  {(typeof selectedEvent.paidAmount === 'number' || typeof selectedEvent.paidAmount === 'string') && Number(selectedEvent.paidAmount) > 0 && (
                     <div className="flex items-start">
                       <DollarSign className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
                       <div>
@@ -1587,7 +1579,7 @@ const CalendarPage: React.FC = () => {
                           {new Intl.NumberFormat(i18n.language, { 
                             style: 'currency', 
                             currency: 'EUR' 
-                          }).format(selectedEvent.paidAmount)}
+                          }).format(Number(selectedEvent.paidAmount))}
                         </p>
                       </div>
                     </div>
