@@ -183,6 +183,7 @@
     "reorderPoint": "Σημείο Αναπαραγγελίας",
     "location": "Τοποθεσία",
     "unitsPerBox": "Μονάδες ανά Κιβώτιο",
+    "unitsPerBox_count": "{{count}} μονάδες ανά κιβώτιο",
     "boxCount": "Αριθμός Κιβωτίων",
     "unitCount": "Αριθμός Μονάδων",
     "tags": "Ετικέτες",

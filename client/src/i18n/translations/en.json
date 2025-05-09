@@ -434,6 +434,7 @@
     "storageLocation": "Storage Location",
     "locationDescription": "Shelf or bin location for faster picking",
     "unitsPerBox": "Units Per Box",
+    "unitsPerBox_count": "{{count}} units per box",
     "boxCount": "Box Count",
     "scanBarcode": "Scan barcode or generate from SKU",
     "actions": "Actions",

@@ -1221,7 +1221,7 @@ const OrderForm = ({
                               {item.product?.unitsPerBox && (
                                 <div className="text-sm text-slate-500">
                                   <Package className="h-3 w-3 inline-block mr-1" />
-                                  {t('products.unitsPerBox', { count: item.product.unitsPerBox })}
+                                  {t('products.unitsPerBox_count', { count: item.product.unitsPerBox })}
                                 </div>
                               )}
                             </td>
