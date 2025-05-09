@@ -424,6 +424,8 @@ const CalendarPage: React.FC = () => {
       return events;
     }
     
+    console.log(`Starting to process ${invoices.length} invoices for calendar events`);
+    
     for (const invoice of invoices) {
       try {
         if (!invoice || !invoice.id) {
@@ -431,7 +433,15 @@ const CalendarPage: React.FC = () => {
           continue;
         }
         
-        // Handle both snake_case and camelCase field names
+        // Handle both snake_case and camelCase field names - more detailed logging
+        console.log(`Processing invoice ${invoice.id}:`, {
+          id: invoice.id,
+          dueDate: invoice.dueDate || invoice.due_date,
+          invoiceDate: invoice.invoiceDate || invoice.invoice_date,
+          status: invoice.status,
+          invoiceNumber: invoice.invoiceNumber || invoice.invoice_number
+        });
+        
         const dueDate = invoice.dueDate || invoice.due_date || invoice.invoiceDate || invoice.invoice_date;
         if (!dueDate) {
           console.warn('Invoice missing due date:', invoice);
@@ -439,6 +449,12 @@ const CalendarPage: React.FC = () => {
         }
         
         const dueDateObj = new Date(dueDate);
+        console.log(`Invoice ${invoice.id} due date:`, {
+          rawDueDate: dueDate,
+          parsedDate: dueDateObj.toISOString(),
+          isValid: !isNaN(dueDateObj.getTime())
+        });
+        
         if (isNaN(dueDateObj.getTime())) {
           console.warn('Invalid invoice due date:', dueDate);
           continue;
@@ -450,6 +466,14 @@ const CalendarPage: React.FC = () => {
         const status = invoice.status || 'pending';
         const amount = parseFloat(invoice.amount || '0');
         const paidAmount = parseFloat(invoice.paidAmount || invoice.paid_amount || '0');
+        
+        console.log(`Invoice ${invoice.id} processed fields:`, {
+          invoiceNumber, 
+          supplierName, 
+          status, 
+          amount, 
+          paidAmount
+        });
         
         // Determine invoice status flags
         const isPaid = status === 'paid';
