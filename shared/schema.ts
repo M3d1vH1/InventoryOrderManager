@@ -1268,6 +1268,7 @@ export const supplierInvoices = pgTable("supplier_invoices", {
   attachment: text("attachment"),
   attachmentUrl: text("attachment_url"),  // Added to match database column
   invoiceDate: date("invoice_date"), // Optional column in the database
+  companyId: text("company_id"), // Which company the invoice is for
   createdAt: timestamp("created_at").notNull().defaultNow()
 });
 
@@ -1335,6 +1336,7 @@ export const insertSupplierInvoiceSchema = createInsertSchema(supplierInvoices)
     attachmentPath: z.string().optional(),
     attachment: z.string().optional(),
     attachmentUrl: z.string().optional(),
+    companyId: z.string().optional(), // Which company the invoice is for
   });
 
 export type InsertSupplierInvoice = z.infer<typeof insertSupplierInvoiceSchema>;
@@ -1364,6 +1366,7 @@ export const supplierPayments = pgTable("supplier_payments", {
   callbackDate: date("callback_date"),
   callbackNotes: text("callback_notes"),
   callbackCompleted: boolean("callback_completed").default(false),
+  bankAccount: text("bank_account"), // Which bank account the payment was made from
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -1411,6 +1414,7 @@ export const insertSupplierPaymentSchema = createInsertSchema(supplierPayments)
     ]).optional(),
     callbackNotes: z.string().optional(),
     callbackCompleted: z.boolean().default(false),
+    bankAccount: z.string().optional(), // Which bank account the payment was made from
   });
 
 export type InsertSupplierPayment = z.infer<typeof insertSupplierPaymentSchema>;
