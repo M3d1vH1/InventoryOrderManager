@@ -160,14 +160,20 @@ const CalendarPage: React.FC = () => {
     queryFn: () => apiRequest('/api/supplier-payments/invoices')
   });
   
-  // Manual fetch for debugging purposes
+  // Direct fetch for invoices - this approach works in the test page
+  const [rawInvoiceData, setRawInvoiceData] = useState<any[]>([]);
+  
   useEffect(() => {
     // Only run this if we have a valid user session (authenticated)
     if (user && user.id) {
+      console.log('Starting direct invoice fetch for calendar...');
       // Use apiRequest helper that includes credentials
       apiRequest('/api/supplier-payments/invoices')
         .then(data => {
           console.log('API request invoices result:', data);
+          // Store the raw invoice data for processing
+          setRawInvoiceData(Array.isArray(data) ? data : []);
+          
           // If no invoices are found but API works, we'll log that information
           if (Array.isArray(data) && data.length === 0) {
             console.log('No invoices found in the database');
@@ -175,11 +181,16 @@ const CalendarPage: React.FC = () => {
         })
         .catch(error => {
           console.error('API request invoice error:', error);
+          toast({
+            title: t('common.error'),
+            description: t('calendar.errorLoadingInvoices'),
+            variant: 'destructive',
+          });
         });
     } else {
       console.log('Skipping manual invoice fetch - user not authenticated yet');
     }
-  }, [user]);
+  }, [user, toast, t]);
   
   // Log the supplier invoices when they change
   useEffect(() => {
@@ -694,14 +705,14 @@ const CalendarPage: React.FC = () => {
       console.log(`Created ${callEvents.length} call events`);
       allEvents = [...allEvents, ...callEvents];
       
-      // Process payments
-      const paymentEvents = createPaymentEvents(payments, invoices);
+      // Process payments - use rawInvoiceData instead of invoices
+      const paymentEvents = createPaymentEvents(payments, rawInvoiceData);
       console.log(`Created ${paymentEvents.length} payment events`);
       allEvents = [...allEvents, ...paymentEvents];
       
-      // Process invoices
-      const invoiceEvents = createInvoiceEvents(invoices);
-      console.log(`Created ${invoiceEvents.length} invoice events`);
+      // Process invoices - IMPORTANT: Use rawInvoiceData here instead of invoices from useQuery
+      const invoiceEvents = createInvoiceEvents(rawInvoiceData);
+      console.log(`Created ${invoiceEvents.length} invoice events from rawInvoiceData`);
       allEvents = [...allEvents, ...invoiceEvents];
       
       // Process inventory events
@@ -720,7 +731,7 @@ const CalendarPage: React.FC = () => {
     }
     
     return allEvents;
-  }, [orders, callLogs, payments, invoices, inventoryEvents, productionBatches, t]);
+  }, [orders, callLogs, payments, rawInvoiceData, inventoryEvents, productionBatches, t]);
 
   // Filter events based on the selected tab
   const filteredEvents = useMemo(() => {
