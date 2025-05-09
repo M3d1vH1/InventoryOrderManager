@@ -194,7 +194,8 @@
       "partialFulfillment": "Partial fulfillment",
       "partialFulfillmentTitle": "Partial Fulfillment Available",
       "partialFulfillmentDescription": "When ordering more than available stock, the system will ship what's available and create backorder items for the rest.",
-      "confirmUpdate": "Are you sure you want to update this order? Changes cannot be undone."
+      "confirmUpdate": "Are you sure you want to update this order? Changes cannot be undone.",
+      "createNewCustomer": "Create New Customer"
     },
     "details": {
       "customer": "Customer",
