@@ -50,6 +50,7 @@ interface Product {
   sku: string;
   currentStock: number;
   minStockLevel: number;
+  unitsPerBox?: number;
 }
 
 interface OrderItemInput {
@@ -757,6 +758,7 @@ const OrderForm = ({
                             <Combobox
                               options={(customers || []).map(customer => ({
                                 value: customer.name, // Use just the name as the value
+                                label: customer.name,
                                 // Store the ID in a hidden attribute for internal use only
                                 id: customer.id
                               }))}
@@ -1216,6 +1218,12 @@ const OrderForm = ({
                             <td className="py-4 px-4">
                               <div className="text-base font-medium">{item.product?.name}</div>
                               <div className="text-sm text-slate-500">{t('orders.form.sku')}: {item.product?.sku}</div>
+                              {item.product?.unitsPerBox && (
+                                <div className="text-sm text-slate-500">
+                                  <Package className="h-3 w-3 inline-block mr-1" />
+                                  {t('products.unitsPerBox', { count: item.product.unitsPerBox })}
+                                </div>
+                              )}
                             </td>
                             <td className="py-4 px-4">
                               <Input
