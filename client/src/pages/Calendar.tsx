@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { CalendarIcon, ChevronLeft, ChevronRight, Clock, DollarSign, Factory, FileText, Package, Phone, Tag, User } from 'lucide-react';
+import { AlertCircle, CalendarIcon, ChevronLeft, ChevronRight, Clock, DollarSign, Factory, FileText, Package, Phone, Tag, User } from 'lucide-react';
 
 // Set up localizer for the calendar
 const localizer = momentLocalizer(moment);
@@ -1014,7 +1014,12 @@ const CalendarPage: React.FC = () => {
                       </>
                     )}
                     {(filterView === 'all' || filterView === 'invoices') && (
-                      <Badge className="bg-[#0EA5E9]">{t('calendar.invoice')}</Badge>
+                      <>
+                        <Badge className="bg-[#0EA5E9]">{t('calendar.pendingInvoice')}</Badge>
+                        <Badge className="bg-[#F59E0B]">{t('calendar.partiallyPaidInvoice')}</Badge>
+                        <Badge className="bg-[#10B981]">{t('calendar.paidInvoice')}</Badge>
+                        <Badge className="bg-[#EF4444]">{t('calendar.overdueInvoice')}</Badge>
+                      </>
                     )}
                     {(filterView === 'all' || filterView === 'inventory') && (
                       <Badge className="bg-[#06B6D4]">{t('calendar.inventory')}</Badge>
@@ -1082,7 +1087,14 @@ const CalendarPage: React.FC = () => {
                           {event.type === 'shipped' && <Package className="h-4 w-4 text-[#10B981]" />}
                           {event.type === 'estimated' && <Package className="h-4 w-4 text-[#8B5CF6]" />}
                           {event.type === 'call' && <Phone className="h-4 w-4 text-[#F59E0B]" />}
-                          {event.type === 'payment' && event.invoiceNumber && event.supplierName && <FileText className="h-4 w-4 text-[#0EA5E9]" />}
+                          {event.type === 'payment' && event.invoiceNumber && event.supplierName && (
+                            <>
+                              {event.invoiceStatus === 'overdue' && <FileText className="h-4 w-4 text-[#EF4444]" />}
+                              {event.invoiceStatus === 'paid' && <FileText className="h-4 w-4 text-[#10B981]" />}
+                              {event.invoiceStatus === 'partially_paid' && <FileText className="h-4 w-4 text-[#F59E0B]" />}
+                              {(!event.invoiceStatus || event.invoiceStatus === 'pending') && <FileText className="h-4 w-4 text-[#0EA5E9]" />}
+                            </>
+                          )}
                           {event.type === 'payment' && !(event.invoiceNumber && event.supplierName) && <DollarSign className="h-4 w-4 text-[#14B8A6]" />}
                           {event.type === 'inventory' && <Tag className="h-4 w-4 text-[#06B6D4]" />}
                           {event.type === 'production' && <Factory className="h-4 w-4 text-[#2563EB]" />}
@@ -1229,13 +1241,53 @@ const CalendarPage: React.FC = () => {
                   )}
                   
                   {selectedEvent.invoiceNumber && (
-                    <div className="flex items-start">
-                      <FileText className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium">{t('supplierPayments.payment.invoice')}</p>
-                        <p className="text-sm text-muted-foreground">{selectedEvent.invoiceNumber}</p>
+                    <>
+                      <div className="flex items-start">
+                        <FileText className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="font-medium">{t('supplierPayments.payment.invoice')}</p>
+                          <p className="text-sm text-muted-foreground">{selectedEvent.invoiceNumber}</p>
+                        </div>
                       </div>
-                    </div>
+                      
+                      {selectedEvent.invoiceStatus && (
+                        <div className="flex items-start">
+                          <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="font-medium">{t('common.status')}</p>
+                            <p className="text-sm">
+                              {selectedEvent.invoiceStatus === 'overdue' && (
+                                <span className="text-red-500 font-medium">{t('calendar.invoiceOverdue')}</span>
+                              )}
+                              {selectedEvent.invoiceStatus === 'paid' && (
+                                <span className="text-green-500 font-medium">{t('calendar.invoicePaid')}</span>
+                              )}
+                              {selectedEvent.invoiceStatus === 'partially_paid' && (
+                                <span className="text-amber-500 font-medium">{t('calendar.invoicePartiallyPaid')}</span>
+                              )}
+                              {(selectedEvent.invoiceStatus === 'pending' || !selectedEvent.invoiceStatus) && (
+                                <span className="text-blue-500 font-medium">{t('calendar.invoiceDue')}</span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {selectedEvent.invoiceAmount && (
+                        <div className="flex items-start">
+                          <DollarSign className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="font-medium">{t('common.amount')}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {new Intl.NumberFormat(i18n.language, { 
+                                style: 'currency', 
+                                currency: 'EUR' 
+                              }).format(selectedEvent.invoiceAmount)}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                   
                   {selectedEvent.callbackRequired && (
