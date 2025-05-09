@@ -78,6 +78,10 @@ const FullCalendar = ({ title, icon, events, color, onClose }) => {
           const paymentId = event.resource.id;
           console.log(`Navigating to payment: /supplier-payments?id=${paymentId}`);
           navigate(`/supplier-payments?id=${paymentId}`);
+        } else if (event.id.startsWith('invoice-')) {
+          const invoiceId = event.resource.id;
+          console.log(`Navigating to invoice: /supplier-payments?invoiceId=${invoiceId}`);
+          navigate(`/supplier-payments?invoiceId=${invoiceId}`);
         } else if (event.id.startsWith('inventory-')) {
           const productId = event.resource.productId || '';
           console.log(`Navigating to inventory: /inventory?product=${productId}`);
@@ -366,6 +370,13 @@ const SimpleCalendar = () => {
     staleTime: 1000 * 60 * 5,
   });
   
+  // Fetch invoice data for payment quadrant
+  const { data: invoices, isLoading: invoicesLoading, isError: invoicesError } = useQuery({
+    queryKey: ['/api/supplier-payments/invoices'],
+    retry: 1,
+    staleTime: 1000 * 60 * 5,
+  });
+  
   const { data: inventory, isLoading: inventoryLoading, isError: inventoryError } = useQuery({
     queryKey: ['/api/inventory/events'],
     retry: 1, 
@@ -512,10 +523,11 @@ const SimpleCalendar = () => {
     return events;
   }, [callLogs, t]);
   
-  // Payment events
+  // Payment and invoice events for the payments quadrant
   const paymentEvents = React.useMemo(() => {
     const events = [];
     try {
+      // Add payment events
       if (payments && Array.isArray(payments)) {
         for (const payment of payments) {
           if (!payment || !payment.paymentDate) continue;
@@ -529,15 +541,64 @@ const SimpleCalendar = () => {
             start,
             end: start,
             allDay: false,
-            resource: payment
+            resource: payment,
+            backgroundColor: '#10B981' // Green for payments
+          });
+        }
+      }
+      
+      // Add invoice events
+      if (invoices && Array.isArray(invoices)) {
+        console.log(`Processing ${invoices.length} invoices for payments quadrant`);
+        
+        for (const invoice of invoices) {
+          if (!invoice || !invoice.dueDate) continue;
+          
+          const dueDate = new Date(invoice.dueDate);
+          if (isNaN(dueDate.getTime())) continue;
+          
+          // Determine color based on invoice status
+          let backgroundColor = '#0EA5E9'; // Default blue for pending
+          
+          if (invoice.status === 'overdue') {
+            backgroundColor = '#EF4444'; // Red for overdue
+          } else if (invoice.status === 'paid') {
+            backgroundColor = '#10B981'; // Green for paid
+          } else if (invoice.status === 'partially_paid') {
+            backgroundColor = '#F59E0B'; // Amber for partially paid
+          }
+          
+          // Create a descriptive title including status
+          let statusText = '';
+          if (invoice.status === 'overdue') {
+            statusText = t('calendar.overdueInvoice');
+          } else if (invoice.status === 'paid') {
+            statusText = t('calendar.paidInvoice');
+          } else if (invoice.status === 'partially_paid') {
+            statusText = t('calendar.partiallyPaidInvoice');
+          } else {
+            statusText = t('calendar.pendingInvoice');
+          }
+          
+          const title = `${invoice.invoiceNumber} - ${statusText} (${invoice.amount || 0}€)`;
+          
+          events.push({
+            id: `invoice-${invoice.id}`,
+            title: title,
+            start: dueDate,
+            end: dueDate,
+            allDay: false,
+            resource: invoice,
+            backgroundColor,
+            type: 'invoice'
           });
         }
       }
     } catch (error) {
-      console.error('Error preparing payment events:', error);
+      console.error('Error preparing payment and invoice events:', error);
     }
     return events;
-  }, [payments]);
+  }, [payments, invoices, t]);
   
   // Inventory events
   const inventoryEvents = React.useMemo(() => {
@@ -660,7 +721,7 @@ const SimpleCalendar = () => {
   };
   
   // Loading state
-  if (ordersLoading || callsLoading || paymentsLoading || inventoryLoading || productionLoading) {
+  if (ordersLoading || callsLoading || paymentsLoading || invoicesLoading || inventoryLoading || productionLoading) {
     return (
       <div className="space-y-4">
         <PageHeader 
@@ -682,8 +743,8 @@ const SimpleCalendar = () => {
   }
 
   // Error state - show partial data if available, but only if we have actual data
-  const hasAnyError = ordersError || callsError || paymentsError || inventoryError || productionError;
-  const hasAnyData = Boolean(orders?.length || callLogs?.length || payments?.length || inventory?.length || production?.length);
+  const hasAnyError = ordersError || callsError || paymentsError || invoicesError || inventoryError || productionError;
+  const hasAnyData = Boolean(orders?.length || callLogs?.length || payments?.length || invoices?.length || inventory?.length || production?.length);
 
   return (
     <div className="space-y-4">
