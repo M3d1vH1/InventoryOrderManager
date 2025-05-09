@@ -41,7 +41,7 @@ type CalendarEvent = {
   title: string;
   start: Date;
   end: Date;
-  type: 'created' | 'shipped' | 'estimated' | 'call' | 'payment' | 'inventory' | 'production';
+  type: 'created' | 'shipped' | 'estimated' | 'call' | 'payment' | 'inventory' | 'production' | 'invoice';
   orderNumber?: string;
   customerName: string;
   callDetails?: string;
@@ -53,6 +53,13 @@ type CalendarEvent = {
   paymentAmount?: number;
   supplierName?: string;
   invoiceNumber?: string;
+  invoiceId?: number;
+  invoiceAmount?: number;
+  paidAmount?: number;
+  invoiceStatus?: string;
+  isOverdue?: boolean;
+  isPartiallyPaid?: boolean;
+  isPaid?: boolean;
   callbackRequired?: boolean;
   callbackDate?: Date;
   callbackNotes?: string;
@@ -374,7 +381,7 @@ const CalendarPage: React.FC = () => {
     
     return events;
   };
-
+  
   // Process invoice events
   const createInvoiceEvents = (invoices: any[] | undefined): CalendarEvent[] => {
     const events: CalendarEvent[] = [];
@@ -392,49 +399,58 @@ const CalendarPage: React.FC = () => {
         
         // Handle both snake_case and camelCase field names
         const dueDate = invoice.dueDate || invoice.due_date || invoice.invoiceDate || invoice.invoice_date;
-        const status = invoice.status || 'pending';
-        let supplierName = invoice.supplierName || invoice.supplier_name || t('common.unknown');
-        const invoiceNumber = invoice.invoiceNumber || invoice.invoice_number || `#${invoice.id}`;
-        const amount = parseFloat(invoice.amount || '0');
-        
         if (!dueDate) {
-          console.warn('Invoice missing date:', invoice);
+          console.warn('Invoice missing due date:', invoice);
           continue;
         }
         
         const dueDateObj = new Date(dueDate);
         if (isNaN(dueDateObj.getTime())) {
-          console.warn('Invalid invoice date:', dueDate);
+          console.warn('Invalid invoice due date:', dueDate);
           continue;
         }
         
-        // Create different events based on invoice status
+        // Get invoice details with appropriate field name handling
+        const invoiceNumber = invoice.invoiceNumber || invoice.invoice_number || '';
+        const supplierName = invoice.supplierName || invoice.supplier_name || t('common.unknown');
+        const status = invoice.status || 'pending';
+        const amount = parseFloat(invoice.amount || '0');
+        const paidAmount = parseFloat(invoice.paidAmount || invoice.paid_amount || '0');
+        
+        // Determine invoice status flags
         const isPaid = status === 'paid';
         const isPartiallyPaid = status === 'partially_paid';
         const isOverdue = status === 'overdue';
         
+        // Create appropriate title based on status
         let title = '';
-        
         if (isPaid) {
-          title = `${t('calendar.invoicePaid')}: ${invoiceNumber}`;
-        } else if (isOverdue) {
-          title = `${t('calendar.invoiceOverdue')}: ${invoiceNumber}`;
+          title = `${t('calendar.invoicePaid')}: ${supplierName}`;
         } else if (isPartiallyPaid) {
-          title = `${t('calendar.invoicePartiallyPaid')}: ${invoiceNumber}`;
+          title = `${t('calendar.invoicePartiallyPaid')}: ${supplierName}`;
+        } else if (isOverdue) {
+          title = `${t('calendar.invoiceOverdue')}: ${supplierName}`;
         } else {
-          title = `${t('calendar.invoiceDue')}: ${invoiceNumber}`;
+          title = `${t('calendar.invoiceDue')}: ${supplierName}`;
         }
         
+        // Add invoice event
         events.push({
           id: `invoice-${invoice.id}`,
           title: title,
           start: dueDateObj,
           end: dueDateObj,
-          type: 'payment', // Always use payment type to ensure we can identify invoice events
-          customerName: supplierName, // Required field in CalendarEvent
+          type: 'invoice',
+          customerName: supplierName, // Required field in CalendarEvent type
           supplierName: supplierName,
+          invoiceId: invoice.id,
           invoiceNumber: invoiceNumber,
-          paymentAmount: amount
+          invoiceAmount: amount,
+          paidAmount: paidAmount,
+          invoiceStatus: status,
+          isPaid: isPaid,
+          isPartiallyPaid: isPartiallyPaid,
+          isOverdue: isOverdue
         });
       } catch (err) {
         console.error('Error processing invoice for calendar:', err, invoice?.id);
@@ -443,6 +459,8 @@ const CalendarPage: React.FC = () => {
     
     return events;
   };
+
+
 
   // Process inventory events
   const createInventoryEvents = (inventoryEvents: any[] | undefined): CalendarEvent[] => {
