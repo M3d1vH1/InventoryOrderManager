@@ -33,15 +33,28 @@ interface PaymentSummary {
     paymentDate: string;
     paymentMethod: string;
   }>;
+  invoices?: Array<{
+    id: number;
+    invoiceNumber: string;
+    supplierName: string;
+    amount: number;
+    paidAmount: number;
+    dueDate: string;
+    status: string;
+  }>;
 }
 
 interface PaymentCalendarEvent {
   date: Date;
-  type: 'payment' | 'due';
+  type: 'payment' | 'due' | 'invoice';
   amount: number;
   title: string;
   supplierName: string;
   invoiceNumber?: string;
+  status?: string;
+  isPaid?: boolean;
+  isPartiallyPaid?: boolean;
+  isOverdue?: boolean;
 }
 
 interface PaymentDashboardProps {
