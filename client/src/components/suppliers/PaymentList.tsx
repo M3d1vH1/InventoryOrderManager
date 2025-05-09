@@ -252,6 +252,7 @@ export const PaymentList = () => {
                     <TableHead>{t('supplierPayments.payment.date')}</TableHead>
                     <TableHead>{t('supplierPayments.payment.supplier')}</TableHead>
                     <TableHead>{t('supplierPayments.payment.invoice')}</TableHead>
+                    <TableHead>{t('supplierPayments.payment.company')}</TableHead>
                     <TableHead>{t('supplierPayments.payment.amount')}</TableHead>
                     <TableHead>{t('supplierPayments.payment.paymentMethod')}</TableHead>
                     <TableHead>{t('supplierPayments.payment.reference')}</TableHead>
@@ -261,7 +262,7 @@ export const PaymentList = () => {
                 <TableBody>
                   {filteredPayments.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-4">
+                      <TableCell colSpan={8} className="text-center py-4">
                         {t('supplierPayments.payment.noResults')}
                       </TableCell>
                     </TableRow>
@@ -271,6 +272,7 @@ export const PaymentList = () => {
                         <TableCell>{formatDate(payment.paymentDate)}</TableCell>
                         <TableCell>{getSupplierForPayment(payment)}</TableCell>
                         <TableCell>{getInvoiceNumber(payment.invoiceId)}</TableCell>
+                        <TableCell>{payment.company || '-'}</TableCell>
                         <TableCell>{formatCurrency(payment.amount)}</TableCell>
                         <TableCell>
                           {getPaymentMethodBadge(payment.paymentMethod)}
