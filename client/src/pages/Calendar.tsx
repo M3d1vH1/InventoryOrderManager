@@ -149,10 +149,10 @@ const CalendarPage: React.FC = () => {
     queryFn: () => apiRequest('/api/supplier-payments/payments')
   });
   
-  // Fetch supplier invoices
+  // Fetch supplier invoices with enhanced handling
   const { data: invoices, isLoading: invoicesLoading, isError: invoicesError, refetch: refetchInvoices } = useQuery({
     queryKey: ['/api/supplier-payments/invoices'],
-    retry: 1,
+    retry: 3, // Increase retry attempts for better resilience
     staleTime: 1000 * 60 * 5, // 5 minutes,
     // Only run query when user is authenticated for invoices specifically
     enabled: !!user && !!user.id,
@@ -160,32 +160,56 @@ const CalendarPage: React.FC = () => {
     queryFn: () => apiRequest('/api/supplier-payments/invoices')
   });
   
-  // Direct fetch for invoices - this approach works in the test page
+  // Direct fetch for invoices with backup SQL approach - this ensures we get invoice data one way or another
   const [rawInvoiceData, setRawInvoiceData] = useState<any[]>([]);
   
   useEffect(() => {
     // Only run this if we have a valid user session (authenticated)
     if (user && user.id) {
       console.log('Starting direct invoice fetch for calendar...');
-      // Use apiRequest helper that includes credentials
-      apiRequest('/api/supplier-payments/invoices')
+      
+      // Try direct SQL endpoint first (more reliable, bypasses some middleware)
+      fetch('/api/supplier-payments/invoices', {
+        credentials: 'include', // Important for session cookies
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`API responded with status: ${response.status}`);
+          }
+          return response.json();
+        })
         .then(data => {
-          console.log('API request invoices result:', data);
+          console.log('Direct fetch invoices result:', data);
           // Store the raw invoice data for processing
-          setRawInvoiceData(Array.isArray(data) ? data : []);
-          
-          // If no invoices are found but API works, we'll log that information
-          if (Array.isArray(data) && data.length === 0) {
-            console.log('No invoices found in the database');
+          if (Array.isArray(data)) {
+            setRawInvoiceData(data);
+            console.log(`Successfully loaded ${data.length} invoices for calendar`);
+          } else {
+            console.warn('Invoice data is not an array:', data);
+            setRawInvoiceData([]);
           }
         })
         .catch(error => {
-          console.error('API request invoice error:', error);
-          toast({
-            title: t('common.error'),
-            description: t('calendar.errorLoadingInvoices'),
-            variant: 'destructive',
-          });
+          console.error('Direct fetch invoice error, falling back to apiRequest:', error);
+          
+          // Fallback to apiRequest if direct fetch fails
+          apiRequest('/api/supplier-payments/invoices')
+            .then(apiData => {
+              console.log('Fallback API request invoices result:', apiData);
+              setRawInvoiceData(Array.isArray(apiData) ? apiData : []);
+            })
+            .catch(apiError => {
+              console.error('Both direct fetch and apiRequest failed for invoices:', apiError);
+              toast({
+                title: t('common.error'),
+                description: t('calendar.errorLoadingInvoices'),
+                variant: 'destructive',
+              });
+            });
         });
     } else {
       console.log('Skipping manual invoice fetch - user not authenticated yet');
@@ -439,9 +463,9 @@ const CalendarPage: React.FC = () => {
     return events;
   };
   
-  // Process invoice events
+  // Process invoice events with enhanced error handling and data normalization
   const createInvoiceEvents = (invoices: any[] | undefined): CalendarEvent[] => {
-    console.log('Creating invoice events from data:', invoices);
+    console.log('Creating invoice events from data:', invoices?.length || 0, 'invoices available');
     const events: CalendarEvent[] = [];
     
     if (!invoices || !Array.isArray(invoices)) {
@@ -451,95 +475,130 @@ const CalendarPage: React.FC = () => {
     
     console.log(`Starting to process ${invoices.length} invoices for calendar events`);
     
+    // Define a function to normalize invoice fields consistently
+    const normalizeInvoice = (invoice: any) => {
+      if (!invoice) return null;
+      
+      return {
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber || invoice.invoice_number || '',
+        supplierName: invoice.supplierName || invoice.supplier_name || t('common.unknown'),
+        dueDate: invoice.dueDate || invoice.due_date,
+        invoiceDate: invoice.invoiceDate || invoice.invoice_date,
+        status: invoice.status || 'pending',
+        amount: parseFloat(invoice.amount || '0'),
+        paidAmount: parseFloat(invoice.paidAmount || invoice.paid_amount || '0')
+      };
+    };
+    
     for (const invoice of invoices) {
       try {
         if (!invoice || !invoice.id) {
-          console.warn('Invalid invoice data:', invoice);
+          console.warn('Invalid invoice data, skipping:', invoice);
           continue;
         }
         
-        // Handle both snake_case and camelCase field names - more detailed logging
-        console.log(`Processing invoice ${invoice.id}:`, {
-          id: invoice.id,
-          dueDate: invoice.dueDate || invoice.due_date,
-          invoiceDate: invoice.invoiceDate || invoice.invoice_date,
-          status: invoice.status,
-          invoiceNumber: invoice.invoiceNumber || invoice.invoice_number
+        // Normalize invoice data to handle different field formats
+        const normalizedInvoice = normalizeInvoice(invoice);
+        if (!normalizedInvoice) {
+          console.warn('Failed to normalize invoice data:', invoice);
+          continue;
+        }
+        
+        console.log(`Processing invoice ${normalizedInvoice.id}:`, {
+          invoiceNumber: normalizedInvoice.invoiceNumber,
+          dueDate: normalizedInvoice.dueDate,
+          status: normalizedInvoice.status
         });
         
-        const dueDate = invoice.dueDate || invoice.due_date || invoice.invoiceDate || invoice.invoice_date;
-        if (!dueDate) {
-          console.warn('Invoice missing due date:', invoice);
+        // Prioritize due date, fall back to invoice date if needed
+        const dueDateStr = normalizedInvoice.dueDate || normalizedInvoice.invoiceDate;
+        if (!dueDateStr) {
+          console.warn(`Invoice ${normalizedInvoice.id} missing due date, skipping`);
           continue;
         }
         
-        const dueDateObj = new Date(dueDate);
-        console.log(`Invoice ${invoice.id} due date:`, {
-          rawDueDate: dueDate,
+        let dueDateObj;
+        try {
+          dueDateObj = new Date(dueDateStr);
+          if (isNaN(dueDateObj.getTime())) {
+            // Try alternative date parsing formats
+            const dateParts = dueDateStr.split(/[\/\-\.]/);
+            if (dateParts.length === 3) {
+              // Try different date formats (MM/DD/YYYY, DD/MM/YYYY, YYYY/MM/DD)
+              const possibleFormats = [
+                new Date(`${dateParts[2]}-${dateParts[0]}-${dateParts[1]}`), // MM/DD/YYYY
+                new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`), // DD/MM/YYYY
+                new Date(`${dateParts[0]}-${dateParts[1]}-${dateParts[2]}`)  // YYYY/MM/DD
+              ];
+              
+              // Find the first valid date
+              dueDateObj = possibleFormats.find(d => !isNaN(d.getTime()));
+              
+              if (!dueDateObj) {
+                throw new Error(`Could not parse date string: ${dueDateStr}`);
+              }
+            } else {
+              throw new Error(`Invalid date format: ${dueDateStr}`);
+            }
+          }
+        } catch (dateError) {
+          console.warn(`Invalid invoice due date format for invoice ${normalizedInvoice.id}:`, dueDateStr, dateError);
+          continue;
+        }
+        
+        console.log(`Invoice ${normalizedInvoice.id} due date:`, {
+          rawDueDate: dueDateStr,
           parsedDate: dueDateObj.toISOString(),
           isValid: !isNaN(dueDateObj.getTime())
         });
         
-        if (isNaN(dueDateObj.getTime())) {
-          console.warn('Invalid invoice due date:', dueDate);
-          continue;
-        }
-        
-        // Get invoice details with appropriate field name handling
-        const invoiceNumber = invoice.invoiceNumber || invoice.invoice_number || '';
-        const supplierName = invoice.supplierName || invoice.supplier_name || t('common.unknown');
-        const status = invoice.status || 'pending';
-        const amount = parseFloat(invoice.amount || '0');
-        const paidAmount = parseFloat(invoice.paidAmount || invoice.paid_amount || '0');
-        
-        console.log(`Invoice ${invoice.id} processed fields:`, {
-          invoiceNumber, 
-          supplierName, 
-          status, 
-          amount, 
-          paidAmount
-        });
-        
-        // Determine invoice status flags
-        const isPaid = status === 'paid';
-        const isPartiallyPaid = status === 'partially_paid';
-        const isOverdue = status === 'overdue';
+        // Determine invoice status flags with safe defaults
+        const isPaid = normalizedInvoice.status === 'paid';
+        const isPartiallyPaid = normalizedInvoice.status === 'partially_paid';
+        const isOverdue = normalizedInvoice.status === 'overdue';
         
         // Create appropriate title based on status
         let title = '';
         if (isPaid) {
-          title = `${t('calendar.invoicePaid')}: ${supplierName}`;
+          title = `${t('calendar.invoicePaid')}: ${normalizedInvoice.supplierName}`;
         } else if (isPartiallyPaid) {
-          title = `${t('calendar.invoicePartiallyPaid')}: ${supplierName}`;
+          title = `${t('calendar.invoicePartiallyPaid')}: ${normalizedInvoice.supplierName}`;
         } else if (isOverdue) {
-          title = `${t('calendar.invoiceOverdue')}: ${supplierName}`;
+          title = `${t('calendar.invoiceOverdue')}: ${normalizedInvoice.supplierName}`;
         } else {
-          title = `${t('calendar.invoiceDue')}: ${supplierName}`;
+          title = `${t('calendar.invoiceDue')}: ${normalizedInvoice.supplierName}`;
         }
         
-        // Add invoice event
+        // Generate unique invoice ID with prefix to avoid collisions
+        const eventId = `invoice-${normalizedInvoice.id}`;
+        
+        // Add invoice event with all needed details
         events.push({
-          id: `invoice-${invoice.id}`,
+          id: eventId,
           title: title,
           start: dueDateObj,
           end: dueDateObj,
           type: 'invoice',
-          customerName: supplierName, // Required field in CalendarEvent type
-          supplierName: supplierName,
-          invoiceId: invoice.id,
-          invoiceNumber: invoiceNumber,
-          invoiceAmount: amount,
-          paidAmount: paidAmount,
-          invoiceStatus: status,
-          isPaid: isPaid,
-          isPartiallyPaid: isPartiallyPaid,
-          isOverdue: isOverdue
+          customerName: normalizedInvoice.supplierName, // Required field in CalendarEvent type
+          supplierName: normalizedInvoice.supplierName,
+          invoiceId: normalizedInvoice.id,
+          invoiceNumber: normalizedInvoice.invoiceNumber,
+          invoiceAmount: normalizedInvoice.amount,
+          paidAmount: normalizedInvoice.paidAmount,
+          invoiceStatus: normalizedInvoice.status,
+          isPaid,
+          isPartiallyPaid,
+          isOverdue
         });
+        
+        console.log(`Successfully created calendar event for invoice ${normalizedInvoice.id}`);
       } catch (err) {
         console.error('Error processing invoice for calendar:', err, invoice?.id);
       }
     }
     
+    console.log(`Created ${events.length} invoice events for calendar`);
     return events;
   };
 
@@ -710,9 +769,31 @@ const CalendarPage: React.FC = () => {
       console.log(`Created ${paymentEvents.length} payment events`);
       allEvents = [...allEvents, ...paymentEvents];
       
-      // Process invoices - IMPORTANT: Use rawInvoiceData here instead of invoices from useQuery
-      const invoiceEvents = createInvoiceEvents(rawInvoiceData);
-      console.log(`Created ${invoiceEvents.length} invoice events from rawInvoiceData`);
+      // Process invoices - Use BOTH rawInvoiceData and regular invoices if available
+      // This gives us the best chance of getting invoice data from either source
+      let mergedInvoices: any[] = [];
+      
+      // First add invoices from the useQuery hook if available
+      if (invoices && Array.isArray(invoices) && invoices.length > 0) {
+        console.log(`Found ${invoices.length} invoices from useQuery hook`);
+        mergedInvoices = [...invoices];
+      }
+      
+      // Then add any invoices from the direct fetch that aren't already included
+      if (rawInvoiceData && Array.isArray(rawInvoiceData) && rawInvoiceData.length > 0) {
+        console.log(`Found ${rawInvoiceData.length} invoices from direct fetch`);
+        
+        // Only add invoices that aren't already in the merged array (avoid duplicates)
+        rawInvoiceData.forEach(rawInvoice => {
+          if (!mergedInvoices.some(inv => inv.id === rawInvoice.id)) {
+            mergedInvoices.push(rawInvoice);
+          }
+        });
+      }
+      
+      console.log(`Processing ${mergedInvoices.length} total unique invoices for calendar`);
+      const invoiceEvents = createInvoiceEvents(mergedInvoices);
+      console.log(`Created ${invoiceEvents.length} invoice events`);
       allEvents = [...allEvents, ...invoiceEvents];
       
       // Process inventory events
