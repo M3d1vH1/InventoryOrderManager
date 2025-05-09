@@ -245,6 +245,11 @@ router.post('/invoices', async (req, res) => {
     
     console.log("Validated data dates:", formattedDates);
     
+    // Convert the company field to companyId if needed
+    if (data.company && !data.companyId) {
+      data.companyId = data.company;
+    }
+    
     // Create the invoice with a direct SQL query to bypass any ORM issues
     try {
       const client = await pool.connect();
@@ -256,9 +261,9 @@ router.post('/invoices', async (req, res) => {
         
         const result = await client.query(
           `INSERT INTO supplier_invoices 
-            (invoice_number, supplier_id, issue_date, due_date, amount, paid_amount, status, notes, attachment_path, invoice_date, reference, rf_number, company_id) 
+            (invoice_number, supplier_id, issue_date, due_date, amount, paid_amount, status, notes, attachment_path, invoice_date, reference, rf_number) 
            VALUES 
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
            RETURNING *`,
           [
             data.invoiceNumber,
@@ -275,9 +280,7 @@ router.post('/invoices', async (req, res) => {
             // Include reference if provided
             data.reference || null,
             // Include RF Number if provided
-            data.rfNumber || null,
-            // Include company as company_id if provided
-            data.company || null
+            data.rfNumber || null
           ]
         );
         
