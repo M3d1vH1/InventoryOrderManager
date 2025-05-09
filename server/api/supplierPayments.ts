@@ -256,9 +256,9 @@ router.post('/invoices', async (req, res) => {
         
         const result = await client.query(
           `INSERT INTO supplier_invoices 
-            (invoice_number, supplier_id, issue_date, due_date, amount, paid_amount, status, notes, attachment_path, invoice_date) 
+            (invoice_number, supplier_id, issue_date, due_date, amount, paid_amount, status, notes, attachment_path, invoice_date, reference, rf_number, company_id) 
            VALUES 
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
            RETURNING *`,
           [
             data.invoiceNumber,
@@ -271,7 +271,13 @@ router.post('/invoices', async (req, res) => {
             data.notes || null,
             data.attachmentPath || null,
             // Include invoice_date if provided
-            data.invoiceDate ? formatSqlDate(data.invoiceDate) : null
+            data.invoiceDate ? formatSqlDate(data.invoiceDate) : null,
+            // Include reference if provided
+            data.reference || null,
+            // Include RF Number if provided
+            data.rfNumber || null,
+            // Include company as company_id if provided
+            data.company || null
           ]
         );
         
