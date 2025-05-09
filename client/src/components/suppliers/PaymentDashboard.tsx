@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle, Clock, AlertCircle, DollarSign, Calendar, CreditCard, ArrowUpDown, Activity, X } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle, DollarSign, Calendar, CreditCard, ArrowUpDown, Activity, X, FileText } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { format, parseISO, isValid, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths } from 'date-fns';
 import { useState, useEffect } from 'react';
@@ -144,6 +144,46 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
         console.error('Error parsing due date:', error);
       }
     });
+
+    // Add invoices to calendar
+    if (summary.invoices && Array.isArray(summary.invoices)) {
+      summary.invoices.forEach(invoice => {
+        try {
+          const dueDate = parseISO(invoice.dueDate);
+          if (isValid(dueDate)) {
+            const isPaid = invoice.status === 'paid';
+            const isPartiallyPaid = invoice.status === 'partially_paid';
+            const isOverdue = invoice.status === 'overdue';
+
+            let title = '';
+            if (isPaid) {
+              title = t('supplierPayments.invoice.paid');
+            } else if (isOverdue) {
+              title = t('supplierPayments.invoice.overdue');
+            } else if (isPartiallyPaid) {
+              title = t('supplierPayments.invoice.partiallyPaid');
+            } else {
+              title = t('supplierPayments.invoice.due');
+            }
+
+            events.push({
+              date: dueDate,
+              type: 'invoice',
+              amount: invoice.amount - invoice.paidAmount,
+              title: title,
+              supplierName: invoice.supplierName,
+              invoiceNumber: invoice.invoiceNumber,
+              status: invoice.status,
+              isPaid,
+              isPartiallyPaid,
+              isOverdue
+            });
+          }
+        } catch (error) {
+          console.error('Error parsing invoice due date:', error);
+        }
+      });
+    }
 
     setCalendarEvents(events);
   }, [summary, t]);
@@ -370,6 +410,8 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
               const dayEvents = getEventsForDay(day);
               const hasPaymentEvent = dayEvents.some(e => e.type === 'payment');
               const hasDueEvent = dayEvents.some(e => e.type === 'due');
+              const hasInvoiceEvent = dayEvents.some(e => e.type === 'invoice');
+              const hasOverdueInvoice = dayEvents.some(e => e.type === 'invoice' && e.isOverdue);
               
               return (
                 <div 
@@ -377,7 +419,9 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
                   className={`h-20 p-1 border rounded-md overflow-hidden 
                     ${hasPaymentEvent ? 'border-green-500/50 bg-green-50/30 dark:bg-green-950/10' : ''}
                     ${hasDueEvent ? 'border-amber-500/50 bg-amber-50/30 dark:bg-amber-950/10' : ''}
-                    ${!hasPaymentEvent && !hasDueEvent ? 'border-border/30' : ''}
+                    ${hasInvoiceEvent && !hasOverdueInvoice ? 'border-blue-500/50 bg-blue-50/30 dark:bg-blue-950/10' : ''}
+                    ${hasOverdueInvoice ? 'border-red-500/50 bg-red-50/30 dark:bg-red-950/10' : ''}
+                    ${!hasPaymentEvent && !hasDueEvent && !hasInvoiceEvent ? 'border-border/30' : ''}
                     ${dayEvents.length > 0 ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}
                   `}
                   onClick={dayEvents.length > 0 ? () => handleDayClick(day) : undefined}
@@ -392,10 +436,12 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
                         className={`text-xs truncate px-1 py-0.5 rounded
                           ${event.type === 'payment' ? 'bg-green-100 text-green-800 dark:bg-green-950/50 dark:text-green-300' : ''}
                           ${event.type === 'due' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300' : ''}
+                          ${event.type === 'invoice' && !event.isOverdue ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300' : ''}
+                          ${event.type === 'invoice' && event.isOverdue ? 'bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-300' : ''}
                         `}
                         title={`${event.supplierName} - ${event.invoiceNumber} - ${formatCurrency(event.amount)}`}
                       >
-                        {event.type === 'payment' ? '💰' : '📅'} {event.supplierName}
+                        {event.type === 'payment' ? '💰' : event.type === 'due' ? '📅' : event.isOverdue ? '⚠️' : '📄'} {event.supplierName}
                       </div>
                     ))}
                   </div>
@@ -410,7 +456,7 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
           </div>
         </CardContent>
         <CardFooter className="border-t pt-4">
-          <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
             <div className="flex items-center">
               <div className="w-3 h-3 bg-green-100 border border-green-500 rounded mr-1"></div>
               <span>{t('supplierPayments.payment.paymentMade')}</span>
@@ -418,6 +464,14 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
             <div className="flex items-center">
               <div className="w-3 h-3 bg-amber-100 border border-amber-500 rounded mr-1"></div>
               <span>{t('supplierPayments.payment.paymentDue')}</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-blue-100 border border-blue-500 rounded mr-1"></div>
+              <span>{t('supplierPayments.invoice.due')}</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-red-100 border border-red-500 rounded mr-1"></div>
+              <span>{t('supplierPayments.invoice.overdue')}</span>
             </div>
           </div>
         </CardFooter>
@@ -443,23 +497,40 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
                 className={`p-3 rounded-md space-y-2
                   ${event.type === 'payment' ? 'bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900' : ''}
                   ${event.type === 'due' ? 'bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900' : ''}
+                  ${event.type === 'invoice' && !event.isOverdue ? 'bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900' : ''}
+                  ${event.type === 'invoice' && event.isOverdue ? 'bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900' : ''}
                 `}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {event.type === 'payment' ? (
                       <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    ) : (
+                    ) : event.type === 'due' ? (
                       <Calendar className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    ) : event.isOverdue ? (
+                      <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    ) : (
+                      <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     )}
                     <span className="font-medium">
                       {event.title}
                     </span>
                   </div>
-                  <Badge variant={event.type === 'payment' ? 'default' : 'secondary'}>
+                  <Badge 
+                    variant={
+                      event.type === 'payment' ? 'default' : 
+                      event.type === 'due' ? 'secondary' : 
+                      event.isOverdue ? 'destructive' : 
+                      'outline'
+                    }
+                  >
                     {event.type === 'payment' 
                       ? t('supplierPayments.payment.paymentMade')
-                      : t('supplierPayments.payment.paymentDue')
+                      : event.type === 'due'
+                      ? t('supplierPayments.payment.paymentDue')
+                      : event.isOverdue
+                      ? t('supplierPayments.invoice.overdue')
+                      : t('supplierPayments.invoice.due')
                     }
                   </Badge>
                 </div>
@@ -471,7 +542,12 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
                   </div>
                   <div>
                     <p className="text-muted-foreground">{t('supplierPayments.payment.amount')}</p>
-                    <p className={`font-medium ${event.type === 'payment' ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                    <p className={`font-medium 
+                      ${event.type === 'payment' ? 'text-green-600 dark:text-green-400' : ''}
+                      ${event.type === 'due' ? 'text-amber-600 dark:text-amber-400' : ''}
+                      ${event.type === 'invoice' && !event.isOverdue ? 'text-blue-600 dark:text-blue-400' : ''}
+                      ${event.type === 'invoice' && event.isOverdue ? 'text-red-600 dark:text-red-400' : ''}
+                    `}>
                       {formatCurrency(event.amount)}
                     </p>
                   </div>
@@ -479,6 +555,12 @@ export const PaymentDashboard = ({ summary }: PaymentDashboardProps) => {
                     <div className="col-span-2">
                       <p className="text-muted-foreground">{t('supplierPayments.payment.invoice')}</p>
                       <p className="font-medium">{event.invoiceNumber}</p>
+                    </div>
+                  )}
+                  {event.status && event.type === 'invoice' && (
+                    <div className="col-span-2">
+                      <p className="text-muted-foreground">{t('supplierPayments.invoice.status')}</p>
+                      <p className="font-medium">{t(`supplierPayments.invoice.statuses.${event.status}`)}</p>
                     </div>
                   )}
                 </div>
