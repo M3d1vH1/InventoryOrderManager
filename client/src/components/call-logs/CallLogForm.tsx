@@ -488,35 +488,36 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                   <FormItem className="flex flex-col space-y-1.5">
                     <FormLabel>{t('callLogs.form.customer')}<span className="text-red-500">*</span></FormLabel>
                     <FormControl>
-                      <Combobox
-                        options={(customers || []).map((customer: any) => {
+                      <select
+                        className="w-full h-10 px-3 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          console.log('Customer selected with ID:', value);
+                          field.onChange(value ? Number(value) : undefined);
+                        }}
+                      >
+                        <option value="">{t('callLogs.form.selectCustomer')}</option>
+                        {(customers || []).map((customer: any) => {
                           // Clean up and prepare label
-                          const label = customer.name || customer.companyName || customer.email || t('common.unknown')
+                          const label = customer.name || customer.companyName || customer.email || t('common.unknown');
                           
                           // Add special debug info for ΑΚΤΗ customer (for debugging only)
                           if (label.includes('ΑΚΤΗ')) {
-                            console.log('Found ΑΚΤΗ customer in data source:', {
+                            console.log('Found ΑΚΤΗ customer in select element:', {
                               id: customer.id,
                               label,
                               customer
-                            })
+                            });
                           }
                           
-                          return {
-                            value: customer.id,
-                            label: label
-                          }
+                          return (
+                            <option key={customer.id} value={customer.id}>
+                              {label}
+                            </option>
+                          );
                         })}
-                        value={field.value}
-                        onChange={(value) => {
-                          console.log('Customer selected with ID:', value)
-                          field.onChange(Number(value))
-                        }}
-                        placeholder={t('callLogs.form.selectCustomer')}
-                        emptyText={t('common.noCustomersFound')}
-                        notFoundText={t('common.noMatchingCustomersFound')}
-                        popoverContentClassName="w-[300px]"
-                      />
+                      </select>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -536,41 +537,40 @@ const CallLogForm: React.FC<CallLogFormProps> = ({
                       <div className="flex items-center space-x-2">
                         <div className="flex-grow">
                           <FormControl>
-                            <Combobox
-                              options={[
-                                { value: 'new', label: `+ ${t('callLogs.form.newProspectiveCustomer')}` },
-                                ...(prospectiveCustomers || []).map((prospect: any) => {
-                                  const label = prospect.name || prospect.companyName || prospect.email || t('common.unknown')
-                                  
-                                  // Add special debug info for ΑΚΤΗ customer (for debugging only)
-                                  if (label.includes('ΑΚΤΗ')) {
-                                    console.log('Found ΑΚΤΗ prospective customer in data source:', {
-                                      id: prospect.id,
-                                      label,
-                                      prospect
-                                    })
-                                  }
-                                  
-                                  return {
-                                    value: prospect.id,
-                                    label: label
-                                  }
-                                })
-                              ]}
-                              value={isNewProspect ? 'new' : field.value}
-                              onChange={(value) => {
+                            <select
+                              className="w-full h-10 px-3 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                              value={isNewProspect ? 'new' : field.value || ""}
+                              onChange={(e) => {
+                                const value = e.target.value;
                                 console.log('Prospective customer selected:', value);
                                 if (value === 'new') {
                                   handleProspectiveCustomerChange('new');
                                 } else {
-                                  handleProspectiveCustomerChange(String(value));
+                                  handleProspectiveCustomerChange(value);
                                 }
                               }}
-                              placeholder={t('callLogs.form.selectProspectiveCustomer')}
-                              emptyText={t('common.noProspectiveCustomersFound')}
-                              notFoundText={t('common.noMatchingProspectiveCustomersFound')}
-                              popoverContentClassName="w-[300px]"
-                            />
+                            >
+                              <option value="">{t('callLogs.form.selectProspectiveCustomer')}</option>
+                              <option value="new">{`+ ${t('callLogs.form.newProspectiveCustomer')}`}</option>
+                              {(prospectiveCustomers || []).map((prospect: any) => {
+                                const label = prospect.name || prospect.companyName || prospect.email || t('common.unknown');
+                                
+                                // Add special debug info for ΑΚΤΗ customer (for debugging only)
+                                if (label.includes('ΑΚΤΗ')) {
+                                  console.log('Found ΑΚΤΗ prospective customer in select:', {
+                                    id: prospect.id,
+                                    label,
+                                    prospect
+                                  });
+                                }
+                                
+                                return (
+                                  <option key={prospect.id} value={prospect.id}>
+                                    {label}
+                                  </option>
+                                );
+                              })}
+                            </select>
                           </FormControl>
                         </div>
                         <Button

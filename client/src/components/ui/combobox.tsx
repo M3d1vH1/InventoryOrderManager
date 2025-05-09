@@ -3,18 +3,6 @@ import { Check, ChevronsUpDown, Search } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 
 // Special case fuzzy matching for Greek and other non-Latin characters
 function fuzzyMatch(text: string, query: string): boolean {
@@ -89,73 +77,102 @@ export function Combobox({
   popoverContentClassName,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
+  const [searchQuery, setSearchQuery] = React.useState("")
   
   // Find the selected option
   const selectedOption = React.useMemo(() => {
     return options.find((option) => option.value === value)
   }, [options, value])
-
-  // Custom command filter function that uses our fuzzy matching
-  const commandFilter = React.useCallback((value: string, search: string) => {
-    return fuzzyMatch(value, search) ? 1 : 0;
-  }, []);
+  
+  // Filter options using our fuzzy matching algorithm
+  const filteredOptions = React.useMemo(() => {
+    if (!searchQuery) return options;
+    
+    // Special case debugging for ΑΚΤΗ search
+    if (searchQuery.toLowerCase().includes('ακτ')) {
+      console.log('Searching for ΑΚΤΗ with query:', searchQuery);
+      
+      // Find all options containing "ΑΚΤΗ"
+      const aktiOptions = options.filter(option => 
+        option.label.toLowerCase().includes('ακτ')
+      );
+      
+      if (aktiOptions.length > 0) {
+        console.log('Found ΑΚΤΗ options:', aktiOptions);
+      } else {
+        console.log('No ΑΚΤΗ options found in available options');
+      }
+    }
+    
+    return options.filter(option => fuzzyMatch(option.label, searchQuery));
+  }, [options, searchQuery]);
 
   return (
     <div className={cn("relative w-full", className)}>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className={cn(
-              "w-full justify-between",
-              disabled && "opacity-50 cursor-not-allowed",
-              triggerClassName
-            )}
-            disabled={disabled}
-          >
-            {value && selectedOption
-              ? selectedOption.label
-              : placeholder}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent 
-          className={cn("p-0", popoverContentClassName)} 
-          align="start"
-          side="bottom"
-          sideOffset={5}
-        >
-          <Command filter={commandFilter}>
-            <CommandInput placeholder={placeholder} className="h-9" />
-            <CommandEmpty>
-              {notFoundText}
-            </CommandEmpty>
-            <CommandGroup className="max-h-[200px] overflow-auto">
-              {options.map((option) => (
-                <CommandItem
+      <Button
+        type="button"
+        variant="outline"
+        role="combobox"
+        aria-expanded={open}
+        className={cn(
+          "w-full justify-between",
+          disabled && "opacity-50 cursor-not-allowed",
+          triggerClassName
+        )}
+        disabled={disabled}
+        onClick={() => setOpen(!open)}
+      >
+        {value && selectedOption
+          ? selectedOption.label
+          : placeholder}
+        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+      </Button>
+      
+      {open && (
+        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-md shadow-lg">
+          <div className="flex items-center border-b border-gray-200 dark:border-gray-800 px-3">
+            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+            <input
+              className="flex h-10 w-full bg-transparent py-3 text-sm outline-none placeholder:text-gray-400 disabled:cursor-not-allowed disabled:opacity-50"
+              placeholder={placeholder}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          
+          {filteredOptions.length === 0 ? (
+            <div className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+              {searchQuery === "" ? emptyText : notFoundText}
+            </div>
+          ) : (
+            <div 
+              className="max-h-[200px] overflow-auto py-1"
+              style={{ scrollBehavior: 'smooth' }}
+            >
+              {filteredOptions.map((option) => (
+                <div
                   key={option.value}
-                  value={option.label}
-                  onSelect={() => {
-                    onChange(option.value)
-                    setOpen(false)
+                  className={cn(
+                    "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-2 text-sm outline-none",
+                    "hover:bg-gray-100 dark:hover:bg-gray-800",
+                    value === option.value ? "bg-gray-100 dark:bg-gray-800" : ""
+                  )}
+                  onClick={() => {
+                    console.log('Option clicked:', option.value);
+                    onChange(option.value);
+                    setOpen(false);
                   }}
-                  className="cursor-pointer"
                 >
-                  {option.label}
-                  <Check
-                    className={cn(
-                      "ml-auto h-4 w-4",
-                      value === option.value ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                </CommandItem>
+                  <span>{option.label}</span>
+                  {value === option.value && (
+                    <Check className="ml-auto h-4 w-4" />
+                  )}
+                </div>
               ))}
-            </CommandGroup>
-          </Command>
-        </PopoverContent>
-      </Popover>
+            </div>
+          )}
+        </div>
+      )}
     </div>
-  )
+  );
 }
