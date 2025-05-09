@@ -156,19 +156,25 @@ export const PaymentList = () => {
 
   // Get supplier name for a payment
   const getSupplierForPayment = (payment: any) => {
-    // Check if the payment has a valid invoiceId
-    if (!payment.invoiceId) return '-';
+    // Check if payment already has supplier information
+    if (payment.supplierName) return payment.supplierName;
     
-    // Try to match by invoice_id first (snake_case from backend)
-    const invoice = invoices.find((inv: any) => 
-      (inv.id === payment.invoiceId) || (inv.id === payment.invoice_id)
-    );
+    // Extract invoice ID using either camelCase or snake_case
+    const paymentInvoiceId = payment.invoiceId || payment.invoice_id;
+    if (!paymentInvoiceId) return '-';
+    
+    // Get the invoice
+    const invoice = invoices.find((inv: any) => inv.id === paymentInvoiceId);
     if (!invoice) return '-';
     
-    // Try to match by supplierId first, fallback to supplier_id (snake_case from backend)
-    const supplier = suppliers.find((s: any) => 
-      (s.id === invoice.supplierId) || (s.id === invoice.supplier_id)
-    );
+    // Extract supplier ID using either camelCase or snake_case
+    const invoiceSupplierId = invoice.supplierId || invoice.supplier_id;
+    if (!invoiceSupplierId) return '-';
+    
+    // Find the supplier
+    const supplier = suppliers.find((s: any) => s.id === invoiceSupplierId);
+    
+    // Return supplier name or fallback
     return supplier ? supplier.name : '-';
   };
 
@@ -199,24 +205,54 @@ export const PaymentList = () => {
 
   // Get badge and icon for payment method
   const getPaymentMethodBadge = (method: string) => {
+    if (!method) return null;
+    
     let icon;
     let variant: "default" | "secondary" | "destructive" | "outline" = "default";
+    let displayText = method;
+    
+    // Clean up method for display - remove translation prefixes if they exist
+    if (typeof method === 'string' && method.startsWith('supplierPayments.payment.method.')) {
+      displayText = method.replace('supplierPayments.payment.method.', '');
+    }
+    
+    // Clean up any remaining t() wrappers
+    if (typeof displayText === 'string' && displayText.startsWith('t(')) {
+      displayText = displayText.replace(/^t\(['"](.+)['"]\)$/, '$1');
+      // Further clean up if it's a translation key
+      if (displayText.includes('.')) {
+        displayText = displayText.split('.').pop() || displayText;
+      }
+    }
+    
+    // Convert display text for better readability
+    displayText = displayText
+      .replace(/_/g, ' ')  // Replace underscores with spaces
+      .replace(/\b\w/g, (c) => c.toUpperCase());  // Capitalize first letter of each word
     
     const methodLower = method && typeof method === 'string' ? method.toLowerCase() : '';
     switch (methodLower) {
       case 'credit card':
       case 'credit_card':
+      case 'creditcard':
+      case 'supplierPayments.payment.method.credit_card'.toLowerCase():
         icon = <CreditCard className="h-4 w-4" />;
         variant = "default";
+        displayText = "Credit Card";
         break;
       case 'bank transfer':
       case 'bank_transfer':
+      case 'banktransfer':
+      case 'supplierPayments.payment.method.bank_transfer'.toLowerCase():
         icon = <Receipt className="h-4 w-4" />;
         variant = "secondary";
+        displayText = "Bank Transfer";
         break;
       case 'cash':
+      case 'supplierPayments.payment.method.cash'.toLowerCase():
         icon = <Calendar className="h-4 w-4" />;
         variant = "outline";
+        displayText = "Cash";
         break;
       default:
         icon = <Receipt className="h-4 w-4" />;
@@ -226,7 +262,7 @@ export const PaymentList = () => {
     return (
       <Badge variant={variant} className="flex w-fit items-center gap-1">
         {icon}
-        {method}
+        {displayText}
       </Badge>
     );
   };
