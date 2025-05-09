@@ -57,7 +57,7 @@ const paymentFormSchema = z.object({
       message: 'Amount must be a positive number',
     }),
   paymentMethod: z.string().min(1, { message: 'Payment method is required' }),
-  reference: z.string().optional(),
+  referenceNumber: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -637,11 +637,14 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                     control={form.control}
                     name="reference"
                     render={({ field }) => {
-                      // If selected invoice has reference, use it as placeholder
+                      // If selected invoice has RF number or reference, use it as placeholder
+                      const invoiceRfNumber = selectedInvoice?.rf_number || selectedInvoice?.rfNumber;
                       const invoiceReference = selectedInvoice?.reference || selectedInvoice?.reference_number;
-                      const placeholder = invoiceReference
-                        ? invoiceReference
-                        : 'RF000000000';
+                      const placeholder = invoiceRfNumber
+                        ? invoiceRfNumber
+                        : invoiceReference
+                          ? invoiceReference
+                          : 'RF000000000';
                       
                       return (
                         <FormItem>
