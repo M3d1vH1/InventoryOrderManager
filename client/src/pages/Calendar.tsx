@@ -146,6 +146,14 @@ const CalendarPage: React.FC = () => {
     retry: 1,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
+  
+  // Log the supplier invoices when they change
+  useEffect(() => {
+    console.log('Supplier invoices data:', invoices);
+    if (invoicesError) {
+      console.error('Error loading supplier invoices:', invoicesError);
+    }
+  }, [invoices, invoicesError]);
 
   // Fetch inventory events
   const { data: inventoryEvents, isLoading: inventoryLoading, isError: inventoryError } = useQuery({
@@ -384,9 +392,11 @@ const CalendarPage: React.FC = () => {
   
   // Process invoice events
   const createInvoiceEvents = (invoices: any[] | undefined): CalendarEvent[] => {
+    console.log('Creating invoice events from data:', invoices);
     const events: CalendarEvent[] = [];
     
     if (!invoices || !Array.isArray(invoices)) {
+      console.warn('No valid invoices data received or not an array');
       return events;
     }
     
@@ -610,29 +620,39 @@ const CalendarPage: React.FC = () => {
     let allEvents: CalendarEvent[] = [];
     
     try {
+      console.log('Creating all calendar events from data sources');
+      
       // Process orders
       const orderEvents = createOrderEvents(orders);
+      console.log(`Created ${orderEvents.length} order events`);
       allEvents = [...allEvents, ...orderEvents];
       
       // Process call logs
       const callEvents = createCallEvents(callLogs);
+      console.log(`Created ${callEvents.length} call events`);
       allEvents = [...allEvents, ...callEvents];
       
       // Process payments
       const paymentEvents = createPaymentEvents(payments, invoices);
+      console.log(`Created ${paymentEvents.length} payment events`);
       allEvents = [...allEvents, ...paymentEvents];
       
       // Process invoices
       const invoiceEvents = createInvoiceEvents(invoices);
+      console.log(`Created ${invoiceEvents.length} invoice events`);
       allEvents = [...allEvents, ...invoiceEvents];
       
       // Process inventory events
       const inventoryEventsList = createInventoryEvents(inventoryEvents);
+      console.log(`Created ${inventoryEventsList.length} inventory events`);
       allEvents = [...allEvents, ...inventoryEventsList];
       
       // Process production batches
       const productionEvents = createProductionEvents(productionBatches);
+      console.log(`Created ${productionEvents.length} production events`);
       allEvents = [...allEvents, ...productionEvents];
+      
+      console.log(`Total events created: ${allEvents.length}`);
     } catch (error) {
       console.error('Error creating calendar events:', error);
     }
@@ -642,31 +662,50 @@ const CalendarPage: React.FC = () => {
 
   // Filter events based on the selected tab
   const filteredEvents = useMemo(() => {
+    console.log(`Filtering events for tab: ${filterView}, total events: ${events.length}`);
+    
+    let result = [];
     switch(filterView) {
       case 'orders':
-        return events.filter(event => ['created', 'shipped', 'estimated'].includes(event.type));
+        result = events.filter(event => ['created', 'shipped', 'estimated'].includes(event.type));
+        console.log(`Filtered orders events: ${result.length}`);
+        break;
       case 'calls':
-        return events.filter(event => event.type === 'call');
+        result = events.filter(event => event.type === 'call');
+        console.log(`Filtered call events: ${result.length}`);
+        break;
       case 'payments':
         // Only include actual payments (not invoices)
-        return events.filter(event => 
+        result = events.filter(event => 
           event.type === 'payment' && 
           !(event.invoiceNumber && event.supplierName)
         );
+        console.log(`Filtered payment events: ${result.length}`);
+        break;
       case 'invoices':
         // Include both payment-based invoices and dedicated invoice events
-        return events.filter(event => 
+        result = events.filter(event => 
           (event.type === 'payment' && event.invoiceNumber && event.supplierName) ||
           event.type === 'invoice'
         );
+        console.log(`Filtered invoice events: ${result.length}`);
+        break;
       case 'inventory':
-        return events.filter(event => event.type === 'inventory');
+        result = events.filter(event => event.type === 'inventory');
+        console.log(`Filtered inventory events: ${result.length}`);
+        break;
       case 'production':
-        return events.filter(event => event.type === 'production');
+        result = events.filter(event => event.type === 'production');
+        console.log(`Filtered production events: ${result.length}`);
+        break;
       case 'all':
       default:
-        return events;
+        result = events;
+        console.log(`Showing all events: ${result.length}`);
+        break;
     }
+    
+    return result;
   }, [events, filterView]);
   
   // Get upcoming events for the sidebar
