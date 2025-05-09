@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -91,17 +91,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Create a simple list of companies with the default company and an "Other" option
-  const [companies, setCompanies] = useState<{id: string, name: string}[]>([
-    { id: '1', name: 'Main Company' },
-    { id: '2', name: t('supplierPayments.invoice.otherCompany', 'Other') }
-  ]);
-  
-  // Fetch company settings to use as company options
-  const { data: companyData, isLoading: isCompanyLoading } = useQuery<any>({
-    queryKey: ['/api/company-settings'],
-    staleTime: 1000 * 60 * 5 // 5 minutes
-  });
+  // Company is now a simple text field, no need for dropdown options
   
   // Custom error message handler for Zod validation
   const customErrorMap: z.ZodErrorMap = (issue, ctx) => {
@@ -266,21 +256,7 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
   const watchedAmount = form.watch('amount');
   const watchedPaidAmount = form.watch('paidAmount');
   
-  // Update company options when company settings are loaded
-  useEffect(() => {
-    if (companyData) {
-      const companyOptions = [
-        { id: companyData.id.toString(), name: companyData.companyName || 'Main Company' },
-        { id: '2', name: t('supplierPayments.invoice.otherCompany', 'Other') }
-      ];
-      setCompanies(companyOptions);
-      
-      // If no company is selected, default to the main company
-      if (!form.getValues('companyId')) {
-        form.setValue('companyId', companyData.id.toString());
-      }
-    }
-  }, [companyData, form, t]);
+  // Company field is now a simple text input, no need for dropdown options or defaults
 
   // Update status when amount or paidAmount changes
   useEffect(() => {
