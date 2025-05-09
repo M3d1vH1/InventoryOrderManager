@@ -740,26 +740,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                   />
                 </div>
 
-                {/* Company field */}
-                <FormField
-                  control={form.control}
-                  name="company"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('supplierPayments.payment.company')}</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input 
-                            placeholder={t('supplierPayments.payment.companyPlaceholder')}
-                            {...field} 
-                          />
-                          <Building2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+{/* Company field is already included in the form fields above */}
 
                 {/* Notes field */}
                 <FormField
