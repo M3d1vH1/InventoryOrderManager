@@ -776,8 +776,9 @@ A 1
                   handleCompleteWithBoxCount(true);
                 }} 
                 disabled={updateOrderStatusMutation.isPending}
+                className="text-sm"
               >
-                {updateOrderStatusMutation.isPending ? "Processing..." : "Skip Label Printing"}
+                {updateOrderStatusMutation.isPending ? "Processing..." : "Skip Printing"}
               </Button>
               <Button 
                 onClick={(e) => {
@@ -785,8 +786,9 @@ A 1
                   handleCompleteWithBoxCount(false);
                 }} 
                 disabled={boxCount < 1 || updateOrderStatusMutation.isPending}
+                className="text-sm"
               >
-                {updateOrderStatusMutation.isPending ? "Processing..." : "Complete & Print Labels"}
+                {updateOrderStatusMutation.isPending ? "Processing..." : "Print Labels"}
               </Button>
             </div>
           </DialogFooter>
