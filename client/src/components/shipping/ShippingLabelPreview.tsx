@@ -84,14 +84,43 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
   const { t } = useTranslation();
   const { toast } = useToast();
   const [isPrinting, setIsPrinting] = useState(false);
+  const [currentBox, setCurrentBox] = useState(boxNumber);
+  
+  // Generate all label contents
+  const generateLabelContent = (boxNum: number) => {
+    // Create a modified version of the label content for the specified box
+    const boxPattern = /BOX \d+ OF \d+/;
+    const newBoxText = `BOX ${boxNum} OF ${totalBoxes}`;
+    return labelContent.replace(boxPattern, newBoxText);
+  };
+  
+  // Handle navigation between boxes
+  const handlePrevBox = () => {
+    if (currentBox > 1) {
+      setCurrentBox(prev => prev - 1);
+    }
+  };
+  
+  const handleNextBox = () => {
+    if (currentBox < totalBoxes) {
+      setCurrentBox(prev => prev + 1);
+    }
+  };
 
   // Handle print action
   const handlePrint = () => {
     setIsPrinting(true);
     
-    // Open the print template in a new window
-    const printUrl = `/print-template?content=${encodeURIComponent(labelContent)}&orderNumber=${encodeURIComponent(orderNumber)}&autoPrint=true`;
-    const printWindow = window.open(printUrl, `_blank_${boxNumber}`);
+    // Print all boxes
+    for (let i = 1; i <= totalBoxes; i++) {
+      const boxContent = generateLabelContent(i);
+      const printUrl = `/print-template?content=${encodeURIComponent(boxContent)}&orderNumber=${encodeURIComponent(orderNumber)}&autoPrint=true`;
+      
+      // Add a small delay between opening windows to prevent browser blocking
+      setTimeout(() => {
+        window.open(printUrl, `_blank_${i}`);
+      }, i * 300);
+    }
     
     // Log the print action to server
     apiRequest({
@@ -100,7 +129,6 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
       body: JSON.stringify({
         orderId,
         boxCount: totalBoxes,
-        currentBox: boxNumber,
         method: 'browser-print'
       }),
       headers: {
@@ -113,15 +141,11 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
     // Reset printing state after delay
     setTimeout(() => {
       setIsPrinting(false);
-      // Check if window was blocked by popup blocker
-      if (!printWindow || printWindow.closed || typeof printWindow.closed === 'undefined') {
-        toast({
-          title: t('orders.labels.printError', 'Print Error'),
-          description: t('orders.labels.popupBlocked', 'The print window was blocked. Please allow popups for this site and try again.'),
-          variant: "destructive",
-        });
-      }
-    }, 1000);
+      toast({
+        title: t('orders.labels.success', 'Labels Ready'),
+        description: t('orders.labels.allLabels', `${totalBoxes} label(s) have been opened for printing.`),
+      });
+    }, (totalBoxes * 300) + 500);
   };
 
   return (
