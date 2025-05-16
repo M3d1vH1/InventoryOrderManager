@@ -33,6 +33,13 @@ export function geoBlockMiddleware(req: Request, res: Response, next: NextFuncti
     console.log(`[GeoBlock] Development mode or local IP detected: ${ip} - Access allowed`);
     return next();
   }
+  
+  // Check if the IP is in the allowlist (comma-separated list of IPs)
+  const allowedIps = process.env.GEOBLOCK_ALLOWED_IPS?.split(',').map(ip => ip.trim()) || [];
+  if (allowedIps.length > 0 && allowedIps.includes(ip)) {
+    console.log(`[GeoBlock] IP ${ip} is in the allowlist - Access granted`);
+    return next();
+  }
 
   try {
     // Look up the location based on IP
