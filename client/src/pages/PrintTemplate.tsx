@@ -17,9 +17,12 @@ const addPrintStyles = () => {
         html, body {
           margin: 0;
           padding: 0;
-          width: 9cm;
-          height: 6cm;
+          width: 100%;
+          height: 100%;
           overflow: hidden;
+          display: flex;
+          justify-content: center;
+          align-items: center;
         }
         body * {
           visibility: hidden;
@@ -28,13 +31,14 @@ const addPrintStyles = () => {
           visibility: visible;
         }
         .print-container {
-          position: absolute;
-          left: 0;
-          top: 0;
+          position: relative;
           width: 9cm;
           height: 6cm;
-          margin: 0;
+          margin: auto;
           padding: 0;
+          box-sizing: border-box;
+          transform: translate(0, 0);
+          page-break-inside: avoid;
         }
         .no-print {
           display: none !important;
