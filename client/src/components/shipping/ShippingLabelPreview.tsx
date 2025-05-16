@@ -20,15 +20,25 @@ interface ShippingLabelPreviewProps {
 const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
   // Attempt to parse JScript commands for a visual preview
   try {
-    // Very basic parsing - extract text lines that start with T
+    // Extract text lines and barcode data
     const textLines: Array<{content: string}> = [];
+    const barcodes: Array<{value: string}> = [];
     const lines = content.split('\n');
     
     lines.forEach(line => {
+      // Parse text commands
       if (line.trim().startsWith('T ')) {
         const textMatch = line.match(/T\s+\d+,\d+,\d+,\d+,[^;]*;(.*)/);
         if (textMatch && textMatch[1]) {
           textLines.push({ content: textMatch[1] });
+        }
+      }
+      
+      // Parse barcode commands
+      else if (line.trim().startsWith('B ')) {
+        const barcodeMatch = line.match(/B\s+\d+,\d+,\d+,[^,]+,\d+,\d+,\d+,\d+;(\d+)/);
+        if (barcodeMatch && barcodeMatch[1]) {
+          barcodes.push({ value: barcodeMatch[1] });
         }
       }
     });
@@ -36,10 +46,22 @@ const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
     return (
       <div className="bg-white border border-gray-200 rounded-md p-4 text-black font-mono text-sm space-y-1">
         {textLines.map((line, index) => (
-          <div key={index}>{line.content}</div>
+          <div key={`text-${index}`}>{line.content}</div>
         ))}
+        
+        {barcodes.length > 0 && (
+          <div className="mt-3 pt-2 border-t border-gray-200">
+            <div className="font-medium text-xs text-gray-600 mb-1">Barcode:</div>
+            {barcodes.map((barcode, index) => (
+              <div key={`barcode-${index}`} className="border border-gray-300 py-2 px-3 text-center bg-gray-50">
+                {barcode.value}
+              </div>
+            ))}
+          </div>
+        )}
+        
         <div className="mt-2 text-xs text-gray-400">
-          (Preview may differ from actual printed label)
+          (Preview shows simplified representation of the actual label)
         </div>
       </div>
     );

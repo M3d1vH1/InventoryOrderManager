@@ -299,7 +299,7 @@ T 25,25,0,3,pt9;Order: ${order.orderNumber}
 T 25,50,0,3,pt8;Customer: ${order.customerName}
 T 25,75,0,3,pt8;Date: ${new Date(order.orderDate).toLocaleDateString()}
 T 25,100,0,3,pt12;BOX ${boxNumber} OF ${totalBoxes}
-B 25,130,0,EAN13,60,0,3,3;${order.id.toString().padStart(12, '0')}
+T 25,130,0,3,pt10;${order.id.toString().padStart(5, '0')}
 T 25,220,0,3,pt8;Warehouse Management System
 A 1
 `;
