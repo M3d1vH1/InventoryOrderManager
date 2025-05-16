@@ -21,6 +21,7 @@ import { getInventoryChanges, getInventoryChange, addInventoryChange, getRecentI
 import orderPdfRouter from "./api/orderPdf";
 import imageUploadFixRouter from "./api/imageUploadFix";
 import { generateOrderPDF } from "./services/puppeteerPdfService";
+import { testPrinter } from "./api/testPrinter";
 import {
   getInventoryPredictions,
   getInventoryPrediction,
@@ -126,6 +127,10 @@ function broadcastMessage(message: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Printer test endpoint for CAB EOS1
+  app.get('/api/test-printer', (req, res) => {
+    testPrinter(req, res);
+  });
   // Development-only auto-login endpoint to help with testing
   if (process.env.NODE_ENV !== 'production') {
     app.get('/api/dev-login', async (req, res) => {
