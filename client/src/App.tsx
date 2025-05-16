@@ -23,6 +23,7 @@ import InventoryPredictions from "@/pages/InventoryPredictions";
 import Production from "@/pages/Production";
 import SupplierPayments from "@/pages/SupplierPayments";
 import CalendarTest from "@/pages/CalendarTest";
+import PrinterTest from "@/pages/printerTest";
 import Login from "@/pages/Login";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
@@ -90,6 +91,7 @@ function AuthenticatedRouter() {
       <Route path="/inventory-predictions" component={InventoryPredictions} />
       <Route path="/production" component={Production} />
       <Route path="/supplier-payments" component={SupplierPayments} />
+      <Route path="/printer-test" component={PrinterTest} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>
