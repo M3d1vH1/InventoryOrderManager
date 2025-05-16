@@ -728,18 +728,18 @@ A 1
       <Dialog open={showBoxCountDialog} onOpenChange={setShowBoxCountDialog}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <PackageCheck className="mr-2 h-5 w-5 text-blue-500" />
-              Enter Box Count for Shipping Labels
+            <DialogTitle className="flex items-center text-base">
+              <PackageCheck className="mr-2 h-5 w-5 text-blue-500 flex-shrink-0" />
+              <span className="truncate">Box Count for Labels</span>
             </DialogTitle>
-            <DialogDescription>
-              Specify how many boxes are used for this order. A shipping label will be generated for each box.
+            <DialogDescription className="text-sm">
+              How many boxes are used for this order? A shipping label will be created for each box.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="boxCount">Number of Boxes</Label>
+                <Label htmlFor="boxCount" className="text-sm">Number of Boxes</Label>
                 <Input
                   id="boxCount"
                   type="number"
@@ -752,11 +752,11 @@ A 1
               
               <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
                 <div className="flex items-center mb-1">
-                  <Printer className="h-4 w-4 mr-2 text-blue-500" />
-                  <p className="text-sm font-medium text-blue-700">CAB EOS1 Label Information</p>
+                  <Printer className="h-4 w-4 mr-2 text-blue-500 flex-shrink-0" />
+                  <p className="text-sm font-medium text-blue-700 truncate">Label Preview</p>
                 </div>
                 <p className="text-sm text-blue-600">
-                  Labels will be printed with order number, customer name, and box numbers.
+                  Preview will show order details and box numbers.
                 </p>
               </div>
             </div>
