@@ -1,5 +1,6 @@
 {pkgs}: {
   deps = [
+    pkgs.cups
     pkgs.libuuid
     pkgs.chromium
     pkgs.glib

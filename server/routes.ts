@@ -2578,80 +2578,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[printer] Received exact box count from user input: ${totalBoxes}`);
       console.log(`[printer] Current box number to print: ${boxNumber}`);
       
-      // Create a temporary file with the JScript content
-      const tempDir = path.join(process.cwd(), 'temp_labels');
+      // Import direct printer service (dynamically to avoid circular dependencies)
+      const { directPrinter } = await import('./services/directPrinting');
       
-      // Ensure the directory exists
-      if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
-      }
-      
-      const tempFilePath = path.join(tempDir, `label_order_${orderId}_box_${boxNumber}.txt`);
-      fs.writeFileSync(tempFilePath, labelContent);
-      
-      // Log the action
       console.log(`[printer] Preparing to print label for order ${orderId}, box ${boxNumber} of ${totalBoxes}`);
       
-      // In a production environment, we would send the file to the printer here
-      // For CAB printers with JScript support, this could be done via direct USB printing
-      // or through a print server. The exact command depends on your setup.
-      
       try {
-        // For Windows systems, a command like this might work:
-        // await execPromise(`copy "${tempFilePath}" COM3:`);
-        
-        // For Linux systems with CUPS, a command like this might work:
-        // await execPromise(`lp -d CAB-EOS1 "${tempFilePath}"`);
-        
-        // Send the file directly to the CAB EOS1 printer
+        // Send print command directly to the CAB EOS1 printer
         console.log(`[printer] Sending label to CAB EOS1 printer`);
         
-        // Determine the appropriate print command based on the operating system
-        let printCommand = '';
-        if (process.platform === 'win32') {
-          // Windows - Try common COM ports for USB-connected label printers
-          // CAB printers often use COM3, COM4, etc.
-          printCommand = `copy "${tempFilePath}" COM1:`;
-          
-          // If that doesn't work, try this alternative with printer name
-          // printCommand = `copy "${tempFilePath}" \\\\localhost\\CABEOS1`;
-        } else if (process.platform === 'linux') {
-          // Linux - use lp command (printer should be set up in CUPS)
-          printCommand = `lp -d CABEOS1 "${tempFilePath}"`;
-        } else if (process.platform === 'darwin') {
-          // macOS - similar to Linux
-          printCommand = `lp -d CABEOS1 "${tempFilePath}"`;
+        // Use our direct printing service for automatic printing
+        const identifier = `order_${orderId}_box_${boxNumber}`;
+        const printResult = await directPrinter.printContent(labelContent, identifier);
+        
+        // Log the print result
+        if (printResult.success) {
+          console.log(`[printer] ${printResult.message}`);
         } else {
-          console.log('[printer] Unsupported platform, will try a generic approach');
-          printCommand = `cat "${tempFilePath}" > /dev/usb/lp0`;
+          console.error(`[printer] Print failed: ${printResult.message}`);
         }
         
-        try {
-          console.log(`[printer] Executing print command: ${printCommand}`);
-          const { stdout, stderr } = await execPromise(printCommand);
-          
-          if (stderr) {
-            console.error(`[printer] Command error: ${stderr}`);
-            // Continue even if there's an error - we'll still report success
-            // and log the issue for troubleshooting
-          }
-          
-          if (stdout) {
-            console.log(`[printer] Command output: ${stdout}`);
-          }
-        } catch (error) {
-          console.error(`[printer] Print command execution error:`, error);
-          // Continue even if there's an error - the label file is still created
-          // and manual printing can be done if needed
-        }
-        
-        // Send notification via WebSocket
+        // Send notification via WebSocket regardless of print success
+        // This allows the UI to show feedback to the user
         broadcastMessage({
           type: 'labelPrinted',
           orderId,
           boxNumber,
           totalBoxes,
-          printFilePath: tempFilePath // Include file path for possible manual printing
+          success: printResult.success,
+          message: printResult.message
         });
         
         // Add to order changelog
@@ -2662,14 +2617,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           action: 'label_printed',
           changes: {
             boxNumber,
-            totalBoxes
+            totalBoxes,
+            success: printResult.success
           },
-          notes: `Printed shipping label for box ${boxNumber} of ${totalBoxes}`
+          notes: printResult.success 
+            ? `Printed shipping label for box ${boxNumber} of ${totalBoxes}` 
+            : `Attempted to print shipping label for box ${boxNumber} of ${totalBoxes}, but encountered an issue: ${printResult.message}`
         });
         
         res.json({ 
           success: true, 
-          message: `Shipping label for order ${orderId}, box ${boxNumber} of ${totalBoxes} has been sent to printer`
+          message: `Shipping label for order ${orderId}, box ${boxNumber} of ${totalBoxes} has been sent to printer`,
+          printResult: printResult
         });
       } catch (printError: any) {
         console.error('[printer] Error sending to printer:', printError);
@@ -2677,11 +2636,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: 'Error sending label to printer', 
           details: printError.message 
         });
-      } finally {
-        // Clean up the temporary file
-        if (fs.existsSync(tempFilePath)) {
-          fs.unlinkSync(tempFilePath);
-        }
       }
     } catch (error: any) {
       console.error('[printer] Error processing label print request:', error);
