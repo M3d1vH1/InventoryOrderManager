@@ -294,7 +294,7 @@ B 20,200,0,EAN13,60,0,1,2;9780201379624
 T 20,300,0,3,pt8;If you can see this, printing works!
 A 1`;
                     
-                  // Use our React Print Template component
+                  // Use our React Print Template component for test label
                   const printUrl = `/print-template?content=${encodeURIComponent(testLabelContent)}&autoPrint=false`;
                   window.open(printUrl, '_blank');
                   
