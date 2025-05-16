@@ -2,6 +2,33 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Printer, FileDown } from 'lucide-react';
 
+// Add print-specific styles to the head
+const addPrintStyles = () => {
+  const styleId = 'label-print-styles';
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.innerHTML = `
+      @page {
+        size: 9cm 6cm;
+        margin: 0;
+      }
+      @media print {
+        body {
+          margin: 0;
+          padding: 0;
+        }
+        .print-container {
+          width: 9cm;
+          height: 6cm;
+          page-break-after: always;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+};
+
 // Function to parse CAB EOS1 JScript commands and convert to HTML
 const parseJScript = (jscript: string): { 
   texts: Array<{x: number, y: number, content: string, fontSize: number}>,
@@ -77,12 +104,13 @@ const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
     
     return (
       <div 
-        className="relative bg-white border border-gray-200" 
+        className="relative bg-white border border-gray-200 print-container" 
         style={{ 
-          width: '4in', 
-          height: '6in', 
+          width: '9cm', 
+          height: '6cm', 
           margin: '0 auto',
-          position: 'relative'
+          position: 'relative',
+          boxSizing: 'border-box'
         }}
       >
         {/* Render text elements */}
@@ -156,6 +184,9 @@ const PrintTemplate = () => {
   const [isRawMode, setIsRawMode] = useState<boolean>(false);
 
   useEffect(() => {
+    // Add print styles to document
+    addPrintStyles();
+    
     // Get query parameters
     const params = new URLSearchParams(window.location.search);
     const content = params.get('content');
