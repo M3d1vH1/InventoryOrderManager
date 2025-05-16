@@ -118,84 +118,69 @@ const parseJScript = (jscript: string): {
 
 // Component for formatted label display
 const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
-  // Try to parse JScript commands
-  try {
-    const parsedContent = parseJScript(content);
+  // Simplified direct rendering of a clean shipping label
+  const extractLabelData = (content: string) => {
+    const orderMatch = content.match(/Order: ([^\n]+)/);
+    const customerMatch = content.match(/Customer: ([^\n]+)/);
+    const dateMatch = content.match(/Date: ([^\n]+)/);
+    const boxMatch = content.match(/BOX (\d+) OF (\d+)/);
+    const idMatch = content.match(/T 25,130,0,3,pt10;(\d+)/);
     
-    return (
-      <div 
-        className="relative bg-white border border-gray-200 print-container" 
-        style={{ 
-          width: '9cm', 
-          height: '6cm', 
-          margin: '0 auto',
-          position: 'relative',
-          boxSizing: 'border-box'
-        }}
-      >
-        {/* Render text elements */}
-        {parsedContent.texts.map((text, index) => (
-          <div 
-            key={`text-${index}`} 
-            style={{
-              position: 'absolute',
-              left: `${text.x / 10}mm`,
-              top: `${text.y / 10}mm`,
-              fontSize: `${text.fontSize}pt`,
-              fontFamily: 'monospace',
-              whiteSpace: 'pre'
-            }}
-          >
-            {text.content}
-          </div>
-        ))}
+    return {
+      orderNumber: orderMatch ? orderMatch[1] : '',
+      customer: customerMatch ? customerMatch[1] : '',
+      date: dateMatch ? dateMatch[1] : '',
+      boxNumber: boxMatch ? boxMatch[1] : '1',
+      totalBoxes: boxMatch ? boxMatch[2] : '1',
+      orderId: idMatch ? idMatch[1] : '',
+    };
+  };
+  
+  const labelData = extractLabelData(content);
+  
+  return (
+    <div 
+      className="relative bg-white border border-gray-200 print-container" 
+      style={{ 
+        width: '9cm', 
+        height: '6cm', 
+        margin: '0 auto',
+        position: 'relative',
+        boxSizing: 'border-box',
+        padding: '6mm',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        overflow: 'hidden'
+      }}
+    >
+      <div className="text-black" style={{ fontFamily: 'Arial, sans-serif' }}>
+        <div style={{ fontSize: '11pt', fontWeight: 'bold', marginBottom: '2mm' }}>
+          Order: {labelData.orderNumber}
+        </div>
         
-        {/* Render barcodes */}
-        {parsedContent.barcodes.map((barcode, index) => (
-          <div 
-            key={`barcode-${index}`} 
-            style={{
-              position: 'absolute',
-              left: `${barcode.x / 10}mm`,
-              top: `${barcode.y / 10}mm`,
-              height: `${barcode.height / 10}mm`,
-              padding: '3px',
-              border: '1px dashed #ccc',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '9pt',
-              color: '#666'
-            }}
-          >
-            Barcode: {barcode.value}
-          </div>
-        ))}
+        <div style={{ fontSize: '9pt', marginBottom: '2mm', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          Customer: {labelData.customer}
+        </div>
         
-        {/* Render lines */}
-        {parsedContent.lines.map((line, index) => (
-          <div 
-            key={`line-${index}`} 
-            style={{
-              position: 'absolute',
-              left: `${line.x1 / 10}mm`,
-              top: `${line.y1 / 10}mm`,
-              width: `${(line.x2 - line.x1) / 10}mm`,
-              height: `${line.thickness / 10}mm`,
-              backgroundColor: '#000'
-            }}
-          />
-        ))}
+        <div style={{ fontSize: '9pt', marginBottom: '2mm' }}>
+          Date: {labelData.date}
+        </div>
+        
+        <div style={{ fontSize: '14pt', fontWeight: 'bold', marginBottom: '2mm', textAlign: 'center' }}>
+          BOX {labelData.boxNumber} OF {labelData.totalBoxes}
+        </div>
+        
+        <div style={{ fontSize: '11pt', fontWeight: 'bold', textAlign: 'center', marginTop: '2mm' }}>
+          {labelData.orderId}
+        </div>
       </div>
-    );
-  } catch (error) {
-    // Fallback to raw content if parsing fails
-    return (
-      <pre className="whitespace-pre font-mono text-sm p-4 bg-gray-50 border rounded-md print:border-0 print:bg-white print:text-sm">
-        {content}
-      </pre>
-    );
-  }
+      
+      <div style={{ fontSize: '8pt', textAlign: 'center', color: '#666', marginTop: '6mm' }}>
+        Warehouse Management System
+      </div>
+    </div>
+  );
 };
 
 const PrintTemplate = () => {

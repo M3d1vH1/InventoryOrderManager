@@ -18,61 +18,58 @@ interface ShippingLabelPreviewProps {
 
 // Component to parse and display the label content in a preview
 const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
-  // Attempt to parse JScript commands for a visual preview
-  try {
-    // Extract text lines and barcode data
-    const textLines: Array<{content: string}> = [];
-    const barcodes: Array<{value: string}> = [];
-    const lines = content.split('\n');
+  // Extract label data for a clean, consistent preview
+  const extractLabelData = (content: string) => {
+    const orderMatch = content.match(/Order: ([^\n]+)/);
+    const customerMatch = content.match(/Customer: ([^\n]+)/);
+    const dateMatch = content.match(/Date: ([^\n]+)/);
+    const boxMatch = content.match(/BOX (\d+) OF (\d+)/);
+    const idMatch = content.match(/T 25,130,0,3,pt10;(\d+)/);
     
-    lines.forEach(line => {
-      // Parse text commands
-      if (line.trim().startsWith('T ')) {
-        const textMatch = line.match(/T\s+\d+,\d+,\d+,\d+,[^;]*;(.*)/);
-        if (textMatch && textMatch[1]) {
-          textLines.push({ content: textMatch[1] });
-        }
-      }
-      
-      // Parse barcode commands
-      else if (line.trim().startsWith('B ')) {
-        const barcodeMatch = line.match(/B\s+\d+,\d+,\d+,[^,]+,\d+,\d+,\d+,\d+;(\d+)/);
-        if (barcodeMatch && barcodeMatch[1]) {
-          barcodes.push({ value: barcodeMatch[1] });
-        }
-      }
-    });
-    
-    return (
-      <div className="bg-white border border-gray-200 rounded-md p-4 text-black font-mono text-sm space-y-1">
-        {textLines.map((line, index) => (
-          <div key={`text-${index}`}>{line.content}</div>
-        ))}
-        
-        {barcodes.length > 0 && (
-          <div className="mt-3 pt-2 border-t border-gray-200">
-            <div className="font-medium text-xs text-gray-600 mb-1">Barcode:</div>
-            {barcodes.map((barcode, index) => (
-              <div key={`barcode-${index}`} className="border border-gray-300 py-2 px-3 text-center bg-gray-50">
-                {barcode.value}
-              </div>
-            ))}
-          </div>
-        )}
-        
-        <div className="mt-2 text-xs text-gray-400">
-          (Preview shows simplified representation of the actual label)
-        </div>
+    return {
+      orderNumber: orderMatch ? orderMatch[1] : '',
+      customer: customerMatch ? customerMatch[1] : '',
+      date: dateMatch ? dateMatch[1] : '',
+      boxNumber: boxMatch ? boxMatch[1] : '1',
+      totalBoxes: boxMatch ? boxMatch[2] : '1',
+      orderId: idMatch ? idMatch[1] : '',
+    };
+  };
+  
+  const labelData = extractLabelData(content);
+  
+  return (
+    <div className="bg-white border border-gray-200 rounded-md py-3 px-4 text-black font-sans text-sm space-y-2" 
+         style={{ width: '8cm', margin: '0 auto' }}>
+      <div style={{ fontWeight: 'bold', fontSize: '11pt' }}>
+        Order: {labelData.orderNumber}
       </div>
-    );
-  } catch (error) {
-    // Fallback to raw content if parsing fails
-    return (
-      <pre className="bg-white border border-gray-200 rounded-md p-4 text-black font-mono text-sm overflow-x-auto">
-        {content}
-      </pre>
-    );
-  }
+      
+      <div style={{ fontSize: '9pt', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        Customer: {labelData.customer}
+      </div>
+      
+      <div style={{ fontSize: '9pt' }}>
+        Date: {labelData.date}
+      </div>
+      
+      <div style={{ fontSize: '14pt', fontWeight: 'bold', textAlign: 'center', margin: '6px 0' }}>
+        BOX {labelData.boxNumber} OF {labelData.totalBoxes}
+      </div>
+      
+      <div style={{ fontSize: '11pt', fontWeight: 'bold', textAlign: 'center', marginTop: '4px' }}>
+        {labelData.orderId}
+      </div>
+      
+      <div style={{ fontSize: '8pt', textAlign: 'center', color: '#666', marginTop: '10px' }}>
+        Warehouse Management System
+      </div>
+      
+      <div className="mt-2 text-xs text-gray-400 border-t pt-2 text-center">
+        (Preview shows simplified representation of the actual label)
+      </div>
+    </div>
+  );
 };
 
 const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
