@@ -9,6 +9,10 @@ import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 const execPromise = promisify(exec);
 
@@ -97,15 +101,21 @@ export class DirectPrintingService {
       return `cat "${filePath}" && echo "[REPLIT] In production, this would be sent to the CAB EOS 1 printer"`;
     }
     
+    // Get printer port from environment or use default from config
+    const printerPort = process.env.PRINTER_PORT || this.config.port;
+    console.log(`[printer] Using printer port: ${printerPort}`);
+    
     switch (process.platform) {
       case 'win32':
         // Windows command using COM port
-        if (this.config.connection === ConnectionType.USB && this.config.port) {
+        if (this.config.connection === ConnectionType.USB && printerPort) {
           // Direct to COM port
-          command = `copy "${filePath}" ${this.config.port}:`;
+          command = `copy "${filePath}" ${printerPort}:`;
+          console.log(`[printer] Windows USB direct printing to port ${printerPort}`);
         } else {
           // Shared printer
           command = `copy "${filePath}" \\\\localhost\\${this.config.name}`;
+          console.log(`[printer] Windows network printing to ${this.config.name}`);
         }
         break;
         
@@ -113,23 +123,28 @@ export class DirectPrintingService {
         // Linux command using CUPS
         if (this.config.connection === ConnectionType.CUPS) {
           command = `lp -d ${this.config.name} "${filePath}"`;
+          console.log(`[printer] Linux CUPS printing to ${this.config.name}`);
         } else if (this.config.connection === ConnectionType.USB) {
-          // Try direct USB device access on Linux
-          command = `cat "${filePath}" > /dev/usb/lp0`;
+          // Try direct USB device access on Linux with configurable port
+          command = `cat "${filePath}" > ${printerPort}`;
+          console.log(`[printer] Linux direct USB printing to ${printerPort}`);
         } else {
           command = `lp -d ${this.config.name} "${filePath}"`;
+          console.log(`[printer] Linux default printing to ${this.config.name}`);
         }
         break;
         
       case 'darwin':
         // macOS command
         command = `lp -d ${this.config.name} "${filePath}"`;
+        console.log(`[printer] macOS printing to ${this.config.name}`);
         break;
         
       default:
         // Fallback for other platforms
+        console.log(`[printer] Platform ${process.platform} not directly supported, attempting generic print command`);
         command = `echo "Platform ${process.platform} not directly supported, attempting generic print command"`;
-        command += ` && cat "${filePath}" > /dev/usb/lp0`;
+        command += ` && cat "${filePath}" > ${printerPort}`;
     }
     
     return command;
