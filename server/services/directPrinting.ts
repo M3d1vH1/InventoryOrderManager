@@ -39,7 +39,7 @@ const DEFAULT_PRINTER_CONFIG: PrinterConfig = {
   type: PrinterType.CABEOS1,
   connection: ConnectionType.USB,
   name: 'CABEOS1',
-  port: 'COM1' // Default USB port for Windows
+  port: process.platform === 'win32' ? 'COM1' : '/dev/usb/lp0' // Default ports for different platforms
 };
 
 /**
