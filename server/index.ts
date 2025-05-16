@@ -9,6 +9,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import cors from "cors";
 import { forceHttps } from './middlewares/forceHttps';
+import { geoBlockMiddleware } from './middlewares/geoblock';
 // csurf is disabled by default as it requires proper setup with cookies, but you can enable it if needed
 // import csrf from "csurf";
 
@@ -30,6 +31,9 @@ app.set('trust proxy', 1);
 
 // Apply HTTPS redirection for production environments
 app.use(forceHttps);
+
+// Apply geoblocking to restrict access to users in Greece only
+app.use(geoBlockMiddleware);
 
 // Security middleware
 // Apply Helmet for secure HTTP headers
