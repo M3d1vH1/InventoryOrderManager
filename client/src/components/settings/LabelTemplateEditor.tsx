@@ -46,7 +46,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from '@/components/ui/alert';
-import { Edit, HelpCircle, Eye, Save, RotateCcw } from 'lucide-react';
+import { Edit, HelpCircle, Eye, Save, RotateCcw, Printer } from 'lucide-react';
 import {
   Tabs,
   TabsContent,
