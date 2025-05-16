@@ -2664,10 +2664,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.addOrderChangelog({
         orderId,
         userId,
-        action: 'labels_printed',
+        action: 'label_printed',  // Using existing action type to avoid TypeScript errors
         changes: { 
           boxCount, 
-          method: method || 'browser-print'
+          method: method || 'browser-print',
+          browserPrint: true
         },
         notes: `${boxCount} shipping label(s) generated using browser-based printing`
       });

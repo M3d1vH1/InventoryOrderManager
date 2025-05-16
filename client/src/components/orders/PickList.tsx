@@ -35,6 +35,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { MapPin, QrCode, ScanBarcode, Truck, RefreshCcw, CheckCircle2, FileText, Info, Printer, PackageCheck } from "lucide-react";
 import { BarcodeScanner } from "@/components/barcode";
+import ShippingLabelPreview from "@/components/shipping/ShippingLabelPreview";
 
 interface OrderItem {
   id: number;
@@ -263,7 +264,15 @@ const PickList = ({ order }: { order: Order }) => {
     });
   };
   
-  // Function to generate shipping labels using browser-based printing
+  // State to manage label preview
+  const [showLabelPreview, setShowLabelPreview] = useState(false);
+  const [labelPreviewData, setLabelPreviewData] = useState<{
+    content: string;
+    boxNumber: number;
+    totalBoxes: number;
+  } | null>(null);
+  
+  // Function to generate shipping labels with preview first
   const generateShippingLabels = (order: Order, boxCount: number) => {
     // Only proceed if we have a valid box count from user input
     if (boxCount < 1) {
@@ -297,40 +306,16 @@ A 1
     };
     
     try {
-      // Open browser printing for each label
-      for (let i = 1; i <= boxCount; i++) {
-        const jscript = createLabelJScript(i, boxCount);
-        
-        // Use browser-based printing via the PrintTemplate component
-        const printUrl = `/print-template?content=${encodeURIComponent(jscript)}&orderNumber=${encodeURIComponent(order.orderNumber)}&autoPrint=false`;
-        
-        // Open in a new tab with a slight delay between each to prevent browser blocking
-        setTimeout(() => {
-          window.open(printUrl, `_blank_${i}`);
-        }, i * 300); // 300ms delay between each window
-      }
+      // Show preview of the first label
+      const firstLabelContent = createLabelJScript(1, boxCount);
       
-      toast({
-        title: "Shipping labels ready",
-        description: `${boxCount} label(s) opened in new tabs. Please click Print in each tab.`,
-        variant: "default"
+      // Set preview data and show preview dialog
+      setLabelPreviewData({
+        content: firstLabelContent,
+        boxNumber: 1,
+        totalBoxes: boxCount
       });
-      
-      // Log to server for audit purposes without waiting for physical printing
-      apiRequest({
-        url: '/api/orders/log-label-print',
-        method: 'POST',
-        body: JSON.stringify({
-          orderId: order.id,
-          boxCount: boxCount,
-          method: 'browser-print'
-        }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }).catch(error => {
-        console.error("Failed to log label printing:", error);
-      });
+      setShowLabelPreview(true);
       
     } catch (error: any) {
       toast({
@@ -421,6 +406,19 @@ A 1
 
   return (
     <>
+      {/* Shipping Label Preview Dialog */}
+      {labelPreviewData && (
+        <ShippingLabelPreview
+          open={showLabelPreview}
+          onOpenChange={setShowLabelPreview}
+          labelContent={labelPreviewData.content}
+          orderId={order.id}
+          orderNumber={order.orderNumber}
+          boxNumber={labelPreviewData.boxNumber}
+          totalBoxes={labelPreviewData.totalBoxes}
+        />
+      )}
+      
       {/* Approval Dialog for Partial Fulfillment */}
       <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
         <DialogContent className="sm:max-w-md">
