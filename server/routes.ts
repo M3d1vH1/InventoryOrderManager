@@ -3496,5 +3496,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/preview-label', isAuthenticated, previewShippingLabel);
   app.get('/api/preview-label/:filename', servePreviewImage); // Accessible without auth to allow image display in iframe
   
+  // Add CAB EOS 1 Printer Test endpoint
+  app.get('/api/printer/test', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { directPrinter } = await import('./services/directPrinting');
+      
+      // Create a test label in JScript language (CAB printer language)
+      const testLabel = `
+m m
+J
+S l1;0,0,8,15,100
+T 20,80,0,3,pt10;CAB EOS 1 Test Label
+T 20,120,0,3,pt8;Warehouse Management System
+T 20,160,0,3,pt6;Print Test: ${new Date().toLocaleString()}
+B 20,200,0,EAN13,60,0,1,2;9780201379624
+T 20,300,0,3,pt8;If you can see this, printing works!
+A 1
+`;
+      
+      console.log('[printer] Sending test label to printer...');
+      
+      const result = await directPrinter.printContent(testLabel, 'test');
+      
+      if (result.success) {
+        console.log('✅ Test label sent to printer successfully');
+      } else {
+        console.error('❌ Printer test failed:', result.message);
+      }
+      
+      // Return result
+      res.json({
+        success: result.success,
+        message: result.message
+      });
+    } catch (err: any) {
+      console.error('Error in printer test endpoint:', err);
+      res.status(500).json({
+        success: false,
+        message: `Error: ${err.message}`,
+        error: err.message
+      });
+    }
+  });
+  
   return httpServer;
 }
