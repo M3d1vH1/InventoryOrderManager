@@ -1,0 +1,10 @@
+
+m m
+J
+S l1;0,0,8,15,100
+T 20,80,0,3,pt10;CAB EOS 1 Test Label
+T 20,120,0,3,pt8;Warehouse Management System
+T 20,160,0,3,pt6;Print Test: 5/16/2025, 8:47:40 AM
+B 20,200,0,EAN13,60,0,1,2;9780201379624
+T 20,300,0,3,pt8;If you can see this, printing works!
+A 1
