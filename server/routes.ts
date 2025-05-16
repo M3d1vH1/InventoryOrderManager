@@ -2648,6 +2648,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Log label printing (for browser-based printing)
+  app.post('/api/orders/log-label-print', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { orderId, boxCount, method } = req.body;
+      
+      if (!orderId || !boxCount) {
+        return res.status(400).json({ 
+          message: 'Missing required fields: orderId and boxCount are required' 
+        });
+      }
+      
+      // Add to order changelog
+      const userId = (req.user as any)?.id || 1;
+      await storage.addOrderChangelog({
+        orderId,
+        userId,
+        action: 'labels_printed',
+        changes: { 
+          boxCount, 
+          method: method || 'browser-print'
+        },
+        notes: `${boxCount} shipping label(s) generated using browser-based printing`
+      });
+      
+      return res.json({ 
+        success: true, 
+        message: `Successfully logged ${boxCount} label(s) printed for order ${orderId}` 
+      });
+    } catch (error: any) {
+      console.error('Error logging label printing:', error);
+      return res.status(500).json({ 
+        message: error.message || 'Error logging label printing' 
+      });
+    }
+  });
+  
   // Email settings routes
   app.get('/api/email-settings', isAuthenticated, hasRole(['admin']), getEmailSettings);
   
