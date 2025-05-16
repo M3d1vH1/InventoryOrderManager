@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>CAB EOS 1 Label Printing</title>
+  <style>
+    @page {
+      size: 4in 6in;
+      margin: 0;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: monospace;
+      background: white;
+    }
+    pre {
+      white-space: pre;
+      font-family: monospace;
+      font-size: 10pt;
+      margin: 0;
+      padding: 20px;
+      background: #f4f4f4;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .label-container {
+      padding: 20px;
+      max-width: 4in;
+    }
+    .label-header {
+      text-align: center;
+      margin-bottom: 15px;
+      font-weight: bold;
+    }
+    .print-only {
+      display: none;
+    }
+    .screen-only {
+      display: block;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #e9f7ff;
+      border: 1px solid #a8d2f0;
+      border-radius: 4px;
+      color: #0c5a93;
+    }
+    .barcode-placeholder {
+      height: 80px;
+      border: 1px dashed #ccc;
+      margin: 10px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-style: italic;
+      color: #666;
+    }
+    .buttons {
+      margin: 20px 0;
+      text-align: center;
+    }
+    .print-button {
+      background: #0066cc;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .print-button:hover {
+      background: #0055aa;
+    }
+    .print-icon {
+      width: 18px;
+      height: 18px;
+    }
+    @media print {
+      .screen-only, .buttons {
+        display: none !important;
+      }
+      .print-only {
+        display: block;
+      }
+      pre {
+        border: none;
+        background: none;
+        font-size: 9pt;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="label-container">
+    <div class="screen-only">
+      <h3>CAB EOS 1 Label Preview</h3>
+      <p>This is a preview of your label. Click the Print button below to send it to your printer.</p>
+    </div>
+    
+    <div class="buttons screen-only">
+      <button class="print-button" onclick="window.print()">
+        <svg class="print-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 6 2 18 2 18 9"></polyline>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+          <rect x="6" y="14" width="12" height="8"></rect>
+        </svg>
+        Print Label
+      </button>
+    </div>
+    
+    <div class="label-header print-only" id="labelTitle">
+      Label
+    </div>
+    
+    <pre id="labelContent"></pre>
+    
+    <div class="print-only">
+      <p style="font-size: 8pt; text-align: right; margin-top: 10px; color: #999;">
+        Printed from Warehouse Management System
+      </p>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Get label content and title from URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const labelContent = urlParams.get('content');
+      const orderNumber = urlParams.get('orderNumber');
+      
+      if (labelContent) {
+        // Decode and display the label content
+        document.getElementById('labelContent').textContent = decodeURIComponent(labelContent);
+        
+        // Set title if order number is provided
+        if (orderNumber) {
+          document.getElementById('labelTitle').textContent = `Label for Order #${orderNumber}`;
+          document.title = `Label - Order #${orderNumber}`;
+        }
+        
+        // Auto-print after a short delay to ensure content is loaded
+        setTimeout(function() {
+          if (urlParams.get('autoPrint') === 'true') {
+            window.print();
+          }
+        }, 500);
+      } else {
+        document.getElementById('labelContent').textContent = 'No label content provided.';
+      }
+    });
+  </script>
+</body>
+</html>

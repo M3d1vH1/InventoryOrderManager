@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Printer, FileDown } from 'lucide-react';
+import { AlertCircle, Printer, FileDown, ExternalLink } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 
@@ -158,13 +158,27 @@ const BrowserPrintLabel: React.FC<BrowserPrintLabelProps> = ({
   // Function to print the label
   const printLabel = () => {
     if (iframeRef.current && iframeRef.current.contentWindow) {
-      iframeRef.current.contentWindow.focus();
-      iframeRef.current.contentWindow.print();
-      
-      toast({
-        title: "Print Job Sent",
-        description: "The label has been sent to your printer.",
-      });
+      try {
+        // Instead of opening a new window, print directly from the iframe
+        setTimeout(() => {
+          if (iframeRef.current && iframeRef.current.contentWindow) {
+            iframeRef.current.contentWindow.focus();
+            iframeRef.current.contentWindow.print();
+            
+            toast({
+              title: "Print Dialog Opened",
+              description: "Please select your printer in the print dialog.",
+            });
+          }
+        }, 300); // Short delay to ensure content is loaded
+      } catch (error) {
+        console.error('Print error:', error);
+        toast({
+          variant: "destructive",
+          title: "Print Failed",
+          description: "Browser blocked the print dialog. Please allow popups for this site.",
+        });
+      }
     } else {
       toast({
         variant: "destructive",

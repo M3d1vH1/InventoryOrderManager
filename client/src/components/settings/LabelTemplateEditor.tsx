@@ -282,26 +282,9 @@ const LabelTemplateEditor: React.FC = () => {
                 </Button>
               </DialogTrigger>
               
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button 
-                    className="bg-blue-600 hover:bg-blue-700 text-white ml-2"
-                  >
-                    <Printer className="h-4 w-4 mr-2" />
-                    Print Test Label
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[600px]">
-                  <DialogHeader>
-                    <DialogTitle>Print Test Label</DialogTitle>
-                    <DialogDescription>
-                      Preview and print a test label directly from your browser
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <div className="mt-4">
-                    <BrowserPrintLabel 
-                      labelContent={`m m
+              <Button 
+                onClick={() => {
+                  const testLabelContent = `m m
 J
 S l1;0,0,8,15,100
 T 20,80,0,3,pt10;CAB EOS 1 Test Label
@@ -309,11 +292,22 @@ T 20,120,0,3,pt8;Warehouse Management System
 T 20,160,0,3,pt6;Print Test: ${new Date().toLocaleString()}
 B 20,200,0,EAN13,60,0,1,2;9780201379624
 T 20,300,0,3,pt8;If you can see this, printing works!
-A 1`}
-                    />
-                  </div>
-                </DialogContent>
-              </Dialog>
+A 1`;
+                    
+                  // Open the print template in a new tab
+                  const printUrl = `/print-label-template.html?content=${encodeURIComponent(testLabelContent)}&autoPrint=false`;
+                  window.open(printUrl, '_blank');
+                  
+                  toast({
+                    title: "Print Template Opened",
+                    description: "The label print page has opened in a new tab. Click the Print button to send it to your printer.",
+                  });
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white ml-2"
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                Print Test Label
+              </Button>
               <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Edit Label Template</DialogTitle>
