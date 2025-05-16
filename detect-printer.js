@@ -6,9 +6,9 @@
  * 2. On Linux: checking standard printer device paths
  */
 
-const fs = require('fs');
-const { exec } = require('child_process');
-const os = require('os');
+import fs from 'fs';
+import { exec } from 'child_process';
+import os from 'os';
 
 // Function to detect printer on Windows
 function detectOnWindows() {
@@ -129,6 +129,19 @@ function detectPrinter() {
       console.log(`Unsupported platform: ${os.platform()}`);
       console.log('This script supports Windows and Linux.');
   }
+}
+
+// Use promisified exec
+function execPromise(command) {
+  return new Promise((resolve, reject) => {
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve(stdout);
+    });
+  });
 }
 
 // Run the detection
