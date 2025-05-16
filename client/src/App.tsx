@@ -24,6 +24,7 @@ import Production from "@/pages/Production";
 import SupplierPayments from "@/pages/SupplierPayments";
 import CalendarTest from "@/pages/CalendarTest";
 import PrinterTest from "@/pages/printerTest";
+import PrintTemplate from "@/pages/PrintTemplate";
 import Login from "@/pages/Login";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
@@ -107,9 +108,14 @@ function Router() {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
 
-  // Handle login route separately
+  // Handle special routes that don't need authentication
   if (location === '/login') {
     return <Login />;
+  }
+  
+  // Print template page doesn't need authentication
+  if (location === '/print-template') {
+    return <PrintTemplate />;
   }
 
   // If not authenticated and not on login page, redirect to login
@@ -127,8 +133,8 @@ function Layout() {
   const { isAuthenticated, isLoading } = useAuth();
   const [location] = useLocation();
 
-  // If on login page or loading, don't show the layout
-  if (location === '/login' || isLoading || !isAuthenticated) {
+  // Special pages that don't need authentication or layout
+  if (location === '/login' || location === '/print-template' || isLoading || !isAuthenticated) {
     return <Router />;
   }
 
