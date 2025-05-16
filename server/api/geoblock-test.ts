@@ -1,39 +1,39 @@
 import { Request, Response } from 'express';
-import geoip from 'geoip-lite';
 
 /**
  * Test endpoint for geoblocking configuration
  * Displays information about the client's IP and access status
  */
 export function testGeoblocking(req: Request, res: Response) {
-  // Get the client IP
+  // Get client IP
   const ip = getClientIp(req);
   
-  // Get geo information
+  // Use geoip-lite to detect country
+  const geoip = require('geoip-lite');
   const geo = geoip.lookup(ip);
   
-  // Check if this IP would be allowed
+  // Check if geoblocking is enabled
+  const isGeoblockingEnabled = process.env.ENABLE_GEOBLOCKING === 'true';
+  
+  // Check if the IP is in the allowlist
   const inAllowlist = checkIfInAllowlist(ip);
-  const isGreekIp = geo?.country === 'GR';
-  const isAllowed = isGreekIp || inAllowlist || isLocalIp(ip);
   
-  // Create a response with the geoblocking information
-  const response = {
-    isGeoblockingActive: process.env.ENABLE_GEOBLOCKING === 'true',
-    clientIp: ip,
-    location: geo ? {
-      country: geo.country,
-      region: geo.region,
-      city: geo.city,
-      timezone: geo.timezone,
-    } : 'Unknown location',
-    accessStatus: {
-      isAllowed,
-      reason: getAccessReason(isGreekIp, inAllowlist, isLocalIp(ip))
-    }
-  };
+  // Check if it's a local/development IP
+  const isLocal = isLocalIp(ip);
   
-  // Format this as a nice HTML page
+  // Check if it's a Greek IP
+  const isGreekIp = geo && geo.country === 'GR';
+  
+  // Determine access status
+  const accessAllowed = !isGeoblockingEnabled || 
+                        isGreekIp || 
+                        inAllowlist || 
+                        isLocal;
+  
+  // Get the reason for access decision
+  const accessReason = getAccessReason(isGreekIp, inAllowlist, isLocal);
+  
+  // Return a simple HTML page with the information
   res.send(`
     <!DOCTYPE html>
     <html>
@@ -61,10 +61,6 @@ export function testGeoblocking(req: Request, res: Response) {
             color: #2c3e50;
             margin-top: 0;
           }
-          h2 {
-            color: #3498db;
-            margin-top: 30px;
-          }
           .info-box {
             background: #f8f9fa;
             border-left: 4px solid #3498db;
@@ -81,43 +77,59 @@ export function testGeoblocking(req: Request, res: Response) {
             background: #d4edda;
             color: #155724;
           }
-          .denied {
+          .blocked {
             background: #f8d7da;
             color: #721c24;
           }
-          pre {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 4px;
-            overflow-x: auto;
+          .header {
+            background: #343a40;
+            color: white;
+            padding: 10px 15px;
+            margin: -20px -20px 20px;
+            border-radius: 8px 8px 0 0;
           }
         </style>
       </head>
       <body>
         <div class="container">
-          <h1>Geoblocking Configuration Test</h1>
-          
-          <div class="info-box">
-            <p><strong>Geoblocking Status:</strong> ${response.isGeoblockingActive ? 'Active' : 'Inactive'}</p>
-            <p><strong>Access Status:</strong> 
-              <span class="status ${response.accessStatus.isAllowed ? 'allowed' : 'denied'}">
-                ${response.accessStatus.isAllowed ? 'Allowed' : 'Denied'}
-              </span>
-            </p>
-            <p><strong>Reason:</strong> ${response.accessStatus.reason}</p>
+          <div class="header">
+            <h1>Warehouse Management System</h1>
+            <p>Geoblocking Test Page</p>
           </div>
           
-          <h2>Your Connection Information</h2>
-          <p><strong>IP Address:</strong> ${response.clientIp}</p>
-          <p><strong>Location:</strong> ${typeof response.location === 'string' ? response.location : 
-            `${response.location.country || 'Unknown'} ${response.location.region ? '/ ' + response.location.region : ''} ${response.location.city ? '/ ' + response.location.city : ''}`}</p>
-          <p><strong>Timezone:</strong> ${typeof response.location === 'string' ? 'Unknown' : (response.location.timezone || 'Unknown')}</p>
+          <div class="info-box">
+            <h2>Your Connection Information</h2>
+            <p><strong>IP Address:</strong> ${ip}</p>
+            <p><strong>Country:</strong> ${geo ? `${geo.country} (${geo.country === 'GR' ? 'Greece' : geo.country})` : 'Unknown'}</p>
+            <p><strong>Region:</strong> ${geo ? geo.region : 'Unknown'}</p>
+            <p><strong>City:</strong> ${geo ? geo.city : 'Unknown'}</p>
+            
+            <h3>Access Status: 
+              <span class="status ${accessAllowed ? 'allowed' : 'blocked'}">
+                ${accessAllowed ? 'ALLOWED' : 'BLOCKED'}
+              </span>
+            </h3>
+            <p><strong>Reason:</strong> ${accessReason}</p>
+          </div>
           
-          <h2>Technical Details</h2>
-          <pre>${JSON.stringify(response, null, 2)}</pre>
+          <div class="info-box">
+            <h2>Geoblocking Configuration</h2>
+            <p><strong>Geoblocking Enabled:</strong> ${isGeoblockingEnabled ? 'Yes' : 'No'}</p>
+            <p><strong>IP in Allowlist:</strong> ${inAllowlist ? 'Yes' : 'No'}</p>
+            <p><strong>Local/Development IP:</strong> ${isLocal ? 'Yes' : 'No'}</p>
+            <p><strong>Greek IP Address:</strong> ${isGreekIp ? 'Yes' : 'No'}</p>
+          </div>
           
-          <div style="margin-top: 30px; font-size: 0.9em; color: #6c757d;">
-            <p>This is a diagnostic page to verify the geoblocking configuration. In production, unauthorized users will see a simple access denied message.</p>
+          <div class="info-box">
+            <h2>Configuration Instructions</h2>
+            <p>Geoblocking can be configured in the <code>.env</code> file with these settings:</p>
+            <ul>
+              <li><code>ENABLE_GEOBLOCKING=true</code> - Turn on geoblocking (block non-Greek IPs)</li>
+              <li><code>ENABLE_GEOBLOCKING=false</code> - Turn off geoblocking (allow all IPs)</li>
+              <li><code>GEOBLOCK_ALLOWED_IPS=1.2.3.4,5.6.7.8</code> - Comma-separated list of IPs to allow regardless of country</li>
+              <li><code>NODE_ENV=development</code> - Development mode disables geoblocking</li>
+              <li><code>NODE_ENV=production</code> - Production mode applies geoblocking according to settings</li>
+            </ul>
           </div>
         </div>
       </body>
@@ -125,56 +137,53 @@ export function testGeoblocking(req: Request, res: Response) {
   `);
 }
 
-// Helper functions
-
+/**
+ * Get the client's real IP address, considering proxy headers
+ */
 function getClientIp(req: Request): string {
-  // Check for standard proxy headers
-  const forwardedFor = req.headers['x-forwarded-for'] as string;
-  
-  if (forwardedFor) {
-    // X-Forwarded-For can contain multiple IPs in a comma-separated list
-    // The client's real IP is typically the first one
-    const ips = forwardedFor.split(',').map(ip => ip.trim());
-    return ips[0];
-  }
-  
-  // Check for other common headers
-  const realIp = req.headers['x-real-ip'] as string;
-  if (realIp) {
-    return realIp;
-  }
-  
-  // Fallback to connection remote address
-  return req.ip || '';
+  return (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || 
+         req.ip || 
+         '127.0.0.1';
 }
 
+/**
+ * Check if the IP is in the allowlist from environment variable
+ */
 function checkIfInAllowlist(ip: string): boolean {
-  const allowedIps = process.env.GEOBLOCK_ALLOWED_IPS?.split(',').map(ip => ip.trim()) || [];
-  return allowedIps.includes(ip);
+  const allowedIps = process.env.GEOBLOCK_ALLOWED_IPS || '';
+  return allowedIps.split(',').some(allowedIp => allowedIp.trim() === ip);
 }
 
+/**
+ * Check if the IP is a local development IP
+ */
 function isLocalIp(ip: string): boolean {
-  return !ip || ip === '127.0.0.1' || ip === '::1' || 
-         ip.startsWith('192.168.') || ip.startsWith('10.') ||
+  return ip === '127.0.0.1' || 
+         ip === 'localhost' || 
+         ip.startsWith('192.168.') || 
+         ip.startsWith('10.') || 
          process.env.NODE_ENV === 'development';
 }
 
+/**
+ * Get a human-readable reason for the access decision
+ */
 function getAccessReason(isGreekIp: boolean, inAllowlist: boolean, isLocalIp: boolean): string {
-  if (!process.env.ENABLE_GEOBLOCKING) {
-    return 'Geoblocking is disabled';
-  }
-  
-  if (isLocalIp) {
-    return 'Local IP address or development environment';
-  }
-  
-  if (inAllowlist) {
-    return 'IP address is in the allowlist';
+  if (!process.env.ENABLE_GEOBLOCKING || process.env.ENABLE_GEOBLOCKING !== 'true') {
+    return 'Geoblocking is disabled - all users can access the site';
   }
   
   if (isGreekIp) {
-    return 'IP address is from Greece';
+    return 'Your IP is from Greece - access is allowed';
   }
   
-  return 'IP address is not from Greece and not in allowlist';
+  if (inAllowlist) {
+    return 'Your IP is in the allowlist - access is allowed';
+  }
+  
+  if (isLocalIp) {
+    return 'You are connecting from a local/development environment - access is allowed';
+  }
+  
+  return 'Your IP is not from Greece - access would be blocked in production';
 }
