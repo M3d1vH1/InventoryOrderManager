@@ -3027,6 +3027,40 @@ const LabelTemplateEditor = () => {
               <Edit className="h-4 w-4 mr-2" />
               Edit Template
             </Button>
+            
+            <Button 
+              onClick={async () => {
+                try {
+                  const response = await fetch('/api/printer/test');
+                  const data = await response.json();
+                  
+                  if (data.success) {
+                    toast({
+                      title: "Δοκιμή εκτυπωτή",
+                      description: "Η εντολή εκτύπωσης στάλθηκε στον εκτυπωτή CAB EOS 1 επιτυχώς!",
+                      variant: "default"
+                    });
+                  } else {
+                    toast({
+                      title: "Σφάλμα εκτυπωτή",
+                      description: data.message || "Προέκυψε σφάλμα κατά την εκτύπωση",
+                      variant: "destructive"
+                    });
+                  }
+                } catch (error) {
+                  console.error("Printer test error:", error);
+                  toast({
+                    title: "Σφάλμα εκτυπωτή",
+                    description: "Δεν ήταν δυνατή η επικοινωνία με τον εκτυπωτή. Ελέγξτε τη σύνδεση και τις ρυθμίσεις.",
+                    variant: "destructive"
+                  });
+                }
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              Δοκιμή Εκτυπωτή
+            </Button>
           </div>
           
           {isLoadingLabelTemplate ? (
