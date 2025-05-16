@@ -76,10 +76,24 @@ export class DirectPrintingService {
   }
 
   /**
+   * Check if running in Replit environment
+   */
+  private isReplitEnvironment(): boolean {
+    return process.env.REPL_ID !== undefined || process.env.REPL_OWNER !== undefined;
+  }
+  
+  /**
    * Create platform-specific printer command
    */
   createPrintCommand(filePath: string): string {
     let command = '';
+    
+    // Special handling for Replit environment
+    if (this.isReplitEnvironment()) {
+      console.log('[printer] Detected Replit environment, using simulation mode');
+      // In Replit, just cat the file to stdout so we can see what would be printed
+      return `cat "${filePath}" && echo "[REPLIT] In production, this would be sent to the CAB EOS 1 printer"`;
+    }
     
     switch (process.platform) {
       case 'win32':
