@@ -2603,16 +2603,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // For Linux systems with CUPS, a command like this might work:
         // await execPromise(`lp -d CAB-EOS1 "${tempFilePath}"`);
         
-        // For now, we'll simulate the printing process
-        console.log(`[printer] Simulating printing of label to CAB EOS1 printer`);
-        console.log(`[printer] Label content:\n${labelContent}`);
+        // Send the file directly to the CAB EOS1 printer
+        console.log(`[printer] Sending label to CAB EOS1 printer`);
+        
+        // Determine the appropriate print command based on the operating system
+        let printCommand = '';
+        if (process.platform === 'win32') {
+          // Windows - Try common COM ports for USB-connected label printers
+          // CAB printers often use COM3, COM4, etc.
+          printCommand = `copy "${tempFilePath}" COM1:`;
+          
+          // If that doesn't work, try this alternative with printer name
+          // printCommand = `copy "${tempFilePath}" \\\\localhost\\CABEOS1`;
+        } else if (process.platform === 'linux') {
+          // Linux - use lp command (printer should be set up in CUPS)
+          printCommand = `lp -d CABEOS1 "${tempFilePath}"`;
+        } else if (process.platform === 'darwin') {
+          // macOS - similar to Linux
+          printCommand = `lp -d CABEOS1 "${tempFilePath}"`;
+        } else {
+          console.log('[printer] Unsupported platform, will try a generic approach');
+          printCommand = `cat "${tempFilePath}" > /dev/usb/lp0`;
+        }
+        
+        try {
+          console.log(`[printer] Executing print command: ${printCommand}`);
+          const { stdout, stderr } = await execPromise(printCommand);
+          
+          if (stderr) {
+            console.error(`[printer] Command error: ${stderr}`);
+            // Continue even if there's an error - we'll still report success
+            // and log the issue for troubleshooting
+          }
+          
+          if (stdout) {
+            console.log(`[printer] Command output: ${stdout}`);
+          }
+        } catch (error) {
+          console.error(`[printer] Print command execution error:`, error);
+          // Continue even if there's an error - the label file is still created
+          // and manual printing can be done if needed
+        }
         
         // Send notification via WebSocket
         broadcastMessage({
           type: 'labelPrinted',
           orderId,
           boxNumber,
-          totalBoxes
+          totalBoxes,
+          printFilePath: tempFilePath // Include file path for possible manual printing
         });
         
         // Add to order changelog

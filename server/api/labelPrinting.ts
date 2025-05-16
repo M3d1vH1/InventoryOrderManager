@@ -4,7 +4,6 @@ import { labelPrinterService } from '../services/labelPrinterService';
 import { z } from 'zod';
 import path from 'path';
 import fs from 'fs';
-import { createOrderWithItems } from '../utils/orderUtils';
 
 // Validation schema for printing requests
 const printLabelSchema = z.object({
