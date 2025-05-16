@@ -263,7 +263,7 @@ const PickList = ({ order }: { order: Order }) => {
     });
   };
   
-  // Function to generate shipping labels for CAB EOS printer
+  // Function to generate shipping labels using browser-based printing
   const generateShippingLabels = (order: Order, boxCount: number) => {
     // Only proceed if we have a valid box count from user input
     if (boxCount < 1) {
@@ -278,8 +278,7 @@ const PickList = ({ order }: { order: Order }) => {
     // Log the exact user-specified box count to ensure it's being used
     console.log(`Using user-specified box count: ${boxCount}`);
     
-    
-    // Create the JScript commands for the CAB EOS1 printer
+    // Create the JScript commands for the CAB EOS1 printer (maintaining compatibility with existing format)
     const createLabelJScript = (boxNumber: number, totalBoxes: number) => {
       // Based on CAB EOS manual - JScript programming language
       return `
@@ -298,41 +297,41 @@ A 1
     };
     
     try {
-      // For each box, create a label
+      // Open browser printing for each label
       for (let i = 1; i <= boxCount; i++) {
         const jscript = createLabelJScript(i, boxCount);
         
-        // Send to the server to print
-        apiRequest({
-          url: '/api/print/shipping-label',
-          method: 'POST',
-          body: JSON.stringify({
-            labelContent: jscript,
-            orderId: order.id,
-            boxNumber: i,
-            totalBoxes: boxCount
-          }),
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        })
-        .then(() => {
-          if (i === boxCount) {
-            toast({
-              title: "Shipping labels printed",
-              description: `${boxCount} label(s) sent to printer`,
-              variant: "default"
-            });
-          }
-        })
-        .catch(error => {
-          toast({
-            title: "Error printing label",
-            description: error.message || "Failed to print shipping label",
-            variant: "destructive"
-          });
-        });
+        // Use browser-based printing via the PrintTemplate component
+        const printUrl = `/print-template?content=${encodeURIComponent(jscript)}&orderNumber=${encodeURIComponent(order.orderNumber)}&autoPrint=false`;
+        
+        // Open in a new tab with a slight delay between each to prevent browser blocking
+        setTimeout(() => {
+          window.open(printUrl, `_blank_${i}`);
+        }, i * 300); // 300ms delay between each window
       }
+      
+      toast({
+        title: "Shipping labels ready",
+        description: `${boxCount} label(s) opened in new tabs. Please click Print in each tab.`,
+        variant: "default"
+      });
+      
+      // Log to server for audit purposes without waiting for physical printing
+      apiRequest({
+        url: '/api/orders/log-label-print',
+        method: 'POST',
+        body: JSON.stringify({
+          orderId: order.id,
+          boxCount: boxCount,
+          method: 'browser-print'
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }).catch(error => {
+        console.error("Failed to log label printing:", error);
+      });
+      
     } catch (error: any) {
       toast({
         title: "Error generating labels",
