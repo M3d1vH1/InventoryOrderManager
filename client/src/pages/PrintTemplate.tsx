@@ -14,14 +14,30 @@ const addPrintStyles = () => {
         margin: 0;
       }
       @media print {
-        body {
+        html, body {
+          margin: 0;
+          padding: 0;
+          width: 9cm;
+          height: 6cm;
+          overflow: hidden;
+        }
+        body * {
+          visibility: hidden;
+        }
+        .print-container, .print-container * {
+          visibility: visible;
+        }
+        .print-container {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 9cm;
+          height: 6cm;
           margin: 0;
           padding: 0;
         }
-        .print-container {
-          width: 9cm;
-          height: 6cm;
-          page-break-after: always;
+        .no-print {
+          display: none !important;
         }
       }
     `;
