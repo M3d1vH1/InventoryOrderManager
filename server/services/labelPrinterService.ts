@@ -457,15 +457,35 @@ E
    */
   async sendToPrinter(filePath: string): Promise<string> {
     try {
-      // For Windows, we would use direct USB printing
-      // For Linux, we'll simulate the printer command with echo for now
-      // This would be replaced with actual USB printing in production
+      console.log(`Attempting to print to CAB EOS1 printer with file: ${filePath}`);
       
-      // In Windows environment, this would be:
-      // const command = `copy "${filePath}" \\\\\\\\Computer\\\\${PRINTER_MODEL}`;
+      // Different OS platforms require different commands
+      let command = '';
       
-      // For demonstration on Linux/Mac, we'll just echo to console
-      const command = `cat "${filePath}" > /dev/null && echo "Label sent to printer: ${PRINTER_MODEL}"`;
+      if (process.platform === 'win32') {
+        // Windows - direct printing using copy command to printer port
+        // Assuming printer is shared or connected directly via USB
+        // Try USB port first (often COM3 or similar for printer devices)
+        command = `copy "${filePath}" COM1:`;
+        
+        // Alternative Windows approach using printer name
+        // command = `copy "${filePath}" \\\\localhost\\CABEOS1`;
+      } else if (process.platform === 'linux') {
+        // Linux - using lp or lpr command
+        // Make sure printer is configured in CUPS with name CABEOS1
+        command = `lp -d CABEOS1 "${filePath}"`;
+        
+        // Alternative using lpr
+        // command = `lpr -P CABEOS1 "${filePath}"`;
+      } else if (process.platform === 'darwin') {
+        // macOS - using lp command
+        command = `lp -d CABEOS1 "${filePath}"`;
+      } else {
+        // Other platforms - simulate printing
+        command = `cat "${filePath}" > /dev/null && echo "Label sent to printer: ${PRINTER_MODEL}"`;
+      }
+      
+      console.log(`Executing printer command: ${command}`);
       
       const { stdout, stderr } = await execPromise(command);
       
@@ -475,7 +495,7 @@ E
       }
       
       console.log(`Printer output: ${stdout}`);
-      return `Success: ${stdout}`;
+      return `Success: Label sent to CAB EOS1 printer`;
     } catch (error: any) {
       console.error('Failed to send to printer:', error);
       return `Error: ${error.message}`;
