@@ -3375,19 +3375,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Shipping companies endpoint - using a direct approach to avoid any parsing errors
+  // Shipping companies endpoint - returning an empty array to remove all shipping companies
   app.get('/api/customers/shipping-companies', (_req: Request, res: Response) => {
-    // Hard-coded shipping companies to avoid any database queries that could cause errors
-    const companies = [
-      { id: 1, name: "ACS" },
-      { id: 2, name: "Speedex" },
-      { id: 3, name: "ELTA Courier" },
-      { id: 4, name: "DHL" },
-      { id: 5, name: "General Post" }
-    ];
-    
-    // Just return the hard-coded list
-    return res.json(companies);
+    // Return empty array as requested to remove all shipping company references
+    return res.json([]);
   });
   
   // Image upload and fix routes

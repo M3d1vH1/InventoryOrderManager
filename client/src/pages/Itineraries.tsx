@@ -29,7 +29,7 @@ type Itinerary = {
   id: number;
   itineraryNumber: string;
   departureDate: string;
-  // Removed shippingCompany field
+  // Vehicle information and driver fields only (no shipping company)
   driverName: string | null;
   vehicleInfo: string | null;
   totalBoxes: number;
@@ -266,24 +266,7 @@ export default function Itineraries() {
     refetchOnWindowFocus: false
   });
   
-  // Get shipping companies for filtering from the database
-  const { data: shippingCompanies = [] } = useQuery({
-    queryKey: ['/api/shipping-companies'],
-    queryFn: async () => {
-      try {
-        const response = await apiRequest('/api/customers/shipping-companies', { method: 'GET' });
-        if (!response.ok) {
-          throw new Error('Failed to fetch shipping companies');
-        }
-        
-        const data = await response.json();
-        return data;
-      } catch (error) {
-        console.error('Error fetching shipping companies:', error);
-        return [];
-      }
-    }
-  });
+  // No shipping companies data or filtering is needed
   
   // Get print preview for an itinerary
   const { data: printPreviewData, isLoading: isLoadingPrintPreview, refetch: refetchPrintPreview } = useQuery({
