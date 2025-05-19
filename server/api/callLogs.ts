@@ -11,11 +11,30 @@ const router = express.Router();
 const slackService = createSlackService(storage);
 
 // Transform DB call logs to match frontend expectations
-function transformCallLog(callLog: CallLog | undefined): any {
+async function transformCallLog(callLog: CallLog | undefined): Promise<any> {
   // Handle undefined call log
   if (!callLog) {
     console.error('Attempted to transform undefined call log');
     return null;
+  }
+  
+  // Try to get the actual customer name if there's a customer ID
+  let customerName = 'Unknown';
+  
+  if (callLog.customerId) {
+    try {
+      const customer = await storage.getCustomer(callLog.customerId);
+      if (customer) {
+        customerName = customer.name || 'Unknown';
+      }
+    } catch (error) {
+      console.error(`Error fetching customer ${callLog.customerId}:`, error);
+      // Fall back to contact name if customer lookup fails
+      customerName = callLog.contactName || callLog.companyName || 'Unknown';
+    }
+  } else {
+    // If no customer ID, use the contact name
+    customerName = callLog.contactName || callLog.companyName || 'Unknown';
   }
   
   // Create a new object without the ...callLog spread to avoid TypeScript errors
@@ -23,9 +42,10 @@ function transformCallLog(callLog: CallLog | undefined): any {
     id: callLog.id,
     customerId: callLog.customerId,
     // Map database field names to frontend field names
-    customerName: callLog.contactName || callLog.companyName || 'Unknown',
-    // For display in call logs list, use contact name in customer column
-    displayName: callLog.contactName || callLog.companyName || 'Unknown',
+    customerName: customerName,
+    // Also store the original contact name for reference
+    contactName: callLog.contactName || '',
+    companyName: callLog.companyName || '',
     // Use a better format for the subject line
     subject: callLog.callPurpose || `Call with ${callLog.contactName || callLog.companyName || 'Unknown'}`,
     needsFollowup: callLog.callStatus === 'needs_followup',
@@ -60,7 +80,8 @@ router.get('/', async (req, res) => {
       dateTo as string | undefined
     );
     // Transform database field names to match frontend expectations
-    const transformedLogs = logs.map(transformCallLog);
+    const transformPromises = logs.map(log => transformCallLog(log));
+    const transformedLogs = await Promise.all(transformPromises);
     res.json(transformedLogs);
   } catch (error) {
     console.error('Error fetching call logs:', error);
@@ -73,7 +94,8 @@ router.get('/scheduled', async (req, res) => {
   try {
     const userId = req.query.userId ? parseInt(req.query.userId as string, 10) : undefined;
     const logs = await storage.getScheduledCalls(userId);
-    const transformedLogs = logs.map(transformCallLog);
+    const transformPromises = logs.map(log => transformCallLog(log));
+    const transformedLogs = await Promise.all(transformPromises);
     res.json(transformedLogs);
   } catch (error) {
     console.error('Error fetching scheduled calls:', error);
@@ -85,7 +107,8 @@ router.get('/scheduled', async (req, res) => {
 router.get('/followup', async (req, res) => {
   try {
     const logs = await storage.getCallLogsRequiringFollowup();
-    const transformedLogs = logs.map(transformCallLog);
+    const transformPromises = logs.map(log => transformCallLog(log));
+    const transformedLogs = await Promise.all(transformPromises);
     res.json(transformedLogs);
   } catch (error) {
     console.error('Error fetching calls requiring follow-up:', error);
@@ -102,7 +125,8 @@ router.get('/search', async (req, res) => {
     }
     
     const logs = await storage.searchCallLogs(query);
-    const transformedLogs = logs.map(transformCallLog);
+    const transformPromises = logs.map(log => transformCallLog(log));
+    const transformedLogs = await Promise.all(transformPromises);
     res.json(transformedLogs);
   } catch (error) {
     console.error('Error searching call logs:', error);
@@ -119,7 +143,8 @@ router.get('/customer/:customerId', async (req, res) => {
     }
     
     const logs = await storage.getCallLogsByCustomer(customerId);
-    const transformedLogs = logs.map(transformCallLog);
+    const transformPromises = logs.map(log => transformCallLog(log));
+    const transformedLogs = await Promise.all(transformPromises);
     res.json(transformedLogs);
   } catch (error) {
     console.error('Error fetching call logs for customer:', error);
@@ -140,7 +165,7 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Call log not found' });
     }
     
-    const transformedLog = transformCallLog(log);
+    const transformedLog = await transformCallLog(log);
     res.json(transformedLog);
   } catch (error) {
     console.error('Error fetching call log:', error);
