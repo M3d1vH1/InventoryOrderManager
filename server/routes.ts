@@ -602,15 +602,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Order routes
   app.get('/api/orders', async (req, res) => {
     try {
+      // Extract query parameters
+      const status = req.query.status as string;
+      const search = req.query.search as string;
+      
+      // Get all orders
       const orders = await storage.getAllOrders();
+      
+      // Filter by status if provided
+      let filteredOrders = orders;
+      if (status) {
+        filteredOrders = orders.filter(order => order.status === status);
+        console.log(`Filtered to ${filteredOrders.length} orders with status: ${status}`);
+      }
+      
+      // Filter by search query if provided
+      if (search) {
+        const searchLower = search.toLowerCase();
+        filteredOrders = filteredOrders.filter(order => 
+          order.orderNumber.toLowerCase().includes(searchLower) ||
+          (order.customerName && order.customerName.toLowerCase().includes(searchLower))
+        );
+      }
+      
+      // Get items for each filtered order
       const ordersWithItems = await Promise.all(
-        orders.map(async (order) => {
+        filteredOrders.map(async (order) => {
           const items = await storage.getOrderItems(order.id);
           return { ...order, items };
         })
       );
+      
       res.json(ordersWithItems);
     } catch (error: any) {
+      console.error('Error fetching orders:', error);
       res.status(500).json({ message: error.message });
     }
   });
