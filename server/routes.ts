@@ -3438,10 +3438,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { pool } = require('./db');
       
       // Direct SQL query to avoid any ORM mapping issues
-      // Let's use a super simple query that just works
+      // Use the correct syntax for comparing with enum values
       const query = `
         SELECT * FROM orders 
-        WHERE status = 'picked'
+        WHERE status::text = 'picked'
       `;
       
       const result = await pool.query(query);
