@@ -161,9 +161,10 @@ export default function Itineraries() {
   
   // Get available orders for adding to itinerary with priority sorting and filtering
   const { data: availableOrders, isLoading: isLoadingAvailableOrders, refetch: refetchAvailableOrders } = useQuery({
-    queryKey: ['/api/orders', 'picked', orderFilter, selectedShippingCompany, searchQuery],
+    queryKey: ['/api/orders/picked', orderFilter, selectedShippingCompany, searchQuery],
     queryFn: async () => {
       try {
+        console.log('Fetching picked orders...');
         // Use the regular orders endpoint with status=picked to get picked orders
         let url = '/api/orders';
         const params = new URLSearchParams();
@@ -182,22 +183,48 @@ export default function Itineraries() {
         const queryString = params.toString();
         if (queryString) url += `?${queryString}`;
         
+        console.log('Fetching URL:', url);
         const response = await apiRequest(url, { method: 'GET' });
-        if (!response.ok) throw new Error('Failed to fetch available orders');
+        if (!response.ok) {
+          console.error('Failed to fetch available orders', response.status);
+          throw new Error('Failed to fetch available orders');
+        }
         
         const orders = await response.json();
+        console.log('Picked orders fetched:', orders.length);
         
-        // Map orders to include boxCount for consistency with the interface
-        return orders.map((order: any) => ({
-          ...order,
-          boxCount: order.items ? order.items.reduce((total: number, item: any) => total + Math.ceil(item.quantity / (item.unitsPerBox || 1)), 0) : 0
-        }));
+        // Calculate box count for each order based on items
+        const ordersWithBoxCount = orders.map((order: any) => {
+          // Default box count is 1 if no items or calculation fails
+          let boxCount = 1; 
+          
+          try {
+            if (order.items && order.items.length > 0) {
+              boxCount = order.items.reduce((total: number, item: any) => {
+                // Get units per box, default to 1 if not available
+                const unitsPerBox = item.unitsPerBox || 1;
+                // Calculate how many boxes needed for this item
+                const itemBoxes = Math.ceil(item.quantity / unitsPerBox);
+                return total + itemBoxes;
+              }, 0);
+            }
+          } catch (err) {
+            console.error('Error calculating boxes for order', order.id, err);
+          }
+          
+          return {
+            ...order,
+            boxCount
+          };
+        });
+        
+        return ordersWithBoxCount;
       } catch (error) {
         console.error('Error fetching available orders:', error);
         return [];
       }
     },
-    enabled: isAddOrderDialogOpen
+    enabled: isAddOrderDialogOpen && true, // Always enable this to ensure it runs
   });
   
   // Get shipping companies for filtering

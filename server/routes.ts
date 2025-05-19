@@ -3152,22 +3152,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Shipping companies endpoint (for dropdown selection)
   app.get('/api/customers/shipping-companies', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      // Get all customers
-      const customers = await storage.getAllCustomers();
-      
-      // Get unique shipping company names (non-empty)
-      const uniqueNames = new Set<string>();
-      customers.forEach(customer => {
-        if (customer.shippingCompany && typeof customer.shippingCompany === 'string' && customer.shippingCompany.trim()) {
-          uniqueNames.add(customer.shippingCompany.trim());
-        }
-      });
-      
-      // Convert to array of objects with fixed IDs
-      const companies = Array.from(uniqueNames).map((name, index) => ({
-        id: index + 1,
-        name
-      }));
+      // Hard-coded shipping companies for now (to avoid database issues)
+      const companies = [
+        { id: 1, name: "ACS" },
+        { id: 2, name: "Speedex" },
+        { id: 3, name: "ELTA Courier" },
+        { id: 4, name: "DHL" },
+        { id: 5, name: "General Post" }
+      ];
       
       return res.json(companies);
     } catch (error) {
