@@ -1,0 +1,229 @@
+import { Request, Response } from 'express';
+import { storage } from '../storage';
+import { z } from 'zod';
+
+// Schema for creating a new shipping itinerary
+const createItinerarySchema = z.object({
+  itineraryNumber: z.string().min(1),
+  departureDate: z.string().or(z.date()),
+  shippingCompany: z.string().optional(),
+  driverName: z.string().optional(),
+  vehicleInfo: z.string().optional(),
+  notes: z.string().optional(),
+  orderIds: z.array(z.number()).optional()
+});
+
+// Get all shipping itineraries
+export async function getAllShippingItineraries(req: Request, res: Response) {
+  try {
+    const itineraries = await storage.getAllShippingItineraries();
+    return res.json(itineraries);
+  } catch (error) {
+    console.error('Error getting shipping itineraries:', error);
+    return res.status(500).json({ 
+      error: 'Failed to retrieve shipping itineraries' 
+    });
+  }
+}
+
+// Get a single shipping itinerary by ID
+export async function getShippingItineraryById(req: Request, res: Response) {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid itinerary ID' });
+    }
+
+    const itinerary = await storage.getShippingItinerary(id);
+    if (!itinerary) {
+      return res.status(404).json({ error: 'Shipping itinerary not found' });
+    }
+
+    // Get orders associated with this itinerary
+    const orders = await storage.getOrdersForItinerary(id);
+
+    return res.json({ 
+      ...itinerary,
+      orders 
+    });
+  } catch (error) {
+    console.error(`Error getting shipping itinerary #${req.params.id}:`, error);
+    return res.status(500).json({ 
+      error: 'Failed to retrieve shipping itinerary' 
+    });
+  }
+}
+
+// Create a new shipping itinerary
+export async function createShippingItinerary(req: Request, res: Response) {
+  try {
+    const parsedBody = createItinerarySchema.safeParse(req.body);
+    if (!parsedBody.success) {
+      return res.status(400).json({ 
+        error: 'Invalid data', 
+        details: parsedBody.error.errors 
+      });
+    }
+
+    const { orderIds, ...itineraryData } = parsedBody.data;
+    
+    // Make sure the user is authenticated
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    // Format departure date if it's a string
+    const departureDate = typeof itineraryData.departureDate === 'string' 
+      ? new Date(itineraryData.departureDate) 
+      : itineraryData.departureDate;
+    
+    // Create the shipping itinerary
+    const newItinerary = await storage.createShippingItinerary({
+      ...itineraryData,
+      departureDate,
+      createdById: req.user.id
+    });
+    
+    // If order IDs are provided, associate them with the itinerary
+    if (orderIds && orderIds.length > 0) {
+      await Promise.all(orderIds.map(orderId => 
+        storage.addOrderToItinerary({
+          itineraryId: newItinerary.id,
+          orderId,
+          addedById: req.user.id
+        })
+      ));
+      
+      // Get the updated itinerary with orders
+      const updatedItinerary = await storage.getShippingItinerary(newItinerary.id);
+      const orders = await storage.getOrdersForItinerary(newItinerary.id);
+      
+      return res.status(201).json({ 
+        ...updatedItinerary,
+        orders 
+      });
+    }
+    
+    return res.status(201).json(newItinerary);
+  } catch (error) {
+    console.error('Error creating shipping itinerary:', error);
+    return res.status(500).json({ 
+      error: 'Failed to create shipping itinerary' 
+    });
+  }
+}
+
+// Add an order to an existing itinerary
+export async function addOrderToItinerary(req: Request, res: Response) {
+  try {
+    const itineraryId = parseInt(req.params.id);
+    const { orderId } = req.body;
+    
+    if (isNaN(itineraryId) || typeof orderId !== 'number') {
+      return res.status(400).json({ error: 'Invalid itinerary ID or order ID' });
+    }
+    
+    // Make sure the user is authenticated
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    // Check if the itinerary exists
+    const itinerary = await storage.getShippingItinerary(itineraryId);
+    if (!itinerary) {
+      return res.status(404).json({ error: 'Shipping itinerary not found' });
+    }
+    
+    // Check if the order exists
+    const order = await storage.getOrder(orderId);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    
+    // Add the order to the itinerary
+    await storage.addOrderToItinerary({
+      itineraryId,
+      orderId,
+      addedById: req.user.id
+    });
+    
+    // Get the updated list of orders for this itinerary
+    const orders = await storage.getOrdersForItinerary(itineraryId);
+    
+    return res.json({ 
+      itinerary,
+      orders 
+    });
+  } catch (error) {
+    console.error(`Error adding order to itinerary #${req.params.id}:`, error);
+    return res.status(500).json({ 
+      error: 'Failed to add order to itinerary' 
+    });
+  }
+}
+
+// Remove an order from an itinerary
+export async function removeOrderFromItinerary(req: Request, res: Response) {
+  try {
+    const itineraryId = parseInt(req.params.itineraryId);
+    const orderId = parseInt(req.params.orderId);
+    
+    if (isNaN(itineraryId) || isNaN(orderId)) {
+      return res.status(400).json({ error: 'Invalid itinerary ID or order ID' });
+    }
+    
+    // Check if the itinerary exists
+    const itinerary = await storage.getShippingItinerary(itineraryId);
+    if (!itinerary) {
+      return res.status(404).json({ error: 'Shipping itinerary not found' });
+    }
+    
+    // Remove the order from the itinerary
+    await storage.removeOrderFromItinerary(itineraryId, orderId);
+    
+    // Get the updated list of orders for this itinerary
+    const orders = await storage.getOrdersForItinerary(itineraryId);
+    
+    return res.json({ 
+      itinerary,
+      orders 
+    });
+  } catch (error) {
+    console.error(`Error removing order from itinerary:`, error);
+    return res.status(500).json({ 
+      error: 'Failed to remove order from itinerary' 
+    });
+  }
+}
+
+// Update itinerary status (mark as completed, etc.)
+export async function updateItineraryStatus(req: Request, res: Response) {
+  try {
+    const id = parseInt(req.params.id);
+    const { status } = req.body;
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid itinerary ID' });
+    }
+    
+    if (!['active', 'completed', 'cancelled'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status. Must be active, completed, or cancelled' });
+    }
+    
+    // Check if the itinerary exists
+    const itinerary = await storage.getShippingItinerary(id);
+    if (!itinerary) {
+      return res.status(404).json({ error: 'Shipping itinerary not found' });
+    }
+    
+    // Update the itinerary status
+    const updatedItinerary = await storage.updateShippingItineraryStatus(id, status);
+    
+    return res.json(updatedItinerary);
+  } catch (error) {
+    console.error(`Error updating itinerary status for #${req.params.id}:`, error);
+    return res.status(500).json({ 
+      error: 'Failed to update itinerary status' 
+    });
+  }
+}

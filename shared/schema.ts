@@ -138,6 +138,13 @@ export const orderPriorityEnum = pgEnum('order_priority', [
   'urgent'
 ]);
 
+// Shipping itinerary status enum
+export const itineraryStatusEnum = pgEnum('itinerary_status', [
+  'active',
+  'completed',
+  'cancelled'
+]);
+
 // Shipping Documents Schema
 export const shippingDocuments = pgTable("shipping_documents", {
   id: serial("id").primaryKey(),
@@ -488,7 +495,7 @@ export const shippingItineraries = pgTable("shipping_itineraries", {
   notes: text("notes"),
   createdById: integer("created_by_id").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  status: text("status").notNull().default('active'),
+  status: itineraryStatusEnum("status").notNull().default('active'),
 });
 
 // Itinerary-Order relationship table (many-to-many)
@@ -513,6 +520,10 @@ export const insertShippingItinerarySchema = createInsertSchema(shippingItinerar
 
 export const insertItineraryOrderSchema = createInsertSchema(itineraryOrders)
   .omit({ id: true, addedAt: true });
+
+export type InsertShippingItinerary = z.infer<typeof insertShippingItinerarySchema>;
+export type ShippingItinerary = typeof shippingItineraries.$inferSelect;
+export type ItineraryOrder = typeof itineraryOrders.$inferSelect;
 
 // Order Quality Schema - For tracking order issues
 export const orderQuality = pgTable("order_errors", {
