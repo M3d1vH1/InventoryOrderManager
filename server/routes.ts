@@ -3438,19 +3438,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { pool } = require('./db');
       
       // Direct SQL query to avoid any ORM mapping issues
+      // Let's use a super simple query that just works
       const query = `
-        SELECT 
-          id, order_number as "orderNumber", customer_name as "customerName", 
-          order_date as "orderDate", status, priority, area,
-          has_shipping_document as "hasShippingDocument",
-          notes, itinerary_id as "itineraryId"
-        FROM orders 
+        SELECT * FROM orders 
         WHERE status = 'picked'
       `;
       
       const result = await pool.query(query);
+      
+      // Transform database column names to our frontend format
       const pickedOrders = result.rows.map(order => ({
-        ...order,
+        id: order.id,
+        orderNumber: order.order_number,
+        customerName: order.customer_name,
+        orderDate: order.order_date,
+        status: order.status,
+        priority: order.priority || 'medium',
+        area: order.area || '',
+        notes: order.notes,
         boxCount: Math.floor(Math.random() * 5) + 1 // Add random box count between 1-5
       }));
       
