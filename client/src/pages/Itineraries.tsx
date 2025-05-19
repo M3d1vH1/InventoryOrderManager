@@ -195,24 +195,52 @@ export default function Itineraries() {
         const orders = await response.json();
         console.log('Picked orders available:', orders.length);
         
-        // Filter by shipping company if selected
+        // Make orders that have the right status available
         let filteredOrders = [...orders];
         
-        if (orderFilter === 'byShipping' && selectedShippingCompany) {
-          // Log the order properties to see what's available
-          if (filteredOrders.length > 0) {
-            console.log('Order properties example:', Object.keys(filteredOrders[0]));
-          }
+        // Show available orders in console for debugging
+        console.log('Picked orders found:', filteredOrders.length);
+        
+        // When filter by shipping is active, show which orders match which shipping company
+        if (filteredOrders.length > 0) {
+          console.log('First order example:', filteredOrders[0]);
+          console.log('Last order example:', filteredOrders[filteredOrders.length - 1]);
           
-          // Use a more flexible approach to find shipping company data
+          // Get the customer details for each order to extract shipping info
+          const ordersWithCustomerInfo = await Promise.all(
+            filteredOrders.map(async (order: any) => {
+              try {
+                if (order.customer_id) {
+                  // Fetch customer details to get shipping company
+                  const customerResponse = await apiRequest(`/api/customers/${order.customer_id}`);
+                  const customer = await customerResponse.json();
+                  
+                  // Add shipping company to order from customer data
+                  return {
+                    ...order,
+                    customerShippingCompany: customer.shippingCompany || customer.shipping_company || 'Unknown'
+                  };
+                }
+                return order;
+              } catch (err) {
+                console.log(`Error getting customer for order ${order.id}:`, err);
+                return order;
+              }
+            })
+          );
+          
+          filteredOrders = ordersWithCustomerInfo;
+        }
+        
+        // Filter by shipping company if selected
+        if (orderFilter === 'byShipping' && selectedShippingCompany) {
           filteredOrders = filteredOrders.filter((order: any) => {
-            // Try various possible locations for shipping company in the data model
+            // Check various fields where shipping company might be stored
             const orderCompany = 
-              order.shippingCompany || 
-              (order.shipping?.company) || 
-              (order.customer?.shippingCompany) ||
-              order.shipping_company;
-              
+              order.customerShippingCompany ||
+              order.shipping_company ||
+              order.shippingCompany;
+            
             return orderCompany === selectedShippingCompany;
           });
         }

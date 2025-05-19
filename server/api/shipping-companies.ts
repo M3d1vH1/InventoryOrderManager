@@ -35,9 +35,9 @@ export async function getShippingCompanies(req: Request, res: Response) {
     });
     
     // Create the shipping company array
-    const shippingCompanies = Array.from(companySet).map(companyName => {
-      // Get a customer ID if we have one, otherwise generate random ID
-      const id = companyMap.get(companyName) || Math.floor(Math.random() * 10000) + 100;
+    const shippingCompanies = Array.from(companySet).map((companyName, index) => {
+      // Use a fixed index instead of customer ID to avoid NaN issues
+      const id = index + 1;
       return {
         id,
         name: companyName
