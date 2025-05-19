@@ -3149,24 +3149,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/shipping-itineraries/:id/orders/:orderId', isAuthenticated, removeOrderFromItinerary);
   app.patch('/api/shipping-itineraries/:id/status', isAuthenticated, updateItineraryStatus);
   
-  // Shipping companies endpoint (for dropdown selection)
-  app.get('/api/customers/shipping-companies', isAuthenticated, async (req: Request, res: Response) => {
+  // Special endpoint for orders ready for shipping itineraries
+  app.get('/api/orders-for-shipping', async (req: Request, res: Response) => {
     try {
-      // Hard-coded shipping companies for now (to avoid database issues)
-      const companies = [
+      // Get basic parameters
+      const { search, shippingCompany, priority } = req.query;
+      
+      // Get all orders first
+      const orders = await storage.getAllOrders();
+      
+      // Filter to include only picked and shipped orders
+      const shippableOrders = orders.filter(order => 
+        order.status === 'picked' || order.status === 'shipped'
+      );
+      
+      console.log(`Found ${shippableOrders.length} orders with picked or shipped status`);
+      
+      // Apply additional filters
+      let filteredOrders = [...shippableOrders];
+      
+      // Filter by shipping company if provided
+      if (shippingCompany && shippingCompany !== 'all') {
+        filteredOrders = filteredOrders.filter(order => 
+          order.shippingCompany === shippingCompany
+        );
+      }
+      
+      // Filter by priority if specified
+      if (priority) {
+        filteredOrders = filteredOrders.filter(order => order.priority === priority);
+      }
+      
+      // Filter by search query if provided
+      if (search) {
+        const searchStr = search.toString().toLowerCase();
+        filteredOrders = filteredOrders.filter(order => 
+          (order.orderNumber && order.orderNumber.toLowerCase().includes(searchStr)) ||
+          (order.customerName && order.customerName.toLowerCase().includes(searchStr)) ||
+          (order.area && order.area.toLowerCase().includes(searchStr))
+        );
+      }
+      
+      // Get order items for each filtered order to calculate boxes
+      const ordersWithItems = await Promise.all(
+        filteredOrders.map(async (order) => {
+          const items = await storage.getOrderItems(order.id);
+          
+          // Calculate box count
+          let boxCount = 1; // Default to 1 if no items
+          
+          if (items && items.length > 0) {
+            boxCount = items.reduce((total, item) => {
+              const unitsPerBox = item.unitsPerBox || 1;
+              return total + Math.ceil(item.quantity / unitsPerBox);
+            }, 0);
+            
+            // If calculation resulted in 0, use 1 as minimum
+            if (boxCount === 0) boxCount = 1;
+          }
+          
+          return { 
+            ...order, 
+            items,
+            boxCount
+          };
+        })
+      );
+      
+      res.json(ordersWithItems);
+    } catch (error) {
+      console.error('Error fetching orders for shipping:', error);
+      res.status(500).json({ message: 'Failed to retrieve orders for shipping' });
+    }
+  });
+  
+  // Shipping companies endpoint (for dropdown selection)
+  app.get('/api/customers/shipping-companies', async (req: Request, res: Response) => {
+    try {
+      const shippingCompaniesHandler = require('./api/shipping-companies');
+      await shippingCompaniesHandler.getShippingCompanies(req, res);
+    } catch (error) {
+      console.error('Error getting shipping companies:', error);
+      // Fallback to default companies if the handler fails
+      const defaultCompanies = [
         { id: 1, name: "ACS" },
         { id: 2, name: "Speedex" },
         { id: 3, name: "ELTA Courier" },
         { id: 4, name: "DHL" },
         { id: 5, name: "General Post" }
       ];
-      
-      return res.json(companies);
-    } catch (error) {
-      console.error('Error getting shipping companies:', error);
-      return res.status(500).json({ 
-        message: 'Failed to retrieve shipping companies' 
-      });
+      return res.json(defaultCompanies);
     }
   });
   
