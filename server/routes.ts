@@ -3141,6 +3141,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Direct endpoint for picked orders - specifically for shipping itineraries
+  app.get('/api/orders/picked', async (req: Request, res: Response) => {
+    try {
+      // Get all orders
+      const allOrders = await storage.getAllOrders();
+      
+      // Filter to just picked orders
+      const pickedOrders = allOrders.filter(order => order.status === 'picked');
+      
+      console.log(`Found ${pickedOrders.length} picked orders for shipping itineraries`);
+      
+      // Get order items for each picked order
+      const ordersWithItems = await Promise.all(
+        pickedOrders.map(async (order) => {
+          try {
+            const items = await storage.getOrderItems(order.id);
+            return { ...order, items };
+          } catch (error) {
+            console.error(`Error getting items for order ${order.id}:`, error);
+            return { ...order, items: [] };
+          }
+        })
+      );
+      
+      return res.json(ordersWithItems);
+    } catch (error) {
+      console.error('Error fetching picked orders:', error);
+      // Return empty array instead of error
+      return res.json([]);
+    }
+  });
+  
   app.post('/api/itineraries/:id/orders', isAuthenticated, addOrderToItinerary);
   app.delete('/api/itineraries/:id/orders/:orderId', isAuthenticated, removeOrderFromItinerary);
   app.patch('/api/itineraries/:id/status', isAuthenticated, updateItineraryStatus);
@@ -3283,15 +3315,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Shipping companies endpoint
   app.get('/api/customers/shipping-companies', (req: Request, res: Response) => {
-    // Return static shipping companies list to avoid any NaN errors
-    const companies = [
-      { id: 1, name: "ACS" },
-      { id: 2, name: "Speedex" },
-      { id: 3, name: "ELTA Courier" },
-      { id: 4, name: "DHL" },
-      { id: 5, name: "General Post" }
-    ];
-    return res.json(companies);
+    try {
+      // Return static shipping companies list to avoid any NaN errors
+      const companies = [
+        { id: 1, name: "ACS" },
+        { id: 2, name: "Speedex" },
+        { id: 3, name: "ELTA Courier" },
+        { id: 4, name: "DHL" },
+        { id: 5, name: "General Post" }
+      ];
+      return res.json(companies);
+    } catch (error) {
+      console.error('Error in shipping companies endpoint:', error);
+      // Return empty array instead of error to prevent UI issues
+      return res.json([]);
+    }
   });
   
   // Image upload and fix routes
