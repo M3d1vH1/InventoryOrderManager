@@ -6,7 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Printer, Edit, Trash, CalendarDays, Package } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, Printer, Edit, Trash, CalendarDays, Package, Search } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { el } from 'date-fns/locale';
@@ -39,7 +41,10 @@ export default function Itineraries() {
   const queryClient = useQueryClient();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isOrdersDialogOpen, setIsOrdersDialogOpen] = useState(false);
+  const [isAddOrderDialogOpen, setIsAddOrderDialogOpen] = useState(false);
   const [selectedItinerary, setSelectedItinerary] = useState<Itinerary | null>(null);
+  const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   
   // Form state for creating new itinerary
   const [formData, setFormData] = useState({
@@ -146,6 +151,147 @@ export default function Itineraries() {
   // Print itinerary
   const handlePrintItinerary = (itineraryId: number) => {
     window.open(`/api/itineraries/${itineraryId}/print`, '_blank');
+  };
+  
+  // Remove order from itinerary
+  const removeOrderMutation = useMutation({
+    mutationFn: async ({ itineraryId, orderId }: { itineraryId: number, orderId: number }) => {
+      const response = await apiRequest(`/api/itineraries/${itineraryId}/orders/${orderId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to remove order from itinerary');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: t('Order removed'),
+        description: t('Order has been removed from the itinerary'),
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/itineraries', selectedItinerary?.id, 'orders'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/itineraries'] });
+    },
+    onError: (error) => {
+      toast({
+        title: t('Error'),
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
+
+  // Handle removing order from itinerary
+  const handleRemoveOrder = (orderId: number) => {
+    if (!selectedItinerary) return;
+    
+    if (window.confirm(t('Are you sure you want to remove this order from the itinerary?'))) {
+      removeOrderMutation.mutate({ 
+        itineraryId: selectedItinerary.id, 
+        orderId 
+      });
+    }
+  };
+  
+  // Update itinerary status
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ itineraryId, status }: { itineraryId: number, status: 'active' | 'completed' | 'cancelled' }) => {
+      const response = await apiRequest(`/api/itineraries/${itineraryId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update itinerary status');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: t('Status updated'),
+        description: t('Itinerary status has been updated'),
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/itineraries'] });
+    },
+    onError: (error) => {
+      toast({
+        title: t('Error'),
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
+
+  // Handle updating itinerary status
+  const handleUpdateStatus = (itineraryId: number, status: 'active' | 'completed' | 'cancelled') => {
+    updateStatusMutation.mutate({ itineraryId, status });
+  };
+
+  // Get available orders for adding to itinerary
+  const { data: availableOrders, isLoading: isLoadingAvailableOrders } = useQuery({
+    queryKey: ['/api/orders', 'available', searchQuery],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest(`/api/orders/available?search=${encodeURIComponent(searchQuery)}`, { method: 'GET' });
+        if (!response.ok) throw new Error('Failed to fetch available orders');
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching available orders:', error);
+        return [];
+      }
+    },
+    enabled: isAddOrderDialogOpen
+  });
+
+  // Add orders to itinerary
+  const addOrdersMutation = useMutation({
+    mutationFn: async ({ itineraryId, orderIds }: { itineraryId: number, orderIds: number[] }) => {
+      const response = await apiRequest(`/api/itineraries/${itineraryId}/orders`, {
+        method: 'POST',
+        body: JSON.stringify({ orderIds }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to add orders to itinerary');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: t('Orders added'),
+        description: t('Orders have been added to the itinerary'),
+      });
+      setIsAddOrderDialogOpen(false);
+      setSelectedOrders([]);
+      queryClient.invalidateQueries({ queryKey: ['/api/itineraries', selectedItinerary?.id, 'orders'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/itineraries'] });
+    },
+    onError: (error) => {
+      toast({
+        title: t('Error'),
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
+
+  // Handle selection of orders
+  const handleOrderSelection = (orderId: number) => {
+    setSelectedOrders(prev => {
+      if (prev.includes(orderId)) {
+        return prev.filter(id => id !== orderId);
+      } else {
+        return [...prev, orderId];
+      }
+    });
+  };
+
+  // Handle adding selected orders to itinerary
+  const handleAddOrders = () => {
+    if (!selectedItinerary || selectedOrders.length === 0) return;
+    
+    addOrdersMutation.mutate({
+      itineraryId: selectedItinerary.id,
+      orderIds: selectedOrders
+    });
   };
 
   // Generate a suggested itinerary number based on date and next sequential number
@@ -306,14 +452,59 @@ export default function Itineraries() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        itinerary.status === 'active' ? 'bg-green-100 text-green-800' :
-                        itinerary.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {itinerary.status === 'active' ? 'Ενεργό' :
-                         itinerary.status === 'completed' ? 'Ολοκληρώθηκε' :
-                         'Ακυρώθηκε'}
+                      <div className="flex items-center space-x-2">
+                        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          itinerary.status === 'active' ? 'bg-green-100 text-green-800' :
+                          itinerary.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {itinerary.status === 'active' ? 'Ενεργό' :
+                           itinerary.status === 'completed' ? 'Ολοκληρώθηκε' :
+                           'Ακυρώθηκε'}
+                        </div>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="py-0 px-1 h-6">
+                              <Edit size={14} />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[425px]">
+                            <DialogHeader>
+                              <DialogTitle>Αλλαγή Κατάστασης</DialogTitle>
+                              <DialogDescription>
+                                Επιλέξτε τη νέα κατάσταση για το δρομολόγιο {itinerary.itineraryNumber}
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                              <div className="grid grid-cols-3 gap-2">
+                                <Button 
+                                  variant={itinerary.status === 'active' ? 'default' : 'outline'} 
+                                  className={itinerary.status === 'active' ? 'bg-green-600' : ''} 
+                                  onClick={() => handleUpdateStatus(itinerary.id, 'active')}
+                                  disabled={updateStatusMutation.isPending}
+                                >
+                                  Ενεργό
+                                </Button>
+                                <Button 
+                                  variant={itinerary.status === 'completed' ? 'default' : 'outline'} 
+                                  className={itinerary.status === 'completed' ? 'bg-blue-600' : ''} 
+                                  onClick={() => handleUpdateStatus(itinerary.id, 'completed')}
+                                  disabled={updateStatusMutation.isPending}
+                                >
+                                  Ολοκληρώθηκε
+                                </Button>
+                                <Button 
+                                  variant={itinerary.status === 'cancelled' ? 'default' : 'outline'} 
+                                  className={itinerary.status === 'cancelled' ? 'bg-red-600' : ''} 
+                                  onClick={() => handleUpdateStatus(itinerary.id, 'cancelled')}
+                                  disabled={updateStatusMutation.isPending}
+                                >
+                                  Ακυρώθηκε
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
@@ -392,6 +583,8 @@ export default function Itineraries() {
                           size="sm" 
                           className="text-red-500 hover:text-red-600 hover:bg-red-50"
                           title="Αφαίρεση από δρομολόγιο"
+                          onClick={() => handleRemoveOrder(order.id)}
+                          disabled={removeOrderMutation.isPending}
                         >
                           <Trash size={16} />
                         </Button>
@@ -429,6 +622,92 @@ export default function Itineraries() {
                 <Printer size={16} className="mr-2" />
                 Εκτύπωση Λίστας
               </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog for adding orders to an itinerary */}
+      <Dialog open={isAddOrderDialogOpen} onOpenChange={setIsAddOrderDialogOpen}>
+        <DialogContent className="sm:max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>
+              Προσθήκη Παραγγελιών στο Δρομολόγιο {selectedItinerary?.itineraryNumber}
+            </DialogTitle>
+            <DialogDescription>
+              Επιλέξτε τις παραγγελίες που θέλετε να προσθέσετε στο δρομολόγιο
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mb-4">
+            <div className="flex items-center space-x-2">
+              <Search size={16} className="text-gray-400" />
+              <Input
+                placeholder="Αναζήτηση με αριθμό παραγγελίας ή όνομα πελάτη..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1"
+              />
+            </div>
+          </div>
+          
+          {isLoadingAvailableOrders ? (
+            <div className="text-center p-4">Φόρτωση διαθέσιμων παραγγελιών...</div>
+          ) : availableOrders?.length > 0 ? (
+            <div className="max-h-[400px] overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[50px]">Επιλογή</TableHead>
+                    <TableHead>Αριθμός</TableHead>
+                    <TableHead>Πελάτης</TableHead>
+                    <TableHead>Ημερομηνία</TableHead>
+                    <TableHead className="text-center">Κιβώτια</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {availableOrders.map((order: any) => (
+                    <TableRow key={order.id} className={selectedOrders.includes(order.id) ? 'bg-gray-50' : ''}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedOrders.includes(order.id)}
+                          onCheckedChange={() => handleOrderSelection(order.id)}
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                      <TableCell>{order.customerName}</TableCell>
+                      <TableCell>{format(new Date(order.orderDate), 'dd/MM/yyyy', { locale: el })}</TableCell>
+                      <TableCell className="text-center">{order.boxCount || '?'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center p-6">
+              <p className="text-muted-foreground">Δεν βρέθηκαν διαθέσιμες παραγγελίες</p>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <div className="flex justify-between w-full">
+              <div className="text-sm">
+                {selectedOrders.length} επιλεγμένες παραγγελίες
+              </div>
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsAddOrderDialogOpen(false)}
+                >
+                  Ακύρωση
+                </Button>
+                <Button 
+                  onClick={handleAddOrders} 
+                  disabled={selectedOrders.length === 0 || addOrdersMutation.isPending}
+                >
+                  {addOrdersMutation.isPending ? 'Προσθήκη...' : 'Προσθήκη Παραγγελιών'}
+                </Button>
+              </div>
             </div>
           </DialogFooter>
         </DialogContent>
