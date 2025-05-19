@@ -514,10 +514,6 @@ export const insertShippingItinerarySchema = createInsertSchema(shippingItinerar
 export const insertItineraryOrderSchema = createInsertSchema(itineraryOrders)
   .omit({ id: true, addedAt: true });
 
-export type InsertShippingItinerary = z.infer<typeof insertShippingItinerarySchema>;
-export type ShippingItinerary = typeof shippingItineraries.$inferSelect;
-export type ItineraryOrder = typeof itineraryOrders.$inferSelect;
-
 // Order Quality Schema - For tracking order issues
 export const orderQuality = pgTable("order_errors", {
   id: serial("id").primaryKey(),
