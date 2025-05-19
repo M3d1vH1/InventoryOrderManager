@@ -3155,18 +3155,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get unique shipping companies from customers
       const customers = await storage.getAllCustomers();
       
-      // Extract unique shipping company names that are not null or empty
-      const companies = customers
-        .filter(c => c.shippingCompany && c.shippingCompany.trim() !== '')
-        .map(c => ({
-          id: c.id,
-          name: c.shippingCompany
-        }));
+      // Create a set to store unique company names
+      const uniqueCompanyNames = new Set<string>();
       
-      // Remove duplicates
-      const uniqueCompanies = Array.from(
-        new Map(companies.map(c => [c.name, c])).values()
-      );
+      // Extract company names that are not null or empty
+      customers.forEach(c => {
+        if (c.shippingCompany && c.shippingCompany.trim() !== '') {
+          uniqueCompanyNames.add(c.shippingCompany.trim());
+        }
+      });
+      
+      // Convert to array of objects with incremental IDs
+      const uniqueCompanies = Array.from(uniqueCompanyNames).map((name, index) => ({
+        id: index + 1,
+        name: name
+      }));
       
       return res.json(uniqueCompanies);
     } catch (error) {
