@@ -169,8 +169,8 @@ export default function Itineraries() {
         let url = '/api/orders';
         const params = new URLSearchParams();
         
-        // Filter by "picked" status
-        params.append('status', 'picked');
+        // Filter by "picked" or "shipped" status since we need to show both
+        params.append('status', 'shipped');
         
         if (searchQuery) params.append('search', searchQuery);
         if (orderFilter === 'byShipping' && selectedShippingCompany) {

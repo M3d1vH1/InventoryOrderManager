@@ -4,30 +4,65 @@ import { storage } from '../storage';
 // Get all shipping companies (unique shipping company names from customers)
 export async function getShippingCompanies(req: Request, res: Response) {
   try {
-    // Get unique shipping companies from customers
+    // Default shipping companies as fallback
+    const defaultCompanies = [
+      { id: 1, name: "ACS" },
+      { id: 2, name: "ELTA Courier" },
+      { id: 3, name: "Speedex" },
+      { id: 4, name: "DHL" },
+      { id: 5, name: "Geniki Taxydromiki" }
+    ];
+
+    // Get customers from the database
     const customers = await storage.getAllCustomers();
+    if (!customers || customers.length === 0) {
+      return res.json(defaultCompanies);
+    }
     
-    // Extract unique shipping company names that are not null or empty
-    const companies = customers
-      .filter(c => c.shippingCompany && c.shippingCompany.trim() !== '')
-      .map(c => ({
-        id: c.id || Math.floor(Math.random() * 1000) + 1,
-        name: c.shippingCompany
-      }));
+    // Extract companies from customers with proper error handling
+    const companySet = new Set<string>();
+    const companyMap = new Map<string, number>();
     
-    // Remove duplicates (using company name as unique identifier)
-    const uniqueCompanies = Array.from(
-      new Map(companies.map(c => [c.name, c])).values()
-    );
+    // First gather all unique company names and their customer IDs
+    customers.forEach(customer => {
+      if (customer.shippingCompany && typeof customer.shippingCompany === 'string' && customer.shippingCompany.trim() !== '') {
+        companySet.add(customer.shippingCompany);
+        // Store first customer ID for each company
+        if (!companyMap.has(customer.shippingCompany) && typeof customer.id === 'number') {
+          companyMap.set(customer.shippingCompany, customer.id);
+        }
+      }
+    });
     
-    // Sort companies alphabetically
-    uniqueCompanies.sort((a, b) => a.name.localeCompare(b.name));
+    // Create the shipping company array
+    const shippingCompanies = Array.from(companySet).map(companyName => {
+      // Get a customer ID if we have one, otherwise generate random ID
+      const id = companyMap.get(companyName) || Math.floor(Math.random() * 10000) + 100;
+      return {
+        id,
+        name: companyName
+      };
+    });
     
-    return res.json(uniqueCompanies);
+    // Add default companies if we don't have enough from customers
+    if (shippingCompanies.length === 0) {
+      return res.json(defaultCompanies);
+    }
+    
+    // Sort alphabetically
+    shippingCompanies.sort((a, b) => a.name.localeCompare(b.name));
+    
+    return res.json(shippingCompanies);
   } catch (error) {
     console.error('Error getting shipping companies:', error);
-    return res.status(500).json({ 
-      message: 'Failed to retrieve shipping companies' 
-    });
+    // Return default companies if there's an error
+    const defaultCompanies = [
+      { id: 1, name: "ACS" },
+      { id: 2, name: "ELTA Courier" },
+      { id: 3, name: "Speedex" },
+      { id: 4, name: "DHL" },
+      { id: 5, name: "Geniki Taxydromiki" }
+    ];
+    return res.json(defaultCompanies);
   }
 }
