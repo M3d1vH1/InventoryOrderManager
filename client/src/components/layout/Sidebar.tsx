@@ -7,7 +7,7 @@ import { FaTachometerAlt, FaShoppingCart, FaBox, FaWarehouse,
   FaCog, FaUserCog, FaSignOutAlt, FaChevronDown, 
   FaList, FaTruckLoading, FaClipboardCheck, FaClipboardList,
   FaBell, FaBoxes, FaAngleDoubleLeft, FaAngleDoubleRight,
-  FaMoneyBillWave, FaTruck } from 'react-icons/fa';
+  FaMoneyBillWave } from 'react-icons/fa';
 
 const Sidebar = () => {
   const { isSidebarOpen, toggleSidebar, setCurrentPage } = useSidebar();
@@ -268,8 +268,6 @@ const Sidebar = () => {
                     </button>
                   </Link>
                 </li>
-                
-                {/* Shipping Itineraries feature removed */}
                 
                 <li className="mb-1">
                   <div>

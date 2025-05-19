@@ -24,7 +24,6 @@ import Production from "@/pages/Production";
 import SupplierPayments from "@/pages/SupplierPayments";
 import CalendarTest from "@/pages/CalendarTest";
 import PrinterTest from "@/pages/printerTest";
-// Removed itineraries import
 import PrintTemplate from "@/pages/PrintTemplate";
 import Login from "@/pages/Login";
 import Sidebar from "@/components/layout/Sidebar";
@@ -93,7 +92,6 @@ function AuthenticatedRouter() {
       <Route path="/inventory-predictions" component={InventoryPredictions} />
       <Route path="/production" component={Production} />
       <Route path="/supplier-payments" component={SupplierPayments} />
-      {/* Itineraries functionality removed */}
       <Route path="/printer-test" component={PrinterTest} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
@@ -122,8 +120,9 @@ function Router() {
 
   // If not authenticated and not on login page, redirect to login
   if (!isAuthenticated) {
-    // Use the React way of showing the login component instead of redirect
-    return <Login />;
+    // Redirect to login page
+    window.location.href = '/login';
+    return null;
   }
 
   // Show authenticated routes
