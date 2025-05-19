@@ -24,7 +24,7 @@ import Production from "@/pages/Production";
 import SupplierPayments from "@/pages/SupplierPayments";
 import CalendarTest from "@/pages/CalendarTest";
 import PrinterTest from "@/pages/printerTest";
-// Itineraries page is loaded dynamically
+import Itineraries from "@/pages/Itineraries";
 import PrintTemplate from "@/pages/PrintTemplate";
 import Login from "@/pages/Login";
 import Sidebar from "@/components/layout/Sidebar";
@@ -93,7 +93,7 @@ function AuthenticatedRouter() {
       <Route path="/inventory-predictions" component={InventoryPredictions} />
       <Route path="/production" component={Production} />
       <Route path="/supplier-payments" component={SupplierPayments} />
-      <Route path="/itineraries" component={React.lazy(() => import('@/pages/Itineraries'))} />
+      <Route path="/itineraries" component={Itineraries} />
       <Route path="/printer-test" component={PrinterTest} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
