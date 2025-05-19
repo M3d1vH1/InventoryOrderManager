@@ -193,6 +193,7 @@ router.post('/', async (req, res) => {
                   quickData.callType === 'outbound' ? 'outgoing' :
                   quickData.callType === 'missed' ? 'missed' : 'incoming',
         callPurpose: 'other', // Default for quick calls
+        subject: quickData.subject || 'No subject', // Store the actual subject
         callStatus: quickData.needsFollowup ? 'needs_followup' : 'completed',
         priority: quickData.priority === 'medium' ? 'normal' : 
                  quickData.priority === 'low' ? 'low' :

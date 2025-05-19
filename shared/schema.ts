@@ -612,6 +612,7 @@ export const callLogs = pgTable("call_logs", {
   customerId: integer("customer_id"), // Optional - for tracking non-customer calls
   contactName: text("contact_name").notNull(), // Name of person contacted
   companyName: text("company_name"), // Company name (for non-customers)
+  subject: text("subject"), // Subject of the call
   callDate: timestamp("call_date").notNull().defaultNow(),
   callTime: text("call_time"), // Time as string for better display control
   duration: integer("duration"), // Call duration in seconds
