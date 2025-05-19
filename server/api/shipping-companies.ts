@@ -4,23 +4,17 @@ import { storage } from '../storage';
 // Get all shipping companies (unique shipping company names from customers)
 export async function getShippingCompanies(req: Request, res: Response) {
   try {
-    // Get unique shipping companies from customers
-    const customers = await storage.getAllCustomers();
+    // Hard-coded shipping companies for reliability
+    const hardcodedCompanies = [
+      { id: 1, name: "ACS" },
+      { id: 2, name: "ELTA Courier" },
+      { id: 3, name: "Speedex" },
+      { id: 4, name: "DHL" },
+      { id: 5, name: "Geniki Taxydromiki" },
+      { id: 6, name: "Courier Center" }
+    ];
     
-    // Extract unique shipping company names that are not null or empty
-    const companies = customers
-      .filter(c => c.shippingCompany && c.shippingCompany.trim() !== '')
-      .map(c => ({
-        id: c.id,
-        name: c.shippingCompany
-      }));
-    
-    // Remove duplicates
-    const uniqueCompanies = Array.from(
-      new Map(companies.map(c => [c.name, c])).values()
-    );
-    
-    return res.json(uniqueCompanies);
+    return res.json(hardcodedCompanies);
   } catch (error) {
     console.error('Error getting shipping companies:', error);
     return res.status(500).json({ 

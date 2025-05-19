@@ -72,7 +72,6 @@ export default function Itineraries() {
     departureDate: format(new Date(), 'yyyy-MM-dd\'T\'HH:mm'),
     driverName: '',
     vehicleInfo: '',
-    shippingCompany: '',
     notes: '',
     status: 'proposed' as 'proposed' | 'active' | 'completed' | 'cancelled'
   });
@@ -349,7 +348,6 @@ export default function Itineraries() {
       departureDate: format(new Date(), 'yyyy-MM-dd\'T\'HH:mm'),
       driverName: '',
       vehicleInfo: '',
-      shippingCompany: '',
       notes: '',
       status: 'proposed'
     });
@@ -666,25 +664,7 @@ export default function Itineraries() {
                           />
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="shippingCompany">Μεταφορική Εταιρεία</Label>
-                        <Select 
-                          value={formData.shippingCompany || "direct"} 
-                          onValueChange={(value) => handleSelectChange('shippingCompany', value === "direct" ? "" : value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Επιλογή μεταφορικής εταιρείας" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="direct">Άμεση Παράδοση</SelectItem>
-                            {shippingCompanies?.map((company: any) => (
-                              <SelectItem key={company.id || company.name} value={company.name || `company-${company.id}`}>
-                                {company.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+
                       <div className="space-y-2">
                         <Label htmlFor="notes">Σημειώσεις</Label>
                         <Textarea
