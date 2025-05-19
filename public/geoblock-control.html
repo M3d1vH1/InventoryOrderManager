@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Geoblocking Control Panel</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        padding: 20px;
+        color: #333;
+        background-color: #f5f5f5;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      }
+      h1 {
+        color: #2c3e50;
+        margin-top: 0;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+      }
+      .info-box {
+        background: #f8f9fa;
+        border-left: 4px solid #3498db;
+        padding: 15px;
+        margin: 20px 0;
+      }
+      .controls {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        padding: 15px;
+        background: #f0f9ff;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+      .status {
+        padding: 8px 12px;
+        border-radius: 4px;
+        display: inline-block;
+        font-weight: bold;
+      }
+      .enabled {
+        background: #d4edda;
+        color: #155724;
+      }
+      .disabled {
+        background: #f8d7da;
+        color: #721c24;
+      }
+      .toggle-button {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        background-color: #4a90e2;
+        color: white;
+        transition: background-color 0.2s;
+      }
+      .toggle-button:hover {
+        background-color: #357abd;
+      }
+      .save-button {
+        background-color: #28a745;
+      }
+      .save-button:hover {
+        background-color: #218838;
+      }
+      label {
+        font-weight: bold;
+        margin-bottom: 5px;
+        display: block;
+      }
+      input {
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        width: 100%;
+        margin-bottom: 15px;
+      }
+      .allowed-ips {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+      }
+      .ip-list {
+        list-style: none;
+        padding: 0;
+      }
+      .ip-list li {
+        padding: 8px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+      }
+      .remove-btn {
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        padding: 2px 8px;
+      }
+      .footer {
+        margin-top: 30px;
+        font-size: 0.9em;
+        color: #6c757d;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Geoblocking Control Panel</h1>
+      
+      <div class="info-box">
+        <h3>Your Connection</h3>
+        <div id="connection-info">Loading...</div>
+      </div>
+      
+      <div class="controls">
+        <div>
+          <h3>Geoblocking Status</h3>
+          <div id="status-display">Loading...</div>
+        </div>
+        <button id="toggle-button" class="toggle-button">Toggle Geoblocking</button>
+      </div>
+      
+      <div class="allowed-ips">
+        <h3>IP Allowlist</h3>
+        <p>Add specific IPs that should be allowed regardless of their country:</p>
+        
+        <div>
+          <label for="ip-input">IP Address:</label>
+          <div style="display: flex; gap: 10px;">
+            <input type="text" id="ip-input" placeholder="Enter IP address (e.g., 203.0.113.1)">
+            <button id="add-ip-button" class="toggle-button save-button">Add</button>
+          </div>
+        </div>
+        
+        <div style="margin-top: 15px;">
+          <h4>Current Allowlist</h4>
+          <ul id="ip-list" class="ip-list">
+            <li>Loading...</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="footer">
+        <p>Geoblocking restricts website access to users from Greece only.</p>
+        <p>IP addresses in the allowlist will be granted access regardless of their location.</p>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        // Load settings
+        loadGeoblockingSettings();
+        
+        // Set up button event handlers
+        document.getElementById('toggle-button').addEventListener('click', toggleGeoblocking);
+        document.getElementById('add-ip-button').addEventListener('click', addIpToAllowlist);
+        
+        // Set up IP input enter key handler
+        document.getElementById('ip-input').addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            addIpToAllowlist();
+          }
+        });
+      });
+      
+      // Function to load geoblocking settings
+      async function loadGeoblockingSettings() {
+        try {
+          // First perform a direct check on the .env file
+          const response = await fetch('/api/geoblocking-status');
+          
+          if (!response.ok) {
+            throw new Error('Failed to fetch geoblocking status');
+          }
+          
+          const data = await response.json();
+          updateStatusDisplay(data);
+          updateConnectionInfo(data);
+          updateIpList(data.allowedIPs || []);
+        } catch (error) {
+          console.error('Error loading geoblocking settings:', error);
+          document.getElementById('status-display').innerHTML = 
+            `<p style="color: red;">Error: ${error.message}</p>`;
+        }
+      }
+      
+      // Function to update the status display
+      function updateStatusDisplay(data) {
+        const statusElement = document.getElementById('status-display');
+        const statusClass = data.enabled ? 'enabled' : 'disabled';
+        const statusText = data.enabled ? 'ENABLED' : 'DISABLED';
+        
+        statusElement.innerHTML = `
+          <p>Current Status: <span class="status ${statusClass}">${statusText}</span></p>
+        `;
+        
+        // Update toggle button text
+        document.getElementById('toggle-button').textContent = 
+          data.enabled ? 'Disable Geoblocking' : 'Enable Geoblocking';
+      }
+      
+      // Function to update connection info
+      function updateConnectionInfo(data) {
+        const element = document.getElementById('connection-info');
+        
+        element.innerHTML = `
+          <p><strong>Your IP Address:</strong> ${data.clientIp}</p>
+          <p><strong>Detected Country:</strong> ${data.country}</p>
+          <p><strong>Is Greek IP:</strong> ${data.isGreekIp ? 'Yes' : 'No'}</p>
+          <p><strong>In Allowlist:</strong> ${data.inAllowlist ? 'Yes' : 'No'}</p>
+          <p><strong>Access Status:</strong> 
+            ${data.accessAllowed ? 
+              '<span style="color: green; font-weight: bold;">Allowed</span>' : 
+              '<span style="color: red; font-weight: bold;">Blocked</span>'}
+          </p>
+        `;
+      }
+      
+      // Function to update IP list
+      function updateIpList(ips) {
+        const listElement = document.getElementById('ip-list');
+        listElement.innerHTML = '';
+        
+        if (ips.length === 0) {
+          const li = document.createElement('li');
+          li.textContent = 'No IPs in allowlist';
+          listElement.appendChild(li);
+          return;
+        }
+        
+        ips.forEach(ip => {
+          const li = document.createElement('li');
+          
+          const ipText = document.createElement('span');
+          ipText.textContent = ip;
+          li.appendChild(ipText);
+          
+          const removeButton = document.createElement('button');
+          removeButton.textContent = 'Remove';
+          removeButton.className = 'remove-btn';
+          removeButton.addEventListener('click', () => removeIpFromAllowlist(ip));
+          
+          li.appendChild(removeButton);
+          listElement.appendChild(li);
+        });
+      }
+      
+      // Function to toggle geoblocking
+      async function toggleGeoblocking() {
+        try {
+          document.getElementById('toggle-button').disabled = true;
+          document.getElementById('toggle-button').textContent = 'Updating...';
+          
+          const response = await fetch('/api/toggle-geoblocking', {
+            method: 'POST'
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to toggle geoblocking');
+          }
+          
+          // Reload settings
+          loadGeoblockingSettings();
+        } catch (error) {
+          console.error('Error toggling geoblocking:', error);
+          alert(`Error: ${error.message}`);
+        } finally {
+          document.getElementById('toggle-button').disabled = false;
+        }
+      }
+      
+      // Function to add IP to allowlist
+      async function addIpToAllowlist() {
+        const input = document.getElementById('ip-input');
+        const ip = input.value.trim();
+        
+        if (!ip) {
+          alert('Please enter an IP address');
+          return;
+        }
+        
+        // Validate IP format (simple validation)
+        const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+        if (!ipRegex.test(ip)) {
+          alert('Please enter a valid IP address (e.g., 203.0.113.1)');
+          return;
+        }
+        
+        try {
+          const response = await fetch('/api/add-ip-to-allowlist', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ ip })
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to add IP to allowlist');
+          }
+          
+          // Clear input and reload settings
+          input.value = '';
+          loadGeoblockingSettings();
+        } catch (error) {
+          console.error('Error adding IP to allowlist:', error);
+          alert(`Error: ${error.message}`);
+        }
+      }
+      
+      // Function to remove IP from allowlist
+      async function removeIpFromAllowlist(ip) {
+        if (!confirm(`Remove ${ip} from the allowlist?`)) {
+          return;
+        }
+        
+        try {
+          const response = await fetch('/api/remove-ip-from-allowlist', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ ip })
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to remove IP from allowlist');
+          }
+          
+          // Reload settings
+          loadGeoblockingSettings();
+        } catch (error) {
+          console.error('Error removing IP from allowlist:', error);
+          alert(`Error: ${error.message}`);
+        }
+      }
+    </script>
+  </body>
+</html>

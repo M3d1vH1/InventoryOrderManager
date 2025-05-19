@@ -21,6 +21,20 @@ npm run build
 echo "Setting environment to production..."
 sed -i 's/NODE_ENV=development/NODE_ENV=production/g' .env
 
+# Set label dimensions to 9cm x 6cm
+echo "Setting label dimensions..."
+if grep -q "LABEL_WIDTH" .env; then
+  sed -i 's/LABEL_WIDTH=.*/LABEL_WIDTH=9/g' .env
+else
+  echo "LABEL_WIDTH=9" >> .env
+fi
+
+if grep -q "LABEL_HEIGHT" .env; then
+  sed -i 's/LABEL_HEIGHT=.*/LABEL_HEIGHT=6/g' .env
+else
+  echo "LABEL_HEIGHT=6" >> .env
+fi
+
 echo ""
 echo "==============================================="
 echo "Build complete! The application is ready for deployment."
