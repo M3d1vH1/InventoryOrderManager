@@ -563,19 +563,9 @@ export default function Itineraries() {
     );
   };
 
-  // Group orders by shipping company for display
-  const getOrdersGroupedByShippingCompany = (orders: Order[]) => {
-    const grouped: Record<string, Order[]> = {};
-    
-    orders?.forEach(order => {
-      const shippingCompany = order.shippingCompany || 'Άμεση Παράδοση';
-      if (!grouped[shippingCompany]) {
-        grouped[shippingCompany] = [];
-      }
-      grouped[shippingCompany].push(order);
-    });
-    
-    return grouped;
+  // Display all orders in a single group
+  const getOrdersForDisplay = (orders: Order[]) => {
+    return { 'Όλες οι παραγγελίες': orders || [] };
   };
 
   // Render component
@@ -1206,12 +1196,7 @@ export default function Itineraries() {
                     <p className="font-semibold">Στοιχεία Οχήματος:</p>
                     <p>{selectedItinerary?.vehicleInfo || '-'}</p>
                   </div>
-                  {selectedItinerary?.shippingCompany && (
-                    <div className="col-span-2">
-                      <p className="font-semibold">Μεταφορική Εταιρεία:</p>
-                      <p>{selectedItinerary.shippingCompany}</p>
-                    </div>
-                  )}
+                  {/* Removed shipping company section */}
                   {selectedItinerary?.notes && (
                     <div className="col-span-2">
                       <p className="font-semibold">Σημειώσεις:</p>
