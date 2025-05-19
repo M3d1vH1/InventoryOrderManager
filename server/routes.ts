@@ -3092,6 +3092,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/itineraries/calendar', isAuthenticated, getItinerariesForCalendar);
   app.get('/api/itineraries/:id', isAuthenticated, getItineraryById);
   app.post('/api/itineraries', isAuthenticated, createShippingItinerary);
+  app.get('/api/itineraries/:id/orders', async (req: Request, res: Response) => {
+    try {
+      const itineraryId = parseInt(req.params.id);
+      
+      if (isNaN(itineraryId)) {
+        return res.status(400).json({ error: 'Invalid itinerary ID' });
+      }
+      
+      // Check if the itinerary exists
+      const itinerary = await storage.getShippingItinerary(itineraryId);
+      if (!itinerary) {
+        return res.status(404).json({ error: 'Shipping itinerary not found' });
+      }
+      
+      // Get all orders for this itinerary
+      const orders = await storage.getOrdersForItinerary(itineraryId);
+      
+      return res.json(orders);
+    } catch (error) {
+      console.error(`Error getting orders for itinerary #${req.params.id}:`, error);
+      return res.status(500).json({ error: 'Failed to get orders for itinerary' });
+    }
+  });
+  
   app.post('/api/itineraries/:id/orders', isAuthenticated, addOrderToItinerary);
   app.delete('/api/itineraries/:id/orders/:orderId', isAuthenticated, removeOrderFromItinerary);
   app.patch('/api/itineraries/:id/status', isAuthenticated, updateItineraryStatus);

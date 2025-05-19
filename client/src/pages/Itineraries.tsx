@@ -1121,8 +1121,8 @@ export default function Itineraries() {
                 <div className="font-medium">Οδηγός:</div>
                 <div>{newlyCreatedItinerary?.driverName || '-'}</div>
                 
-                <div className="font-medium">Μεταφορική:</div>
-                <div>{newlyCreatedItinerary?.shippingCompany || 'Άμεση Παράδοση'}</div>
+                <div className="font-medium">Όχημα:</div>
+                <div>{newlyCreatedItinerary?.vehicleInfo || '-'}</div>
                 
                 <div className="font-medium">Κιβώτια:</div>
                 <div>{newlyCreatedItinerary?.totalBoxes || 0}</div>
