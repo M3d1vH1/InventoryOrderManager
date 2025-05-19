@@ -3232,19 +3232,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Shipping companies endpoint (fixed version)
+  // Shipping companies endpoint
   app.get('/api/customers/shipping-companies', (req: Request, res: Response) => {
-    // Hardcoded shipping companies - always works regardless of database state
-    const companies = [
-      { id: 1, name: "ACS" },
-      { id: 2, name: "Speedex" },
-      { id: 3, name: "ELTA Courier" },
-      { id: 4, name: "DHL" },
-      { id: 5, name: "General Post" } 
-    ];
-    
-    // Return fixed companies for now
-    return res.json(companies);
+    // Return an empty array - we're not using shipping companies with itineraries
+    return res.json([]);
   });
   
   // Image upload and fix routes

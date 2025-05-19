@@ -62,8 +62,7 @@ export default function Itineraries() {
   const [selectedItinerary, setSelectedItinerary] = useState<Itinerary | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [orderFilter, setOrderFilter] = useState('all'); // 'all', 'byShipping', 'priority'
-  const [selectedShippingCompany, setSelectedShippingCompany] = useState<string | null>(null);
+  const [orderFilter, setOrderFilter] = useState('all'); // 'all', 'priority'
   const [newlyCreatedItinerary, setNewlyCreatedItinerary] = useState<Itinerary | null>(null);
   
   // Form state for creating new itinerary
@@ -80,7 +79,7 @@ export default function Itineraries() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   
   // Get all itineraries with status filtering
-  const { data: itineraries, isLoading } = useQuery({
+  const { data: itineraries = [], isLoading } = useQuery({
     queryKey: ['/api/itineraries', statusFilter],
     queryFn: async () => {
       try {
@@ -159,8 +158,8 @@ export default function Itineraries() {
   });
   
   // Get available orders for adding to itinerary with priority sorting and filtering
-  const { data: availableOrders, isLoading: isLoadingAvailableOrders, refetch: refetchAvailableOrders } = useQuery({
-    queryKey: ['/api/orders/picked', orderFilter, selectedShippingCompany, searchQuery],
+  const { data: availableOrders = [], isLoading: isLoadingAvailableOrders, refetch: refetchAvailableOrders } = useQuery({
+    queryKey: ['/api/orders/picked', orderFilter, searchQuery],
     queryFn: async () => {
       try {
         console.log('Fetching picked orders...');
@@ -200,18 +199,7 @@ export default function Itineraries() {
         // Show available orders in console for debugging
         console.log('Picked orders found:', filteredOrders.length);
         
-        // Filter by shipping company if needed
-        if (orderFilter === 'byShipping' && selectedShippingCompany) {
-          console.log('Filtering by shipping company:', selectedShippingCompany);
-          
-          // Filter orders by shipping company field
-          filteredOrders = filteredOrders.filter((order: any) => {
-            // The order's shipping company must match the selected one
-            return order.shippingCompany === selectedShippingCompany;
-          });
-          
-          console.log('Orders after shipping company filter:', filteredOrders.length);
-        }
+        // No longer filtering by shipping company - removed to simplify
         
         // Filter by search if provided
         if (searchQuery) {
