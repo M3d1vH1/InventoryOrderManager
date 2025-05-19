@@ -7,7 +7,7 @@ import { FaTachometerAlt, FaShoppingCart, FaBox, FaWarehouse,
   FaCog, FaUserCog, FaSignOutAlt, FaChevronDown, 
   FaList, FaTruckLoading, FaClipboardCheck, FaClipboardList,
   FaBell, FaBoxes, FaAngleDoubleLeft, FaAngleDoubleRight,
-  FaMoneyBillWave } from 'react-icons/fa';
+  FaMoneyBillWave, FaTruck } from 'react-icons/fa';
 
 const Sidebar = () => {
   const { isSidebarOpen, toggleSidebar, setCurrentPage } = useSidebar();
@@ -265,6 +265,20 @@ const Sidebar = () => {
                         <FaMoneyBillWave size={16} />
                       </span>
                       {isSidebarOpen && <span className="ml-2">{t('supplierPayments.title') || "Payments"}</span>}
+                    </button>
+                  </Link>
+                </li>
+                
+                <li className="mb-1">
+                  <Link href="/itineraries" onClick={() => setCurrentPage("Shipping Itineraries")}>
+                    <button 
+                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/itineraries") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                      title={t('itineraries.title') || "Shipping Itineraries"}
+                    >
+                      <span className="flex items-center w-5 h-5">
+                        <FaTruck size={16} />
+                      </span>
+                      {isSidebarOpen && <span className="ml-2">{t('itineraries.title') || "Shipping Itineraries"}</span>}
                     </button>
                   </Link>
                 </li>
