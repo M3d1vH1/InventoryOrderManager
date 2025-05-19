@@ -165,60 +165,6 @@ export default function Itineraries() {
       try {
         console.log('Fetching picked orders...');
         
-        // Create array of test orders if there are issues fetching from the API
-        const fallbackOrders = [
-          {
-            id: 101,
-            orderNumber: 'ORD-1001',
-            customerName: 'White River Supplies',
-            boxCount: 3,
-            shippingCompany: 'ACS',
-            area: 'Athens',
-            totalItems: 15,
-            priority: 'high'
-          },
-          {
-            id: 102,
-            orderNumber: 'ORD-1002',
-            customerName: 'Blue Ocean Restaurant',
-            boxCount: 2,
-            shippingCompany: 'Speedex',
-            area: 'Thessaloniki',
-            totalItems: 8,
-            priority: 'medium'
-          },
-          {
-            id: 103,
-            orderNumber: 'ORD-1003',
-            customerName: 'Mountain View Hotel',
-            boxCount: 5,
-            shippingCompany: 'DHL',
-            area: 'Santorini',
-            totalItems: 20,
-            priority: 'low'
-          },
-          {
-            id: 104,
-            orderNumber: 'ORD-1004',
-            customerName: 'City Center Cafe',
-            boxCount: 1,
-            shippingCompany: 'ELTA Courier',
-            area: 'Athens',
-            totalItems: 5,
-            priority: 'medium'
-          },
-          {
-            id: 105,
-            orderNumber: 'ORD-1005',
-            customerName: 'Lakeside Resort',
-            boxCount: 4,
-            shippingCompany: 'ACS',
-            area: 'Ioannina',
-            totalItems: 12,
-            priority: 'urgent'
-          }
-        ];
-        
         // Use the regular orders endpoint with status=picked to get picked orders
         let url = '/api/orders';
         const params = new URLSearchParams();
@@ -238,32 +184,20 @@ export default function Itineraries() {
         if (queryString) url += `?${queryString}`;
         
         console.log('Fetching URL:', url);
-        let orders;
         
-        try {
-          const response = await apiRequest(url, { method: 'GET' });
-          if (!response.ok) {
-            console.warn('Failed to fetch from API, using fallback orders');
-            orders = fallbackOrders;
-          } else {
-            orders = await response.json();
-            
-            // If no orders returned but we're logged in, use fallback data
-            if (orders.length === 0) {
-              console.warn('No orders returned from API, using fallback orders');
-              orders = fallbackOrders;
-            }
-          }
-        } catch (error) {
-          console.warn('Error fetching from API, using fallback orders', error);
-          orders = fallbackOrders;
+        const response = await apiRequest(url, { method: 'GET' });
+        if (!response.ok) {
+          throw new Error('Failed to fetch orders from the database');
         }
         
+        const orders = await response.json();
         console.log('Picked orders available:', orders.length);
         
         // Filter by shipping company if selected
+        let filteredOrders = [...orders];
+        
         if (orderFilter === 'byShipping' && selectedShippingCompany) {
-          orders = orders.filter((order: any) => 
+          filteredOrders = filteredOrders.filter((order: any) => 
             order.shippingCompany === selectedShippingCompany
           );
         }
@@ -271,7 +205,7 @@ export default function Itineraries() {
         // Filter by search if provided
         if (searchQuery) {
           const query = searchQuery.toLowerCase();
-          orders = orders.filter((order: any) => 
+          filteredOrders = filteredOrders.filter((order: any) => 
             order.orderNumber.toLowerCase().includes(query) ||
             order.customerName.toLowerCase().includes(query) ||
             (order.shippingCompany && order.shippingCompany.toLowerCase().includes(query))
@@ -287,19 +221,19 @@ export default function Itineraries() {
             'low': 1
           };
           
-          orders.sort((a: any, b: any) => {
+          filteredOrders.sort((a: any, b: any) => {
             const aPriority = priorityWeight[a.priority || 'low'] || 0;
             const bPriority = priorityWeight[b.priority || 'low'] || 0;
             return bPriority - aPriority;
           });
         }
         
-        // Make sure each order has a boxCount
-        const ordersWithBoxCount = orders.map((order: any) => {
+        // Calculate box count for each order based on items if not already present
+        const ordersWithBoxCount = filteredOrders.map((order: any) => {
           if (order.boxCount) return order;
           
-          // Default box count is 1 if no items or calculation fails
-          let boxCount = 1; 
+          // Calculate accurate box count based on items
+          let boxCount = 0; 
           
           try {
             if (order.items && order.items.length > 0) {
@@ -311,8 +245,12 @@ export default function Itineraries() {
                 return total + itemBoxes;
               }, 0);
             }
+            
+            // Ensure at least 1 box if calculation resulted in 0
+            if (boxCount === 0) boxCount = 1;
           } catch (err) {
             console.error('Error calculating boxes for order', order.id, err);
+            boxCount = 1; // Default to 1 if calculation fails
           }
           
           return {
@@ -323,61 +261,29 @@ export default function Itineraries() {
         
         return ordersWithBoxCount;
       } catch (error) {
-        console.error('Error in order processing function:', error);
+        console.error('Error fetching picked orders:', error);
         return [];
       }
     },
-    enabled: isAddOrderDialogOpen // Enable when dialog is open
+    enabled: isAddOrderDialogOpen,
+    refetchOnWindowFocus: false
   });
   
-  // Get shipping companies for filtering - use hardcoded data to avoid backend issues
-  const { data: shippingCompanies = [
-    { id: 1, name: "ACS" },
-    { id: 2, name: "Speedex" },
-    { id: 3, name: "ELTA Courier" },
-    { id: 4, name: "DHL" },
-    { id: 5, name: "General Post" }
-  ] } = useQuery({
+  // Get shipping companies for filtering from the database
+  const { data: shippingCompanies = [] } = useQuery({
     queryKey: ['/api/shipping-companies'],
     queryFn: async () => {
       try {
-        // First try the API
         const response = await apiRequest('/api/customers/shipping-companies', { method: 'GET' });
         if (!response.ok) {
-          // If API fails, use hardcoded companies
-          console.log('Using hardcoded shipping companies');
-          return [
-            { id: 1, name: "ACS" },
-            { id: 2, name: "Speedex" },
-            { id: 3, name: "ELTA Courier" },
-            { id: 4, name: "DHL" },
-            { id: 5, name: "General Post" }
-          ];
+          throw new Error('Failed to fetch shipping companies');
         }
         
         const data = await response.json();
-        if (!data || !Array.isArray(data) || data.length === 0) {
-          // If API returns empty results, use hardcoded companies
-          return [
-            { id: 1, name: "ACS" },
-            { id: 2, name: "Speedex" },
-            { id: 3, name: "ELTA Courier" },
-            { id: 4, name: "DHL" },
-            { id: 5, name: "General Post" }
-          ];
-        }
-        
         return data;
       } catch (error) {
         console.error('Error fetching shipping companies:', error);
-        // If error, use hardcoded companies
-        return [
-          { id: 1, name: "ACS" },
-          { id: 2, name: "Speedex" },
-          { id: 3, name: "ELTA Courier" },
-          { id: 4, name: "DHL" },
-          { id: 5, name: "General Post" }
-        ];
+        return [];
       }
     }
   });
