@@ -1070,7 +1070,7 @@ const Settings = () => {
       <h1 className="text-3xl font-bold mb-6">Settings</h1>
       
       <Tabs defaultValue="general" onValueChange={setActiveTab} value={activeTab}>
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="general">
             <Cog className="h-4 w-4 mr-2" />
             General
