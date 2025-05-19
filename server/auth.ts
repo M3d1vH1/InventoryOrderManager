@@ -20,27 +20,34 @@ const sessionPool = new pg.Pool({
 
 export function setupAuth(app: Express) {
   // Session configuration
-  app.use(
-    session({
-      store: new PgSession({
-        pool: sessionPool, // Use dedicated session pool
-        tableName: 'session',
-        createTableIfMissing: true,
-      }),
-      secret: process.env.SESSION_SECRET || (process.env.NODE_ENV === 'production' 
-        ? require('crypto').randomBytes(64).toString('hex') // Generate random secret in production
-        : 'warehouse_mgmt_dev_secret'), // Static secret for development
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        maxAge: 1000 * 60 * 60 * 24, // 24 hours
-        secure: process.env.NODE_ENV === 'production', // Only send cookies over HTTPS in production
-        httpOnly: true, // Prevents JavaScript from reading cookies (XSS protection)
-        sameSite: 'strict', // Prevents CSRF attacks
-        path: '/', // Restrict cookie to base path
-      },
-    })
-  );
+  const sessionOptions = {
+    store: new PgSession({
+      pool: sessionPool, // Use dedicated session pool
+      tableName: 'session',
+      createTableIfMissing: true,
+    }),
+    secret: process.env.SESSION_SECRET || (process.env.NODE_ENV === 'production' 
+      ? require('crypto').randomBytes(64).toString('hex') // Generate random secret in production
+      : 'warehouse_mgmt_dev_secret'), // Static secret for development
+    resave: false,
+    saveUninitialized: false,
+    rolling: true, // Reset expiration countdown on activity
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 24, // 24 hours
+      secure: false, // Allow cookies over HTTP for now (even in production)
+      httpOnly: true, // Prevents JavaScript from reading cookies (XSS protection)
+      sameSite: 'lax', // Changed from strict to allow redirects
+      path: '/', // Restrict cookie to base path
+    },
+  };
+  
+  // In production, set a permanent session secret
+  if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+    process.env.SESSION_SECRET = require('crypto').randomBytes(64).toString('hex');
+    console.log('[auth] Created new session secret for production');
+  }
+  
+  app.use(session(sessionOptions));
 
   // Initialize passport
   app.use(passport.initialize());
@@ -86,9 +93,14 @@ export function setupAuth(app: Express) {
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
+      if (!user) {
+        console.log(`[auth] User with id ${id} not found during session deserialization`);
+        return done(null, false);
+      }
       done(null, user);
     } catch (error) {
-      done(error, null);
+      console.error(`[auth] Error deserializing user: ${error}`);
+      done(null, false);
     }
   });
 
