@@ -62,6 +62,7 @@ export async function getItineraryById(req: Request, res: Response) {
 // Create a new shipping itinerary
 export async function createShippingItinerary(req: Request, res: Response) {
   try {
+    // Validate the request body
     const parsedBody = createItinerarySchema.safeParse(req.body);
     if (!parsedBody.success) {
       return res.status(400).json({ 
@@ -75,11 +76,16 @@ export async function createShippingItinerary(req: Request, res: Response) {
       return res.status(401).json({ error: 'Authentication required' });
     }
     
-    const { data, orderIds } = parsedBody.success ? parsedBody.data : { data: {}, orderIds: [] };
+    // Get user ID - since we're using TypeScript with Express session, 
+    // we need to ensure we have a valid user ID
+    const userId = (req.user as any)?.id || 1;
+    
+    // Extract data from the parsed body
+    const data = parsedBody.data;
     
     // Format departure date if it's a string
-    const departureDate = typeof data.departureDate === 'string' 
-      ? new Date(data.departureDate) 
+    const departureDate = typeof data.departureDate === 'string'
+      ? new Date(data.departureDate)
       : data.departureDate;
     
     // Create the shipping itinerary
@@ -90,18 +96,19 @@ export async function createShippingItinerary(req: Request, res: Response) {
       driverName: data.driverName || null,
       vehicleInfo: data.vehicleInfo || null,
       notes: data.notes || null,
-      createdById: req.user.id,
+      createdById: userId,
       status: 'active'
     });
     
     // If order IDs are provided, associate them with the itinerary
-    if (orderIds && orderIds.length > 0) {
+    const orderIds = data.orderIds || [];
+    if (orderIds.length > 0) {
       await Promise.all(orderIds.map(orderId => 
         storage.addOrderToItinerary({
           itineraryId: newItinerary.id,
           orderId,
           boxCount: 1, // Default box count is 1
-          addedById: req.user!.id
+          addedById: userId
         })
       ));
       
@@ -151,12 +158,15 @@ export async function addOrderToItinerary(req: Request, res: Response) {
       return res.status(404).json({ error: 'Order not found' });
     }
     
+    // Get user ID from session
+    const userId = (req.user as any)?.id || 1;
+
     // Add the order to the itinerary
     await storage.addOrderToItinerary({
       itineraryId,
       orderId,
       boxCount: boxCount || 1, // Ensure we have a valid box count
-      addedById: req.user.id || 1 // Fallback to ID 1 if user ID is not available
+      addedById: userId
     });
     
     // Get all orders for this itinerary to return in the response
@@ -182,6 +192,11 @@ export async function removeOrderFromItinerary(req: Request, res: Response) {
     
     if (isNaN(itineraryId) || isNaN(orderId)) {
       return res.status(400).json({ error: 'Invalid itinerary ID or order ID' });
+    }
+    
+    // Make sure the user is authenticated
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
     }
     
     // Check if the itinerary exists
