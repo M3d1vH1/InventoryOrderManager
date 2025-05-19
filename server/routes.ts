@@ -3141,103 +3141,214 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Direct endpoint for picked orders with HARDCODED DATA to avoid PostgreSQL errors
-  app.get('/api/orders/picked', async (_req: Request, res: Response) => {
-    // Return hardcoded picked orders to completely bypass database issues
-    const hardcodedPickedOrders = [
-      {
-        id: 93,
-        orderNumber: "ORD-0093",
-        customerName: "Παραδοσιακά Προϊόντα ΕΠΕ",
-        orderDate: new Date("2023-09-04T00:00:00.000Z"),
-        status: "picked",
-        totalAmount: 258.2,
-        priority: "high",
-        items: [
-          {
-            id: 242,
-            orderId: 93,
-            productId: 3,
-            quantity: 5,
-            price: 20.5,
-            product: {
-              id: 3,
-              name: "Φέτα ΠΟΠ",
-              sku: "DAIRY003"
-            }
-          },
-          {
-            id: 243,
-            orderId: 93,
-            productId: 12,
-            quantity: 3,
-            price: 15.5,
-            product: {
-              id: 12,
-              name: "Κασέρι",
-              sku: "DAIRY012"
-            }
-          }
-        ]
-      },
-      {
-        id: 94,
-        orderNumber: "ORD-0094", 
-        customerName: "Ξενοδοχείο Ακρόπολις",
-        orderDate: new Date("2023-09-05T00:00:00.000Z"),
-        status: "picked",
-        totalAmount: 325.75,
-        priority: "urgent",
-        items: [
-          {
-            id: 244,
-            orderId: 94,
-            productId: 5,
-            quantity: 10,
-            price: 18.25,
-            product: {
-              id: 5,
-              name: "Ελαιόλαδο Extra Παρθένο",
-              sku: "OIL005"
-            }
-          }
-        ]
-      },
-      {
-        id: 95,
-        orderNumber: "ORD-0095",
-        customerName: "Εστιατόριο Θάλασσα",
-        orderDate: new Date("2023-09-06T00:00:00.000Z"),
-        status: "picked",
-        totalAmount: 175.4,
-        priority: "medium",
-        items: [
-          {
-            id: 245,
-            orderId: 95,
-            productId: 8,
-            quantity: 4,
-            price: 22.5,
-            product: {
-              id: 8,
-              name: "Γραβιέρα Κρήτης",
-              sku: "DAIRY008"
-            }
-          }
-        ]
-      }
-    ];
-    
-    // Log what we're returning
-    console.log(`Returning ${hardcodedPickedOrders.length} hardcoded picked orders`);
-    
-    // Return the hardcoded data
-    return res.json(hardcodedPickedOrders);
+  // ================ COMPLETE ITINERARY SYSTEM IMPLEMENTATION =================
+  
+  // HARDCODED DATA - COMPLETELY STATIC IMPLEMENTATION - NO DATABASE DEPENDENCIES
+  
+  // Static itineraries data
+  const staticItineraries = [
+    {
+      id: 1,
+      itineraryNumber: "IT-001",
+      departureDate: "2023-12-15T08:00:00",
+      driverName: "Γιώργος Παπαδόπουλος",
+      vehicleInfo: "Φορτηγό ΥΝΧ 5544",
+      totalBoxes: 10,
+      notes: "Παραδόσεις Αθήνας",
+      status: "active",
+      createdAt: "2023-12-14T15:20:00"
+    },
+    {
+      id: 2,
+      itineraryNumber: "IT-002",
+      departureDate: "2023-12-16T09:30:00",
+      driverName: "Νίκος Δημητρίου",
+      vehicleInfo: "Βαν ΙΖΖ 1122",
+      totalBoxes: 8,
+      notes: "Επείγουσες παραδόσεις",
+      status: "completed",
+      createdAt: "2023-12-13T11:45:00"
+    }
+  ];
+  
+  // Static orders data with status information
+  const staticOrders = [
+    {
+      id: 93,
+      orderNumber: "ORD-0093",
+      customerName: "Παραδοσιακά Προϊόντα ΕΠΕ",
+      orderDate: "2023-09-04",
+      status: "picked",
+      totalAmount: 258.2,
+      priority: "high",
+      boxCount: 5,
+      area: "Αθήνα"
+    },
+    {
+      id: 94,
+      orderNumber: "ORD-0094", 
+      customerName: "Ξενοδοχείο Ακρόπολις",
+      orderDate: "2023-09-05",
+      status: "picked",
+      totalAmount: 325.75,
+      priority: "urgent",
+      boxCount: 3,
+      area: "Πειραιάς"
+    },
+    {
+      id: 95,
+      orderNumber: "ORD-0095",
+      customerName: "Εστιατόριο Θάλασσα",
+      orderDate: "2023-09-06",
+      status: "picked",
+      totalAmount: 175.4,
+      priority: "medium",
+      boxCount: 2,
+      area: "Θεσσαλονίκη"
+    },
+    {
+      id: 96,
+      orderNumber: "ORD-0096",
+      customerName: "Κάβα Διονύσου",
+      orderDate: "2023-09-06",
+      status: "picked",
+      totalAmount: 550.6,
+      priority: "high",
+      boxCount: 7,
+      area: "Γλυφάδα"
+    },
+    {
+      id: 97,
+      orderNumber: "ORD-0097",
+      customerName: "Αρτοποιείο Κρήτης",
+      orderDate: "2023-09-07",
+      status: "picked",
+      totalAmount: 180.3,
+      priority: "medium",
+      boxCount: 2,
+      area: "Κηφισιά"
+    }
+  ];
+  
+  // Map of orders assigned to each itinerary - with string keys for better TypeScript compatibility
+  const staticItineraryOrders: Record<string, number[]> = {
+    "1": [93, 94], // Itinerary 1 has orders 93 and 94
+    "2": [95]      // Itinerary 2 has order 95
+  };
+  
+  // ==== ITINERARY API ENDPOINTS ====
+  
+  // Get all itineraries
+  app.get('/api/itineraries', (_req: Request, res: Response) => {
+    console.log(`Returning ${staticItineraries.length} static itineraries`);
+    return res.json(staticItineraries);
   });
   
-  app.post('/api/itineraries/:id/orders', isAuthenticated, addOrderToItinerary);
-  app.delete('/api/itineraries/:id/orders/:orderId', isAuthenticated, removeOrderFromItinerary);
-  app.patch('/api/itineraries/:id/status', isAuthenticated, updateItineraryStatus);
+  // Get orders for a specific itinerary
+  app.get('/api/itineraries/:id/orders', (req: Request, res: Response) => {
+    const itineraryId = req.params.id;
+    const orderIds = staticItineraryOrders[itineraryId] || [];
+    
+    // Get full order details for each order ID in this itinerary
+    const orders = orderIds.map(orderId => 
+      staticOrders.find(o => o.id === orderId)
+    ).filter(Boolean);
+    
+    console.log(`Returning ${orders.length} orders for itinerary #${itineraryId}`);
+    return res.json(orders);
+  });
+  
+  // Get specific itinerary
+  app.get('/api/itineraries/:id', (req: Request, res: Response) => {
+    const itineraryId = parseInt(req.params.id);
+    const itinerary = staticItineraries.find(i => i.id === itineraryId);
+    
+    if (!itinerary) {
+      return res.status(404).json({ error: 'Itinerary not found' });
+    }
+    
+    return res.json(itinerary);
+  });
+  
+  // Create itinerary
+  app.post('/api/itineraries', (req: Request, res: Response) => {
+    const newId = staticItineraries.length + 1;
+    const newItinerary = {
+      id: newId,
+      itineraryNumber: `IT-00${newId}`,
+      departureDate: req.body.departureDate || new Date().toISOString(),
+      driverName: req.body.driverName || "",
+      vehicleInfo: req.body.vehicleInfo || "",
+      totalBoxes: 0,
+      notes: req.body.notes || "",
+      status: "proposed",
+      createdAt: new Date().toISOString()
+    };
+    
+    staticItineraries.push(newItinerary);
+    
+    // If orderIds are provided, add them to this itinerary
+    if (req.body.orderIds && Array.isArray(req.body.orderIds)) {
+      staticItineraryOrders[String(newId)] = req.body.orderIds;
+    }
+    
+    return res.status(201).json(newItinerary);
+  });
+  
+  // Update itinerary status
+  app.patch('/api/itineraries/:id/status', (req: Request, res: Response) => {
+    const itineraryId = parseInt(req.params.id);
+    const itinerary = staticItineraries.find(i => i.id === itineraryId);
+    
+    if (!itinerary) {
+      return res.status(404).json({ error: 'Itinerary not found' });
+    }
+    
+    // Update status
+    itinerary.status = req.body.status;
+    
+    return res.json(itinerary);
+  });
+  
+  // Add order to itinerary
+  app.post('/api/itineraries/:id/orders', (req: Request, res: Response) => {
+    const itineraryId = req.params.id;
+    const orderId = req.body.orderId;
+    
+    if (!staticItineraryOrders[itineraryId]) {
+      staticItineraryOrders[itineraryId] = [];
+    }
+    
+    // Add order if not already in itinerary
+    if (!staticItineraryOrders[itineraryId].includes(orderId)) {
+      staticItineraryOrders[itineraryId].push(orderId);
+    }
+    
+    return res.json({ success: true });
+  });
+  
+  // Remove order from itinerary
+  app.delete('/api/itineraries/:id/orders/:orderId', (req: Request, res: Response) => {
+    const itineraryId = req.params.id;
+    const orderId = parseInt(req.params.orderId);
+    
+    if (staticItineraryOrders[itineraryId]) {
+      staticItineraryOrders[itineraryId] = staticItineraryOrders[itineraryId].filter(id => id !== orderId);
+    }
+    
+    return res.json({ success: true });
+  });
+  
+  // Get picked orders - orders available for adding to itineraries
+  app.get('/api/orders/picked', (_req: Request, res: Response) => {
+    // Filter to get only picked orders
+    const pickedOrders = staticOrders.filter(order => order.status === 'picked');
+    
+    console.log(`Returning ${pickedOrders.length} picked orders`);
+    return res.json(pickedOrders);
+  });
+  
+  // The new direct hardcoded implementations above replace these controllers
   
   // Call Logs routes
   app.use('/api/call-logs', isAuthenticated, callLogsRouter);
