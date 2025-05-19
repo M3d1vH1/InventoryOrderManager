@@ -161,11 +161,15 @@ export default function Itineraries() {
   
   // Get available orders for adding to itinerary with priority sorting and filtering
   const { data: availableOrders, isLoading: isLoadingAvailableOrders, refetch: refetchAvailableOrders } = useQuery({
-    queryKey: ['/api/orders', 'available', orderFilter, selectedShippingCompany, searchQuery],
+    queryKey: ['/api/orders', 'picked', orderFilter, selectedShippingCompany, searchQuery],
     queryFn: async () => {
       try {
-        let url = '/api/orders/available';
+        // Use the regular orders endpoint with status=picked to get picked orders
+        let url = '/api/orders';
         const params = new URLSearchParams();
+        
+        // Filter by "picked" status
+        params.append('status', 'picked');
         
         if (searchQuery) params.append('search', searchQuery);
         if (orderFilter === 'byShipping' && selectedShippingCompany) {
@@ -180,7 +184,14 @@ export default function Itineraries() {
         
         const response = await apiRequest(url, { method: 'GET' });
         if (!response.ok) throw new Error('Failed to fetch available orders');
-        return await response.json();
+        
+        const orders = await response.json();
+        
+        // Map orders to include boxCount for consistency with the interface
+        return orders.map((order: any) => ({
+          ...order,
+          boxCount: order.items ? order.items.reduce((total: number, item: any) => total + Math.ceil(item.quantity / (item.unitsPerBox || 1)), 0) : 0
+        }));
       } catch (error) {
         console.error('Error fetching available orders:', error);
         return [];

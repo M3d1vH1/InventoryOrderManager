@@ -3152,26 +3152,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Shipping companies endpoint (for dropdown selection)
   app.get('/api/customers/shipping-companies', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      // Get unique shipping companies from customers
+      // Get all customers
       const customers = await storage.getAllCustomers();
       
-      // Create a set to store unique company names
-      const uniqueCompanyNames = new Set<string>();
-      
-      // Extract company names that are not null or empty
-      customers.forEach(c => {
-        if (c.shippingCompany && c.shippingCompany.trim() !== '') {
-          uniqueCompanyNames.add(c.shippingCompany.trim());
+      // Get unique shipping company names (non-empty)
+      const uniqueNames = new Set<string>();
+      customers.forEach(customer => {
+        if (customer.shippingCompany && typeof customer.shippingCompany === 'string' && customer.shippingCompany.trim()) {
+          uniqueNames.add(customer.shippingCompany.trim());
         }
       });
       
-      // Convert to array of objects with incremental IDs
-      const uniqueCompanies = Array.from(uniqueCompanyNames).map((name, index) => ({
+      // Convert to array of objects with fixed IDs
+      const companies = Array.from(uniqueNames).map((name, index) => ({
         id: index + 1,
-        name: name
+        name
       }));
       
-      return res.json(uniqueCompanies);
+      return res.json(companies);
     } catch (error) {
       console.error('Error getting shipping companies:', error);
       return res.status(500).json({ 
