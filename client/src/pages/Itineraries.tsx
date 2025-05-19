@@ -8,14 +8,18 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Printer, Edit, Trash, CalendarDays, Package, Search } from 'lucide-react';
+import { Plus, Printer, Edit, Trash, CalendarDays, Package, Search, Truck, FileText, FilterX, Filter } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { el } from 'date-fns/locale';
 import { apiRequest } from '@/lib/queryClient';
 import { useTranslation } from 'react-i18next';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
-// Simple types for our components
+// Enhanced types for our components
 type Itinerary = {
   id: number;
   itineraryNumber: string;
@@ -26,6 +30,7 @@ type Itinerary = {
   totalBoxes: number;
   notes: string | null;
   status: 'active' | 'completed' | 'cancelled';
+  createdAt?: string;
 };
 
 type Order = {
@@ -33,6 +38,10 @@ type Order = {
   orderNumber: string;
   customerName: string;
   boxCount: number;
+  shippingCompany?: string | null;
+  shippingAddress?: string | null;
+  area?: string | null;
+  totalItems?: number;
 };
 
 export default function Itineraries() {
@@ -45,6 +54,10 @@ export default function Itineraries() {
   const [selectedItinerary, setSelectedItinerary] = useState<Itinerary | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [orderFilter, setOrderFilter] = useState('all'); // 'all', 'byArea', 'byShipping'
+  const [selectedArea, setSelectedArea] = useState<string | null>(null);
+  const [selectedShippingCompany, setSelectedShippingCompany] = useState<string | null>(null);
+  const [isPrintPreviewOpen, setIsPrintPreviewOpen] = useState(false);
   
   // Form state for creating new itinerary
   const [formData, setFormData] = useState({
@@ -56,12 +69,18 @@ export default function Itineraries() {
     notes: ''
   });
 
-  // Get all itineraries
+  // Get all itineraries with status filtering
+  const [statusFilter, setStatusFilter] = useState<string>('active');
+  
   const { data: itineraries, isLoading } = useQuery({
-    queryKey: ['/api/itineraries'],
+    queryKey: ['/api/itineraries', statusFilter],
     queryFn: async () => {
       try {
-        const response = await apiRequest('/api/itineraries', { method: 'GET' });
+        const url = statusFilter === 'all' 
+          ? '/api/itineraries' 
+          : `/api/itineraries?status=${statusFilter}`;
+          
+        const response = await apiRequest(url, { method: 'GET' });
         if (!response.ok) throw new Error('Failed to fetch itineraries');
         return await response.json();
       } catch (error) {
@@ -73,7 +92,7 @@ export default function Itineraries() {
 
   // Create new itinerary
   const createItineraryMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
+    mutationFn: async (data: typeof formData & { orderIds?: number[] }) => {
       const response = await apiRequest('/api/itineraries', {
         method: 'POST',
         body: JSON.stringify(data),
@@ -83,12 +102,21 @@ export default function Itineraries() {
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: t('Itinerary created'),
         description: t('New delivery itinerary has been created successfully'),
       });
       setIsCreateDialogOpen(false);
+      
+      // If we have selected orders during creation, add them immediately after
+      if (selectedOrders.length > 0) {
+        addOrdersMutation.mutate({
+          itineraryId: data.id,
+          orderIds: selectedOrders
+        });
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['/api/itineraries'] });
       resetForm();
     },
@@ -117,10 +145,45 @@ export default function Itineraries() {
     },
     enabled: !!selectedItinerary
   });
+  
+  // Get shipping areas for filtering
+  const { data: areas } = useQuery({
+    queryKey: ['/api/areas'],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest('/api/orders/areas', { method: 'GET' });
+        if (!response.ok) return [];
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching areas:', error);
+        return [];
+      }
+    }
+  });
+  
+  // Get shipping companies for filtering
+  const { data: shippingCompanies } = useQuery({
+    queryKey: ['/api/shipping-companies'],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest('/api/customers/shipping-companies', { method: 'GET' });
+        if (!response.ok) return [];
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching shipping companies:', error);
+        return [];
+      }
+    }
+  });
 
   // Handle form input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  // Handle select changes
+  const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -134,12 +197,19 @@ export default function Itineraries() {
       shippingCompany: '',
       notes: ''
     });
+    setSelectedOrders([]);
   };
 
   // Submit form handler
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createItineraryMutation.mutate(formData);
+    
+    const submitData = {
+      ...formData,
+      orderIds: selectedOrders.length > 0 ? selectedOrders : undefined
+    };
+    
+    createItineraryMutation.mutate(submitData);
   };
 
   // View orders for a specific itinerary
