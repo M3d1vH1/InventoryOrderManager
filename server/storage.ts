@@ -22,6 +22,8 @@ import {
   inventoryHistory, type InventoryHistory, type InsertInventoryHistory,
   inventoryPredictions, type InventoryPrediction, type InsertInventoryPrediction,
   seasonalPatterns, type SeasonalPattern, type InsertSeasonalPattern,
+  shippingItineraries, type ShippingItinerary, type InsertShippingItinerary,
+  itineraryOrders, type ItineraryOrder,
   // Production module imports
   rawMaterials, type RawMaterial, type InsertRawMaterial,
   productionBatches, type ProductionBatch, type InsertProductionBatch,
@@ -40,6 +42,17 @@ import { DatabaseStorage, initStorage } from './storage.postgresql';
 import { log } from './vite';
 
 export interface IStorage {
+  // Shipping Itinerary methods
+  getAllShippingItineraries(): Promise<ShippingItinerary[]>;
+  getShippingItinerary(id: number): Promise<ShippingItinerary | undefined>;
+  createShippingItinerary(data: InsertShippingItinerary): Promise<ShippingItinerary>;
+  updateShippingItineraryStatus(id: number, status: string): Promise<ShippingItinerary | undefined>;
+  getOrdersForItinerary(itineraryId: number): Promise<any[]>;
+  addOrderToItinerary(data: { itineraryId: number, orderId: number, boxCount: number, addedById: number }): Promise<void>;
+  removeOrderFromItinerary(itineraryId: number, orderId: number): Promise<void>;
+  getUpcomingItineraries(limit?: number): Promise<ShippingItinerary[]>;
+  getItinerariesForCalendar(startDate: Date, endDate: Date): Promise<ShippingItinerary[]>;
+  
   // Email settings methods
   getEmailSettings(): Promise<EmailSettings | undefined>;
   updateEmailSettings(settings: Partial<InsertEmailSettings>): Promise<EmailSettings | undefined>;
