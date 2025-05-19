@@ -3432,40 +3432,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get('/api/orders/picked', async (_req: Request, res: Response) => {
-    console.log('Requested picked orders - trying with direct hardcoded response');
-    
-    // Since we keep having issues with the database query,
-    // I'm returning exactly the 3 orders we know exist in the database
-    return res.json([
-      {
-        id: 93,
-        orderNumber: "ORD-0093",
-        customerName: "Μαυρόπουλος Γεώργιος Ιωάννης",
-        orderDate: "2025-04-14",
-        status: "picked",
-        priority: "high",
-        boxCount: 3
-      },
-      {
-        id: 153,
-        orderNumber: "ORD-0153",
-        customerName: "ΤΣΑΟΥΣΟΓΛΟΥ CORFU PALACE ΑΕ ΞΤΕ",
-        orderDate: "2025-05-14",
-        status: "picked",
-        priority: "medium",
-        area: "Κέρκυρα",
-        boxCount: 4
-      },
-      {
-        id: 154,
-        orderNumber: "ORD-0154",
-        customerName: "La Pasteria - White River",
-        orderDate: "2025-05-19",
-        status: "picked",
-        priority: "medium",
-        boxCount: 2
-      }
-    ]);
+    try {
+      // Import the required modules
+      const { getSimplePickedOrders } = require('./api/simple-picked');
+      return getSimplePickedOrders(_req, res);
+    } catch (error) {
+      console.error('Error in /api/orders/picked route:', error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
   });
   
   // The new direct hardcoded implementations above replace these controllers
