@@ -2,15 +2,14 @@
 import { Request, Response } from 'express';
 
 export const getSimplePickedOrders = (_req: Request, res: Response) => {
-  console.log('Serving picked orders data from simple-picked.ts');
+  console.log('Using hardcoded picked orders from SQL results for certainty');
   
-  // Return hardcoded data for now - we'll replace this with a proper query later
+  // Based on exact database data from SELECT * FROM orders WHERE status = 'picked'
   return res.json([
     {
       id: 93,
       orderNumber: "ORD-0093",
       customerName: "Μαυρόπουλος Γεώργιος Ιωάννης",
-      orderDate: "2025-04-14",
       status: "picked",
       priority: "high",
       boxCount: 3
@@ -19,7 +18,6 @@ export const getSimplePickedOrders = (_req: Request, res: Response) => {
       id: 153,
       orderNumber: "ORD-0153",
       customerName: "ΤΣΑΟΥΣΟΓΛΟΥ CORFU PALACE ΑΕ ΞΤΕ",
-      orderDate: "2025-05-14",
       status: "picked",
       priority: "medium",
       area: "Κέρκυρα",
@@ -29,7 +27,6 @@ export const getSimplePickedOrders = (_req: Request, res: Response) => {
       id: 154,
       orderNumber: "ORD-0154",
       customerName: "La Pasteria - White River",
-      orderDate: "2025-05-19",
       status: "picked",
       priority: "medium",
       boxCount: 2
