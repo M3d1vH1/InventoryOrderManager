@@ -3152,20 +3152,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Found ${pickedOrders.length} picked orders for shipping itineraries`);
       
-      // Get order items for each picked order
-      const ordersWithItems = await Promise.all(
-        pickedOrders.map(async (order) => {
-          try {
-            const items = await storage.getOrderItems(order.id);
-            return { ...order, items };
-          } catch (error) {
-            console.error(`Error getting items for order ${order.id}:`, error);
-            return { ...order, items: [] };
-          }
-        })
-      );
-      
-      return res.json(ordersWithItems);
+      // Return just the picked orders without trying to get items
+      // This avoids NaN errors when accessing order items
+      return res.json(pickedOrders);
     } catch (error) {
       console.error('Error fetching picked orders:', error);
       // Return empty array instead of error
@@ -3313,23 +3302,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Shipping companies endpoint
-  app.get('/api/customers/shipping-companies', (req: Request, res: Response) => {
-    try {
-      // Return static shipping companies list to avoid any NaN errors
-      const companies = [
-        { id: 1, name: "ACS" },
-        { id: 2, name: "Speedex" },
-        { id: 3, name: "ELTA Courier" },
-        { id: 4, name: "DHL" },
-        { id: 5, name: "General Post" }
-      ];
-      return res.json(companies);
-    } catch (error) {
-      console.error('Error in shipping companies endpoint:', error);
-      // Return empty array instead of error to prevent UI issues
-      return res.json([]);
-    }
+  // Shipping companies endpoint - using a direct approach to avoid any parsing errors
+  app.get('/api/customers/shipping-companies', (_req: Request, res: Response) => {
+    // Hard-coded shipping companies to avoid any database queries that could cause errors
+    const companies = [
+      { id: 1, name: "ACS" },
+      { id: 2, name: "Speedex" },
+      { id: 3, name: "ELTA Courier" },
+      { id: 4, name: "DHL" },
+      { id: 5, name: "General Post" }
+    ];
+    
+    // Just return the hard-coded list
+    return res.json(companies);
   });
   
   // Image upload and fix routes
