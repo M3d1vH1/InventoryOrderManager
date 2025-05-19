@@ -3147,7 +3147,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/shipping-itineraries', isAuthenticated, createShippingItinerary);
   app.post('/api/shipping-itineraries/:id/orders', isAuthenticated, addOrderToItinerary);
   app.delete('/api/shipping-itineraries/:id/orders/:orderId', isAuthenticated, removeOrderFromItinerary);
-  app.put('/api/shipping-itineraries/:id/status', isAuthenticated, updateItineraryStatus);
+  app.patch('/api/shipping-itineraries/:id/status', isAuthenticated, updateItineraryStatus);
+  
+  // Shipping companies endpoint (for dropdown selection)
+  app.get('/api/customers/shipping-companies', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Get unique shipping companies from customers
+      const customers = await storage.getAllCustomers();
+      
+      // Extract unique shipping company names that are not null or empty
+      const companies = customers
+        .filter(c => c.shippingCompany && c.shippingCompany.trim() !== '')
+        .map(c => ({
+          id: c.id,
+          name: c.shippingCompany
+        }));
+      
+      // Remove duplicates
+      const uniqueCompanies = Array.from(
+        new Map(companies.map(c => [c.name, c])).values()
+      );
+      
+      return res.json(uniqueCompanies);
+    } catch (error) {
+      console.error('Error getting shipping companies:', error);
+      return res.status(500).json({ 
+        message: 'Failed to retrieve shipping companies' 
+      });
+    }
+  });
   
   // Image upload and fix routes
   app.use('/api/image-fix', imageUploadFixRouter);

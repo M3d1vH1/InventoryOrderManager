@@ -594,16 +594,16 @@ export default function Itineraries() {
                       <div className="space-y-2">
                         <Label htmlFor="shippingCompany">Μεταφορική Εταιρεία</Label>
                         <Select 
-                          value={formData.shippingCompany} 
-                          onValueChange={(value) => handleSelectChange('shippingCompany', value)}
+                          value={formData.shippingCompany || "direct"} 
+                          onValueChange={(value) => handleSelectChange('shippingCompany', value === "direct" ? "" : value)}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Επιλογή μεταφορικής εταιρείας" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Άμεση Παράδοση</SelectItem>
+                            <SelectItem value="direct">Άμεση Παράδοση</SelectItem>
                             {shippingCompanies?.map((company: any) => (
-                              <SelectItem key={company.id || company.name} value={company.name}>
+                              <SelectItem key={company.id || company.name} value={company.name || `company-${company.id}`}>
                                 {company.name}
                               </SelectItem>
                             ))}
