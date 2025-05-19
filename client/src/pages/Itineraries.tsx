@@ -1,40 +1,34 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
-  Plus, Printer, Edit, Trash, CalendarDays, Package, 
-  Search, Truck, FileText, FilterX, Filter, CheckCircle2, 
-  XCircle, AlertCircle
+  Plus, Printer, Truck, Search, Package, FilterX, CheckCircle2
 } from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format, parseISO } from 'date-fns';
-import { el } from 'date-fns/locale';
+import { useQuery } from '@tanstack/react-query';
+import { format } from 'date-fns';
 import { apiRequest } from '@/lib/queryClient';
 import { useTranslation } from 'react-i18next';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 
-// Enhanced types for our components
+// Simplified types
 type Itinerary = {
   id: number;
   itineraryNumber: string;
   departureDate: string;
-  // Vehicle information and driver fields only (no shipping company)
   driverName: string | null;
   vehicleInfo: string | null;
   totalBoxes: number;
   notes: string | null;
-  status: 'proposed' | 'active' | 'completed' | 'cancelled';
+  status: string;
   createdAt?: string;
 };
 
@@ -43,40 +37,32 @@ type Order = {
   orderNumber: string;
   customerName: string;
   boxCount: number;
-  shippingAddress?: string | null;
   area?: string | null;
-  totalItems?: number;
   priority?: string | null;
-  orderDate?: string | Date | null;
+  orderDate?: string;
+  status: string;
 };
 
 export default function Itineraries() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  
+  // Simple states for our dialogs
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isOrdersDialogOpen, setIsOrdersDialogOpen] = useState(false);
   const [isAddOrderDialogOpen, setIsAddOrderDialogOpen] = useState(false);
-  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
-  const [isPrintPreviewOpen, setIsPrintPreviewOpen] = useState(false);
   const [selectedItinerary, setSelectedItinerary] = useState<Itinerary | null>(null);
-  const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [orderFilter, setOrderFilter] = useState('all'); // 'all', 'priority'
-  const [newlyCreatedItinerary, setNewlyCreatedItinerary] = useState<Itinerary | null>(null);
   
-  // Form state for creating new itinerary
+  // Simple form data
   const [formData, setFormData] = useState({
     itineraryNumber: '',
     departureDate: format(new Date(), 'yyyy-MM-dd\'T\'HH:mm'),
     driverName: '',
     vehicleInfo: '',
-    notes: '',
-    status: 'proposed' as 'proposed' | 'active' | 'completed' | 'cancelled'
+    notes: ''
   });
-
-  // Itinerary status filter
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   
   // Get all itineraries with status filtering
   const { data: itineraries = [], isLoading } = useQuery({

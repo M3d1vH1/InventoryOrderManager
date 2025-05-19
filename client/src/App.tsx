@@ -24,7 +24,7 @@ import Production from "@/pages/Production";
 import SupplierPayments from "@/pages/SupplierPayments";
 import CalendarTest from "@/pages/CalendarTest";
 import PrinterTest from "@/pages/printerTest";
-import Itineraries from "@/pages/Itineraries";
+import SimpleItineraries from "@/pages/SimpleItineraries";
 import PrintTemplate from "@/pages/PrintTemplate";
 import Login from "@/pages/Login";
 import Sidebar from "@/components/layout/Sidebar";
@@ -93,7 +93,7 @@ function AuthenticatedRouter() {
       <Route path="/inventory-predictions" component={InventoryPredictions} />
       <Route path="/production" component={Production} />
       <Route path="/supplier-payments" component={SupplierPayments} />
-      <Route path="/itineraries" component={Itineraries} />
+      <Route path="/itineraries" component={SimpleItineraries} />
       <Route path="/printer-test" component={PrinterTest} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />

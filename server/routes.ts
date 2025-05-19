@@ -3341,11 +3341,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Get picked orders - orders available for adding to itineraries
   app.get('/api/orders/picked', (_req: Request, res: Response) => {
-    // Filter to get only picked orders
-    const pickedOrders = staticOrders.filter(order => order.status === 'picked');
-    
-    console.log(`Returning ${pickedOrders.length} picked orders`);
-    return res.json(pickedOrders);
+      // Just return all orders directly without any filtering
+    console.log(`Returning all ${staticOrders.length} orders as hardcoded data`);
+    return res.json(staticOrders);
   });
   
   // The new direct hardcoded implementations above replace these controllers
