@@ -362,7 +362,7 @@ const CallLogs: React.FC = () => {
                           {formatDate(call.callDate)}
                         </td>
                         <td className="py-3 px-4">
-                          {call.customerName}
+                          {call.displayName || call.customerName}
                         </td>
                         <td className="py-3 px-4">
                           <div className="max-w-[200px] truncate">{call.subject}</div>

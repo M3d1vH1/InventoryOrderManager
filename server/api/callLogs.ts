@@ -23,9 +23,11 @@ function transformCallLog(callLog: CallLog | undefined): any {
     id: callLog.id,
     customerId: callLog.customerId,
     // Map database field names to frontend field names
-    customerName: callLog.contactName || 'Unknown',
-    // Use contactName + callPurpose as subject since there's no subject field in the database schema
-    subject: callLog.contactName || (callLog.callPurpose ? `Call: ${callLog.callPurpose}` : 'No subject'),
+    customerName: callLog.contactName || callLog.companyName || 'Unknown',
+    // For display in call logs list, use contact name in customer column
+    displayName: callLog.contactName || callLog.companyName || 'Unknown',
+    // Use a better format for the subject line
+    subject: callLog.callPurpose || `Call with ${callLog.contactName || callLog.companyName || 'Unknown'}`,
     needsFollowup: callLog.callStatus === 'needs_followup',
     outcome: callLog.callPurpose,
     assignedToId: callLog.followupAssignedTo,
