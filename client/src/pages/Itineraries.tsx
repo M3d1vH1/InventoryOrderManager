@@ -617,6 +617,16 @@ export default function Itineraries() {
                 Κλείσιμο
               </Button>
               <Button 
+                variant="outline"
+                onClick={() => {
+                  setIsAddOrderDialogOpen(true);
+                  setSelectedOrders([]);
+                }}
+              >
+                <Plus size={16} className="mr-2" />
+                Προσθήκη Παραγγελιών
+              </Button>
+              <Button 
                 onClick={() => selectedItinerary && handlePrintItinerary(selectedItinerary.id)}
               >
                 <Printer size={16} className="mr-2" />
