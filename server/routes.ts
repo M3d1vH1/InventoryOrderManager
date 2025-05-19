@@ -15,7 +15,7 @@ import { promisify } from "util";
 import PDFDocument from 'pdfkit';
 import { getEmailSettings, updateEmailSettings, testEmailConnection, getEmailTemplate, updateEmailTemplate } from "./api/emailSettings";
 import { getGeoblockingSettings, updateGeoblockingSettings } from "./api/geoblocking";
-import { getGeoblockingStatus, toggleGeoblocking, addIpToAllowlist, removeIpFromAllowlist } from "./api/geoblocking-controls";
+import { getGeoblockingStatus, toggleGeoblocking, addToAllowlist, removeFromAllowlist } from "./api/geoblocking-routes";
 import { getLabelTemplate, updateLabelTemplate, getAllLabelTemplates, previewLabelTemplate } from "./api/labelTemplates";
 import { getCompanySettings, updateCompanySettings, getNotificationSettings, updateNotificationSettings, testSlackWebhook, testSlackNotification, testSlackTemplate } from "./api/settings";
 import { getOrderErrors, getOrderQuality, createOrderError, updateOrderError, resolveOrderError, adjustInventoryForError, getErrorStats } from "./api/orderErrors";
@@ -129,6 +129,12 @@ function broadcastMessage(message: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Geoblocking control routes
+  app.get('/geoblocking-status', getGeoblockingStatus);
+  app.get('/toggle-geoblocking', toggleGeoblocking);
+  app.post('/add-to-allowlist', addToAllowlist);
+  app.get('/remove-from-allowlist', removeFromAllowlist);
+
   // Printer test endpoint for CAB EOS1
   app.get('/api/test-printer', (req, res) => {
     testPrinter(req, res);
