@@ -15,7 +15,6 @@ export const shippingItineraries = pgTable("shipping_itineraries", {
   id: serial("id").primaryKey(),
   itineraryNumber: text("itinerary_number").notNull().unique(),
   departureDate: timestamp("departure_date").notNull(),
-  shippingCompany: text("shipping_company"),
   driverName: text("driver_name"),
   vehicleInfo: text("vehicle_info"),
   totalBoxes: integer("total_boxes").notNull().default(0),
@@ -40,7 +39,6 @@ export const insertShippingItinerarySchema = createInsertSchema(shippingItinerar
   .extend({
     itineraryNumber: z.string().min(1),
     departureDate: z.date(),
-    shippingCompany: z.string().optional(),
     driverName: z.string().optional(),
     vehicleInfo: z.string().optional(),
     notes: z.string().optional(),

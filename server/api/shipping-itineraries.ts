@@ -8,7 +8,6 @@ import { isAuthenticated } from '../auth';
 const createItinerarySchema = z.object({
   itineraryNumber: z.string(),
   departureDate: z.string().or(z.date()),
-  shippingCompany: z.string().optional().nullable(),
   driverName: z.string().optional().nullable(),
   vehicleInfo: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
@@ -92,7 +91,6 @@ export async function createShippingItinerary(req: Request, res: Response) {
     const newItinerary = await storage.createShippingItinerary({
       itineraryNumber: data.itineraryNumber,
       departureDate,
-      shippingCompany: data.shippingCompany || null,
       driverName: data.driverName || null,
       vehicleInfo: data.vehicleInfo || null,
       notes: data.notes || null,
