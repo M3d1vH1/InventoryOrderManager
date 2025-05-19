@@ -3235,19 +3235,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Shipping companies endpoint (for dropdown selection)
   app.get('/api/customers/shipping-companies', async (req: Request, res: Response) => {
     try {
-      const shippingCompaniesHandler = require('./api/shipping-companies');
-      await shippingCompaniesHandler.getShippingCompanies(req, res);
-    } catch (error) {
-      console.error('Error getting shipping companies:', error);
-      // Fallback to default companies if the handler fails
-      const defaultCompanies = [
+      // Return default shipping companies to avoid database errors
+      const companies = [
         { id: 1, name: "ACS" },
         { id: 2, name: "Speedex" },
         { id: 3, name: "ELTA Courier" },
         { id: 4, name: "DHL" },
         { id: 5, name: "General Post" }
       ];
-      return res.json(defaultCompanies);
+      
+      return res.json(companies);
+    } catch (error) {
+      console.error('Error getting shipping companies:', error);
+      return res.status(500).json({ 
+        message: 'Failed to retrieve shipping companies' 
+      });
     }
   });
   

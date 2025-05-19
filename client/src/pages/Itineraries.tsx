@@ -165,11 +165,14 @@ export default function Itineraries() {
       try {
         console.log('Fetching picked orders...');
         
-        // Use the dedicated endpoint for shipping orders that returns both picked and shipped orders
-        let url = '/api/orders-for-shipping';
+        // Use the regular orders endpoint with specific status filter
+        let url = '/api/orders';
         
         // Build query parameters for filtering
         const params = new URLSearchParams();
+        
+        // Only show picked orders (not shipped)
+        params.append('status', 'picked');
         
         if (searchQuery) params.append('search', searchQuery);
         if (orderFilter === 'byShipping' && selectedShippingCompany) {
