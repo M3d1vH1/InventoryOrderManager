@@ -46,6 +46,16 @@ import productionRouter from "./api/production";
 import supplierPaymentsRouter from "./api/supplierPayments";
 import { createSlackService } from "./services/notifications/slackService";
 import { printShippingLabel, printBatchShippingLabels, previewShippingLabel, servePreviewImage } from "./api/labelPrinting";
+import {
+  getAllItineraries,
+  getItineraryById,
+  createShippingItinerary,
+  addOrderToItinerary,
+  removeOrderFromItinerary,
+  updateItineraryStatus,
+  getUpcomingItineraries,
+  getItinerariesForCalendar
+} from "./api/shipping-itineraries";
 
 // Function to determine the appropriate storage path based on environment
 function getStoragePath(): string {
@@ -3118,6 +3128,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Supplier Payment Tracking routes
   app.use('/api/supplier-payments', isAuthenticated, supplierPaymentsRouter);
+  
+  // Shipping Itinerary Routes
+  app.get('/api/shipping-itineraries', isAuthenticated, getAllItineraries);
+  app.get('/api/shipping-itineraries/upcoming', isAuthenticated, getUpcomingItineraries);
+  app.get('/api/shipping-itineraries/calendar', isAuthenticated, getItinerariesForCalendar);
+  app.get('/api/shipping-itineraries/:id', isAuthenticated, getItineraryById);
+  app.post('/api/shipping-itineraries', isAuthenticated, createShippingItinerary);
+  app.post('/api/shipping-itineraries/:id/orders', isAuthenticated, addOrderToItinerary);
+  app.delete('/api/shipping-itineraries/:id/orders/:orderId', isAuthenticated, removeOrderFromItinerary);
+  app.put('/api/shipping-itineraries/:id/status', isAuthenticated, updateItineraryStatus);
   
   // Image upload and fix routes
   app.use('/api/image-fix', imageUploadFixRouter);

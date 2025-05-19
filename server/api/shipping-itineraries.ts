@@ -6,9 +6,12 @@ import { isAuthenticated } from '../auth';
 
 // Schema for creating a new itinerary
 const createItinerarySchema = z.object({
-  data: insertShippingItinerarySchema.extend({
-    createdById: z.number(),
-  }),
+  itineraryNumber: z.string(),
+  departureDate: z.string().or(z.date()),
+  shippingCompany: z.string().optional().nullable(),
+  driverName: z.string().optional().nullable(),
+  vehicleInfo: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
   orderIds: z.array(z.number()).optional(),
 });
 
@@ -67,22 +70,28 @@ export async function createShippingItinerary(req: Request, res: Response) {
       });
     }
 
-    const { orderIds, ...itineraryData } = parsedBody.data;
-    
     // Make sure the user is authenticated
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
     }
     
+    const { data, orderIds } = parsedBody.success ? parsedBody.data : { data: {}, orderIds: [] };
+    
     // Format departure date if it's a string
-    const departureDate = typeof itineraryData.departureDate === 'string' 
-      ? new Date(itineraryData.departureDate) 
-      : itineraryData.departureDate;
+    const departureDate = typeof data.departureDate === 'string' 
+      ? new Date(data.departureDate) 
+      : data.departureDate;
     
     // Create the shipping itinerary
     const newItinerary = await storage.createShippingItinerary({
-      ...itineraryData,
-      departureDate
+      itineraryNumber: data.itineraryNumber,
+      departureDate,
+      shippingCompany: data.shippingCompany || null,
+      driverName: data.driverName || null,
+      vehicleInfo: data.vehicleInfo || null,
+      notes: data.notes || null,
+      createdById: req.user.id,
+      status: 'active'
     });
     
     // If order IDs are provided, associate them with the itinerary
@@ -136,12 +145,18 @@ export async function addOrderToItinerary(req: Request, res: Response) {
       return res.status(404).json({ error: 'Shipping itinerary not found' });
     }
     
+    // Check if the order exists
+    const order = await storage.getOrder(orderId);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    
     // Add the order to the itinerary
     await storage.addOrderToItinerary({
       itineraryId,
       orderId,
-      boxCount,
-      addedById: req.user.id
+      boxCount: boxCount || 1, // Ensure we have a valid box count
+      addedById: req.user.id || 1 // Fallback to ID 1 if user ID is not available
     });
     
     // Get all orders for this itinerary to return in the response
