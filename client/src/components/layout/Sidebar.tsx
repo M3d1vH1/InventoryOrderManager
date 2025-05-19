@@ -269,19 +269,7 @@ const Sidebar = () => {
                   </Link>
                 </li>
                 
-                <li className="mb-1">
-                  <Link href="/itineraries" onClick={() => setCurrentPage("Shipping Itineraries")}>
-                    <button 
-                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/itineraries") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
-                      title={t('itineraries.title') || "Shipping Itineraries"}
-                    >
-                      <span className="flex items-center w-5 h-5">
-                        <FaTruck size={16} />
-                      </span>
-                      {isSidebarOpen && <span className="ml-2">{t('itineraries.title') || "Shipping Itineraries"}</span>}
-                    </button>
-                  </Link>
-                </li>
+                {/* Shipping Itineraries feature removed */}
                 
                 <li className="mb-1">
                   <div>
