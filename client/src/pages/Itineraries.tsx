@@ -915,8 +915,8 @@ export default function Itineraries() {
               <div className="text-center p-4">Φόρτωση παραγγελιών...</div>
             ) : itineraryOrders?.length > 0 ? (
               <ScrollArea className="h-[400px]">
-                {/* Group orders by shipping company */}
-                {Object.entries(getOrdersGroupedByShippingCompany(itineraryOrders)).map(([company, orders]) => (
+                {/* Display all orders in a single group */}
+                {Object.entries(getOrdersForDisplay(itineraryOrders || [])).map(([company, orders]) => (
                   <div key={company} className="mb-6">
                     <h3 className="font-semibold text-lg mb-2 flex items-center">
                       <Truck size={16} className="mr-2" />
@@ -1207,11 +1207,11 @@ export default function Itineraries() {
                 
                 <Separator className="my-4" />
                 
-                {/* Group orders by shipping company in preview */}
+                {/* Display all orders in a single group */}
                 {itineraryOrders?.length > 0 ? (
                   <div>
                     <h3 className="font-bold text-lg mb-4">Λίστα Παραγγελιών</h3>
-                    {Object.entries(getOrdersGroupedByShippingCompany(itineraryOrders)).map(([company, orders]) => (
+                    {Object.entries(getOrdersForDisplay(itineraryOrders || [])).map(([company, orders]) => (
                       <div key={company} className="mb-6">
                         <h4 className="font-semibold text-md mb-2 flex items-center bg-muted p-2 rounded">
                           <Truck size={16} className="mr-2" />
