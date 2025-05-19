@@ -199,9 +199,22 @@ export default function Itineraries() {
         let filteredOrders = [...orders];
         
         if (orderFilter === 'byShipping' && selectedShippingCompany) {
-          filteredOrders = filteredOrders.filter((order: any) => 
-            order.shippingCompany === selectedShippingCompany
-          );
+          // Log the order properties to see what's available
+          if (filteredOrders.length > 0) {
+            console.log('Order properties example:', Object.keys(filteredOrders[0]));
+          }
+          
+          // Use a more flexible approach to find shipping company data
+          filteredOrders = filteredOrders.filter((order: any) => {
+            // Try various possible locations for shipping company in the data model
+            const orderCompany = 
+              order.shippingCompany || 
+              (order.shipping?.company) || 
+              (order.customer?.shippingCompany) ||
+              order.shipping_company;
+              
+            return orderCompany === selectedShippingCompany;
+          });
         }
         
         // Filter by search if provided
