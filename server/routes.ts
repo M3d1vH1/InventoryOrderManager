@@ -3234,8 +3234,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Shipping companies endpoint
   app.get('/api/customers/shipping-companies', (req: Request, res: Response) => {
-    // Return an empty array - we're not using shipping companies with itineraries
-    return res.json([]);
+    // Return static shipping companies list to avoid any NaN errors
+    const companies = [
+      { id: 1, name: "ACS" },
+      { id: 2, name: "Speedex" },
+      { id: 3, name: "ELTA Courier" },
+      { id: 4, name: "DHL" },
+      { id: 5, name: "General Post" }
+    ];
+    return res.json(companies);
   });
   
   // Image upload and fix routes

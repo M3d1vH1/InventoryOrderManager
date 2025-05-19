@@ -1032,7 +1032,6 @@ export default function Itineraries() {
               <SelectContent>
                 <SelectItem value="all">Όλες οι παραγγελίες</SelectItem>
                 <SelectItem value="priority">Με προτεραιότητα</SelectItem>
-                <SelectItem value="byShipping">Ανά μεταφορική</SelectItem>
               </SelectContent>
             </Select>
             
