@@ -46,8 +46,8 @@ async function transformCallLog(callLog: CallLog | undefined): Promise<any> {
     // Also store the original contact name for reference
     contactName: callLog.contactName || '',
     companyName: callLog.companyName || '',
-    // Use a better format for the subject line
-    subject: callLog.callPurpose || `Call with ${callLog.contactName || callLog.companyName || 'Unknown'}`,
+    // Use the actual subject line as provided in the call log
+    subject: callLog.subject || callLog.callPurpose || 'No subject',
     needsFollowup: callLog.callStatus === 'needs_followup',
     outcome: callLog.callPurpose,
     assignedToId: callLog.followupAssignedTo,
