@@ -122,9 +122,8 @@ function Router() {
 
   // If not authenticated and not on login page, redirect to login
   if (!isAuthenticated) {
-    // Redirect to login page
-    window.location.href = '/login';
-    return null;
+    // Use the React way of showing the login component instead of redirect
+    return <Login />;
   }
 
   // Show authenticated routes
