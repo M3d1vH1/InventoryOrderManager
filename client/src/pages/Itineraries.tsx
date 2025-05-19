@@ -29,7 +29,7 @@ type Itinerary = {
   id: number;
   itineraryNumber: string;
   departureDate: string;
-  shippingCompany: string | null;
+  // Removed shippingCompany field
   driverName: string | null;
   vehicleInfo: string | null;
   totalBoxes: number;
@@ -43,7 +43,6 @@ type Order = {
   orderNumber: string;
   customerName: string;
   boxCount: number;
-  shippingCompany?: string | null;
   shippingAddress?: string | null;
   area?: string | null;
   totalItems?: number;
@@ -206,8 +205,7 @@ export default function Itineraries() {
           const query = searchQuery.toLowerCase();
           filteredOrders = filteredOrders.filter((order: any) => 
             order.orderNumber.toLowerCase().includes(query) ||
-            order.customerName.toLowerCase().includes(query) ||
-            (order.shippingCompany && order.shippingCompany.toLowerCase().includes(query))
+            (order.customerName && order.customerName.toLowerCase().includes(query))
           );
         }
         
@@ -727,28 +725,8 @@ export default function Itineraries() {
                         <SelectContent>
                           <SelectItem value="all">Όλες οι παραγγελίες</SelectItem>
                           <SelectItem value="priority">Με προτεραιότητα</SelectItem>
-                          <SelectItem value="byShipping">Ανά μεταφορική</SelectItem>
                         </SelectContent>
                       </Select>
-                      
-                      {orderFilter === 'byShipping' && (
-                        <Select
-                          value={selectedShippingCompany || ''}
-                          onValueChange={setSelectedShippingCompany}
-                        >
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Μεταφορική" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="">Όλες οι μεταφορικές</SelectItem>
-                            {shippingCompanies?.map((company: any) => (
-                              <SelectItem key={company.id || company.name} value={company.name}>
-                                {company.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
                     </div>
                     
                     <ScrollArea className="h-[350px] rounded-md border p-4">
@@ -779,7 +757,6 @@ export default function Itineraries() {
                                 <div className="text-sm text-muted-foreground flex justify-between mt-1">
                                   <span>Κιβώτια: {order.boxCount || 0}</span>
                                   <span>Περιοχή: {order.area || '-'}</span>
-                                  <span>Μεταφορική: {order.shippingCompany || 'Άμεση Παράδοση'}</span>
                                 </div>
                               </div>
                             </div>
