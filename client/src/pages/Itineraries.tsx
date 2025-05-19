@@ -8,15 +8,20 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Printer, Edit, Trash, CalendarDays, Package, Search, Truck, FileText, FilterX, Filter } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  Plus, Printer, Edit, Trash, CalendarDays, Package, 
+  Search, Truck, FileText, FilterX, Filter, CheckCircle2, 
+  XCircle, AlertCircle
+} from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import { el } from 'date-fns/locale';
 import { apiRequest } from '@/lib/queryClient';
 import { useTranslation } from 'react-i18next';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 
 // Enhanced types for our components
@@ -29,7 +34,7 @@ type Itinerary = {
   vehicleInfo: string | null;
   totalBoxes: number;
   notes: string | null;
-  status: 'active' | 'completed' | 'cancelled';
+  status: 'proposed' | 'active' | 'completed' | 'cancelled';
   createdAt?: string;
 };
 
@@ -42,6 +47,7 @@ type Order = {
   shippingAddress?: string | null;
   area?: string | null;
   totalItems?: number;
+  priority?: string | null;
 };
 
 export default function Itineraries() {
@@ -51,13 +57,14 @@ export default function Itineraries() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isOrdersDialogOpen, setIsOrdersDialogOpen] = useState(false);
   const [isAddOrderDialogOpen, setIsAddOrderDialogOpen] = useState(false);
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [isPrintPreviewOpen, setIsPrintPreviewOpen] = useState(false);
   const [selectedItinerary, setSelectedItinerary] = useState<Itinerary | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [orderFilter, setOrderFilter] = useState('all'); // 'all', 'byArea', 'byShipping'
-  const [selectedArea, setSelectedArea] = useState<string | null>(null);
+  const [orderFilter, setOrderFilter] = useState('all'); // 'all', 'byShipping', 'priority'
   const [selectedShippingCompany, setSelectedShippingCompany] = useState<string | null>(null);
-  const [isPrintPreviewOpen, setIsPrintPreviewOpen] = useState(false);
+  const [newlyCreatedItinerary, setNewlyCreatedItinerary] = useState<Itinerary | null>(null);
   
   // Form state for creating new itinerary
   const [formData, setFormData] = useState({
@@ -66,12 +73,14 @@ export default function Itineraries() {
     driverName: '',
     vehicleInfo: '',
     shippingCompany: '',
-    notes: ''
+    notes: '',
+    status: 'proposed' as 'proposed' | 'active' | 'completed' | 'cancelled'
   });
 
-  // Get all itineraries with status filtering
-  const [statusFilter, setStatusFilter] = useState<string>('active');
+  // Itinerary status filter
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   
+  // Get all itineraries with status filtering
   const { data: itineraries, isLoading } = useQuery({
     queryKey: ['/api/itineraries', statusFilter],
     queryFn: async () => {
@@ -109,7 +118,11 @@ export default function Itineraries() {
       });
       setIsCreateDialogOpen(false);
       
-      // If we have selected orders during creation, add them immediately after
+      // Set the newly created itinerary for confirmation
+      setNewlyCreatedItinerary(data);
+      setIsConfirmDialogOpen(true);
+      
+      // If we have selected orders during creation, add them to the itinerary
       if (selectedOrders.length > 0) {
         addOrdersMutation.mutate({
           itineraryId: data.id,
@@ -146,19 +159,34 @@ export default function Itineraries() {
     enabled: !!selectedItinerary
   });
   
-  // Get shipping areas for filtering
-  const { data: areas } = useQuery({
-    queryKey: ['/api/areas'],
+  // Get available orders for adding to itinerary with priority sorting and filtering
+  const { data: availableOrders, isLoading: isLoadingAvailableOrders, refetch: refetchAvailableOrders } = useQuery({
+    queryKey: ['/api/orders', 'available', orderFilter, selectedShippingCompany, searchQuery],
     queryFn: async () => {
       try {
-        const response = await apiRequest('/api/orders/areas', { method: 'GET' });
-        if (!response.ok) return [];
+        let url = '/api/orders/available';
+        const params = new URLSearchParams();
+        
+        if (searchQuery) params.append('search', searchQuery);
+        if (orderFilter === 'byShipping' && selectedShippingCompany) {
+          params.append('shippingCompany', selectedShippingCompany);
+        }
+        if (orderFilter === 'priority') {
+          params.append('sortBy', 'priority');
+        }
+        
+        const queryString = params.toString();
+        if (queryString) url += `?${queryString}`;
+        
+        const response = await apiRequest(url, { method: 'GET' });
+        if (!response.ok) throw new Error('Failed to fetch available orders');
         return await response.json();
       } catch (error) {
-        console.error('Error fetching areas:', error);
+        console.error('Error fetching available orders:', error);
         return [];
       }
-    }
+    },
+    enabled: isAddOrderDialogOpen
   });
   
   // Get shipping companies for filtering
@@ -173,6 +201,58 @@ export default function Itineraries() {
         console.error('Error fetching shipping companies:', error);
         return [];
       }
+    }
+  });
+  
+  // Get print preview for an itinerary
+  const { data: printPreviewData, isLoading: isLoadingPrintPreview, refetch: refetchPrintPreview } = useQuery({
+    queryKey: ['/api/itineraries', selectedItinerary?.id, 'print-preview'],
+    queryFn: async () => {
+      if (!selectedItinerary) return null;
+      try {
+        const response = await apiRequest(`/api/itineraries/${selectedItinerary.id}/print-preview`, { method: 'GET' });
+        if (!response.ok) throw new Error('Failed to generate print preview');
+        return await response.json();
+      } catch (error) {
+        console.error('Error generating print preview:', error);
+        return null;
+      }
+    },
+    enabled: isPrintPreviewOpen && !!selectedItinerary
+  });
+  
+  // Confirm itinerary (change status from proposed to active)
+  const confirmItineraryMutation = useMutation({
+    mutationFn: async ({ itineraryId }: { itineraryId: number }) => {
+      const response = await apiRequest(`/api/itineraries/${itineraryId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'active' }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to confirm itinerary');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: t('Itinerary confirmed'),
+        description: t('Itinerary has been activated and is ready for delivery'),
+      });
+      setIsConfirmDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/itineraries'] });
+      
+      // Open print preview after confirmation
+      if (newlyCreatedItinerary) {
+        setSelectedItinerary(newlyCreatedItinerary);
+        setIsPrintPreviewOpen(true);
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: t('Error'),
+        description: error.message,
+        variant: 'destructive',
+      });
     }
   });
 
@@ -195,7 +275,8 @@ export default function Itineraries() {
       driverName: '',
       vehicleInfo: '',
       shippingCompany: '',
-      notes: ''
+      notes: '',
+      status: 'proposed'
     });
     setSelectedOrders([]);
   };
@@ -220,7 +301,23 @@ export default function Itineraries() {
 
   // Print itinerary
   const handlePrintItinerary = (itineraryId: number) => {
-    window.open(`/api/itineraries/${itineraryId}/print`, '_blank');
+    // First open print preview
+    const itinerary = itineraries?.find(i => i.id === itineraryId);
+    if (itinerary) {
+      setSelectedItinerary(itinerary);
+      setIsPrintPreviewOpen(true);
+    } else {
+      // Direct print if no preview available
+      window.open(`/api/itineraries/${itineraryId}/print`, '_blank');
+    }
+  };
+  
+  // Actual print function after preview
+  const handleActualPrint = () => {
+    if (selectedItinerary) {
+      window.open(`/api/itineraries/${selectedItinerary.id}/print`, '_blank');
+      setIsPrintPreviewOpen(false);
+    }
   };
   
   // Remove order from itinerary
@@ -265,7 +362,7 @@ export default function Itineraries() {
   
   // Update itinerary status
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ itineraryId, status }: { itineraryId: number, status: 'active' | 'completed' | 'cancelled' }) => {
+    mutationFn: async ({ itineraryId, status }: { itineraryId: number, status: 'proposed' | 'active' | 'completed' | 'cancelled' }) => {
       const response = await apiRequest(`/api/itineraries/${itineraryId}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ status }),
@@ -275,11 +372,18 @@ export default function Itineraries() {
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: t('Status updated'),
-        description: t('Itinerary status has been updated'),
+        description: t('Itinerary status has been updated successfully'),
       });
+      
+      if (data.status === 'active') {
+        // If status changed to active, offer print option
+        setSelectedItinerary(data);
+        setIsPrintPreviewOpen(true);
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['/api/itineraries'] });
     },
     onError: (error) => {
@@ -292,25 +396,9 @@ export default function Itineraries() {
   });
 
   // Handle updating itinerary status
-  const handleUpdateStatus = (itineraryId: number, status: 'active' | 'completed' | 'cancelled') => {
+  const handleUpdateStatus = (itineraryId: number, status: 'proposed' | 'active' | 'completed' | 'cancelled') => {
     updateStatusMutation.mutate({ itineraryId, status });
   };
-
-  // Get available orders for adding to itinerary
-  const { data: availableOrders, isLoading: isLoadingAvailableOrders } = useQuery({
-    queryKey: ['/api/orders', 'available', searchQuery],
-    queryFn: async () => {
-      try {
-        const response = await apiRequest(`/api/orders/available?search=${encodeURIComponent(searchQuery)}`, { method: 'GET' });
-        if (!response.ok) throw new Error('Failed to fetch available orders');
-        return await response.json();
-      } catch (error) {
-        console.error('Error fetching available orders:', error);
-        return [];
-      }
-    },
-    enabled: isAddOrderDialogOpen
-  });
 
   // Add orders to itinerary
   const addOrdersMutation = useMutation({
@@ -327,7 +415,7 @@ export default function Itineraries() {
     onSuccess: () => {
       toast({
         title: t('Orders added'),
-        description: t('Orders have been added to the itinerary'),
+        description: t('Orders have been added to the itinerary successfully'),
       });
       setIsAddOrderDialogOpen(false);
       setSelectedOrders([]);
@@ -343,7 +431,7 @@ export default function Itineraries() {
     }
   });
 
-  // Handle selection of orders
+  // Handle selection of orders in the selection interface (similar to picking)
   const handleOrderSelection = (orderId: number) => {
     setSelectedOrders(prev => {
       if (prev.includes(orderId)) {
@@ -375,6 +463,41 @@ export default function Itineraries() {
     }
   }, [isCreateDialogOpen, itineraries]);
 
+  // Get priority badge color
+  const getPriorityBadge = (priority: string | null | undefined) => {
+    if (!priority) return null;
+    
+    const variant = 
+      priority === 'urgent' ? 'destructive' :
+      priority === 'high' ? 'default' :
+      priority === 'medium' ? 'secondary' :
+      'outline';
+      
+    return (
+      <Badge variant={variant} className="ml-2">
+        {priority === 'urgent' ? 'Επείγον' :
+         priority === 'high' ? 'Υψηλή' :
+         priority === 'medium' ? 'Μεσαία' :
+         'Χαμηλή'}
+      </Badge>
+    );
+  };
+
+  // Group orders by shipping company for display
+  const getOrdersGroupedByShippingCompany = (orders: Order[]) => {
+    const grouped: Record<string, Order[]> = {};
+    
+    orders?.forEach(order => {
+      const shippingCompany = order.shippingCompany || 'Άμεση Παράδοση';
+      if (!grouped[shippingCompany]) {
+        grouped[shippingCompany] = [];
+      }
+      grouped[shippingCompany].push(order);
+    });
+    
+    return grouped;
+  };
+
   // Render component
   return (
     <div className="container mx-auto py-6">
@@ -384,6 +507,22 @@ export default function Itineraries() {
           <p className="text-muted-foreground">Διαχείριση δρομολογίων παράδοσης</p>
         </div>
         <div className="flex gap-2">
+          <Select 
+            value={statusFilter} 
+            onValueChange={setStatusFilter}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Φίλτρο κατάστασης" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Όλα τα δρομολόγια</SelectItem>
+              <SelectItem value="proposed">Προτεινόμενα</SelectItem>
+              <SelectItem value="active">Ενεργά</SelectItem>
+              <SelectItem value="completed">Ολοκληρωμένα</SelectItem>
+              <SelectItem value="cancelled">Ακυρωμένα</SelectItem>
+            </SelectContent>
+          </Select>
+          
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button className="flex items-center gap-2">
@@ -391,95 +530,215 @@ export default function Itineraries() {
                 Νέο Δρομολόγιο
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
+            <DialogContent className="sm:max-w-[700px]">
               <DialogHeader>
                 <DialogTitle>Δημιουργία Νέου Δρομολογίου</DialogTitle>
                 <DialogDescription>
                   Συμπληρώστε τα στοιχεία του νέου δρομολογίου παράδοσης
                 </DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleSubmit}>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="itineraryNumber">Αριθμός Δρομολογίου</Label>
-                      <Input
-                        id="itineraryNumber"
-                        name="itineraryNumber"
-                        value={formData.itineraryNumber}
-                        onChange={handleInputChange}
-                        required
-                      />
+              
+              <Tabs defaultValue="details" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="details">Στοιχεία Δρομολογίου</TabsTrigger>
+                  <TabsTrigger value="orders">Επιλογή Παραγγελιών</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="details">
+                  <form onSubmit={handleSubmit}>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="itineraryNumber">Αριθμός Δρομολογίου</Label>
+                          <Input
+                            id="itineraryNumber"
+                            name="itineraryNumber"
+                            value={formData.itineraryNumber}
+                            onChange={handleInputChange}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="departureDate">Ημερομηνία Αναχώρησης</Label>
+                          <Input
+                            id="departureDate"
+                            name="departureDate"
+                            type="datetime-local"
+                            value={formData.departureDate}
+                            onChange={handleInputChange}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="driverName">Όνομα Οδηγού</Label>
+                          <Input
+                            id="driverName"
+                            name="driverName"
+                            value={formData.driverName}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="vehicleInfo">Στοιχεία Οχήματος</Label>
+                          <Input
+                            id="vehicleInfo"
+                            name="vehicleInfo"
+                            value={formData.vehicleInfo}
+                            onChange={handleInputChange}
+                            placeholder="Αριθμός κυκλοφορίας / Τύπος"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="shippingCompany">Μεταφορική Εταιρεία</Label>
+                        <Select 
+                          value={formData.shippingCompany} 
+                          onValueChange={(value) => handleSelectChange('shippingCompany', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Επιλογή μεταφορικής εταιρείας" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Άμεση Παράδοση</SelectItem>
+                            {shippingCompanies?.map((company: any) => (
+                              <SelectItem key={company.id || company.name} value={company.name}>
+                                {company.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="notes">Σημειώσεις</Label>
+                        <Textarea
+                          id="notes"
+                          name="notes"
+                          value={formData.notes || ''}
+                          onChange={handleInputChange}
+                          rows={3}
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="departureDate">Ημερομηνία Αναχώρησης</Label>
-                      <Input
-                        id="departureDate"
-                        name="departureDate"
-                        type="datetime-local"
-                        value={formData.departureDate}
-                        onChange={handleInputChange}
-                        required
-                      />
+                    <DialogFooter>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setIsCreateDialogOpen(false)}
+                      >
+                        Ακύρωση
+                      </Button>
+                      <Button 
+                        type="submit" 
+                        disabled={createItineraryMutation.isPending}
+                      >
+                        {createItineraryMutation.isPending ? 'Επεξεργασία...' : 'Αποθήκευση'}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </TabsContent>
+                
+                <TabsContent value="orders">
+                  <div className="py-2">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <Label htmlFor="search-orders" className="sr-only">Αναζήτηση παραγγελιών</Label>
+                      <div className="relative flex-1">
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="search-orders"
+                          placeholder="Αναζήτηση παραγγελιών..."
+                          className="pl-8"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                      </div>
+                      <Select
+                        value={orderFilter}
+                        onValueChange={setOrderFilter}
+                      >
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Φίλτρο παραγγελιών" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Όλες οι παραγγελίες</SelectItem>
+                          <SelectItem value="priority">Με προτεραιότητα</SelectItem>
+                          <SelectItem value="byShipping">Ανά μεταφορική</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      
+                      {orderFilter === 'byShipping' && (
+                        <Select
+                          value={selectedShippingCompany || ''}
+                          onValueChange={setSelectedShippingCompany}
+                        >
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Μεταφορική" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Όλες οι μεταφορικές</SelectItem>
+                            {shippingCompanies?.map((company: any) => (
+                              <SelectItem key={company.id || company.name} value={company.name}>
+                                {company.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                    
+                    <ScrollArea className="h-[350px] rounded-md border p-4">
+                      {isLoadingAvailableOrders ? (
+                        <div className="text-center p-4">Φόρτωση διαθέσιμων παραγγελιών...</div>
+                      ) : availableOrders?.length > 0 ? (
+                        <div className="space-y-4">
+                          {availableOrders.map((order: Order) => (
+                            <div 
+                              key={order.id} 
+                              className={`flex items-center space-x-2 p-2 rounded-md ${
+                                selectedOrders.includes(order.id) 
+                                  ? 'bg-primary/20' 
+                                  : 'hover:bg-muted/50'
+                              }`}
+                              onClick={() => handleOrderSelection(order.id)}
+                            >
+                              <Checkbox 
+                                checked={selectedOrders.includes(order.id)}
+                                onCheckedChange={() => handleOrderSelection(order.id)}
+                                className="mr-2"
+                              />
+                              <div className="flex-1">
+                                <div className="font-medium flex items-center">
+                                  {order.orderNumber} - {order.customerName}
+                                  {getPriorityBadge(order.priority)}
+                                </div>
+                                <div className="text-sm text-muted-foreground flex justify-between mt-1">
+                                  <span>Κιβώτια: {order.boxCount || 0}</span>
+                                  <span>Περιοχή: {order.area || '-'}</span>
+                                  <span>Μεταφορική: {order.shippingCompany || 'Άμεση Παράδοση'}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center p-4">
+                          <p className="text-muted-foreground">Δεν υπάρχουν διαθέσιμες παραγγελίες</p>
+                        </div>
+                      )}
+                    </ScrollArea>
+                    
+                    <div className="flex justify-between items-center mt-4">
+                      <div className="text-sm">
+                        Επιλεγμένες παραγγελίες: <strong>{selectedOrders.length}</strong>
+                      </div>
+                      <Button onClick={handleSubmit} disabled={selectedOrders.length === 0}>
+                        Δημιουργία με επιλεγμένες παραγγελίες
+                      </Button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="driverName">Όνομα Οδηγού</Label>
-                      <Input
-                        id="driverName"
-                        name="driverName"
-                        value={formData.driverName}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="vehicleInfo">Στοιχεία Οχήματος</Label>
-                      <Input
-                        id="vehicleInfo"
-                        name="vehicleInfo"
-                        value={formData.vehicleInfo}
-                        onChange={handleInputChange}
-                        placeholder="Αριθμός κυκλοφορίας / Τύπος"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="shippingCompany">Μεταφορική Εταιρεία</Label>
-                    <Input
-                      id="shippingCompany"
-                      name="shippingCompany"
-                      value={formData.shippingCompany}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Σημειώσεις</Label>
-                    <Input
-                      id="notes"
-                      name="notes"
-                      value={formData.notes}
-                      onChange={handleInputChange}
-                      className="h-20"
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setIsCreateDialogOpen(false)}
-                  >
-                    Ακύρωση
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={createItineraryMutation.isPending}
-                  >
-                    {createItineraryMutation.isPending ? 'Επεξεργασία...' : 'Αποθήκευση'}
-                  </Button>
-                </DialogFooter>
-              </form>
+                </TabsContent>
+              </Tabs>
             </DialogContent>
           </Dialog>
         </div>
@@ -509,92 +768,76 @@ export default function Itineraries() {
               <TableBody>
                 {itineraries.map((itinerary: Itinerary) => (
                   <TableRow key={itinerary.id}>
-                    <TableCell className="font-medium">{itinerary.itineraryNumber}</TableCell>
+                    <TableCell>{itinerary.itineraryNumber}</TableCell>
                     <TableCell>
-                      {format(new Date(itinerary.departureDate), 'dd/MM/yyyy HH:mm', { locale: el })}
+                      {itinerary.departureDate 
+                        ? format(new Date(itinerary.departureDate), 'dd/MM/yyyy HH:mm', { locale: el })
+                        : '-'}
                     </TableCell>
                     <TableCell>{itinerary.driverName || '-'}</TableCell>
-                    <TableCell>{itinerary.shippingCompany || '-'}</TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center">
-                        <Package size={14} className="mr-1" />
-                        {itinerary.totalBoxes}
-                      </div>
-                    </TableCell>
+                    <TableCell>{itinerary.shippingCompany || 'Άμεση Παράδοση'}</TableCell>
+                    <TableCell className="text-center">{itinerary.totalBoxes || 0}</TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          itinerary.status === 'active' ? 'bg-green-100 text-green-800' :
-                          itinerary.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {itinerary.status === 'active' ? 'Ενεργό' :
-                           itinerary.status === 'completed' ? 'Ολοκληρώθηκε' :
-                           'Ακυρώθηκε'}
-                        </div>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="sm" className="py-0 px-1 h-6">
-                              <Edit size={14} />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-[425px]">
-                            <DialogHeader>
-                              <DialogTitle>Αλλαγή Κατάστασης</DialogTitle>
-                              <DialogDescription>
-                                Επιλέξτε τη νέα κατάσταση για το δρομολόγιο {itinerary.itineraryNumber}
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="grid gap-4 py-4">
-                              <div className="grid grid-cols-3 gap-2">
-                                <Button 
-                                  variant={itinerary.status === 'active' ? 'default' : 'outline'} 
-                                  className={itinerary.status === 'active' ? 'bg-green-600' : ''} 
-                                  onClick={() => handleUpdateStatus(itinerary.id, 'active')}
-                                  disabled={updateStatusMutation.isPending}
-                                >
-                                  Ενεργό
-                                </Button>
-                                <Button 
-                                  variant={itinerary.status === 'completed' ? 'default' : 'outline'} 
-                                  className={itinerary.status === 'completed' ? 'bg-blue-600' : ''} 
-                                  onClick={() => handleUpdateStatus(itinerary.id, 'completed')}
-                                  disabled={updateStatusMutation.isPending}
-                                >
-                                  Ολοκληρώθηκε
-                                </Button>
-                                <Button 
-                                  variant={itinerary.status === 'cancelled' ? 'default' : 'outline'} 
-                                  className={itinerary.status === 'cancelled' ? 'bg-red-600' : ''} 
-                                  onClick={() => handleUpdateStatus(itinerary.id, 'cancelled')}
-                                  disabled={updateStatusMutation.isPending}
-                                >
-                                  Ακυρώθηκε
-                                </Button>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      </div>
+                      <Badge variant={
+                        itinerary.status === 'proposed' ? 'outline' :
+                        itinerary.status === 'active' ? 'default' : 
+                        itinerary.status === 'completed' ? 'success' : 
+                        'destructive'
+                      }>
+                        {itinerary.status === 'proposed' && 'Προτεινόμενο'}
+                        {itinerary.status === 'active' && 'Ενεργό'}
+                        {itinerary.status === 'completed' && 'Ολοκληρωμένο'}
+                        {itinerary.status === 'cancelled' && 'Ακυρωμένο'}
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
+                      <div className="flex justify-end gap-2">
                         <Button 
-                          variant="outline" 
-                          size="sm" 
+                          variant="ghost" 
+                          size="icon"
                           onClick={() => handleViewOrders(itinerary)}
                           title="Προβολή παραγγελιών"
                         >
-                          <CalendarDays size={16} />
+                          <Package size={16} />
                         </Button>
                         <Button 
-                          variant="outline" 
-                          size="sm" 
+                          variant="ghost" 
+                          size="icon"
                           onClick={() => handlePrintItinerary(itinerary.id)}
                           title="Εκτύπωση δρομολογίου"
                         >
                           <Printer size={16} />
                         </Button>
+                        {itinerary.status === 'proposed' && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleUpdateStatus(itinerary.id, 'active')}
+                            title="Επιβεβαίωση δρομολογίου"
+                          >
+                            <CheckCircle2 size={16} className="text-green-500" />
+                          </Button>
+                        )}
+                        {itinerary.status === 'active' && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleUpdateStatus(itinerary.id, 'completed')}
+                            title="Ολοκλήρωση δρομολογίου"
+                          >
+                            <CalendarDays size={16} className="text-blue-500" />
+                          </Button>
+                        )}
+                        {(itinerary.status === 'proposed' || itinerary.status === 'active') && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleUpdateStatus(itinerary.id, 'cancelled')}
+                            title="Ακύρωση δρομολογίου"
+                          >
+                            <XCircle size={16} className="text-red-500" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -602,193 +845,413 @@ export default function Itineraries() {
               </TableBody>
             </Table>
           ) : (
-            <div className="text-center p-6">
-              <p className="text-muted-foreground mb-4">Δεν υπάρχουν δρομολόγια ακόμα</p>
+            <div className="text-center p-8">
+              <p className="text-muted-foreground">Δεν υπάρχουν δρομολόγια ακόμα</p>
               <Button 
                 variant="outline" 
+                className="mt-4"
                 onClick={() => setIsCreateDialogOpen(true)}
               >
                 <Plus size={16} className="mr-2" />
-                Δημιουργία Πρώτου Δρομολογίου
+                Δημιουργία Νέου Δρομολογίου
               </Button>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Dialog for viewing orders in an itinerary */}
+      {/* Orders dialog */}
       <Dialog open={isOrdersDialogOpen} onOpenChange={setIsOrdersDialogOpen}>
-        <DialogContent className="sm:max-w-[700px]">
+        <DialogContent className="sm:max-w-[800px]">
           <DialogHeader>
-            <DialogTitle>
-              Παραγγελίες Δρομολογίου {selectedItinerary?.itineraryNumber}
-            </DialogTitle>
+            <DialogTitle>Παραγγελίες Δρομολογίου {selectedItinerary?.itineraryNumber}</DialogTitle>
             <DialogDescription>
-              {selectedItinerary && format(new Date(selectedItinerary.departureDate), 'dd/MM/yyyy', { locale: el })}
+              Λίστα παραγγελιών που περιλαμβάνονται στο δρομολόγιο
             </DialogDescription>
           </DialogHeader>
-          
-          {isLoadingOrders ? (
-            <div className="text-center p-4">Φόρτωση παραγγελιών...</div>
-          ) : itineraryOrders?.length > 0 ? (
-            <div className="max-h-[400px] overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Αριθμός</TableHead>
-                    <TableHead>Πελάτης</TableHead>
-                    <TableHead className="text-center">Κιβώτια</TableHead>
-                    <TableHead className="text-right">Ενέργειες</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {itineraryOrders.map((order: Order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium">{order.orderNumber}</TableCell>
-                      <TableCell>{order.customerName}</TableCell>
-                      <TableCell className="text-center">{order.boxCount}</TableCell>
-                      <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                          title="Αφαίρεση από δρομολόγιο"
-                          onClick={() => handleRemoveOrder(order.id)}
-                          disabled={removeOrderMutation.isPending}
-                        >
-                          <Trash size={16} />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center p-6">
-              <p className="text-muted-foreground">Δεν υπάρχουν παραγγελίες σε αυτό το δρομολόγιο</p>
-            </div>
-          )}
-          
-          <DialogFooter className="flex justify-between">
-            <div>
-              <span className="text-sm font-medium text-muted-foreground mr-2">
-                Συνολικά Κιβώτια:
-              </span>
-              <span className="font-bold">
-                {selectedItinerary?.totalBoxes || 0}
-              </span>
-            </div>
-            <div className="flex gap-2">
+          <div className="py-4">
+            {isLoadingOrders ? (
+              <div className="text-center p-4">Φόρτωση παραγγελιών...</div>
+            ) : itineraryOrders?.length > 0 ? (
+              <ScrollArea className="h-[400px]">
+                {/* Group orders by shipping company */}
+                {Object.entries(getOrdersGroupedByShippingCompany(itineraryOrders)).map(([company, orders]) => (
+                  <div key={company} className="mb-6">
+                    <h3 className="font-semibold text-lg mb-2 flex items-center">
+                      <Truck size={16} className="mr-2" />
+                      {company}
+                      <Badge variant="outline" className="ml-2">
+                        {orders.length} παραγγελίες
+                      </Badge>
+                    </h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Αριθμός</TableHead>
+                          <TableHead>Πελάτης</TableHead>
+                          <TableHead className="text-center">Κιβώτια</TableHead>
+                          <TableHead>Περιοχή</TableHead>
+                          <TableHead className="text-right">Ενέργειες</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {orders.map((order: Order) => (
+                          <TableRow key={order.id}>
+                            <TableCell>{order.orderNumber}</TableCell>
+                            <TableCell>{order.customerName}</TableCell>
+                            <TableCell className="text-center">{order.boxCount || 0}</TableCell>
+                            <TableCell>{order.area || '-'}</TableCell>
+                            <TableCell className="text-right">
+                              {selectedItinerary?.status !== 'completed' && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => handleRemoveOrder(order.id)}
+                                  title="Αφαίρεση από το δρομολόγιο"
+                                >
+                                  <Trash size={16} className="text-red-500" />
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    <Separator className="my-4" />
+                  </div>
+                ))}
+              </ScrollArea>
+            ) : (
+              <div className="text-center p-4">
+                <p className="text-muted-foreground">Δεν υπάρχουν παραγγελίες στο δρομολόγιο</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            {selectedItinerary && selectedItinerary.status !== 'completed' && (
               <Button 
-                variant="outline" 
-                onClick={() => setIsOrdersDialogOpen(false)}
-              >
-                Κλείσιμο
-              </Button>
-              <Button 
-                variant="outline"
                 onClick={() => {
+                  setIsOrdersDialogOpen(false);
                   setIsAddOrderDialogOpen(true);
-                  setSelectedOrders([]);
                 }}
+                className="flex items-center gap-2"
               >
-                <Plus size={16} className="mr-2" />
+                <Plus size={16} />
                 Προσθήκη Παραγγελιών
               </Button>
-              <Button 
-                onClick={() => selectedItinerary && handlePrintItinerary(selectedItinerary.id)}
-              >
-                <Printer size={16} className="mr-2" />
-                Εκτύπωση Λίστας
-              </Button>
-            </div>
+            )}
+            <Button 
+              onClick={() => handlePrintItinerary(selectedItinerary?.id || 0)}
+              variant="outline"
+              className="flex items-center gap-2"
+              disabled={!selectedItinerary}
+            >
+              <Printer size={16} />
+              Εκτύπωση
+            </Button>
+            <Button 
+              variant="secondary" 
+              onClick={() => setIsOrdersDialogOpen(false)}
+            >
+              Κλείσιμο
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Dialog for adding orders to an itinerary */}
+      {/* Add orders dialog */}
       <Dialog open={isAddOrderDialogOpen} onOpenChange={setIsAddOrderDialogOpen}>
         <DialogContent className="sm:max-w-[800px]">
           <DialogHeader>
-            <DialogTitle>
-              Προσθήκη Παραγγελιών στο Δρομολόγιο {selectedItinerary?.itineraryNumber}
-            </DialogTitle>
+            <DialogTitle>Προσθήκη Παραγγελιών στο Δρομολόγιο</DialogTitle>
             <DialogDescription>
-              Επιλέξτε τις παραγγελίες που θέλετε να προσθέσετε στο δρομολόγιο
+              Επιλέξτε παραγγελίες για προσθήκη στο δρομολόγιο {selectedItinerary?.itineraryNumber}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="mb-4">
-            <div className="flex items-center space-x-2">
-              <Search size={16} className="text-gray-400" />
+          <div className="flex items-center space-x-2 mb-4">
+            <Label htmlFor="search-orders-add" className="sr-only">Αναζήτηση παραγγελιών</Label>
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Αναζήτηση με αριθμό παραγγελίας ή όνομα πελάτη..."
+                id="search-orders-add"
+                placeholder="Αναζήτηση παραγγελιών..."
+                className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1"
               />
             </div>
+            <Select
+              value={orderFilter}
+              onValueChange={setOrderFilter}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Φίλτρο παραγγελιών" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Όλες οι παραγγελίες</SelectItem>
+                <SelectItem value="priority">Με προτεραιότητα</SelectItem>
+                <SelectItem value="byShipping">Ανά μεταφορική</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {orderFilter === 'byShipping' && (
+              <Select
+                value={selectedShippingCompany || ''}
+                onValueChange={setSelectedShippingCompany}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Μεταφορική" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Όλες οι μεταφορικές</SelectItem>
+                  {shippingCompanies?.map((company: any) => (
+                    <SelectItem key={company.id || company.name} value={company.name}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           
-          {isLoadingAvailableOrders ? (
-            <div className="text-center p-4">Φόρτωση διαθέσιμων παραγγελιών...</div>
-          ) : availableOrders?.length > 0 ? (
-            <div className="max-h-[400px] overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[50px]">Επιλογή</TableHead>
-                    <TableHead>Αριθμός</TableHead>
-                    <TableHead>Πελάτης</TableHead>
-                    <TableHead>Ημερομηνία</TableHead>
-                    <TableHead className="text-center">Κιβώτια</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {availableOrders.map((order: any) => (
-                    <TableRow key={order.id} className={selectedOrders.includes(order.id) ? 'bg-gray-50' : ''}>
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedOrders.includes(order.id)}
-                          onCheckedChange={() => handleOrderSelection(order.id)}
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">{order.orderNumber}</TableCell>
-                      <TableCell>{order.customerName}</TableCell>
-                      <TableCell>{format(new Date(order.orderDate), 'dd/MM/yyyy', { locale: el })}</TableCell>
-                      <TableCell className="text-center">{order.boxCount || '?'}</TableCell>
-                    </TableRow>
+          <div className="py-4">
+            <ScrollArea className="h-[400px] rounded-md border p-4">
+              {isLoadingAvailableOrders ? (
+                <div className="text-center p-4">Φόρτωση διαθέσιμων παραγγελιών...</div>
+              ) : availableOrders?.length > 0 ? (
+                <div className="space-y-4">
+                  {availableOrders.map((order: Order) => (
+                    <div 
+                      key={order.id} 
+                      className={`flex items-center space-x-2 p-3 rounded-md ${
+                        selectedOrders.includes(order.id) 
+                          ? 'bg-primary/20' 
+                          : 'hover:bg-muted/50'
+                      } cursor-pointer`}
+                      onClick={() => handleOrderSelection(order.id)}
+                    >
+                      <Checkbox 
+                        checked={selectedOrders.includes(order.id)}
+                        onCheckedChange={() => handleOrderSelection(order.id)}
+                        className="mr-2"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium flex items-center">
+                          {order.orderNumber} - {order.customerName}
+                          {getPriorityBadge(order.priority)}
+                        </div>
+                        <div className="text-sm text-muted-foreground flex justify-between mt-1">
+                          <span>Κιβώτια: {order.boxCount || 0}</span>
+                          <span>Περιοχή: {order.area || '-'}</span>
+                          <span>Μεταφορική: {order.shippingCompany || 'Άμεση Παράδοση'}</span>
+                        </div>
+                      </div>
+                    </div>
                   ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center p-6">
-              <p className="text-muted-foreground">Δεν βρέθηκαν διαθέσιμες παραγγελίες</p>
-            </div>
-          )}
+                </div>
+              ) : (
+                <div className="text-center p-4">
+                  <p className="text-muted-foreground">Δεν υπάρχουν διαθέσιμες παραγγελίες</p>
+                </div>
+              )}
+            </ScrollArea>
+          </div>
           
           <DialogFooter>
-            <div className="flex justify-between w-full">
-              <div className="text-sm">
-                {selectedOrders.length} επιλεγμένες παραγγελίες
-              </div>
-              <div className="flex space-x-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setIsAddOrderDialogOpen(false)}
-                >
-                  Ακύρωση
-                </Button>
-                <Button 
-                  onClick={handleAddOrders} 
-                  disabled={selectedOrders.length === 0 || addOrdersMutation.isPending}
-                >
-                  {addOrdersMutation.isPending ? 'Προσθήκη...' : 'Προσθήκη Παραγγελιών'}
-                </Button>
+            <div className="flex-1 text-sm">
+              Επιλεγμένες παραγγελίες: <strong>{selectedOrders.length}</strong>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsAddOrderDialogOpen(false)}
+            >
+              Ακύρωση
+            </Button>
+            <Button 
+              onClick={handleAddOrders}
+              disabled={selectedOrders.length === 0}
+            >
+              Προσθήκη Επιλεγμένων
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm itinerary dialog */}
+      <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Επιβεβαίωση Δρομολογίου</DialogTitle>
+            <DialogDescription>
+              Θέλετε να επιβεβαιώσετε το δρομολόγιο "{newlyCreatedItinerary?.itineraryNumber}"?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p>Μετά την επιβεβαίωση, το δρομολόγιο θα οριστικοποιηθεί για παράδοση.</p>
+            <div className="mt-4 p-3 bg-muted rounded-md">
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="font-medium">Ημερομηνία:</div>
+                <div>{newlyCreatedItinerary?.departureDate ? format(new Date(newlyCreatedItinerary.departureDate), 'dd/MM/yyyy HH:mm', { locale: el }) : '-'}</div>
+                
+                <div className="font-medium">Οδηγός:</div>
+                <div>{newlyCreatedItinerary?.driverName || '-'}</div>
+                
+                <div className="font-medium">Μεταφορική:</div>
+                <div>{newlyCreatedItinerary?.shippingCompany || 'Άμεση Παράδοση'}</div>
+                
+                <div className="font-medium">Κιβώτια:</div>
+                <div>{newlyCreatedItinerary?.totalBoxes || 0}</div>
               </div>
             </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsConfirmDialogOpen(false)}
+            >
+              Ακύρωση
+            </Button>
+            <Button 
+              onClick={() => {
+                if (newlyCreatedItinerary) {
+                  confirmItineraryMutation.mutate({ itineraryId: newlyCreatedItinerary.id });
+                }
+              }}
+              disabled={confirmItineraryMutation.isPending}
+            >
+              {confirmItineraryMutation.isPending ? 'Επεξεργασία...' : 'Επιβεβαίωση & Εκτύπωση'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Print preview dialog */}
+      <Dialog open={isPrintPreviewOpen} onOpenChange={setIsPrintPreviewOpen}>
+        <DialogContent className="sm:max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>Προεπισκόπηση Εκτύπωσης</DialogTitle>
+            <DialogDescription>
+              Δρομολόγιο: {selectedItinerary?.itineraryNumber}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {isLoadingPrintPreview ? (
+              <div className="text-center p-4">Φόρτωση προεπισκόπησης...</div>
+            ) : (
+              <div className="border rounded-md p-6 bg-white">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold">ΦΟΡΜΑ ΔΡΟΜΟΛΟΓΙΟΥ</h2>
+                  <p className="text-lg">{selectedItinerary?.itineraryNumber}</p>
+                  <p>{selectedItinerary?.departureDate ? format(new Date(selectedItinerary.departureDate), 'dd/MM/yyyy HH:mm', { locale: el }) : '-'}</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <p className="font-semibold">Στοιχεία Οδηγού:</p>
+                    <p>{selectedItinerary?.driverName || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Στοιχεία Οχήματος:</p>
+                    <p>{selectedItinerary?.vehicleInfo || '-'}</p>
+                  </div>
+                  {selectedItinerary?.shippingCompany && (
+                    <div className="col-span-2">
+                      <p className="font-semibold">Μεταφορική Εταιρεία:</p>
+                      <p>{selectedItinerary.shippingCompany}</p>
+                    </div>
+                  )}
+                  {selectedItinerary?.notes && (
+                    <div className="col-span-2">
+                      <p className="font-semibold">Σημειώσεις:</p>
+                      <p>{selectedItinerary.notes}</p>
+                    </div>
+                  )}
+                </div>
+                
+                <Separator className="my-4" />
+                
+                {/* Group orders by shipping company in preview */}
+                {itineraryOrders?.length > 0 ? (
+                  <div>
+                    <h3 className="font-bold text-lg mb-4">Λίστα Παραγγελιών</h3>
+                    {Object.entries(getOrdersGroupedByShippingCompany(itineraryOrders)).map(([company, orders]) => (
+                      <div key={company} className="mb-6">
+                        <h4 className="font-semibold text-md mb-2 flex items-center bg-muted p-2 rounded">
+                          <Truck size={16} className="mr-2" />
+                          {company}
+                          <Badge variant="outline" className="ml-2">
+                            {orders.length} παραγγελίες
+                          </Badge>
+                        </h4>
+                        <table className="w-full border-collapse mb-4">
+                          <thead>
+                            <tr className="border-b">
+                              <th className="text-left py-2">Αριθμός</th>
+                              <th className="text-left py-2">Πελάτης</th>
+                              <th className="text-center py-2">Κιβώτια</th>
+                              <th className="text-left py-2">Περιοχή</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {orders.map((order: Order) => (
+                              <tr key={order.id} className="border-b">
+                                <td className="py-2">{order.orderNumber}</td>
+                                <td className="py-2">{order.customerName}</td>
+                                <td className="py-2 text-center">{order.boxCount || 0}</td>
+                                <td className="py-2">{order.area || '-'}</td>
+                              </tr>
+                            ))}
+                            <tr className="font-semibold">
+                              <td colSpan={2} className="py-2 text-right">Σύνολο:</td>
+                              <td className="py-2 text-center">
+                                {orders.reduce((sum, order) => sum + (order.boxCount || 0), 0)}
+                              </td>
+                              <td></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    ))}
+                    
+                    <div className="mt-6 font-semibold flex justify-between border-t pt-4">
+                      <span>Συνολικά Κιβώτια:</span>
+                      <span>{selectedItinerary?.totalBoxes || 0}</span>
+                    </div>
+                    
+                    <div className="mt-8 grid grid-cols-2 gap-8">
+                      <div>
+                        <p className="mb-4">Υπογραφή Οδηγού:</p>
+                        <div className="border-b border-dashed h-10"></div>
+                      </div>
+                      <div>
+                        <p className="mb-4">Ημερομηνία & Ώρα:</p>
+                        <div className="border-b border-dashed h-10"></div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center p-4">
+                    <p className="text-muted-foreground">Δεν υπάρχουν παραγγελίες στο δρομολόγιο</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsPrintPreviewOpen(false)}
+            >
+              Ακύρωση
+            </Button>
+            <Button 
+              onClick={handleActualPrint}
+              className="flex items-center gap-2"
+            >
+              <Printer size={16} />
+              Εκτύπωση
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
