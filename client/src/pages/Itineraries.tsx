@@ -165,10 +165,10 @@ export default function Itineraries() {
       try {
         console.log('Fetching picked orders...');
         
-        // Use the regular orders endpoint to get all shippable orders
+        // Use the dedicated endpoint for shipping orders that returns both picked and shipped orders
         let url = '/api/orders-for-shipping';
         
-        // Build query parameters
+        // Build query parameters for filtering
         const params = new URLSearchParams();
         
         if (searchQuery) params.append('search', searchQuery);

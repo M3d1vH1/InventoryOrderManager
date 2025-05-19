@@ -3149,38 +3149,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/shipping-itineraries/:id/orders/:orderId', isAuthenticated, removeOrderFromItinerary);
   app.patch('/api/shipping-itineraries/:id/status', isAuthenticated, updateItineraryStatus);
   
-  // Special endpoint for orders ready for shipping itineraries
+  // Endpoint for orders that are ready for shipping (picked or shipped)
   app.get('/api/orders-for-shipping', async (req: Request, res: Response) => {
     try {
-      // Get basic parameters
-      const { search, shippingCompany, priority } = req.query;
+      // Get all orders from the existing method
+      const allOrders = await storage.getAllOrders();
+      console.log(`Total orders in system: ${allOrders.length}`);
       
-      // Get all orders first
-      const orders = await storage.getAllOrders();
-      
-      // Filter to include only picked and shipped orders
-      const shippableOrders = orders.filter(order => 
+      // Filter to only include picked and shipped orders
+      const shippableOrders = allOrders.filter(order => 
         order.status === 'picked' || order.status === 'shipped'
       );
       
       console.log(`Found ${shippableOrders.length} orders with picked or shipped status`);
       
-      // Apply additional filters
+      // Get the query parameters
+      const { search, shippingCompany, priority } = req.query;
+      
+      // Apply filters
       let filteredOrders = [...shippableOrders];
       
-      // Filter by shipping company if provided
+      // Apply additional filters if provided
       if (shippingCompany && shippingCompany !== 'all') {
+        const company = shippingCompany.toString().toLowerCase();
+        filteredOrders = filteredOrders.filter(order => {
+          // Try various possible locations for shipping company in your data model
+          const orderCompany = 
+            (order.shippingCompany ? order.shippingCompany.toString().toLowerCase() : '') ||
+            (order.shipping?.company ? order.shipping.company.toString().toLowerCase() : '') ||
+            (order.customer?.shippingCompany ? order.customer.shippingCompany.toString().toLowerCase() : '');
+            
+          return orderCompany.includes(company);
+        });
+      }
+      
+      // Filter by priority if provided
+      if (priority) {
         filteredOrders = filteredOrders.filter(order => 
-          order.shippingCompany === shippingCompany
+          order.priority === priority
         );
       }
       
-      // Filter by priority if specified
-      if (priority) {
-        filteredOrders = filteredOrders.filter(order => order.priority === priority);
-      }
-      
-      // Filter by search query if provided
+      // Filter by search if provided
       if (search) {
         const searchStr = search.toString().toLowerCase();
         filteredOrders = filteredOrders.filter(order => 
@@ -3190,33 +3200,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
       }
       
-      // Get order items for each filtered order to calculate boxes
-      const ordersWithItems = await Promise.all(
+      // Get complete order data including items
+      const ordersWithDetails = await Promise.all(
         filteredOrders.map(async (order) => {
+          // Get order items
           const items = await storage.getOrderItems(order.id);
           
           // Calculate box count
           let boxCount = 1; // Default to 1 if no items
           
+          // Add box count calculation
           if (items && items.length > 0) {
+            // Simple calculation: 1 box per item, adjusted for quantity
             boxCount = items.reduce((total, item) => {
-              const unitsPerBox = item.unitsPerBox || 1;
-              return total + Math.ceil(item.quantity / unitsPerBox);
+              return total + Math.max(1, Math.ceil(item.quantity / 10)); // Assume 10 items per box
             }, 0);
-            
-            // If calculation resulted in 0, use 1 as minimum
-            if (boxCount === 0) boxCount = 1;
           }
           
-          return { 
-            ...order, 
+          return {
+            ...order,
             items,
             boxCount
           };
         })
       );
       
-      res.json(ordersWithItems);
+      res.json(ordersWithDetails);
     } catch (error) {
       console.error('Error fetching orders for shipping:', error);
       res.status(500).json({ message: 'Failed to retrieve orders for shipping' });
