@@ -244,7 +244,7 @@ router.post('/', async (req, res) => {
         // Don't fail the request if Slack notification fails
       }
       
-      const transformedLog = transformCallLog(newLog);
+      const transformedLog = await transformCallLog(newLog);
       res.status(201).json(transformedLog);
     } else {
       // Standard call log creation
@@ -265,7 +265,7 @@ router.post('/', async (req, res) => {
         // Don't fail the request if Slack notification fails
       }
       
-      const transformedLog = transformCallLog(newLog);
+      const transformedLog = await transformCallLog(newLog);
       res.status(201).json(transformedLog);
     }
   } catch (error) {
@@ -300,7 +300,7 @@ router.patch('/:id', async (req, res) => {
     if (!updatedLog) {
       return res.status(404).json({ error: 'Call log not found or update failed' });
     }
-    const transformedLog = transformCallLog(updatedLog);
+    const transformedLog = await transformCallLog(updatedLog);
     res.json(transformedLog);
   } catch (error) {
     console.error('Error updating call log:', error);
