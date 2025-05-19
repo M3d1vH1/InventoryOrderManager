@@ -47,6 +47,7 @@ type Order = {
   area?: string | null;
   totalItems?: number;
   priority?: string | null;
+  orderDate?: string | Date | null;
 };
 
 export default function Itineraries() {
@@ -800,7 +801,7 @@ export default function Itineraries() {
                   <TableHead>Αριθμός</TableHead>
                   <TableHead>Ημερομηνία</TableHead>
                   <TableHead>Οδηγός</TableHead>
-                  <TableHead>Μεταφορική</TableHead>
+                  <TableHead>Όχημα</TableHead>
                   <TableHead className="text-center">Κιβώτια</TableHead>
                   <TableHead>Κατάσταση</TableHead>
                   <TableHead className="text-right">Ενέργειες</TableHead>
@@ -816,7 +817,7 @@ export default function Itineraries() {
                         : '-'}
                     </TableCell>
                     <TableCell>{itinerary.driverName || '-'}</TableCell>
-                    <TableCell>{itinerary.shippingCompany || 'Άμεση Παράδοση'}</TableCell>
+                    <TableCell>{itinerary.vehicleInfo || '-'}</TableCell>
                     <TableCell className="text-center">{itinerary.totalBoxes || 0}</TableCell>
                     <TableCell>
                       <Badge variant={
@@ -1035,24 +1036,7 @@ export default function Itineraries() {
               </SelectContent>
             </Select>
             
-            {orderFilter === 'byShipping' && (
-              <Select
-                value={selectedShippingCompany || ''}
-                onValueChange={setSelectedShippingCompany}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Μεταφορική" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Όλες οι μεταφορικές</SelectItem>
-                  {shippingCompanies?.map((company: any) => (
-                    <SelectItem key={company.id || company.name} value={company.name}>
-                      {company.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            {/* Shipping company filter removed */}
           </div>
           
           <div className="py-4">
@@ -1084,7 +1068,7 @@ export default function Itineraries() {
                         <div className="text-sm text-muted-foreground flex justify-between mt-1">
                           <span>Κιβώτια: {order.boxCount || 0}</span>
                           <span>Περιοχή: {order.area || '-'}</span>
-                          <span>Μεταφορική: {order.shippingCompany || 'Άμεση Παράδοση'}</span>
+                          <span>Ημερομηνία: {order.orderDate ? format(new Date(order.orderDate), 'dd/MM/yyyy') : '-'}</span>
                         </div>
                       </div>
                     </div>
