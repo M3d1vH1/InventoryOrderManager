@@ -3086,6 +3086,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/inventory-changes/recent', isAuthenticated, getRecentInventoryChanges);
   app.get('/api/inventory-changes/by-type/:type', isAuthenticated, getInventoryChangesByType);
   
+  // Shipping Itinerary routes
+  app.get('/api/itineraries', isAuthenticated, getAllItineraries);
+  app.get('/api/itineraries/upcoming', isAuthenticated, getUpcomingItineraries);
+  app.get('/api/itineraries/calendar', isAuthenticated, getItinerariesForCalendar);
+  app.get('/api/itineraries/:id', isAuthenticated, getItineraryById);
+  app.post('/api/itineraries', isAuthenticated, createShippingItinerary);
+  app.post('/api/itineraries/:id/orders', isAuthenticated, addOrderToItinerary);
+  app.delete('/api/itineraries/:id/orders/:orderId', isAuthenticated, removeOrderFromItinerary);
+  app.patch('/api/itineraries/:id/status', isAuthenticated, updateItineraryStatus);
+  
   // Call Logs routes
   app.use('/api/call-logs', isAuthenticated, callLogsRouter);
   app.use('/api/prospective-customers', isAuthenticated, prospectiveCustomersRouter);
