@@ -175,9 +175,8 @@ export default function Itineraries() {
         params.append('status', 'picked');
         
         if (searchQuery) params.append('search', searchQuery);
-        if (orderFilter === 'byShipping' && selectedShippingCompany) {
-          params.append('shippingCompany', selectedShippingCompany);
-        }
+        // Don't filter by shipping company here - we'll do that after loading the data
+        // This ensures we load all picked orders and display them with their shipping info
         if (orderFilter === 'priority') {
           params.append('sortBy', 'priority');
         }
@@ -201,48 +200,17 @@ export default function Itineraries() {
         // Show available orders in console for debugging
         console.log('Picked orders found:', filteredOrders.length);
         
-        // When filter by shipping is active, show which orders match which shipping company
-        if (filteredOrders.length > 0) {
-          console.log('First order example:', filteredOrders[0]);
-          console.log('Last order example:', filteredOrders[filteredOrders.length - 1]);
-          
-          // Get the customer details for each order to extract shipping info
-          const ordersWithCustomerInfo = await Promise.all(
-            filteredOrders.map(async (order: any) => {
-              try {
-                if (order.customer_id) {
-                  // Fetch customer details to get shipping company
-                  const customerResponse = await apiRequest(`/api/customers/${order.customer_id}`);
-                  const customer = await customerResponse.json();
-                  
-                  // Add shipping company to order from customer data
-                  return {
-                    ...order,
-                    customerShippingCompany: customer.shippingCompany || customer.shipping_company || 'Unknown'
-                  };
-                }
-                return order;
-              } catch (err) {
-                console.log(`Error getting customer for order ${order.id}:`, err);
-                return order;
-              }
-            })
-          );
-          
-          filteredOrders = ordersWithCustomerInfo;
-        }
-        
-        // Filter by shipping company if selected
+        // Filter by shipping company if needed
         if (orderFilter === 'byShipping' && selectedShippingCompany) {
+          console.log('Filtering by shipping company:', selectedShippingCompany);
+          
+          // Filter orders by shipping company field
           filteredOrders = filteredOrders.filter((order: any) => {
-            // Check various fields where shipping company might be stored
-            const orderCompany = 
-              order.customerShippingCompany ||
-              order.shipping_company ||
-              order.shippingCompany;
-            
-            return orderCompany === selectedShippingCompany;
+            // The order's shipping company must match the selected one
+            return order.shippingCompany === selectedShippingCompany;
           });
+          
+          console.log('Orders after shipping company filter:', filteredOrders.length);
         }
         
         // Filter by search if provided
