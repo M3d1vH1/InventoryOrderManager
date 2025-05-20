@@ -208,32 +208,30 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
             max-width: 80%;
           }
           .order-number {
-            font-size: 14pt;
+            font-size: 12.5pt;
             font-weight: bold;
             margin-bottom: 0.1cm;
             border-bottom: 1px solid #eee;
             padding-bottom: 0.1cm;
           }
           .customer {
-            font-size: 12pt;
+            font-size: 11pt;
             font-weight: bold;
             margin-bottom: 0.1cm;
           }
           .address, .phone {
-            font-size: 11pt;
+            font-size: 10pt;
             margin-bottom: 0.1cm;
           }
           .shipping {
-            font-size: 12pt;
+            font-size: 11pt;
             font-weight: bold;
-            background-color: #f0f8ff;
-            padding: 3px 5px;
-            border-radius: 3px;
+            padding: 2px 4px;
             margin-top: 0.1cm;
             margin-bottom: 0.1cm;
           }
           .box-number {
-            font-size: 14pt;
+            font-size: 12.5pt;
             font-weight: bold;
             text-align: center;
             margin: 0.2cm 0;
