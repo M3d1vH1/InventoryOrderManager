@@ -5,7 +5,6 @@ import { Printer, X, ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { useTranslation } from 'react-i18next';
-import QRCode from 'qrcode';
 
 interface ShippingLabelPreviewProps {
   open: boolean;
@@ -18,7 +17,7 @@ interface ShippingLabelPreviewProps {
 }
 
 // Component to parse and display the label content in a preview
-const FormattedLabel: React.FC<{ content: string, qrCodeURL: string }> = ({ content, qrCodeURL }) => {
+const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
   // Extract label data for a clean, consistent preview
   const extractLabelData = (content: string) => {
     // Match all needed fields from the JScript content
@@ -63,50 +62,33 @@ const FormattedLabel: React.FC<{ content: string, qrCodeURL: string }> = ({ cont
         />
       </div>
       
-      <div className="flex justify-between">
-        <div className="flex-1">
-          {/* Order Information - Made More Prominent */}
-          <div style={{ fontWeight: 'bold', fontSize: '14pt', borderBottom: '1px solid #eee', paddingBottom: '4px' }}>
-            Order: {labelData.orderNumber}
-          </div>
-          
-          {/* Customer Information Section */}
-          <div style={{ fontSize: '11pt', fontWeight: 'bold' }}>
-            Customer: {labelData.customer}
-          </div>
-          
-          {labelData.address && (
-            <div style={{ fontSize: '10pt', whiteSpace: 'pre-wrap' }}>
-              Address: {labelData.address}
-            </div>
-          )}
-          
-          {labelData.phone && (
-            <div style={{ fontSize: '10pt' }}>
-              Phone: {labelData.phone}
-            </div>
-          )}
-        </div>
-        
-        {/* QR Code */}
-        {qrCodeURL && (
-          <div className="ml-2" style={{ width: '100px', height: '100px' }}>
-            <img 
-              src={qrCodeURL} 
-              alt="Tracking QR Code" 
-              style={{ 
-                width: '100%', 
-                height: 'auto' 
-              }} 
-            />
-          </div>
-        )}
+      {/* Order Information - Made More Prominent */}
+      <div style={{ fontWeight: 'bold', fontSize: '14pt', borderBottom: '1px solid #eee', paddingBottom: '4px' }}>
+        Order: {labelData.orderNumber}
       </div>
+      
+      {/* Customer Information Section */}
+      <div style={{ fontSize: '11pt', fontWeight: 'bold' }}>
+        Customer: {labelData.customer}
+      </div>
+      
+      {labelData.address && (
+        <div style={{ fontSize: '10pt', whiteSpace: 'pre-wrap' }}>
+          Address: {labelData.address}
+        </div>
+      )}
+      
+      {labelData.phone && (
+        <div style={{ fontSize: '10pt' }}>
+          Phone: {labelData.phone}
+        </div>
+      )}
       
       {/* Shipping Company - Very Important */}
       <div style={{ 
         fontSize: '12pt', 
         fontWeight: 'bold', 
+        backgroundColor: '#f0f8ff', 
         padding: '3px 5px',
         borderRadius: '3px',
         marginTop: '4px'
@@ -137,20 +119,6 @@ const FormattedLabel: React.FC<{ content: string, qrCodeURL: string }> = ({ cont
   );
 };
 
-// Function to generate QR code as data URL
-const generateQRCode = async (text: string): Promise<string> => {
-  try {
-    return await QRCode.toDataURL(text, {
-      width: 100,
-      margin: 1,
-      errorCorrectionLevel: 'M'
-    });
-  } catch (err) {
-    console.error("Error generating QR code:", err);
-    return '';
-  }
-};
-
 const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
   open,
   onOpenChange,
@@ -165,33 +133,11 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
   const [isPrinting, setIsPrinting] = useState(false);
   const [currentBox, setCurrentBox] = useState(boxNumber);
   const [currentLabelContent, setCurrentLabelContent] = useState(labelContent);
-  const [qrCodeURL, setQRCodeURL] = useState<string>('');
   
   // Update current label content when current box changes
   useEffect(() => {
     setCurrentLabelContent(generateLabelContent(currentBox));
   }, [currentBox]);
-  
-  // Generate QR code for the tracking URL
-  useEffect(() => {
-    // Create tracking URL based on order number and box information
-    const trackingInfo = {
-      orderId: orderId,
-      orderNumber: orderNumber,
-      box: currentBox,
-      totalBoxes: totalBoxes,
-      timestamp: new Date().toISOString()
-    };
-    
-    // Generate a tracking URL - in a real implementation, this would be a unique tracking URL
-    // For now we'll create a JSON string that represents the tracking data
-    const trackingData = JSON.stringify(trackingInfo);
-    
-    // Generate QR code for this data
-    generateQRCode(trackingData)
-      .then(url => setQRCodeURL(url))
-      .catch(err => console.error("Failed to generate QR code:", err));
-  }, [orderId, orderNumber, currentBox, totalBoxes]);
   
   // Generate all label contents
   const generateLabelContent = (boxNum: number) => {
