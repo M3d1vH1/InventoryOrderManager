@@ -30,6 +30,8 @@ const ShippingLabel: React.FC = () => {
     }
   }, [location]);
 
+  const [labelHtml, setLabelHtml] = useState<string | null>(null);
+
   useEffect(() => {
     // Load data from new shipping label API
     const loadData = async () => {
@@ -50,8 +52,12 @@ const ShippingLabel: React.FC = () => {
         const labelResponse = await fetch(`/api/orders/${orderId}/new-shipping-label?boxNumber=${currentBox}&boxCount=${boxCount}`);
         
         if (labelResponse.ok) {
-          // Set minimal customer data - this won't be displayed since we're 
-          // now using the server-generated HTML directly
+          const labelData = await labelResponse.json();
+          if (labelData.html) {
+            setLabelHtml(labelData.html);
+          }
+          
+          // Set minimal customer data
           setCustomer({
             name: orderData.customerName,
             address: "Not available",
@@ -113,14 +119,48 @@ const ShippingLabel: React.FC = () => {
     preferred_shipping_company: customer?.preferred_shipping_company
   });
 
+  const handleBoxChange = async (boxNum: number) => {
+    setCurrentBox(boxNum);
+    if (orderId) {
+      try {
+        const response = await fetch(`/api/orders/${orderId}/new-shipping-label?boxNumber=${boxNum}&boxCount=${boxCount}`);
+        if (response.ok) {
+          const data = await response.json();
+          setLabelHtml(data.html);
+        }
+      } catch (err) {
+        console.error("Error updating box number:", err);
+      }
+    }
+  };
+
+  const handleBoxCountChange = async (count: number) => {
+    setBoxCount(count);
+    if (orderId) {
+      try {
+        // If current box is greater than new count, adjust it
+        const newCurrentBox = currentBox > count ? count : currentBox;
+        setCurrentBox(newCurrentBox);
+        
+        const response = await fetch(`/api/orders/${orderId}/new-shipping-label?boxNumber=${newCurrentBox}&boxCount=${count}`);
+        if (response.ok) {
+          const data = await response.json();
+          setLabelHtml(data.html);
+        }
+      } catch (err) {
+        console.error("Error updating box count:", err);
+      }
+    }
+  };
+
   return (
     <div className="p-6 max-w-xl mx-auto">
       <div className="mb-6 print:hidden">
         <h1 className="text-2xl font-bold mb-4">Shipping Label</h1>
         <div className="flex justify-between mb-4">
           <div>
-            <p>Order: {order.orderNumber}</p>
-            <p>Customer: {order.customerName}</p>
+            <p>Order: {order?.orderNumber}</p>
+            <p>Customer: {order?.customerName}</p>
           </div>
           <div>
             <Button 
@@ -139,7 +179,7 @@ const ShippingLabel: React.FC = () => {
               min={1}
               max={boxCount}
               value={currentBox}
-              onChange={e => setCurrentBox(parseInt(e.target.value) || 1)}
+              onChange={e => handleBoxChange(parseInt(e.target.value) || 1)}
               className="w-16 px-2 py-1 border rounded"
             />
             <span>of</span>
@@ -147,7 +187,7 @@ const ShippingLabel: React.FC = () => {
               type="number"
               min={1}
               value={boxCount}
-              onChange={e => setBoxCount(parseInt(e.target.value) || 1)}
+              onChange={e => handleBoxCountChange(parseInt(e.target.value) || 1)}
               className="w-16 px-2 py-1 border rounded"
             />
             <span>boxes</span>
@@ -155,53 +195,17 @@ const ShippingLabel: React.FC = () => {
         </div>
       </div>
 
-      {/* Actual Shipping Label */}
-      <div 
-        className="border border-gray-300 rounded-md p-3 pt-1 bg-white print:border-0 print:p-0 print:shadow-none" 
-        style={{marginTop: '-3mm', transform: 'scale(0.95)', transformOrigin: 'top center'}}
-      >
-        <div className="text-center mb-1">
-          <img 
-            src={`${window.location.origin}/shipping-logo.png`}
-            alt="Company Logo" 
-            className="h-10 mx-auto"
-            onError={(e) => {
-              // If the PNG fails, try the SVG as fallback
-              e.currentTarget.src = `${window.location.origin}/simple-logo.svg`;
-              // If SVG also fails, handle that error
-              e.currentTarget.onerror = () => {
-                // Create a text fallback
-                const parent = e.currentTarget.parentElement;
-                if (parent) {
-                  e.currentTarget.style.display = 'none';
-                  const textLogo = document.createElement('div');
-                  textLogo.textContent = "OLIVE OIL COMPANY";
-                  textLogo.className = "font-bold text-lg";
-                  parent.appendChild(textLogo);
-                }
-              };
-            }}
-          />
+      {/* Server-generated Shipping Label */}
+      {labelHtml ? (
+        <div 
+          className="border border-gray-300 rounded-md bg-white print:border-0 print:p-0 print:shadow-none"
+          dangerouslySetInnerHTML={{ __html: labelHtml }}
+        ></div>
+      ) : (
+        <div className="text-center p-4 border rounded">
+          {loading ? "Loading shipping label..." : "No label template available"}
         </div>
-        
-        <div className="text-sm font-bold mb-1">
-          Order: {order.orderNumber}
-        </div>
-        
-        <div className="mb-2 text-sm">
-          <p className="font-semibold">Customer: {order.customerName}</p>
-          <p>Address: {formatAddress()}</p>
-          <p>Phone: {customer?.phone || ""}</p>
-        </div>
-        
-        <div className="font-bold mb-1 text-sm">
-          Shipping: {getShippingCompany()}
-        </div>
-        
-        <div className="text-center font-bold p-1 border border-gray-300 bg-gray-100 mt-1 mb-0 text-sm">
-          BOX {currentBox} OF {boxCount}
-        </div>
-      </div>
+      )}
     </div>
   );
 };
