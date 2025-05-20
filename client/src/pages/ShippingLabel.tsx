@@ -107,16 +107,28 @@ const ShippingLabel: React.FC = () => {
     return addressParts.join(", ");
   };
   
-  // Determine shipping company display - force N/A
+  // Determine shipping company display - use actual data
   const getShippingCompany = () => {
-    // Hard-coded to N/A as requested
-    return "N/A";
+    if (!customer) return "N/A";
+    
+    // Check custom shipping company first (for 'other' preference)
+    if (customer.preferredShippingCompany === 'other' && customer.customShippingCompany) {
+      return customer.customShippingCompany;
+    }
+    // Then check regular shipping company
+    if (customer.shippingCompany) {
+      return customer.shippingCompany;
+    }
+    
+    return "N/A"; // Fallback
   };
   
   // Log customer data for debugging
   console.log("Customer shipping data:", {
-    custom_shipping_company: customer?.custom_shipping_company,
-    preferred_shipping_company: customer?.preferred_shipping_company
+    customShippingCompany: customer?.customShippingCompany,
+    preferredShippingCompany: customer?.preferredShippingCompany,
+    shippingCompany: customer?.shippingCompany,
+    customer: customer
   });
 
   const handleBoxChange = async (boxNum: number) => {

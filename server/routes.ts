@@ -2675,8 +2675,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Order not found' });
       }
       
-      // Force "N/A" for shipping company
-      const shippingCompany = "N/A";
+      // Get shipping company from the customer data
+      let shippingCompany = "N/A";
+      try {
+        // Find customer based on order's customer name
+        const customerData = await storage.getCustomerByName(order.customerName);
+        if (customerData) {
+          // Use the correct shipping company information based on preference
+          if (customerData.preferredShippingCompany === 'other' && customerData.customShippingCompany) {
+            shippingCompany = customerData.customShippingCompany;
+          } else if (customerData.shippingCompany) {
+            shippingCompany = customerData.shippingCompany;
+          }
+        }
+        console.log(`Shipping company for ${order.customerName}: ${shippingCompany}`);
+      } catch (error) {
+        console.error("Error getting shipping company:", error);
+      }
       
       // Generate HTML version of the label
       const html = `
