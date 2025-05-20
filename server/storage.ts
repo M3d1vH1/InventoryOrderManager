@@ -1304,8 +1304,8 @@ export class MemStorage implements IStorage {
       email: insertCustomer.email || null,
       phone: insertCustomer.phone || null,
       contactPerson: insertCustomer.contactPerson || null,
-      shippingCompany: insertCustomer.shippingCompany || null,
-      billingCompany: insertCustomer.billingCompany || null,
+      preferredShippingCompany: insertCustomer.preferredShippingCompany || null,
+      customShippingCompany: insertCustomer.customShippingCompany || null,
       notes: insertCustomer.notes || null,
       createdAt: new Date()
     };

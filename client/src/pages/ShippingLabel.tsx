@@ -57,40 +57,16 @@ const ShippingLabel: React.FC = () => {
             setLabelHtml(labelData.html);
           }
           
-          // Get actual customer data with shipping company information
-          try {
-            const customerResponse = await fetch(`/api/shipping/customer/${encodeURIComponent(orderData.customerName)}`);
-            if (customerResponse.ok) {
-              const customerData = await customerResponse.json();
-              setCustomer(customerData);
-              console.log("Found customer data for shipping label:", orderData.customerName);
-            } else {
-              // Fallback if customer data can't be found
-              setCustomer({
-                name: orderData.customerName,
-                address: "Not available",
-                phone: "Not available",
-                city: "",
-                country: "",
-                custom_shipping_company: null,
-                preferred_shipping_company: null,
-                shipping_company: null
-              });
-            }
-          } catch (error) {
-            console.error("Error fetching customer data:", error);
-            // Set minimal customer data as fallback
-            setCustomer({
-              name: orderData.customerName,
-              address: "Not available",
-              phone: "Not available",
-              city: "",
-              country: "",
-              custom_shipping_company: null,
-              preferred_shipping_company: null,
-              shipping_company: null
-            });
-          }
+          // Set minimal customer data
+          setCustomer({
+            name: orderData.customerName,
+            address: "Not available",
+            phone: "Not available",
+            city: "",
+            country: "",
+            custom_shipping_company: null,
+            preferred_shipping_company: null
+          });
         } else {
           console.error("Failed to load shipping label template");
         }

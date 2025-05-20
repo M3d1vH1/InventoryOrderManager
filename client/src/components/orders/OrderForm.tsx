@@ -372,10 +372,15 @@ const OrderForm = ({
     
     let shippingCompany = '';
     
-    // Use shipping company if available (now consolidated to a single field)
-    if (customer.shippingCompany) {
+    // Use preferred shipping company if available
+    if (customer.preferredShippingCompany) {
+      shippingCompany = customer.preferredShippingCompany;
+      console.log('Using preferred shipping company:', shippingCompany);
+    } 
+    // Otherwise use the regular shipping company if available
+    else if (customer.shippingCompany) {
       shippingCompany = customer.shippingCompany;
-      console.log('Using shipping company:', shippingCompany);
+      console.log('Using regular shipping company:', shippingCompany);
     }
     else {
       console.log('No shipping company found in customer data');
