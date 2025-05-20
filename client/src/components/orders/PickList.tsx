@@ -299,6 +299,7 @@ const PickList = ({ order }: { order: Order }) => {
       // Get the real customer information for this order using the dedicated endpoint
       let customerAddress = "";
       let customerPhone = "";
+      let shippingCompany = "N/A"; // Default value
       
       try {
         // Using our new dedicated endpoint to get customer information for shipping labels
@@ -319,7 +320,14 @@ const PickList = ({ order }: { order: Order }) => {
             customerAddress = addressParts.join(", ");
             customerPhone = customer.phone || "";
             
-            console.log("Found customer data for shipping label:", customer.name);
+            // Use the appropriate shipping company information from customer database
+            if (customer.preferred_shipping_company === 'other' && customer.custom_shipping_company) {
+              shippingCompany = customer.custom_shipping_company;
+            } else if (customer.shipping_company) {
+              shippingCompany = customer.shipping_company;
+            }
+            
+            console.log(`Found customer data for shipping label: ${customer.name}, Shipping: ${shippingCompany}`);
           }
         } else {
           console.log("No customer data found for shipping label. Using order name only.");
@@ -327,9 +335,6 @@ const PickList = ({ order }: { order: Order }) => {
       } catch (error) {
         console.error("Error fetching customer details for shipping label:", error);
       }
-      
-      // Use a fixed shipping company name instead of the customer's area/location
-      const shippingCompany = "ΤΑΧΥΜΕΤΑΦΟΡΙΚΗ";
       
       // Based on CAB EOS manual - JScript programming language for CAB printer
       return `
