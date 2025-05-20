@@ -298,7 +298,7 @@ const PickList = ({ order }: { order: Order }) => {
       const orderId = order.id.toString().padStart(5, '0');
       
       // Get shipping and customer info - safely access properties that might not be in all orders
-      const orderArea = (order as any).area || "";
+      const orderArea = (order as any).area || "Standard";
       const customerAddress = (order as any).customerAddress || "";
       const customerPhone = (order as any).customerPhone || "";
       
@@ -309,11 +309,12 @@ J
 H 100,0,T
 S l1;0,0,68,71,100
 
-; Print company logo at the top
-GI 10,10,"shipping-logo.png"
+; Instead of using GI command which might not work in all cases, 
+; use text to show company name until logo issue is fixed
+T 10,15,0,3,pt16,b;Amphoreus
 
-; Order information
-T 10,40,0,3,pt10;Order Number: ${order.orderNumber}
+; Order information (made more prominent)
+T 10,40,0,3,pt12,b;Order: ${order.orderNumber}
 T 10,60,0,3,pt10;Date: ${formattedDate}
 
 ; Customer information (bold)
@@ -325,8 +326,8 @@ T 10,105,0,3,pt9;Address: ${customerAddress}
 ; Customer phone (if available)
 T 10,125,0,3,pt9;Phone: ${customerPhone}
 
-; Shipping company information (bold)
-T 10,145,0,3,pt10,b;Shipping: ${orderArea}
+; Shipping company information (bold) - making more prominent
+T 10,145,0,3,pt12,b;SHIP VIA: ${orderArea.toUpperCase()}
 
 ; Box count information (prominently displayed)
 T 10,175,0,3,pt16,b;BOX ${boxNumber} OF ${totalBoxes}
