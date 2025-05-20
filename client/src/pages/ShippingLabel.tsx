@@ -135,6 +135,25 @@ const ShippingLabel: React.FC = () => {
     return addressParts.join(", ");
   };
   
+  // Determine shipping company display
+  const getShippingCompany = () => {
+    // Show N/A for these specific values or when no value is present
+    if (!customer?.custom_shipping_company && 
+        (!customer?.preferred_shipping_company || 
+         customer?.preferred_shipping_company === 'other' ||
+         customer?.preferred_shipping_company === 'ΤΑΧΥΜΕΤΑΦΟΡΙΚΗ')) {
+      return "N/A";
+    }
+    
+    // Use custom shipping company if available
+    if (customer?.custom_shipping_company) {
+      return customer.custom_shipping_company;
+    }
+    
+    // Use preferred shipping company as fallback
+    return customer?.preferred_shipping_company || "N/A";
+  };
+  
   // Log customer data for debugging
   console.log("Customer shipping data:", {
     custom_shipping_company: customer?.custom_shipping_company,
@@ -222,16 +241,11 @@ const ShippingLabel: React.FC = () => {
           <p>Phone: {customer?.phone || ""}</p>
         </div>
         
-        <div className="font-bold mb-4">
-          Shipping: {
-            customer?.custom_shipping_company ? customer.custom_shipping_company :
-            (customer?.preferred_shipping_company && customer.preferred_shipping_company !== 'other' 
-              ? customer.preferred_shipping_company 
-              : "N/A")
-          }
+        <div className="font-bold mb-3 text-sm">
+          Shipping: {getShippingCompany()}
         </div>
         
-        <div className="text-center font-bold p-1 border border-gray-300 bg-gray-100 my-2">
+        <div className="text-center font-bold p-1 border border-gray-300 bg-gray-100 my-2 text-sm">
           BOX {currentBox} OF {boxCount}
         </div>
       </div>
