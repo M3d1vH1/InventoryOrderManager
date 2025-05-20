@@ -203,27 +203,27 @@ const ShippingLabel: React.FC = () => {
       </div>
 
       {/* Actual Shipping Label */}
-      <div className="border border-gray-300 rounded-md p-4 pt-2 bg-white print:border-0 print:p-0 print:shadow-none" style={{marginTop: '-2mm'}}>
-        <div className="text-center mb-2">
+      <div 
+        className="border border-gray-300 rounded-md p-3 pt-1 bg-white print:border-0 print:p-0 print:shadow-none" 
+        style={{marginTop: '-3mm', transform: 'scale(0.95)', transformOrigin: 'top center'}}
+      >
+        <div className="text-center mb-1">
           <img 
             src={`${window.location.origin}/shipping-logo.png`}
             alt="Company Logo" 
-            className="h-12 mx-auto"
+            className="h-10 mx-auto"
             onError={(e) => {
-              console.log("Logo load error, switching to fallback");
-              console.log("Logo failed to load, trying SVG");
               // If the PNG fails, try the SVG as fallback
               e.currentTarget.src = `${window.location.origin}/simple-logo.svg`;
               // If SVG also fails, handle that error
               e.currentTarget.onerror = () => {
-                console.log("Fallback logo also failed");
                 // Create a text fallback
                 const parent = e.currentTarget.parentElement;
                 if (parent) {
                   e.currentTarget.style.display = 'none';
                   const textLogo = document.createElement('div');
                   textLogo.textContent = "OLIVE OIL COMPANY";
-                  textLogo.className = "text-xl font-bold";
+                  textLogo.className = "font-bold text-lg";
                   parent.appendChild(textLogo);
                 }
               };
@@ -231,21 +231,21 @@ const ShippingLabel: React.FC = () => {
           />
         </div>
         
-        <div className="text-base font-bold mb-3">
+        <div className="text-sm font-bold mb-1">
           Order: {order.orderNumber}
         </div>
         
-        <div className="mb-4">
+        <div className="mb-2 text-sm">
           <p className="font-semibold">Customer: {order.customerName}</p>
           <p>Address: {formatAddress()}</p>
           <p>Phone: {customer?.phone || ""}</p>
         </div>
         
-        <div className="font-bold mb-3 text-sm">
+        <div className="font-bold mb-1 text-sm">
           Shipping: {getShippingCompany()}
         </div>
         
-        <div className="text-center font-bold p-1 border border-gray-300 bg-gray-100 my-2 text-sm">
+        <div className="text-center font-bold p-1 border border-gray-300 bg-gray-100 mt-1 mb-0 text-sm">
           BOX {currentBox} OF {boxCount}
         </div>
       </div>
