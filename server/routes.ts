@@ -3557,17 +3557,13 @@ A 1
       // First try to get shipping company info from the customer record
       const customer = await storage.getCustomerByName(order.customerName);
       
-      // Check for billingCompany (originally customShippingCompany, renamed for UI)
-      if (customer && customer.billingCompany) {
-        shippingInfo = customer.billingCompany;
-      } 
-      // Check for regular shippingCompany - this is what most customers have
-      else if (customer && customer.shippingCompany) {
+      // Check for shippingCompany - this is the consolidated field for shipping info
+      if (customer && customer.shippingCompany) {
         shippingInfo = customer.shippingCompany;
       }
-      // Try preferred shipping company if available
-      else if (customer && customer.preferredShippingCompany) {
-        shippingInfo = customer.preferredShippingCompany;
+      // Check for billingCompany as fallback
+      else if (customer && customer.billingCompany) {
+        shippingInfo = customer.billingCompany;
       }
       // Fall back to order data if available (supporting legacy data)
       else if ((order as any).shippingCompany) {

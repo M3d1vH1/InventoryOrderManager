@@ -265,7 +265,6 @@ export const insertCustomerSchema = createInsertSchema(customers)
     phone: z.string().optional(),
     contactPerson: z.string().optional(),
     shippingCompany: z.string().optional(),
-    preferredShippingCompany: z.enum(['dhl', 'fedex', 'ups', 'usps', 'royal_mail', 'other']).optional(),
     billingCompany: z.string().optional(), // Field for tracking which company should be invoiced
     notes: z.string().optional(),
   });
