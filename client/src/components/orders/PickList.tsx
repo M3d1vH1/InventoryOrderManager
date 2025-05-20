@@ -287,20 +287,46 @@ const PickList = ({ order }: { order: Order }) => {
     // Log the exact user-specified box count to ensure it's being used
     console.log(`Using user-specified box count: ${boxCount}`);
     
-    // Create the JScript commands for the CAB EOS1 printer (maintaining compatibility with existing format)
+    // Create the JScript commands for the CAB EOS1 printer with enhanced label format
     const createLabelJScript = (boxNumber: number, totalBoxes: number) => {
+      // Prepare customer information 
+      const shippingCompany = order.area || ""; // Use the area field for shipping company
+      const formattedDate = new Date(order.orderDate).toLocaleDateString();
+      const orderId = order.id.toString().padStart(5, '0');
+      
       // Based on CAB EOS manual - JScript programming language
       return `
 m m
 J
 H 100,0,T
 S l1;0,0,68,71,100
-T 25,25,0,3,pt9;Order: ${order.orderNumber}
-T 25,50,0,3,pt8;Customer: ${order.customerName}
-T 25,75,0,3,pt8;Date: ${new Date(order.orderDate).toLocaleDateString()}
-T 25,100,0,3,pt12;BOX ${boxNumber} OF ${totalBoxes}
-T 25,130,0,3,pt10;${order.id.toString().padStart(5, '0')}
-T 25,220,0,3,pt8;Warehouse Management System
+
+; Print company logo at the top
+GI 10,10,"shipping-logo.png"
+
+; Order information
+T 10,40,0,3,pt10;Order Number: ${order.orderNumber}
+T 10,60,0,3,pt10;Date: ${formattedDate}
+
+; Customer information (bold)
+T 10,85,0,3,pt12,b;Customer: ${order.customerName}
+
+; Customer address (if available)
+T 10,105,0,3,pt9;Address: ${order.customerAddress || ""}
+
+; Customer phone (if available)
+T 10,125,0,3,pt9;Phone: ${order.customerPhone || ""}
+
+; Shipping company information (bold)
+T 10,145,0,3,pt10,b;Shipping: ${shippingCompany}
+
+; Box count information (prominently displayed)
+T 10,175,0,3,pt16,b;BOX ${boxNumber} OF ${totalBoxes}
+
+; Order ID (reference number)
+T 10,210,0,3,pt10;ID: ${orderId}
+
+; Print command
 A 1
 `;
     };
