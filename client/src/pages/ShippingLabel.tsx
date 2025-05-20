@@ -184,12 +184,12 @@ const ShippingLabel: React.FC = () => {
       </div>
 
       {/* Actual Shipping Label */}
-      <div className="border border-gray-300 rounded-md p-4 pt-2 bg-white print:border-0 print:p-0 print:shadow-none">
-        <div className="text-center mb-4">
+      <div className="border border-gray-300 rounded-md p-4 pt-2 bg-white print:border-0 print:p-0 print:shadow-none" style={{marginTop: '-2mm'}}>
+        <div className="text-center mb-2">
           <img 
             src={`${window.location.origin}/shipping-logo.png`}
             alt="Company Logo" 
-            className="h-14 mx-auto"
+            className="h-12 mx-auto"
             onError={(e) => {
               console.log("Logo load error, switching to fallback");
               console.log("Logo failed to load, trying SVG");
@@ -212,7 +212,7 @@ const ShippingLabel: React.FC = () => {
           />
         </div>
         
-        <div className="text-xl font-bold mb-4">
+        <div className="text-base font-bold mb-3">
           Order: {order.orderNumber}
         </div>
         
