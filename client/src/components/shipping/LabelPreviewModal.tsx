@@ -155,7 +155,7 @@ const LabelPreviewModal: React.FC<LabelPreviewModalProps> = ({
     if (open && boxCount > 0 && currentBox > 0 && currentBox <= boxCount) {
       handlePreview();
     }
-  }, [currentBox, open]);
+  }, [currentBox, open, boxCount]);
 
   // Reset form data when the modal opens
   React.useEffect(() => {
@@ -180,32 +180,92 @@ const LabelPreviewModal: React.FC<LabelPreviewModalProps> = ({
   };
   
   // Handle printing with browser
-  const handleBrowserPrint = () => {
-    // Open a new print template window
-    const printUrl = `/print-template?orderId=${orderId}&boxNumber=${currentBox}&boxCount=${boxCount}&autoPrint=true`;
-    window.open(printUrl, '_blank');
-    
-    // Log the print action to server
-    apiRequest({
-      url: '/api/orders/log-label-print',
-      method: 'POST',
-      body: JSON.stringify({
-        orderId,
-        boxNumber: currentBox,
-        boxCount,
-        method: 'browser-print'
-      }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    }).catch(error => {
-      console.error("Failed to log label printing:", error);
-    });
-    
-    toast({
-      title: t('printing.success', 'Print Request Sent'),
-      description: t('printing.successDescription', 'Label has been sent to printer')
-    });
+  const handleBrowserPrint = async () => {
+    try {
+      // First generate the label HTML
+      const previewResponse = await apiRequest('/api/preview-label', {
+        method: 'POST',
+        body: JSON.stringify({
+          orderId,
+          boxCount,
+          currentBox
+        }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!previewResponse.success) {
+        throw new Error("Failed to generate label content");
+      }
+      
+      // Get the HTML content from the preview
+      let labelHtml = "";
+      if (previewResponse.isHtml && previewResponse.previewUrl) {
+        // Fetch the HTML content
+        const response = await fetch(previewResponse.previewUrl);
+        labelHtml = await response.text();
+      } else {
+        // Create a simple HTML with the image
+        labelHtml = `
+          <html>
+            <head>
+              <title>Shipping Label - Order ${orderNumber} - Box ${currentBox} of ${boxCount}</title>
+              <style>
+                body { margin: 0; padding: 0; text-align: center; }
+                img { max-width: 100%; height: auto; }
+              </style>
+            </head>
+            <body>
+              <img src="${previewResponse.previewUrl}" alt="Shipping Label" />
+              <script>
+                window.onload = function() {
+                  setTimeout(function() { window.print(); }, 500);
+                }
+              </script>
+            </body>
+          </html>
+        `;
+      }
+      
+      // Open a new window with the content
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(labelHtml);
+        printWindow.document.close();
+      } else {
+        throw new Error("Could not open print window. Please check your popup blocker settings.");
+      }
+      
+      // Log the print action to server
+      apiRequest({
+        url: '/api/orders/log-label-print',
+        method: 'POST',
+        body: JSON.stringify({
+          orderId,
+          boxNumber: currentBox,
+          boxCount,
+          method: 'browser-print'
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }).catch(error => {
+        console.error("Failed to log label printing:", error);
+      });
+      
+      toast({
+        title: 'Print Request Sent',
+        description: `Label for Box ${currentBox} of ${boxCount} has been opened for printing`
+      });
+    } catch (error) {
+      console.error("Error printing label:", error);
+      toast({
+        title: 'Printing Error',
+        description: error.message || 'Failed to print label',
+        variant: 'destructive'
+      });
+    }
   };
 
   return (
@@ -214,7 +274,7 @@ const LabelPreviewModal: React.FC<LabelPreviewModalProps> = ({
         <DialogHeader>
           <DialogTitle>{t('labels.title', 'Print Shipping Label')}</DialogTitle>
           <DialogDescription>
-            {t('labels.description', { orderNumber }, `Print shipping labels for order ${orderNumber}`)}
+            {`Print shipping labels for order ${orderNumber}`}
           </DialogDescription>
         </DialogHeader>
 
@@ -316,38 +376,69 @@ const LabelPreviewModal: React.FC<LabelPreviewModalProps> = ({
           )}
         </div>
 
-        <DialogFooter className="flex justify-between items-center">
-          <div className="flex space-x-2">
+        <DialogFooter className="flex flex-col space-y-4 w-full items-center sm:items-stretch">
+          {/* Navigation Controls */}
+          <div className="flex w-full justify-between items-center border-b pb-3 mb-2">
             <Button
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              size="sm"
+              onClick={handlePrevBox}
+              disabled={currentBox <= 1}
+              className="flex items-center"
             >
-              {t('common.cancel', 'Cancel')}
+              <ChevronLeft className="mr-1 h-4 w-4" />
+              Previous Box
+            </Button>
+            
+            <div className="font-semibold text-center">
+              Box {currentBox} of {boxCount}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNextBox}
+              disabled={currentBox >= boxCount}
+              className="flex items-center"
+            >
+              Next Box
+              <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
           
-          <div className="flex space-x-2">
+          {/* Action Buttons */}
+          <div className="flex w-full justify-between items-center">
             <Button
-              variant="outline"
-              onClick={handleBrowserPrint}
-              disabled={!previewUrl || printing}
+              variant="default"
+              onClick={() => onOpenChange(false)}
+              className="bg-green-600 hover:bg-green-700 text-white"
             >
-              <Printer className="mr-2 h-4 w-4" />
-              {t('labels.printInBrowser', 'Print in Browser')}
+              Finish Label Printing
             </Button>
             
-            <Button
-              onClick={handlePrint}
-              disabled={!previewUrl || printing}
-              className="gap-2"
-            >
-              {printing ? (
-                <span className="animate-spin h-4 w-4 border-2 border-t-transparent rounded-full"></span>
-              ) : (
-                <Printer className="h-4 w-4" />
-              )}
-              {printing ? t('labels.printing', 'Printing...') : t('labels.print', 'Print Label')}
-            </Button>
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                onClick={handleBrowserPrint}
+                disabled={!previewUrl || printing}
+              >
+                <Printer className="mr-2 h-4 w-4" />
+                Print Current Label
+              </Button>
+              
+              <Button
+                onClick={handlePrint}
+                disabled={!previewUrl || printing}
+                className="gap-2"
+              >
+                {printing ? (
+                  <span className="animate-spin h-4 w-4 border-2 border-t-transparent rounded-full"></span>
+                ) : (
+                  <Printer className="h-4 w-4" />
+                )}
+                {printing ? 'Printing...' : 'Send to Printer'}
+              </Button>
+            </div>
           </div>
         </DialogFooter>
       </DialogContent>
