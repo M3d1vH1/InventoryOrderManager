@@ -120,7 +120,8 @@ function Router() {
   }
   
   // Multi-label print view doesn't need authentication
-  if (location.startsWith('/print-labels/')) {
+  const printLabelsMatch = location.match(/\/print-labels\/(\d+)\/(\d+)/);
+  if (printLabelsMatch) {
     return <MultiLabelPrintView />;
   }
 
