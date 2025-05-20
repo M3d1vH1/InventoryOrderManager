@@ -188,7 +188,7 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
             width: 9cm;
             height: 6cm;
             box-sizing: border-box;
-            transform: translateY(-3mm) scale(0.95); /* Reduced to avoid content going outside label */
+            transform: translateY(-3mm) scale(0.85); /* Further reduced to 0.85 to fit content on label */
             transform-origin: top center;
             display: flex;
             justify-content: center; /* Center content horizontally */
