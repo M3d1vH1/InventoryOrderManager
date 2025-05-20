@@ -328,7 +328,8 @@ const PickList = ({ order }: { order: Order }) => {
         console.error("Error fetching customer details for shipping label:", error);
       }
       
-      const shippingCompany = order.area || "ΤΑΧΥΜΕΤΑΦΟΡΙΚΗ";
+      // Use a fixed shipping company name instead of the customer's area/location
+      const shippingCompany = "ΤΑΧΥΜΕΤΑΦΟΡΙΚΗ";
       
       // Based on CAB EOS manual - JScript programming language for CAB printer
       return `
@@ -337,8 +338,8 @@ J
 H 100,0,T
 S l1;0,0,68,71,100
 
-; Important: Logo must be properly referenced relative to printer's working directory
-GI 20,15,"shipping-logo.png"
+; Using T command to create text label instead of GI for image (which isn't working)
+T 25,10,0,3,pt14,b;OLIVE OIL COMPANY
 
 ; Order number - very prominent
 T 10,40,0,3,pt14,b;Order: ${order.orderNumber}
@@ -353,9 +354,6 @@ T 10,130,0,3,pt13,b;Shipping: ${shippingCompany}
 
 ; Box information - clearly visible
 T 10,160,0,3,pt16,b;BOX ${boxNumber} OF ${totalBoxes}
-
-; Date information
-T 10,190,0,3,pt10;Date: ${formattedDate}
 
 ; Print command
 A 1
