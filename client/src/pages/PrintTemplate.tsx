@@ -118,17 +118,23 @@ const parseJScript = (jscript: string): {
 
 // Component for formatted label display
 const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
-  // Simplified direct rendering of a clean shipping label
+  // Improved extraction of all shipping label data
   const extractLabelData = (content: string) => {
     const orderMatch = content.match(/Order: ([^\n]+)/);
     const customerMatch = content.match(/Customer: ([^\n]+)/);
+    const addressMatch = content.match(/Address: ([^\n]+)/);
+    const phoneMatch = content.match(/Phone: ([^\n]+)/);
+    const shippingMatch = content.match(/Shipping: ([^\n]+)/);
     const dateMatch = content.match(/Date: ([^\n]+)/);
-    const boxMatch = content.match(/BOX (\d+) OF (\d+)/);
+    const boxMatch = content.match(/BOX (\d+) OF (\d+)/i);
     const idMatch = content.match(/T 25,130,0,3,pt10;(\d+)/);
     
     return {
       orderNumber: orderMatch ? orderMatch[1] : '',
       customer: customerMatch ? customerMatch[1] : '',
+      address: addressMatch ? addressMatch[1] : '',
+      phone: phoneMatch ? phoneMatch[1] : '',
+      shipping: shippingMatch ? shippingMatch[1] : '',
       date: dateMatch ? dateMatch[1] : '',
       boxNumber: boxMatch ? boxMatch[1] : '1',
       totalBoxes: boxMatch ? boxMatch[2] : '1',
@@ -147,36 +153,60 @@ const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
         margin: '0 auto',
         position: 'relative',
         boxSizing: 'border-box',
-        padding: '6mm',
+        padding: '5mm',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
         overflow: 'hidden'
       }}
     >
+      {/* Company logo at top */}
+      <div className="text-center" style={{ marginBottom: '2mm' }}>
+        <img src="/shipping-logo.png" alt="Company Logo" style={{ height: '8mm', maxWidth: '100%', margin: '0 auto' }} />
+      </div>
+      
       <div className="text-black" style={{ fontFamily: 'Arial, sans-serif' }}>
-        <div style={{ fontSize: '11pt', fontWeight: 'bold', marginBottom: '2mm' }}>
+        {/* Order number - prominent */}
+        <div style={{ fontSize: '12pt', fontWeight: 'bold', marginBottom: '1mm' }}>
           Order: {labelData.orderNumber}
         </div>
         
-        <div style={{ fontSize: '9pt', marginBottom: '2mm', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {/* Customer information section */}
+        <div style={{ fontSize: '10pt', fontWeight: 'bold', marginBottom: '1mm' }}>
           Customer: {labelData.customer}
         </div>
         
-        <div style={{ fontSize: '9pt', marginBottom: '2mm' }}>
-          Date: {labelData.date}
-        </div>
+        {labelData.address && (
+          <div style={{ fontSize: '9pt', marginBottom: '1mm', lineHeight: '1.1' }}>
+            Address: {labelData.address}
+          </div>
+        )}
         
-        <div style={{ fontSize: '14pt', fontWeight: 'bold', marginBottom: '2mm', textAlign: 'center' }}>
+        {labelData.phone && (
+          <div style={{ fontSize: '9pt', marginBottom: '1mm' }}>
+            Phone: {labelData.phone}
+          </div>
+        )}
+        
+        {/* Shipping information */}
+        {labelData.shipping && (
+          <div style={{ fontSize: '10pt', fontWeight: 'bold', marginBottom: '1mm' }}>
+            Shipping: {labelData.shipping}
+          </div>
+        )}
+        
+        {/* Box information - very prominent */}
+        <div style={{ fontSize: '14pt', fontWeight: 'bold', textAlign: 'center', margin: '2mm 0', padding: '1mm', border: '1px solid #ccc', backgroundColor: '#f5f5f5' }}>
           BOX {labelData.boxNumber} OF {labelData.totalBoxes}
         </div>
         
-        <div style={{ fontSize: '11pt', fontWeight: 'bold', textAlign: 'center', marginTop: '2mm' }}>
-          {labelData.orderId}
+        {/* Date information */}
+        <div style={{ fontSize: '9pt', marginBottom: '1mm' }}>
+          Date: {labelData.date}
         </div>
       </div>
       
-      <div style={{ fontSize: '8pt', textAlign: 'center', color: '#666', marginTop: '6mm' }}>
+      <div style={{ fontSize: '8pt', textAlign: 'center', color: '#666', marginTop: '2mm' }}>
         Warehouse Management System
       </div>
     </div>
