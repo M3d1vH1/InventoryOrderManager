@@ -20,6 +20,7 @@ interface ShippingLabelPreviewProps {
 const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
   // Extract label data for a clean, consistent preview
   const extractLabelData = (content: string) => {
+    // Match all needed fields from the JScript content
     const orderMatch = content.match(/Order: ([^\n]+)/);
     const orderNumMatch = content.match(/Order Number: ([^\n]+)/);
     const customerMatch = content.match(/Customer: ([^\n]+)/);
@@ -27,8 +28,14 @@ const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
     const phoneMatch = content.match(/Phone: ([^\n]+)/);
     const shippingCompanyMatch = content.match(/Shipping: ([^\n]+)/);
     const dateMatch = content.match(/Date: ([^\n]+)/);
-    const boxMatch = content.match(/BOX (\d+) OF (\d+)/);
-    const idMatch = content.match(/T 25,130,0,3,pt10;(\d+)/);
+    
+    // Specifically look for our new BOX format 
+    const boxStandard = content.match(/BOX (\d+) OF (\d+)/);
+    const boxNew = content.match(/BOX (\d+) OF (\d+)/i);
+    
+    // ID can be in various formats
+    const idMatchStandard = content.match(/T 25,130,0,3,pt10;(\d+)/);
+    const idMatchNew = content.match(/ID: (\d+)/);
     
     return {
       orderNumber: orderNumMatch ? orderNumMatch[1] : (orderMatch ? orderMatch[1] : ''),
@@ -37,9 +44,9 @@ const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
       phone: phoneMatch ? phoneMatch[1] : '',
       shippingCompany: shippingCompanyMatch ? shippingCompanyMatch[1] : '',
       date: dateMatch ? dateMatch[1] : '',
-      boxNumber: boxMatch ? boxMatch[1] : '1',
-      totalBoxes: boxMatch ? boxMatch[2] : '1',
-      orderId: idMatch ? idMatch[1] : '',
+      boxNumber: (boxNew ? boxNew[1] : (boxStandard ? boxStandard[1] : '1')),
+      totalBoxes: (boxNew ? boxNew[2] : (boxStandard ? boxStandard[2] : '1')),
+      orderId: (idMatchNew ? idMatchNew[1] : (idMatchStandard ? idMatchStandard[1] : '')),
     };
   };
   

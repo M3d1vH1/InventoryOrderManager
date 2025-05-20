@@ -64,8 +64,12 @@ interface Order {
   id: number;
   orderNumber: string;
   customerName: string;
+  customerAddress?: string;
+  customerPhone?: string;
+  customerEmail?: string;
   orderDate: string;
   status: 'pending' | 'picked' | 'shipped' | 'cancelled';
+  area?: string; // For shipping company
   notes?: string;
   items?: OrderItem[];
 }
@@ -289,10 +293,14 @@ const PickList = ({ order }: { order: Order }) => {
     
     // Create the JScript commands for the CAB EOS1 printer with enhanced label format
     const createLabelJScript = (boxNumber: number, totalBoxes: number) => {
-      // Prepare customer information 
-      const shippingCompany = order.area || ""; // Use the area field for shipping company
+      // Get the formatted date safely
       const formattedDate = new Date(order.orderDate).toLocaleDateString();
       const orderId = order.id.toString().padStart(5, '0');
+      
+      // Get shipping and customer info - safely access properties that might not be in all orders
+      const orderArea = (order as any).area || "";
+      const customerAddress = (order as any).customerAddress || "";
+      const customerPhone = (order as any).customerPhone || "";
       
       // Based on CAB EOS manual - JScript programming language
       return `
@@ -312,13 +320,13 @@ T 10,60,0,3,pt10;Date: ${formattedDate}
 T 10,85,0,3,pt12,b;Customer: ${order.customerName}
 
 ; Customer address (if available)
-T 10,105,0,3,pt9;Address: ${order.customerAddress || ""}
+T 10,105,0,3,pt9;Address: ${customerAddress}
 
 ; Customer phone (if available)
-T 10,125,0,3,pt9;Phone: ${order.customerPhone || ""}
+T 10,125,0,3,pt9;Phone: ${customerPhone}
 
 ; Shipping company information (bold)
-T 10,145,0,3,pt10,b;Shipping: ${shippingCompany}
+T 10,145,0,3,pt10,b;Shipping: ${orderArea}
 
 ; Box count information (prominently displayed)
 T 10,175,0,3,pt16,b;BOX ${boxNumber} OF ${totalBoxes}
