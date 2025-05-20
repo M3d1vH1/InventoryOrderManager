@@ -164,10 +164,98 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
   const handlePrintCurrentLabel = () => {
     setIsPrinting(true);
     
-    // Print the current box
-    const boxContent = generateLabelContent(currentBox);
-    const printUrl = `/print-template?content=${encodeURIComponent(boxContent)}&orderNumber=${encodeURIComponent(orderNumber)}&autoPrint=true`;
-    window.open(printUrl, '_blank');
+    // Create a simple HTML label
+    const htmlLabel = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Shipping Label - Order ${orderNumber}</title>
+        <style>
+          @page {
+            size: 9cm 6cm;
+            margin: 0;
+          }
+          body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            width: 9cm;
+            height: 6cm;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            transform: translateY(-3mm) scale(0.95);
+            transform-origin: top center;
+          }
+          .label-container {
+            padding: 0.3cm;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+          }
+          .logo {
+            text-align: center;
+            margin-bottom: 0.1cm;
+          }
+          .logo img {
+            height: 0.8cm;
+            max-width: 80%;
+          }
+          .order-number {
+            font-size: 10pt;
+            font-weight: bold;
+            margin-bottom: 0.1cm;
+          }
+          .customer {
+            font-size: 9pt;
+            margin-bottom: 0.1cm;
+          }
+          .shipping {
+            font-size: 9pt;
+            font-weight: bold;
+            margin-bottom: 0.1cm;
+          }
+          .box-number {
+            font-size: 11pt;
+            font-weight: bold;
+            text-align: center;
+            margin: 0.1cm 0;
+            border: 1px solid #ccc;
+            background-color: #f0f0f0;
+            padding: 0.1cm;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="label-container">
+          <div class="logo">
+            <img src="/shipping-logo.png" onerror="this.src='/simple-logo.svg'; this.onerror=function(){this.outerHTML='<div style=\\'font-weight:bold;font-size:12pt;\\'>OLIVE OIL COMPANY</div>'}">
+          </div>
+          <div class="order-number">Order: ${orderNumber}</div>
+          <div class="customer">Customer: ${labelData.customer}</div>
+          <div class="shipping">Shipping: N/A</div>
+          <div class="box-number">BOX ${currentBox} OF ${totalBoxes}</div>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    // Create a new window to print from
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlLabel);
+      printWindow.document.close();
+      
+      // Trigger print after the content loads
+      printWindow.onload = function() {
+        setTimeout(() => {
+          printWindow.print();
+          // Close window after printing (or after a delay if print is cancelled)
+          setTimeout(() => printWindow.close(), 1000);
+        }, 500);
+      };
+    }
     
     // Log the print action to server
     apiRequest({
