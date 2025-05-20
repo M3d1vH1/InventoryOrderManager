@@ -172,13 +172,35 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
       const customerMatch = content.match(/Customer: ([^\n]+)/);
       const addressMatch = content.match(/Address: ([^\n]+)/);
       const phoneMatch = content.match(/Phone: ([^\n]+)/);
+      
+      // For shipping company, check for multiple formats in the content
+      let shippingCompany = "N/A";
+      
+      // First try the standard format
       const shippingMatch = content.match(/Shipping: ([^\n]+)/);
+      if (shippingMatch && shippingMatch[1] && shippingMatch[1].trim() !== "N/A") {
+        shippingCompany = shippingMatch[1];
+      } 
+      // Then try other potential formats that might be in the label content
+      else {
+        const altShippingMatch1 = content.match(/Shipping Company: ([^\n]+)/);
+        const altShippingMatch2 = content.match(/Ship via: ([^\n]+)/);
+        const altShippingMatch3 = content.match(/Carrier: ([^\n]+)/);
+        
+        if (altShippingMatch1 && altShippingMatch1[1] && altShippingMatch1[1].trim() !== "N/A") {
+          shippingCompany = altShippingMatch1[1];
+        } else if (altShippingMatch2 && altShippingMatch2[1] && altShippingMatch2[1].trim() !== "N/A") {
+          shippingCompany = altShippingMatch2[1];
+        } else if (altShippingMatch3 && altShippingMatch3[1] && altShippingMatch3[1].trim() !== "N/A") {
+          shippingCompany = altShippingMatch3[1];
+        }
+      }
       
       return {
         customerName: customerMatch ? customerMatch[1] : "Unknown Customer",
         customerAddress: addressMatch ? addressMatch[1] : "No Address",
         customerPhone: phoneMatch ? phoneMatch[1] : "No Phone",
-        shippingCompany: shippingMatch ? shippingMatch[1] : "N/A"
+        shippingCompany: shippingCompany
       };
     }
     
