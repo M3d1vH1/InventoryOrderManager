@@ -167,6 +167,7 @@ const Orders = () => {
   
   // State for label printing
   const [showPrintLabelDialog, setShowPrintLabelDialog] = useState(false);
+  const [showMultiLabelDialog, setShowMultiLabelDialog] = useState(false);
   const [orderToPrint, setOrderToPrint] = useState<Order | null>(null);
   const [boxCount, setBoxCount] = useState<number>(1);
 
@@ -666,8 +667,15 @@ A 1
   // Handle print labels submission
   const handlePrintLabels = () => {
     if (orderToPrint) {
-      generateShippingLabels(orderToPrint, boxCount);
+      // Open multi-label print view in a new window
+      const url = `/print-labels/${orderToPrint.id}/${boxCount}`;
+      window.open(url, '_blank');
       setShowPrintLabelDialog(false);
+      
+      toast({
+        title: t('orders.labels.success', 'Labels Ready'),
+        description: t('orders.labels.batchSuccessDescription', 'All {{count}} shipping labels will be displayed for printing', { count: boxCount }),
+      });
     }
   };
 

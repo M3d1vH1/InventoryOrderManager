@@ -25,6 +25,7 @@ import SupplierPayments from "@/pages/SupplierPayments";
 import CalendarTest from "@/pages/CalendarTest";
 import PrinterTest from "@/pages/printerTest";
 import PrintTemplate from "@/pages/PrintTemplate";
+import MultiLabelPrintView from "@/pages/MultiLabelPrintView";
 import Login from "@/pages/Login";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
@@ -113,9 +114,14 @@ function Router() {
     return <Login />;
   }
   
-  // Print template page doesn't need authentication
+  // Print template and multi-label print pages don't need authentication
   if (location === '/print-template') {
     return <PrintTemplate />;
+  }
+  
+  // Multi-label print view doesn't need authentication
+  if (location.startsWith('/print-labels/')) {
+    return <MultiLabelPrintView />;
   }
 
   // If not authenticated and not on login page, redirect to login
