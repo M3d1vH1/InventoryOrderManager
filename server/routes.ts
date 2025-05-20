@@ -2682,10 +2682,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const customerData = await storage.getCustomerByName(order.customerName);
         if (customerData) {
           // Use the correct shipping company information based on preference
-          if (customerData.preferredShippingCompany === 'other' && customerData.customShippingCompany) {
-            shippingCompany = customerData.customShippingCompany;
-          } else if (customerData.shippingCompany) {
-            shippingCompany = customerData.shippingCompany;
+          if (customerData.preferred_shipping_company === 'other' && customerData.custom_shipping_company) {
+            shippingCompany = customerData.custom_shipping_company;
+          } else if (customerData.shipping_company) {
+            shippingCompany = customerData.shipping_company;
           }
         }
         console.log(`Shipping company for ${order.customerName}: ${shippingCompany}`);
@@ -2741,9 +2741,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       margin-bottom: 0.1cm;
     }
     .shipping {
-      font-size: 9pt;
+      font-size: 10pt;
       font-weight: bold;
       margin-bottom: 0.1cm;
+      background-color: #f8f8f8;
+      padding: 0.1cm;
+      border-left: 3px solid #666;
     }
     .box-number {
       font-size: 11pt;

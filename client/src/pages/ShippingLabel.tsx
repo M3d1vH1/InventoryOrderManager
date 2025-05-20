@@ -112,12 +112,12 @@ const ShippingLabel: React.FC = () => {
     if (!customer) return "N/A";
     
     // Check custom shipping company first (for 'other' preference)
-    if (customer.preferredShippingCompany === 'other' && customer.customShippingCompany) {
-      return customer.customShippingCompany;
+    if (customer.preferred_shipping_company === 'other' && customer.custom_shipping_company) {
+      return customer.custom_shipping_company;
     }
     // Then check regular shipping company
-    if (customer.shippingCompany) {
-      return customer.shippingCompany;
+    if (customer.shipping_company) {
+      return customer.shipping_company;
     }
     
     return "N/A"; // Fallback
@@ -125,9 +125,9 @@ const ShippingLabel: React.FC = () => {
   
   // Log customer data for debugging
   console.log("Customer shipping data:", {
-    customShippingCompany: customer?.customShippingCompany,
-    preferredShippingCompany: customer?.preferredShippingCompany,
-    shippingCompany: customer?.shippingCompany,
+    custom_shipping_company: customer?.custom_shipping_company,
+    preferred_shipping_company: customer?.preferred_shipping_company,
+    shipping_company: customer?.shipping_company,
     customer: customer
   });
 
