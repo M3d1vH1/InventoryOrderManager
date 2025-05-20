@@ -325,9 +325,9 @@ const PickList = ({ order }: { order: Order }) => {
         console.error("Error fetching customer details:", error);
       }
       
-      // If we couldn't get customer details, use fallbacks
-      if (!customerAddress) customerAddress = "Address on file";
-      if (!customerPhone) customerPhone = "Phone on file";
+      // If no customer details were found, leave blank rather than using fake data
+      if (!customerAddress) customerAddress = "";
+      if (!customerPhone) customerPhone = "";
       
       const shippingCompany = order.area || "ΤΑΧΥΜΕΤΑΦΟΡΙΚΗ";
       
@@ -338,8 +338,8 @@ J
 H 100,0,T
 S l1;0,0,68,71,100
 
-; Company logo at top center
-GI 25,10,"shipping-logo.png"
+; Important: Logo must be properly referenced relative to printer's working directory
+GI 20,15,"shipping-logo.png"
 
 ; Order number - very prominent
 T 10,40,0,3,pt14,b;Order: ${order.orderNumber}
