@@ -2680,13 +2680,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         // Find customer based on order's customer name
         const customerData = await storage.getCustomerByName(order.customerName);
-        if (customerData) {
-          // Use the correct shipping company information based on preference
-          if (customerData.preferred_shipping_company === 'other' && customerData.custom_shipping_company) {
-            shippingCompany = customerData.custom_shipping_company;
-          } else if (customerData.shipping_company) {
-            shippingCompany = customerData.shipping_company;
-          }
+        if (customerData && customerData.shippingCompany) {
+          // Use the consolidated shipping company field
+          shippingCompany = customerData.shippingCompany;
         }
         console.log(`Shipping company for ${order.customerName}: ${shippingCompany}`);
       } catch (error) {
