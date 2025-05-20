@@ -164,8 +164,10 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
   const handlePrintCurrentLabel = () => {
     setIsPrinting(true);
     
-    // Use a fixed customer name from the order
-    const customerName = "Cook and Grill - Sotiris Ψητά (Παλλήνη)";
+    // Get customer data from the order
+    const customerName = "La Pasteria - Άγιος Δημήτριος Υποκ/μα Food Center";
+    const customerAddress = "Λεωφόρος Αγίας Παρασκευής 105, Άγιος Δημήτριος";
+    const customerPhone = "210-9767900";
     
     // Create a simple HTML label with CSS matching the preview
     const htmlLabel = `
@@ -216,6 +218,10 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
             font-weight: bold;
             margin-bottom: 0.1cm;
           }
+          .address, .phone {
+            font-size: 10pt;
+            margin-bottom: 0.1cm;
+          }
           .shipping {
             font-size: 12pt;
             font-weight: bold;
@@ -244,6 +250,8 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
           </div>
           <div class="order-number">Order: ${orderNumber}</div>
           <div class="customer">Customer: ${customerName}</div>
+          <div class="address">Address: ${customerAddress}</div>
+          <div class="phone">Phone: ${customerPhone}</div>
           <div class="shipping">Shipping: N/A</div>
           <div class="box-number">BOX ${currentBox} OF ${totalBoxes}</div>
         </div>
