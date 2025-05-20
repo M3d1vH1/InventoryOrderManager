@@ -10,16 +10,20 @@ router.get('/', isAuthenticated, async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
     
-    const customers = await storage.getCustomers(page, limit);
-    const total = await storage.getCustomersCount();
+    const customers = await storage.getAllCustomers();
+    
+    // Simple pagination implementation
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    const paginatedCustomers = customers.slice(startIndex, endIndex);
     
     res.json({
-      customers,
+      customers: paginatedCustomers,
       pagination: {
-        total,
+        total: customers.length,
         page,
         limit,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(customers.length / limit)
       }
     });
   } catch (error) {
@@ -53,7 +57,7 @@ router.get('/:id', isAuthenticated, async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Invalid customer ID' });
     }
     
-    const customer = await storage.getCustomerById(id);
+    const customer = await storage.getCustomer(id);
     if (!customer) {
       return res.status(404).json({ message: 'Customer not found' });
     }
