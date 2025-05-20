@@ -291,48 +291,42 @@ const PickList = ({ order }: { order: Order }) => {
     // Log the exact user-specified box count to ensure it's being used
     console.log(`Using user-specified box count: ${boxCount}`);
     
-    // Create the JScript commands for the CAB EOS1 printer with enhanced label format
+    // Create the JScript commands for the CAB EOS1 printer with all requested customer information
     const createLabelJScript = (boxNumber: number, totalBoxes: number) => {
-      // Get the formatted date safely
+      // Get essential information
       const formattedDate = new Date(order.orderDate).toLocaleDateString();
-      const orderId = order.id.toString().padStart(5, '0');
       
-      // Get shipping and customer info - safely access properties that might not be in all orders
-      const orderArea = (order as any).area || "Standard";
+      // Get customer and shipping info safely from order data
       const customerAddress = (order as any).customerAddress || "";
       const customerPhone = (order as any).customerPhone || "";
+      const shippingCompany = (order as any).area || "Standard Delivery";
       
-      // Based on CAB EOS manual - JScript programming language
+      // Based on CAB EOS manual - JScript programming language for CAB printer
       return `
 m m
 J
 H 100,0,T
 S l1;0,0,68,71,100
 
-; Print company logo at the top - using SVG format which might work better
-GI 10,10,"/simple-logo.svg"
+; Company logo at top center
+GI 25,10,"/shipping-logo.png"
 
-; Order information (made more prominent)
-T 10,40,0,3,pt12,b;Order: ${order.orderNumber}
-T 10,60,0,3,pt10;Date: ${formattedDate}
+; Order number - very prominent
+T 10,40,0,3,pt14,b;Order: ${order.orderNumber}
 
-; Customer information (bold)
-T 10,85,0,3,pt12,b;Customer: ${order.customerName}
+; Customer information section - as requested
+T 10,65,0,3,pt12,b;Customer: ${order.customerName}
+T 10,85,0,3,pt10;Address: ${customerAddress}
+T 10,105,0,3,pt10;Phone: ${customerPhone}
 
-; Customer address (if available)
-T 10,105,0,3,pt9;Address: ${customerAddress}
+; Shipping company - very important information
+T 10,130,0,3,pt13,b;Shipping: ${shippingCompany}
 
-; Customer phone (if available)
-T 10,125,0,3,pt9;Phone: ${customerPhone}
+; Box information - clearly visible
+T 10,160,0,3,pt16,b;BOX ${boxNumber} OF ${totalBoxes}
 
-; Shipping company information (bold) - making more prominent
-T 10,145,0,3,pt12,b;SHIP VIA: ${orderArea.toUpperCase()}
-
-; Box count information (prominently displayed)
-T 10,175,0,3,pt16,b;BOX ${boxNumber} OF ${totalBoxes}
-
-; Order ID (reference number)
-T 10,210,0,3,pt10;ID: ${orderId}
+; Date information
+T 10,190,0,3,pt10;Date: ${formattedDate}
 
 ; Print command
 A 1

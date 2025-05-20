@@ -22,31 +22,24 @@ const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
   const extractLabelData = (content: string) => {
     // Match all needed fields from the JScript content
     const orderMatch = content.match(/Order: ([^\n]+)/);
-    const orderNumMatch = content.match(/Order Number: ([^\n]+)/);
     const customerMatch = content.match(/Customer: ([^\n]+)/);
     const addressMatch = content.match(/Address: ([^\n]+)/);
     const phoneMatch = content.match(/Phone: ([^\n]+)/);
     const shippingCompanyMatch = content.match(/Shipping: ([^\n]+)/);
     const dateMatch = content.match(/Date: ([^\n]+)/);
     
-    // Specifically look for our new BOX format 
-    const boxStandard = content.match(/BOX (\d+) OF (\d+)/);
-    const boxNew = content.match(/BOX (\d+) OF (\d+)/i);
-    
-    // ID can be in various formats
-    const idMatchStandard = content.match(/T 25,130,0,3,pt10;(\d+)/);
-    const idMatchNew = content.match(/ID: (\d+)/);
+    // Box information
+    const boxMatch = content.match(/BOX (\d+) OF (\d+)/i);
     
     return {
-      orderNumber: orderNumMatch ? orderNumMatch[1] : (orderMatch ? orderMatch[1] : ''),
+      orderNumber: orderMatch ? orderMatch[1] : '',
       customer: customerMatch ? customerMatch[1] : '',
       address: addressMatch ? addressMatch[1] : '',
       phone: phoneMatch ? phoneMatch[1] : '',
       shippingCompany: shippingCompanyMatch ? shippingCompanyMatch[1] : '',
       date: dateMatch ? dateMatch[1] : '',
-      boxNumber: (boxNew ? boxNew[1] : (boxStandard ? boxStandard[1] : '1')),
-      totalBoxes: (boxNew ? boxNew[2] : (boxStandard ? boxStandard[2] : '1')),
-      orderId: (idMatchNew ? idMatchNew[1] : (idMatchStandard ? idMatchStandard[1] : '')),
+      boxNumber: boxMatch ? boxMatch[1] : '1',
+      totalBoxes: boxMatch ? boxMatch[2] : '1',
     };
   };
   
@@ -58,10 +51,10 @@ const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
       {/* Company Logo */}
       <div className="text-center mb-2">
         <img 
-          src="/simple-logo.svg" 
+          src="/shipping-logo.png" 
           alt="Company Logo" 
           style={{ 
-            height: '35px', 
+            height: '40px', 
             maxWidth: '100%', 
             margin: '0 auto',
             objectFit: 'contain'
@@ -69,38 +62,41 @@ const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
         />
       </div>
       
-      {/* Order Information */}
-      <div style={{ fontWeight: 'bold', fontSize: '10pt' }}>
+      {/* Order Information - Made More Prominent */}
+      <div style={{ fontWeight: 'bold', fontSize: '14pt', borderBottom: '1px solid #eee', paddingBottom: '4px' }}>
         Order: {labelData.orderNumber}
       </div>
       
-      {/* Customer Information */}
-      <div style={{ fontSize: '9pt', fontWeight: 'bold' }}>
+      {/* Customer Information Section */}
+      <div style={{ fontSize: '11pt', fontWeight: 'bold' }}>
         Customer: {labelData.customer}
       </div>
       
       {labelData.address && (
-        <div style={{ fontSize: '9pt', whiteSpace: 'pre-wrap' }}>
+        <div style={{ fontSize: '10pt', whiteSpace: 'pre-wrap' }}>
           Address: {labelData.address}
         </div>
       )}
       
       {labelData.phone && (
-        <div style={{ fontSize: '9pt' }}>
+        <div style={{ fontSize: '10pt' }}>
           Phone: {labelData.phone}
         </div>
       )}
       
-      {/* Shipping Company */}
+      {/* Shipping Company - Very Important */}
       {labelData.shippingCompany && (
-        <div style={{ fontSize: '9pt', fontWeight: 'bold' }}>
+        <div style={{ 
+          fontSize: '12pt', 
+          fontWeight: 'bold', 
+          backgroundColor: '#f0f8ff', 
+          padding: '3px 5px',
+          borderRadius: '3px',
+          marginTop: '4px'
+        }}>
           Shipping: {labelData.shippingCompany}
         </div>
       )}
-      
-      <div style={{ fontSize: '9pt' }}>
-        Date: {labelData.date}
-      </div>
       
       {/* Box Information - Highlighted */}
       <div 
@@ -108,8 +104,8 @@ const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
           fontSize: '14pt', 
           fontWeight: 'bold', 
           textAlign: 'center', 
-          margin: '8px 0',
-          padding: '4px',
+          margin: '10px 0',
+          padding: '5px',
           border: '1px solid #ccc',
           backgroundColor: '#f5f5f5',
           borderRadius: '4px'
@@ -118,8 +114,9 @@ const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
         BOX {labelData.boxNumber} OF {labelData.totalBoxes}
       </div>
       
-      <div style={{ fontSize: '11pt', fontWeight: 'bold', textAlign: 'center', marginTop: '4px' }}>
-        {labelData.orderId}
+      {/* Date Information */}
+      <div style={{ fontSize: '10pt', textAlign: 'right' }}>
+        Date: {labelData.date}
       </div>
       
       <div className="mt-2 text-xs text-gray-400 border-t pt-2 text-center">
