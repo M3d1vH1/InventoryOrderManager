@@ -309,9 +309,8 @@ J
 H 100,0,T
 S l1;0,0,68,71,100
 
-; Instead of using GI command which might not work in all cases, 
-; use text to show company name until logo issue is fixed
-T 10,15,0,3,pt16,b;Amphoreus
+; Print company logo at the top - using SVG format which might work better
+GI 10,10,"/simple-logo.svg"
 
 ; Order information (made more prominent)
 T 10,40,0,3,pt12,b;Order: ${order.orderNumber}

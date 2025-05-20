@@ -58,7 +58,7 @@ const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
       {/* Company Logo */}
       <div className="text-center mb-2">
         <img 
-          src="/shipping-logo.png" 
+          src="/simple-logo.svg" 
           alt="Company Logo" 
           style={{ 
             height: '35px', 
