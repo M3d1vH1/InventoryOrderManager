@@ -208,8 +208,8 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
             margin-bottom: 0.2cm;
           }
           .logo img {
-            height: 1.2cm;
-            max-width: 80%;
+            height: 1.44cm; /* Increased from 1.2cm to 1.44cm (20% larger) */
+            max-width: 90%; /* Increased max-width to accommodate larger logo */
           }
           .order-number {
             font-size: 16.63pt;
