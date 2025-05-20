@@ -21,14 +21,21 @@ const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
   // Extract label data for a clean, consistent preview
   const extractLabelData = (content: string) => {
     const orderMatch = content.match(/Order: ([^\n]+)/);
+    const orderNumMatch = content.match(/Order Number: ([^\n]+)/);
     const customerMatch = content.match(/Customer: ([^\n]+)/);
+    const addressMatch = content.match(/Address: ([^\n]+)/);
+    const phoneMatch = content.match(/Phone: ([^\n]+)/);
+    const shippingCompanyMatch = content.match(/Shipping: ([^\n]+)/);
     const dateMatch = content.match(/Date: ([^\n]+)/);
     const boxMatch = content.match(/BOX (\d+) OF (\d+)/);
     const idMatch = content.match(/T 25,130,0,3,pt10;(\d+)/);
     
     return {
-      orderNumber: orderMatch ? orderMatch[1] : '',
+      orderNumber: orderNumMatch ? orderNumMatch[1] : (orderMatch ? orderMatch[1] : ''),
       customer: customerMatch ? customerMatch[1] : '',
+      address: addressMatch ? addressMatch[1] : '',
+      phone: phoneMatch ? phoneMatch[1] : '',
+      shippingCompany: shippingCompanyMatch ? shippingCompanyMatch[1] : '',
       date: dateMatch ? dateMatch[1] : '',
       boxNumber: boxMatch ? boxMatch[1] : '1',
       totalBoxes: boxMatch ? boxMatch[2] : '1',
@@ -40,29 +47,72 @@ const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
   
   return (
     <div className="bg-white border border-gray-200 rounded-md py-3 px-4 text-black font-sans text-sm space-y-2" 
-         style={{ width: '8cm', margin: '0 auto' }}>
-      <div style={{ fontWeight: 'bold', fontSize: '11pt' }}>
+         style={{ width: '10cm', margin: '0 auto' }}>
+      {/* Company Logo */}
+      <div className="text-center mb-2">
+        <img 
+          src="/shipping-logo.png" 
+          alt="Company Logo" 
+          style={{ 
+            height: '35px', 
+            maxWidth: '100%', 
+            margin: '0 auto',
+            objectFit: 'contain'
+          }} 
+        />
+      </div>
+      
+      {/* Order Information */}
+      <div style={{ fontWeight: 'bold', fontSize: '10pt' }}>
         Order: {labelData.orderNumber}
       </div>
       
-      <div style={{ fontSize: '9pt', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      {/* Customer Information */}
+      <div style={{ fontSize: '9pt', fontWeight: 'bold' }}>
         Customer: {labelData.customer}
       </div>
+      
+      {labelData.address && (
+        <div style={{ fontSize: '9pt', whiteSpace: 'pre-wrap' }}>
+          Address: {labelData.address}
+        </div>
+      )}
+      
+      {labelData.phone && (
+        <div style={{ fontSize: '9pt' }}>
+          Phone: {labelData.phone}
+        </div>
+      )}
+      
+      {/* Shipping Company */}
+      {labelData.shippingCompany && (
+        <div style={{ fontSize: '9pt', fontWeight: 'bold' }}>
+          Shipping: {labelData.shippingCompany}
+        </div>
+      )}
       
       <div style={{ fontSize: '9pt' }}>
         Date: {labelData.date}
       </div>
       
-      <div style={{ fontSize: '14pt', fontWeight: 'bold', textAlign: 'center', margin: '6px 0' }}>
+      {/* Box Information - Highlighted */}
+      <div 
+        style={{ 
+          fontSize: '14pt', 
+          fontWeight: 'bold', 
+          textAlign: 'center', 
+          margin: '8px 0',
+          padding: '4px',
+          border: '1px solid #ccc',
+          backgroundColor: '#f5f5f5',
+          borderRadius: '4px'
+        }}
+      >
         BOX {labelData.boxNumber} OF {labelData.totalBoxes}
       </div>
       
       <div style={{ fontSize: '11pt', fontWeight: 'bold', textAlign: 'center', marginTop: '4px' }}>
         {labelData.orderId}
-      </div>
-      
-      <div style={{ fontSize: '8pt', textAlign: 'center', color: '#666', marginTop: '10px' }}>
-        Warehouse Management System
       </div>
       
       <div className="mt-2 text-xs text-gray-400 border-t pt-2 text-center">
