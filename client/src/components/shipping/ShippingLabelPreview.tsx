@@ -188,7 +188,7 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
             width: 9cm;
             height: 6cm;
             box-sizing: border-box;
-            transform: translateY(-3mm) scale(0.95);
+            transform: translateY(-3mm) scale(0.85);
             transform-origin: top center;
           }
           .label-container {
@@ -207,23 +207,23 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
             max-width: 80%;
           }
           .order-number {
-            font-size: 14pt;
+            font-size: 12pt;
             font-weight: bold;
             margin-bottom: 0.1cm;
             border-bottom: 1px solid #eee;
             padding-bottom: 0.1cm;
           }
           .customer {
-            font-size: 11pt;
+            font-size: 10pt;
             font-weight: bold;
             margin-bottom: 0.1cm;
           }
           .address, .phone {
-            font-size: 10pt;
+            font-size: 9pt;
             margin-bottom: 0.1cm;
           }
           .shipping {
-            font-size: 12pt;
+            font-size: 10pt;
             font-weight: bold;
             background-color: #f0f8ff;
             padding: 3px 5px;
@@ -232,11 +232,11 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
             margin-bottom: 0.1cm;
           }
           .box-number {
-            font-size: 14pt;
+            font-size: 12pt;
             font-weight: bold;
             text-align: center;
             margin: 0.2cm 0;
-            padding: 5px;
+            padding: 4px;
             border: 1px solid #ccc;
             background-color: #f5f5f5;
             border-radius: 4px;
