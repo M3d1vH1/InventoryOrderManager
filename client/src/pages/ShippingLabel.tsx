@@ -135,23 +135,10 @@ const ShippingLabel: React.FC = () => {
     return addressParts.join(", ");
   };
   
-  // Determine shipping company display
+  // Determine shipping company display - force N/A
   const getShippingCompany = () => {
-    // Show N/A for these specific values or when no value is present
-    if (!customer?.custom_shipping_company && 
-        (!customer?.preferred_shipping_company || 
-         customer?.preferred_shipping_company === 'other' ||
-         customer?.preferred_shipping_company === 'ΤΑΧΥΜΕΤΑΦΟΡΙΚΗ')) {
-      return "N/A";
-    }
-    
-    // Use custom shipping company if available
-    if (customer?.custom_shipping_company) {
-      return customer.custom_shipping_company;
-    }
-    
-    // Use preferred shipping company as fallback
-    return customer?.preferred_shipping_company || "N/A";
+    // Hard-coded to N/A as requested
+    return "N/A";
   };
   
   // Log customer data for debugging
