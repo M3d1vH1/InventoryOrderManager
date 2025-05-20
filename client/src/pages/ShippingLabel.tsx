@@ -197,7 +197,7 @@ const ShippingLabel: React.FC = () => {
           Shipping: {customer?.custom_shipping_company || 
                    (customer?.preferred_shipping_company && customer.preferred_shipping_company !== 'other' 
                     ? customer.preferred_shipping_company 
-                    : "ΤΑΧΥΜΕΤΑΦΟΡΙΚΗ")}
+                    : "N/A")}
         </div>
         
         <div className="text-center text-xl font-bold p-2 border border-gray-300 bg-gray-100 my-4">
