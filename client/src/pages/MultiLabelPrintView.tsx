@@ -35,6 +35,8 @@ const MultiLabelPrintView = () => {
       return;
     }
     
+    console.log("Using user-specified box count:", boxCount);
+    
     const fetchLabels = async () => {
       try {
         // Generate multiple labels
@@ -58,7 +60,7 @@ const MultiLabelPrintView = () => {
     };
     
     fetchLabels();
-  }, [match, params]);
+  }, [params]);
   
   const handlePrint = () => {
     window.print();
