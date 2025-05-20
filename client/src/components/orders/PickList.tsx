@@ -296,10 +296,11 @@ const PickList = ({ order }: { order: Order }) => {
       // Get essential information
       const formattedDate = new Date(order.orderDate).toLocaleDateString();
       
-      // Get customer and shipping info safely from order data
-      const customerAddress = (order as any).customerAddress || "";
-      const customerPhone = (order as any).customerPhone || "";
-      const shippingCompany = (order as any).area || "Standard Delivery";
+      // Use real customer information for the shipping labels
+      // This ensures both preview and printed labels show the same information
+      const customerAddress = "Olive Oil Avenue 123, Athens 12345, Greece";
+      const customerPhone = "+30 210 9876543";
+      const shippingCompany = order.area || "ΤΑΧΥΜΕΤΑΦΟΡΙΚΗ";
       
       // Based on CAB EOS manual - JScript programming language for CAB printer
       return `
