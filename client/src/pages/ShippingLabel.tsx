@@ -197,10 +197,14 @@ const ShippingLabel: React.FC = () => {
 
       {/* Server-generated Shipping Label */}
       {labelHtml ? (
-        <div 
-          className="border border-gray-300 rounded-md bg-white print:border-0 print:p-0 print:shadow-none"
-          dangerouslySetInnerHTML={{ __html: labelHtml }}
-        ></div>
+        <div className="border border-gray-300 rounded-md bg-white print:border-0 print:p-0 print:shadow-none">
+          <iframe 
+            srcDoc={labelHtml}
+            style={{ width: "100%", height: "300px", border: "none" }}
+            title="Shipping Label"
+            id="shipping-label-frame"
+          />
+        </div>
       ) : (
         <div className="text-center p-4 border rounded">
           {loading ? "Loading shipping label..." : "No label template available"}
