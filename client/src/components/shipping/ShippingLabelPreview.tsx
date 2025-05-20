@@ -320,12 +320,12 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
           <div class="logo">
             <img src="/shipping-logo.png" onerror="this.src='/simple-logo.svg'; this.onerror=function(){this.outerHTML='<div style=\\'font-weight:bold;font-size:12pt;\\'>OLIVE OIL COMPANY</div>'}">
           </div>
-          <div class="order-number">Order: ${orderNumber}</div>
-          <div class="customer">Customer: ${customerName}</div>
-          <div class="address">Address: ${customerAddress}</div>
-          <div class="phone">Phone: ${customerPhone}</div>
-          <div class="shipping">Shipping: ${shippingCompany}</div>
-          <div class="box-number">BOX ${currentBox} OF ${totalBoxes}</div>
+          <div class="order-number">Παραγγελία: ${orderNumber}</div>
+          <div class="customer">Πελάτης: ${customerName}</div>
+          <div class="address">Διεύθυνση: ${customerAddress}</div>
+          <div class="phone">Τηλέφωνο: ${customerPhone}</div>
+          <div class="shipping">Εταιρεία Αποστολής: ${shippingCompany}</div>
+          <div class="box-number">ΚΟΥΤΙ ${currentBox} ΑΠΟ ${totalBoxes}</div>
         </div>
       </body>
       </html>
