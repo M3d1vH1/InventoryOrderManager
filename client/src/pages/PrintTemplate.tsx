@@ -162,12 +162,12 @@ const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
     >
       {/* Company logo at top */}
       <div className="text-center" style={{ marginBottom: '2mm' }}>
-        <img src="/shipping-logo.png" alt="Company Logo" style={{ height: '8mm', maxWidth: '100%', margin: '0 auto' }} />
+        <img src="/simple-logo.svg" alt="Company Logo" style={{ height: '10mm', maxWidth: '100%', margin: '0 auto' }} />
       </div>
       
       <div className="text-black" style={{ fontFamily: 'Arial, sans-serif' }}>
-        {/* Order number - prominent */}
-        <div style={{ fontSize: '12pt', fontWeight: 'bold', marginBottom: '1mm' }}>
+        {/* Order number - smaller to save space */}
+        <div style={{ fontSize: '10pt', fontWeight: 'bold', marginBottom: '1mm' }}>
           Order: {labelData.orderNumber}
         </div>
         
@@ -204,10 +204,6 @@ const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
         <div style={{ fontSize: '9pt', marginBottom: '1mm' }}>
           Date: {labelData.date}
         </div>
-      </div>
-      
-      <div style={{ fontSize: '8pt', textAlign: 'center', color: '#666', marginTop: '2mm' }}>
-        Warehouse Management System
       </div>
     </div>
   );
