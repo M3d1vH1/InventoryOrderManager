@@ -91,9 +91,10 @@ const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
         backgroundColor: '#f0f8ff', 
         padding: '3px 5px',
         borderRadius: '3px',
-        marginTop: '4px'
+        marginTop: '4px',
+        borderLeft: '4px solid #4a90e2'
       }}>
-        Shipping: N/A
+        Shipping: {labelData.shippingCompany || 'N/A'}
       </div>
       
       {/* Box Information - Highlighted */}
@@ -180,6 +181,7 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
       const shippingMatch = content.match(/Shipping: ([^\n]+)/);
       if (shippingMatch && shippingMatch[1] && shippingMatch[1].trim() !== "N/A") {
         shippingCompany = shippingMatch[1];
+        console.log("Found shipping company in label content:", shippingCompany);
       } 
       // Then try other potential formats that might be in the label content
       else {
@@ -193,6 +195,34 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
           shippingCompany = altShippingMatch2[1];
         } else if (altShippingMatch3 && altShippingMatch3[1] && altShippingMatch3[1].trim() !== "N/A") {
           shippingCompany = altShippingMatch3[1];
+        }
+      }
+      
+      // Add extra check before setting default
+      if (shippingCompany === "N/A") {
+        // Try to extract additional customer information from the API if needed
+        try {
+          // Extract customer name from content
+          const customerMatch = content.match(/Customer: ([^\n]+)/);
+          const customerName = customerMatch ? customerMatch[1].trim() : null;
+          
+          if (customerName) {
+            console.log("Attempting to get shipping company for:", customerName);
+            // Make async non-blocking request to improve data but don't wait for it
+            fetch(`/api/shipping/customer/${encodeURIComponent(customerName)}`)
+              .then(response => response.json())
+              .then(customer => {
+                if (customer && (customer.shippingCompany || 
+                    (customer.preferredShippingCompany === 'other' && customer.billingCompany))) {
+                  console.log("Found shipping company data from API:", customer);
+                }
+              })
+              .catch(err => {
+                console.warn("Failed to fetch additional shipping company data", err);
+              });
+          }
+        } catch (err) {
+          console.warn("Error in additional shipping company check:", err);
         }
       }
       

@@ -2682,10 +2682,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const customerData = await storage.getCustomerByName(order.customerName);
         if (customerData) {
           // Use the correct shipping company information based on preference
-          if (customerData.preferred_shipping_company === 'other' && customerData.custom_shipping_company) {
-            shippingCompany = customerData.custom_shipping_company;
-          } else if (customerData.shipping_company) {
-            shippingCompany = customerData.shipping_company;
+          console.log("Customer shipping data:", {
+            preferredShippingCompany: customerData.preferredShippingCompany,
+            billingCompany: customerData.billingCompany,
+            shippingCompany: customerData.shippingCompany
+          });
+          
+          if (customerData.preferredShippingCompany === 'other' && customerData.billingCompany) {
+            shippingCompany = customerData.billingCompany;
+          } else if (customerData.shippingCompany) {
+            shippingCompany = customerData.shippingCompany;
           }
         }
         console.log(`Shipping company for ${order.customerName}: ${shippingCompany}`);
