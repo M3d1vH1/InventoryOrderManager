@@ -2658,6 +2658,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // New improved shipping label endpoint
+  app.get('/api/orders/:id/new-shipping-label', async (req: Request, res: Response) => {
+    try {
+      const orderId = parseInt(req.params.id, 10);
+      const boxNumber = parseInt(req.query.boxNumber as string, 10) || 1;
+      const boxCount = parseInt(req.query.boxCount as string, 10) || 1;
+      
+      if (isNaN(orderId)) {
+        return res.status(400).json({ message: 'Invalid order ID' });
+      }
+      
+      // Get order details
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      
+      // Force "N/A" for shipping company
+      const shippingCompany = "N/A";
+      
+      // Generate HTML version of the label
+      const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Shipping Label - Order ${order.orderNumber}</title>
+  <style>
+    @page {
+      size: 9cm 6cm;
+      margin: 0;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      width: 9cm;
+      height: 6cm;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      transform: translateY(-3mm) scale(0.95);
+      transform-origin: top center;
+    }
+    .label-container {
+      padding: 0.3cm;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 0.1cm;
+    }
+    .logo img {
+      height: 0.8cm;
+      max-width: 80%;
+    }
+    .order-number {
+      font-size: 10pt;
+      font-weight: bold;
+      margin-bottom: 0.1cm;
+    }
+    .customer {
+      font-size: 9pt;
+      margin-bottom: 0.1cm;
+    }
+    .shipping {
+      font-size: 9pt;
+      font-weight: bold;
+      margin-bottom: 0.1cm;
+    }
+    .box-number {
+      font-size: 11pt;
+      font-weight: bold;
+      text-align: center;
+      margin: 0.1cm 0;
+      border: 1px solid #ccc;
+      background-color: #f0f0f0;
+      padding: 0.1cm;
+    }
+  </style>
+</head>
+<body>
+  <div class="label-container">
+    <div class="logo">
+      <img src="/shipping-logo.png" onerror="this.src='/simple-logo.svg'; this.onerror=function(){this.outerHTML='<div style=\\'font-weight:bold;font-size:12pt;\\'>OLIVE OIL COMPANY</div>'}">
+    </div>
+    <div class="order-number">Order: ${order.orderNumber}</div>
+    <div class="customer">Customer: ${order.customerName}</div>
+    <div class="shipping">Shipping: ${shippingCompany}</div>
+    <div class="box-number">BOX ${boxNumber} OF ${boxCount}</div>
+  </div>
+</body>
+</html>`;
+      
+      // Log this action
+      const userId = (req.user as any)?.id || 1;
+      await storage.addOrderChangelog({
+        orderId,
+        userId,
+        action: 'label_printed',
+        changes: {
+          boxNumber,
+          boxCount
+        },
+        notes: `Generated new shipping label for box ${boxNumber} of ${boxCount}`
+      }).catch(err => {
+        console.warn('Failed to log label generation:', err);
+      });
+      
+      // Return only HTML version
+      res.json({
+        html,
+        boxNumber,
+        boxCount
+      });
+    } catch (error: any) {
+      console.error('Error generating shipping label:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Generate shipping label for multi-label printing
   app.get('/api/orders/:id/generate-label', async (req: Request, res: Response) => {
     try {

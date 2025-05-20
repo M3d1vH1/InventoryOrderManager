@@ -31,12 +31,12 @@ const ShippingLabel: React.FC = () => {
   }, [location]);
 
   useEffect(() => {
-    // Load order and customer data
+    // Load data from new shipping label API
     const loadData = async () => {
       if (!orderId) return;
 
       try {
-        // Fetch order data
+        // First get basic order info
         const orderResponse = await fetch(`/api/orders/${orderId}`);
         if (!orderResponse.ok) {
           console.error("Failed to load order");
@@ -45,58 +45,24 @@ const ShippingLabel: React.FC = () => {
         const orderData = await orderResponse.json();
         setOrder(orderData);
 
-        // Fetch customer data
-        if (orderData.customerName) {
-          try {
-            // Use the customerName to search for matching customer
-            console.log("Searching for customer:", orderData.customerName);
-            const customerResponse = await fetch(`/api/customers/search?q=${encodeURIComponent(orderData.customerName)}`);
-            
-            if (customerResponse.ok) {
-              const customers = await customerResponse.json();
-              console.log("Found customers:", customers);
-              
-              if (customers.length > 0) {
-                setCustomer(customers[0]);
-              } else {
-                console.log("No matching customers found");
-                // Set a minimal customer object using order data
-                setCustomer({
-                  name: orderData.customerName,
-                  address: "Not available",
-                  phone: "Not available",
-                  city: "",
-                  country: "",
-                  custom_shipping_company: null,
-                  preferred_shipping_company: null
-                });
-              }
-            } else {
-              console.error("Customer API returned error:", await customerResponse.text());
-              // Set a minimal customer object using order data
-              setCustomer({
-                name: orderData.customerName,
-                address: "Not available",
-                phone: "Not available",
-                city: "",
-                country: "",
-                custom_shipping_company: null,
-                preferred_shipping_company: null
-              });
-            }
-          } catch (err) {
-            console.error("Error fetching customer data:", err);
-            // Set a minimal customer object using order data
-            setCustomer({
-              name: orderData.customerName,
-              address: "Not available",
-              phone: "Not available",
-              city: "",
-              country: "",
-              custom_shipping_company: null,
-              preferred_shipping_company: null
-            });
-          }
+        // Now get the shipping label from our new API endpoint
+        console.log(`Using user-specified box count: ${boxCount}`);
+        const labelResponse = await fetch(`/api/orders/${orderId}/new-shipping-label?boxNumber=${currentBox}&boxCount=${boxCount}`);
+        
+        if (labelResponse.ok) {
+          // Set minimal customer data - this won't be displayed since we're 
+          // now using the server-generated HTML directly
+          setCustomer({
+            name: orderData.customerName,
+            address: "Not available",
+            phone: "Not available",
+            city: "",
+            country: "",
+            custom_shipping_company: null,
+            preferred_shipping_company: null
+          });
+        } else {
+          console.error("Failed to load shipping label template");
         }
       } catch (err) {
         console.error("Error loading data:", err);
