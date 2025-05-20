@@ -160,9 +160,9 @@ const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
         overflow: 'hidden'
       }}
     >
-      {/* Company logo at top */}
+      {/* Company logo at top - using absolute URL to ensure visibility during printing */}
       <div className="text-center" style={{ marginBottom: '2mm' }}>
-        <img src="/simple-logo.svg" alt="Company Logo" style={{ height: '10mm', maxWidth: '100%', margin: '0 auto' }} />
+        <img src={window.location.origin + "/shipping-logo.png"} alt="Company Logo" style={{ height: '10mm', maxWidth: '100%', margin: '0 auto' }} />
       </div>
       
       <div className="text-black" style={{ fontFamily: 'Arial, sans-serif' }}>

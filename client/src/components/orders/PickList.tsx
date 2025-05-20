@@ -292,14 +292,43 @@ const PickList = ({ order }: { order: Order }) => {
     console.log(`Using user-specified box count: ${boxCount}`);
     
     // Create the JScript commands for the CAB EOS1 printer with all requested customer information
-    const createLabelJScript = (boxNumber: number, totalBoxes: number) => {
+    const createLabelJScript = async (boxNumber: number, totalBoxes: number) => {
       // Get essential information
       const formattedDate = new Date(order.orderDate).toLocaleDateString();
       
-      // Use real customer information for the shipping labels
-      // This ensures both preview and printed labels show the same information
-      const customerAddress = "Olive Oil Avenue 123, Athens 12345, Greece";
-      const customerPhone = "+30 210 9876543";
+      // Get the real customer information for this order
+      let customerAddress = "";
+      let customerPhone = "";
+      
+      try {
+        // Try to fetch the customer details from API
+        const response = await fetch(`/api/customers/search?q=${encodeURIComponent(order.customerName)}`);
+        if (response.ok) {
+          const customers = await response.json();
+          // Find the exact match or closest match
+          const customer = customers.find((c: any) => c.name === order.customerName) || customers[0];
+          
+          if (customer) {
+            // Format the complete address from customer data parts
+            const addressParts = [
+              customer.address,
+              customer.city,
+              customer.postalCode,
+              customer.country
+            ].filter(Boolean); // Remove empty parts
+            
+            customerAddress = addressParts.join(", ");
+            customerPhone = customer.phone || "";
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching customer details:", error);
+      }
+      
+      // If we couldn't get customer details, use fallbacks
+      if (!customerAddress) customerAddress = "Address on file";
+      if (!customerPhone) customerPhone = "Phone on file";
+      
       const shippingCompany = order.area || "ΤΑΧΥΜΕΤΑΦΟΡΙΚΗ";
       
       // Based on CAB EOS manual - JScript programming language for CAB printer
@@ -310,7 +339,7 @@ H 100,0,T
 S l1;0,0,68,71,100
 
 ; Company logo at top center
-GI 25,10,"/shipping-logo.png"
+GI 25,10,"shipping-logo.png"
 
 ; Order number - very prominent
 T 10,40,0,3,pt14,b;Order: ${order.orderNumber}
@@ -335,16 +364,16 @@ A 1
     };
     
     try {
-      // Show preview of the first label
-      const firstLabelContent = createLabelJScript(1, boxCount);
-      
-      // Set preview data and show preview dialog
-      setLabelPreviewData({
-        content: firstLabelContent,
-        boxNumber: 1,
-        totalBoxes: boxCount
+      // Show preview of the first label - now handles async
+      createLabelJScript(1, boxCount).then(firstLabelContent => {
+        // Set preview data and show preview dialog
+        setLabelPreviewData({
+          content: firstLabelContent,
+          boxNumber: 1,
+          totalBoxes: boxCount
+        });
+        setShowLabelPreview(true);
       });
-      setShowLabelPreview(true);
       
     } catch (error: any) {
       toast({
