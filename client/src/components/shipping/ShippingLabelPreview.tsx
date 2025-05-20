@@ -179,10 +179,10 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
         <style>
           @page {
             size: 9cm 6cm;
-            margin: 0;
+            margin: 0 auto; /* Center horizontally on the page */
           }
           body {
-            margin: 0;
+            margin: 0 auto; /* Center horizontally */
             padding: 0;
             font-family: Arial, sans-serif;
             width: 9cm;
@@ -190,13 +190,17 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
             box-sizing: border-box;
             transform: translateY(-3mm) scale(0.85);
             transform-origin: top center;
+            display: flex;
+            justify-content: center; /* Center content horizontally */
           }
           .label-container {
             padding: 0.3cm;
             display: flex;
             flex-direction: column;
             height: 100%;
+            width: 100%;
             background-color: white;
+            margin: 0 auto; /* Center the container */
           }
           .logo {
             text-align: center;
