@@ -125,16 +125,16 @@ const OrderPicking = () => {
                   onClick={() => setSelectedOrderId(String(order.id))}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-medium">{order.orderNumber}</span>
+                    <span className="font-medium">{t('orders.order')} {order.orderNumber}</span>
                     <Badge variant="outline" className="text-xs">
                       {t('orders.itemCount', { count: order.items?.length || 0 })}
                     </Badge>
                   </div>
                   <div className="text-sm text-slate-600">
-                    {order.customerName}
+                    {t('orders.customer')}: {order.customerName}
                   </div>
                   <div className="text-xs text-slate-500 mt-1">
-                    {t('orders.created')}: {new Date(order.orderDate).toLocaleDateString()}
+                    {t('orders.created')}: {new Date(order.orderDate).toLocaleDateString('el-GR')}
                   </div>
                 </div>
               ))}
