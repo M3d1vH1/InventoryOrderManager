@@ -321,11 +321,18 @@ const PickList = ({ order }: { order: Order }) => {
             customerPhone = customer.phone || "";
             
             // Use the appropriate shipping company information from customer database
-            if (customer.preferred_shipping_company === 'other' && customer.custom_shipping_company) {
-              shippingCompany = customer.custom_shipping_company;
-            } else if (customer.shipping_company) {
-              shippingCompany = customer.shipping_company;
+            if (customer.preferredShippingCompany === 'other' && customer.billingCompany) {
+              shippingCompany = customer.billingCompany;
+            } else if (customer.shippingCompany) {
+              shippingCompany = customer.shippingCompany;
             }
+            
+            console.log("Debug shipping company:", {
+              preferredShippingCompany: customer.preferredShippingCompany,
+              customShippingCompany: customer.billingCompany,
+              shippingCompany: customer.shippingCompany,
+              finalValue: shippingCompany
+            });
             
             console.log(`Found customer data for shipping label: ${customer.name}, Shipping: ${shippingCompany}`);
           }
