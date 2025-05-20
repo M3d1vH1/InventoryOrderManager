@@ -167,7 +167,7 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
     // Use a fixed customer name from the order
     const customerName = "Cook and Grill - Sotiris Ψητά (Παλλήνη)";
     
-    // Create a simple HTML label
+    // Create a simple HTML label with CSS matching the preview
     const htmlLabel = `
       <!DOCTYPE html>
       <html>
@@ -186,8 +186,6 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
             width: 9cm;
             height: 6cm;
             box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
             transform: translateY(-3mm) scale(0.95);
             transform-origin: top center;
           }
@@ -196,37 +194,46 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
             display: flex;
             flex-direction: column;
             height: 100%;
+            background-color: white;
           }
           .logo {
             text-align: center;
-            margin-bottom: 0.1cm;
+            margin-bottom: 0.2cm;
           }
           .logo img {
-            height: 0.8cm;
+            height: 1cm;
             max-width: 80%;
           }
           .order-number {
-            font-size: 10pt;
+            font-size: 14pt;
             font-weight: bold;
             margin-bottom: 0.1cm;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.1cm;
           }
           .customer {
-            font-size: 9pt;
+            font-size: 11pt;
+            font-weight: bold;
             margin-bottom: 0.1cm;
           }
           .shipping {
-            font-size: 9pt;
+            font-size: 12pt;
             font-weight: bold;
+            background-color: #f0f8ff;
+            padding: 3px 5px;
+            border-radius: 3px;
+            margin-top: 0.1cm;
             margin-bottom: 0.1cm;
           }
           .box-number {
-            font-size: 11pt;
+            font-size: 14pt;
             font-weight: bold;
             text-align: center;
-            margin: 0.1cm 0;
+            margin: 0.2cm 0;
+            padding: 5px;
             border: 1px solid #ccc;
-            background-color: #f0f0f0;
-            padding: 0.1cm;
+            background-color: #f5f5f5;
+            border-radius: 4px;
           }
         </style>
       </head>
