@@ -162,6 +162,17 @@ const ShippingLabel: React.FC = () => {
             src="/shipping-logo.png" 
             alt="Company Logo" 
             className="h-14 mx-auto"
+            onError={(e) => {
+              console.log("Logo load error, switching to fallback");
+              // If the PNG fails, try the SVG as fallback
+              e.currentTarget.src = "/simple-logo.svg";
+              // If SVG also fails, handle that error
+              e.currentTarget.onerror = () => {
+                console.log("Fallback logo also failed");
+                // Use inline text as last resort
+                e.currentTarget.style.display = 'none';
+              };
+            }}
           />
         </div>
         
@@ -176,7 +187,10 @@ const ShippingLabel: React.FC = () => {
         </div>
         
         <div className="font-bold mb-4">
-          Shipping: {order.shippingCompany || order.preferredShippingCompany || "ΤΑΧΥΜΕΤΑΦΟΡΙΚΗ"}
+          Shipping: {customer?.custom_shipping_company || 
+                   (customer?.preferred_shipping_company && customer.preferred_shipping_company !== 'other' 
+                    ? customer.preferred_shipping_company 
+                    : "ΤΑΧΥΜΕΤΑΦΟΡΙΚΗ")}
         </div>
         
         <div className="text-center text-xl font-bold p-2 border border-gray-300 bg-gray-100 my-4">
