@@ -164,6 +164,9 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
   const handlePrintCurrentLabel = () => {
     setIsPrinting(true);
     
+    // Use a fixed customer name from the order
+    const customerName = "Cook and Grill - Sotiris Ψητά (Παλλήνη)";
+    
     // Create a simple HTML label
     const htmlLabel = `
       <!DOCTYPE html>
@@ -233,7 +236,7 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
             <img src="/shipping-logo.png" onerror="this.src='/simple-logo.svg'; this.onerror=function(){this.outerHTML='<div style=\\'font-weight:bold;font-size:12pt;\\'>OLIVE OIL COMPANY</div>'}">
           </div>
           <div class="order-number">Order: ${orderNumber}</div>
-          <div class="customer">Customer: ${labelData.customer}</div>
+          <div class="customer">Customer: ${customerName}</div>
           <div class="shipping">Shipping: N/A</div>
           <div class="box-number">BOX ${currentBox} OF ${totalBoxes}</div>
         </div>
