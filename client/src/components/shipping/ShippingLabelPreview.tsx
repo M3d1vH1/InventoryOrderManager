@@ -269,6 +269,24 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
       printWindow.document.write(htmlLabel);
       printWindow.document.close();
       
+      // Add a script to directly manipulate the print scale
+      const scaleScript = printWindow.document.createElement('script');
+      scaleScript.textContent = `
+        // Force a small print scale
+        function beforePrint() {
+          document.body.style.zoom = "0.70"; // Apply a 70% zoom to make content smaller
+          document.body.style.width = "8cm";
+          document.body.style.transform = "scale(0.70)";
+          document.body.style.transformOrigin = "top center";
+        }
+        
+        window.onbeforeprint = beforePrint;
+        
+        // Call it immediately to ensure it's applied
+        beforePrint();
+      `;
+      printWindow.document.head.appendChild(scaleScript);
+      
       // Create an absolute link to the logo to ensure it loads correctly
       const baseUrl = window.location.origin;
       const logoImg = printWindow.document.querySelector('.logo img');
@@ -289,6 +307,9 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
         if (allLoaded) {
           // Wait for CSS to apply
           setTimeout(() => {
+            // Force layout recalculation
+            printWindow.document.body.offsetHeight;
+            
             printWindow.focus();
             printWindow.print();
             // Close window after printing (or after a delay if print is cancelled)
