@@ -162,7 +162,7 @@ const ShippingLabel: React.FC = () => {
       </div>
 
       {/* Actual Shipping Label */}
-      <div className="border border-gray-300 rounded-md p-6 bg-white print:border-0 print:p-0 print:shadow-none">
+      <div className="border border-gray-300 rounded-md p-4 pt-2 bg-white print:border-0 print:p-0 print:shadow-none">
         <div className="text-center mb-4">
           <img 
             src={`${window.location.origin}/shipping-logo.png`}
@@ -200,13 +200,10 @@ const ShippingLabel: React.FC = () => {
         </div>
         
         <div className="font-bold mb-4">
-          Shipping: {customer?.custom_shipping_company || 
-                   (customer?.preferred_shipping_company && customer.preferred_shipping_company !== 'other' 
-                    ? customer.preferred_shipping_company 
-                    : "N/A")}
+          Shipping: N/A
         </div>
         
-        <div className="text-center font-bold p-2 border border-gray-300 bg-gray-100 my-4">
+        <div className="text-center font-bold p-1 border border-gray-300 bg-gray-100 my-2">
           BOX {currentBox} OF {boxCount}
         </div>
       </div>
