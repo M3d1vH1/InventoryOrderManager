@@ -256,7 +256,7 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
             width: 9cm;
             height: 6cm;
             box-sizing: border-box;
-            transform: translateY(-3mm) scale(0.85); /* Further reduced to 0.85 to fit content on label */
+            transform: translateY(-3mm) scale(1.0); /* Scale restored to 1.0 for larger label */
             transform-origin: top center;
             display: flex;
             justify-content: center; /* Center content horizontally */
@@ -342,9 +342,9 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
       scaleScript.textContent = `
         // Force a small print scale
         function beforePrint() {
-          document.body.style.zoom = "0.70"; // Apply a 70% zoom to make content smaller
-          document.body.style.width = "8cm";
-          document.body.style.transform = "scale(0.70)";
+          document.body.style.zoom = "1.0"; // Restored to 100% for larger label
+          document.body.style.width = "9cm";
+          document.body.style.transform = "scale(1.0)";
           document.body.style.transformOrigin = "top center";
         }
         
