@@ -118,6 +118,12 @@ const ShippingLabel: React.FC = () => {
     
     return addressParts.join(", ");
   };
+  
+  // Log customer data for debugging
+  console.log("Customer shipping data:", {
+    custom_shipping_company: customer?.custom_shipping_company,
+    preferred_shipping_company: customer?.preferred_shipping_company
+  });
 
   return (
     <div className="p-6 max-w-xl mx-auto">
@@ -170,6 +176,7 @@ const ShippingLabel: React.FC = () => {
             className="h-14 mx-auto"
             onError={(e) => {
               console.log("Logo load error, switching to fallback");
+              console.log("Logo failed to load, trying SVG");
               // If the PNG fails, try the SVG as fallback
               e.currentTarget.src = `${window.location.origin}/simple-logo.svg`;
               // If SVG also fails, handle that error
@@ -200,7 +207,10 @@ const ShippingLabel: React.FC = () => {
         </div>
         
         <div className="font-bold mb-4">
-          Shipping: N/A
+          Shipping: {customer?.custom_shipping_company || 
+                    (customer?.preferred_shipping_company && customer.preferred_shipping_company !== 'other' 
+                     ? customer.preferred_shipping_company 
+                     : "N/A")}
         </div>
         
         <div className="text-center font-bold p-1 border border-gray-300 bg-gray-100 my-2">
