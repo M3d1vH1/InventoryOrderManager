@@ -169,6 +169,10 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
     const customerAddress = "Λεωφόρος Αγίας Παρασκευής 105, Άγιος Δημήτριος";
     const customerPhone = "210-9767900";
     
+    // Fetch shipping company information from the label content
+    const shippingCompanyMatch = labelContent.match(/Shipping: ([^\n]+)/);
+    const shippingCompany = shippingCompanyMatch ? shippingCompanyMatch[1] : "N/A";
+    
     // Create a simple HTML label with CSS matching the preview
     const htmlLabel = `
       <!DOCTYPE html>
@@ -256,7 +260,7 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
           <div class="customer">Customer: ${customerName}</div>
           <div class="address">Address: ${customerAddress}</div>
           <div class="phone">Phone: ${customerPhone}</div>
-          <div class="shipping">Shipping: N/A</div>
+          <div class="shipping">Shipping: ${shippingCompany}</div>
           <div class="box-number">BOX ${currentBox} OF ${totalBoxes}</div>
         </div>
       </body>
