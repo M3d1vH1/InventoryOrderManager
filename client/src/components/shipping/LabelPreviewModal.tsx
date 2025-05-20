@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { useTranslation } from 'react-i18next';
+import { ChevronLeft, ChevronRight, Printer, Eye } from 'lucide-react';
 
 interface LabelPreviewModalProps {
   open: boolean;
@@ -149,6 +150,13 @@ const LabelPreviewModal: React.FC<LabelPreviewModalProps> = ({
     }
   };
 
+  // Auto-preview when box selection changes
+  React.useEffect(() => {
+    if (open && boxCount > 0 && currentBox > 0 && currentBox <= boxCount) {
+      handlePreview();
+    }
+  }, [currentBox, open]);
+
   // Reset form data when the modal opens
   React.useEffect(() => {
     if (open) {
@@ -157,14 +165,56 @@ const LabelPreviewModal: React.FC<LabelPreviewModalProps> = ({
       setPreviewUrl(null);
     }
   }, [open]);
+  
+  // Handle navigation between boxes
+  const handlePrevBox = () => {
+    if (currentBox > 1) {
+      setCurrentBox(prev => prev - 1);
+    }
+  };
+  
+  const handleNextBox = () => {
+    if (currentBox < boxCount) {
+      setCurrentBox(prev => prev + 1);
+    }
+  };
+  
+  // Handle printing with browser
+  const handleBrowserPrint = () => {
+    // Open a new print template window
+    const printUrl = `/print-template?orderId=${orderId}&boxNumber=${currentBox}&boxCount=${boxCount}&autoPrint=true`;
+    window.open(printUrl, '_blank');
+    
+    // Log the print action to server
+    apiRequest({
+      url: '/api/orders/log-label-print',
+      method: 'POST',
+      body: JSON.stringify({
+        orderId,
+        boxNumber: currentBox,
+        boxCount,
+        method: 'browser-print'
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }).catch(error => {
+      console.error("Failed to log label printing:", error);
+    });
+    
+    toast({
+      title: t('printing.success', 'Print Request Sent'),
+      description: t('printing.successDescription', 'Label has been sent to printer')
+    });
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{t('labels.title')}</DialogTitle>
+          <DialogTitle>{t('labels.title', 'Print Shipping Label')}</DialogTitle>
           <DialogDescription>
-            {t('labels.description', { orderNumber })}
+            {t('labels.description', { orderNumber }, `Print shipping labels for order ${orderNumber}`)}
           </DialogDescription>
         </DialogHeader>
 
@@ -172,7 +222,7 @@ const LabelPreviewModal: React.FC<LabelPreviewModalProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label htmlFor="boxCount" className="text-sm font-medium">
-                {t('labels.boxCount')}
+                {t('labels.boxCount', 'Total Box Count')}
               </label>
               <Input
                 id="boxCount"
@@ -189,38 +239,56 @@ const LabelPreviewModal: React.FC<LabelPreviewModalProps> = ({
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor="currentBox" className="text-sm font-medium">
-                {t('labels.currentBox')}
+              <label className="text-sm font-medium">
+                {t('labels.navigation', 'Label Navigation')}
               </label>
-              <Input
-                id="currentBox"
-                type="number"
-                min="1"
-                max={boxCount}
-                value={currentBox}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value);
-                  if (value > 0 && value <= boxCount) {
-                    setCurrentBox(value);
-                  }
-                }}
-              />
+              <div className="flex items-center space-x-2">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  disabled={currentBox <= 1}
+                  onClick={handlePrevBox}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                <div className="flex-1 text-center font-medium">
+                  {t('labels.boxIndicator', 'Box {{current}} of {{total}}', { 
+                    current: currentBox, 
+                    total: boxCount 
+                  })}
+                </div>
+                
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  disabled={currentBox >= boxCount}
+                  onClick={handleNextBox}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
 
-          <div className="flex justify-end space-x-2">
-            <Button
-              variant="outline"
-              onClick={handlePreview}
-              disabled={loading}
-            >
-              {loading ? t('labels.previewing') : t('labels.preview')}
-            </Button>
-          </div>
-
-          {previewUrl && (
-            <div className="mt-4 border rounded-md p-2">
-              <div className="text-sm font-medium mb-2">{t('labels.previewTitle')}</div>
+          {loading ? (
+            <div className="h-[400px] flex items-center justify-center border rounded-md p-6">
+              <div className="text-center space-y-3">
+                <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
+                <div>{t('labels.generatingPreview', 'Generating label preview...')}</div>
+              </div>
+            </div>
+          ) : previewUrl ? (
+            <div className="border rounded-md p-2">
+              <div className="text-sm font-medium mb-2 flex justify-between items-center">
+                <span>{t('labels.previewTitle', 'Label Preview')}</span>
+                <span className="text-sm text-muted-foreground">
+                  {t('labels.boxIndicator', 'Box {{current}} of {{total}}', { 
+                    current: currentBox, 
+                    total: boxCount 
+                  })}
+                </span>
+              </div>
               {isHtmlPreview ? (
                 <iframe
                   src={previewUrl}
@@ -235,36 +303,52 @@ const LabelPreviewModal: React.FC<LabelPreviewModalProps> = ({
                 />
               )}
             </div>
+          ) : (
+            <div className="h-[200px] flex items-center justify-center border rounded-md">
+              <Button 
+                variant="outline" 
+                onClick={handlePreview}
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                {t('labels.generatePreview', 'Generate Preview')}
+              </Button>
+            </div>
           )}
         </div>
 
-        <DialogFooter className="space-x-2">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="mt-2"
-          >
-            {t('common.cancel')}
-          </Button>
-          
-          <Button
-            onClick={handlePrint}
-            disabled={printing}
-            className="mt-2"
-          >
-            {printing ? t('labels.printing') : t('labels.print')}
-          </Button>
-          
-          {boxCount > 1 && (
+        <DialogFooter className="flex justify-between items-center">
+          <div className="flex space-x-2">
             <Button
-              onClick={handlePrintBatch}
-              disabled={printing}
-              variant="default"
-              className="mt-2"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
             >
-              {printing ? t('labels.printingBatch') : t('labels.printBatch')}
+              {t('common.cancel', 'Cancel')}
             </Button>
-          )}
+          </div>
+          
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              onClick={handleBrowserPrint}
+              disabled={!previewUrl || printing}
+            >
+              <Printer className="mr-2 h-4 w-4" />
+              {t('labels.printInBrowser', 'Print in Browser')}
+            </Button>
+            
+            <Button
+              onClick={handlePrint}
+              disabled={!previewUrl || printing}
+              className="gap-2"
+            >
+              {printing ? (
+                <span className="animate-spin h-4 w-4 border-2 border-t-transparent rounded-full"></span>
+              ) : (
+                <Printer className="h-4 w-4" />
+              )}
+              {printing ? t('labels.printing', 'Printing...') : t('labels.print', 'Print Label')}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
