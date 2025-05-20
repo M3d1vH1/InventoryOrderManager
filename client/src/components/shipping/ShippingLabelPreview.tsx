@@ -174,7 +174,8 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
       const phoneMatch = content.match(/Phone: ([^\n]+)/);
       
       // For shipping company, check for multiple formats in the content
-      let shippingCompany = "N/A";
+      // Use empty string as default so we can get the actual value from the database
+      let shippingCompany = "";
       
       // First try the standard format
       const shippingMatch = content.match(/Shipping: ([^\n]+)/);
