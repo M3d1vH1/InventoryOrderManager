@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 import axios from 'axios';
-import { useParams } from 'wouter';
+import { useParams, useLocation } from 'wouter';
 
 /**
  * This page displays multiple labels for batch printing
@@ -14,6 +14,7 @@ import { useParams } from 'wouter';
 const MultiLabelPrintView = () => {
   const { t } = useTranslation();
   const params = useParams<{ orderId: string; boxCount: string }>();
+  const [location] = useLocation();
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
