@@ -69,18 +69,18 @@ const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
       
       {/* Customer Information Section */}
       <div style={{ fontSize: '11pt', fontWeight: 'bold' }}>
-        Customer: {labelData.customer}
+        Πελάτης: {labelData.customer}
       </div>
       
       {labelData.address && (
         <div style={{ fontSize: '10pt', whiteSpace: 'pre-wrap' }}>
-          Address: {labelData.address}
+          Διεύθυνση: {labelData.address}
         </div>
       )}
       
       {labelData.phone && (
         <div style={{ fontSize: '10pt' }}>
-          Phone: {labelData.phone}
+          Τηλέφωνο: {labelData.phone}
         </div>
       )}
       
@@ -94,7 +94,7 @@ const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
         marginTop: '4px',
         borderLeft: '4px solid #4a90e2'
       }}>
-        Shipping: {labelData.shippingCompany || 'N/A'}
+        Εταιρεία Αποστολής: {labelData.shippingCompany || 'N/A'}
       </div>
       
       {/* Box Information - Highlighted */}
