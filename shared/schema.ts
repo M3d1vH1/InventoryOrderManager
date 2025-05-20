@@ -245,8 +245,8 @@ export const customers = pgTable("customers", {
   phone: text("phone"),
   contactPerson: text("contact_person"),
   shippingCompany: text("shipping_company"),
-  preferredShippingCompany: shippingCompanyEnum("preferred_shipping_company"),
-  billingCompany: text("custom_shipping_company"), // Renamed from customShippingCompany, keeping DB column name for compatibility
+  // Removed preferredShippingCompany and custom_shipping_company - consolidated to single field
+  billingCompany: text("billing_company"), // Changed to proper billing company field
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
