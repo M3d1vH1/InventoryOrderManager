@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 import axios from 'axios';
-import { useRoute } from 'wouter';
+import { useParams } from 'wouter';
 
 /**
  * This page displays multiple labels for batch printing
@@ -13,14 +13,14 @@ import { useRoute } from 'wouter';
  */
 const MultiLabelPrintView = () => {
   const { t } = useTranslation();
-  const [match, params] = useRoute<{ orderId: string; boxCount: string }>('/print-labels/:orderId/:boxCount');
+  const params = useParams<{ orderId: string; boxCount: string }>();
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [labelData, setLabelData] = useState<Array<{ id: number; html: string }>>([]);
   
   useEffect(() => {
-    if (!match) {
+    if (!params.orderId || !params.boxCount) {
       setError('Invalid route parameters');
       setLoading(false);
       return;
