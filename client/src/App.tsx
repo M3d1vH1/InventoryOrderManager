@@ -26,6 +26,7 @@ import CalendarTest from "@/pages/CalendarTest";
 import PrinterTest from "@/pages/printerTest";
 import PrintTemplate from "@/pages/PrintTemplate";
 import MultiLabelPrintView from "@/pages/MultiLabelPrintView";
+import ShippingLabel from "@/pages/ShippingLabel";
 import Login from "@/pages/Login";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
@@ -114,9 +115,13 @@ function Router() {
     return <Login />;
   }
   
-  // Print template and multi-label print pages don't need authentication
+  // Print template and other printing pages don't need authentication
   if (location === '/print-template') {
     return <PrintTemplate />;
+  }
+  
+  if (location.startsWith('/shipping-label/')) {
+    return <ShippingLabel />;
   }
   
   // Multi-label print view doesn't need authentication
