@@ -3265,6 +3265,17 @@ A 1
   // Image upload and fix routes
   app.use('/api/image-fix', imageUploadFixRouter);
   
+  // Serve shipping logo with proper content type
+  app.get('/shipping-logo.png', (req, res) => {
+    res.setHeader('Content-Type', 'image/png');
+    res.sendFile(path.join(process.cwd(), 'public', 'shipping-logo.png'));
+  });
+  
+  app.get('/simple-logo.svg', (req, res) => {
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.sendFile(path.join(process.cwd(), 'public', 'simple-logo.svg'));
+  });
+  
   // Orders PDF generation - alternative route format (public access)
   app.get('/api/orders/:id/pdf', async (req: Request, res: Response) => {
     try {
