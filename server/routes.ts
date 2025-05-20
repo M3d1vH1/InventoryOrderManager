@@ -2656,6 +2656,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Generate shipping label for multi-label printing
+  app.get('/api/orders/:id/generate-label', async (req: Request, res: Response) => {
+    try {
+      const orderId = parseInt(req.params.id, 10);
+      const boxNumber = parseInt(req.query.boxNumber as string, 10) || 1;
+      const boxCount = parseInt(req.query.boxCount as string, 10) || 1;
+      
+      if (isNaN(orderId)) {
+        return res.status(400).json({ message: 'Invalid order ID' });
+      }
+      
+      // Get order details
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      
+      // Generate JScript label content
+      const jscript = `
+m m
+J
+H 100,0,T
+S l1;0,0,68,71,100
+T 25,25,0,3,pt9;Order: ${order.orderNumber}
+T 25,50,0,3,pt8;Customer: ${order.customerName}
+T 25,75,0,3,pt8;Date: ${new Date(order.orderDate).toLocaleDateString()}
+T 25,100,0,3,pt12;BOX ${boxNumber} OF ${boxCount}
+T 25,130,0,3,pt10;${order.id.toString().padStart(5, '0')}
+T 25,220,0,3,pt8;Warehouse Management System
+A 1
+`;
+      
+      // Generate HTML version of the label
+      const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Shipping Label - Order ${order.orderNumber}</title>
+  <style>
+    @page {
+      size: 9cm 6cm;
+      margin: 0;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      width: 9cm;
+      height: 6cm;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+    }
+    .label-container {
+      padding: 0.5cm;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .order-number {
+      font-size: 12pt;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .customer {
+      font-size: 10pt;
+      margin-bottom: 5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .date {
+      font-size: 10pt;
+      margin-bottom: 10px;
+    }
+    .box-number {
+      font-size: 16pt;
+      font-weight: bold;
+      text-align: center;
+      margin: 10px 0;
+    }
+    .order-id {
+      font-size: 12pt;
+      font-weight: bold;
+      text-align: center;
+      margin-top: auto;
+      margin-bottom: 10px;
+    }
+    .footer {
+      font-size: 8pt;
+      text-align: center;
+      color: #666;
+      margin-top: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="label-container">
+    <div class="order-number">Order: ${order.orderNumber}</div>
+    <div class="customer">Customer: ${order.customerName}</div>
+    <div class="date">Date: ${new Date(order.orderDate).toLocaleDateString()}</div>
+    <div class="box-number">BOX ${boxNumber} OF ${boxCount}</div>
+    <div class="order-id">${order.id.toString().padStart(5, '0')}</div>
+    <div class="footer">Warehouse Management System</div>
+  </div>
+</body>
+</html>
+`;
+      
+      // Log this action
+      const userId = (req.user as any)?.id || 1;
+      await storage.addOrderChangelog({
+        orderId,
+        userId,
+        action: 'label_generated',
+        changes: {
+          boxNumber,
+          boxCount
+        },
+        notes: `Generated shipping label for box ${boxNumber} of ${boxCount}`
+      }).catch(err => {
+        console.warn('Failed to log label generation:', err);
+      });
+      
+      // Return both versions
+      res.json({
+        jscript,
+        html,
+        boxNumber,
+        boxCount
+      });
+    } catch (error: any) {
+      console.error('Error generating shipping label:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Log label printing (for browser-based printing)
   app.post('/api/orders/log-label-print', isAuthenticated, async (req: Request, res: Response) => {
     try {

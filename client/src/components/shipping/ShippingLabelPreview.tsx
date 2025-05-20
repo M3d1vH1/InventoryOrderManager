@@ -111,15 +111,15 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
   const handlePrint = () => {
     setIsPrinting(true);
     
-    // Print all boxes
-    for (let i = 1; i <= totalBoxes; i++) {
-      const boxContent = generateLabelContent(i);
+    // For multiple boxes, use the multi-label print view
+    if (totalBoxes > 1) {
+      const url = `/print-labels/${orderId}/${totalBoxes}`;
+      window.open(url, '_blank');
+    } else {
+      // For a single box, use the existing method
+      const boxContent = generateLabelContent(1);
       const printUrl = `/print-template?content=${encodeURIComponent(boxContent)}&orderNumber=${encodeURIComponent(orderNumber)}&autoPrint=true`;
-      
-      // Add a small delay between opening windows to prevent browser blocking
-      setTimeout(() => {
-        window.open(printUrl, `_blank_${i}`);
-      }, i * 300);
+      window.open(printUrl, '_blank');
     }
     
     // Log the print action to server
@@ -143,9 +143,11 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
       setIsPrinting(false);
       toast({
         title: t('orders.labels.success', 'Labels Ready'),
-        description: t('orders.labels.allLabels', `${totalBoxes} label(s) have been opened for printing.`),
+        description: totalBoxes > 1 
+          ? t('orders.labels.allLabelsOneView', `All ${totalBoxes} labels are ready for printing in a single view.`)
+          : t('orders.labels.singleLabel', 'Shipping label has been opened for printing.'),
       });
-    }, (totalBoxes * 300) + 500);
+    }, 1000);
   };
 
   return (
