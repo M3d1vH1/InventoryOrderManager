@@ -50,7 +50,9 @@ const ShippingLabel: React.FC = () => {
                   address: "Not available",
                   phone: "Not available",
                   city: "",
-                  country: ""
+                  country: "",
+                  custom_shipping_company: null,
+                  preferred_shipping_company: null
                 });
               }
             } else {
@@ -61,7 +63,9 @@ const ShippingLabel: React.FC = () => {
                 address: "Not available",
                 phone: "Not available",
                 city: "",
-                country: ""
+                country: "",
+                custom_shipping_company: null,
+                preferred_shipping_company: null
               });
             }
           } catch (err) {
@@ -72,7 +76,9 @@ const ShippingLabel: React.FC = () => {
               address: "Not available",
               phone: "Not available",
               city: "",
-              country: ""
+              country: "",
+              custom_shipping_company: null,
+              preferred_shipping_company: null
             });
           }
         }
@@ -200,7 +206,7 @@ const ShippingLabel: React.FC = () => {
                     : "N/A")}
         </div>
         
-        <div className="text-center text-xl font-bold p-2 border border-gray-300 bg-gray-100 my-4">
+        <div className="text-center font-bold p-2 border border-gray-300 bg-gray-100 my-4">
           BOX {currentBox} OF {boxCount}
         </div>
       </div>
