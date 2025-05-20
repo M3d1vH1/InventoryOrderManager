@@ -164,14 +164,26 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
   const handlePrintCurrentLabel = () => {
     setIsPrinting(true);
     
-    // Get customer data from the order
-    const customerName = "La Pasteria - Άγιος Δημήτριος Υποκ/μα Food Center";
-    const customerAddress = "Λεωφόρος Αγίας Παρασκευής 105, Άγιος Δημήτριος";
-    const customerPhone = "210-9767900";
+    // Extract all needed data from the label content
+    const extractedData = extractDataFromLabel(labelContent);
     
-    // Fetch shipping company information from the label content
-    const shippingCompanyMatch = labelContent.match(/Shipping: ([^\n]+)/);
-    const shippingCompany = shippingCompanyMatch ? shippingCompanyMatch[1] : "N/A";
+    // Helper function to extract data from label content
+    function extractDataFromLabel(content) {
+      const customerMatch = content.match(/Customer: ([^\n]+)/);
+      const addressMatch = content.match(/Address: ([^\n]+)/);
+      const phoneMatch = content.match(/Phone: ([^\n]+)/);
+      const shippingMatch = content.match(/Shipping: ([^\n]+)/);
+      
+      return {
+        customerName: customerMatch ? customerMatch[1] : "Unknown Customer",
+        customerAddress: addressMatch ? addressMatch[1] : "No Address",
+        customerPhone: phoneMatch ? phoneMatch[1] : "No Phone",
+        shippingCompany: shippingMatch ? shippingMatch[1] : "N/A"
+      };
+    }
+    
+    // Use extracted data
+    const { customerName, customerAddress, customerPhone, shippingCompany } = extractedData;
     
     // Create a simple HTML label with CSS matching the preview
     const htmlLabel = `
