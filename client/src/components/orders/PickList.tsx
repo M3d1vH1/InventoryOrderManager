@@ -296,17 +296,16 @@ const PickList = ({ order }: { order: Order }) => {
       // Get essential information
       const formattedDate = new Date(order.orderDate).toLocaleDateString();
       
-      // Get the real customer information for this order
+      // Get the real customer information for this order using the dedicated endpoint
       let customerAddress = "";
       let customerPhone = "";
       
       try {
-        // Try to fetch the customer details from API
-        const response = await fetch(`/api/customers/search?q=${encodeURIComponent(order.customerName)}`);
+        // Using our new dedicated endpoint to get customer information for shipping labels
+        const response = await fetch(`/api/shipping/customer/${encodeURIComponent(order.customerName)}`);
+        
         if (response.ok) {
-          const customers = await response.json();
-          // Find the exact match or closest match
-          const customer = customers.find((c: any) => c.name === order.customerName) || customers[0];
+          const customer = await response.json();
           
           if (customer) {
             // Format the complete address from customer data parts
@@ -319,15 +318,15 @@ const PickList = ({ order }: { order: Order }) => {
             
             customerAddress = addressParts.join(", ");
             customerPhone = customer.phone || "";
+            
+            console.log("Found customer data for shipping label:", customer.name);
           }
+        } else {
+          console.log("No customer data found for shipping label. Using order name only.");
         }
       } catch (error) {
-        console.error("Error fetching customer details:", error);
+        console.error("Error fetching customer details for shipping label:", error);
       }
-      
-      // If no customer details were found, leave blank rather than using fake data
-      if (!customerAddress) customerAddress = "";
-      if (!customerPhone) customerPhone = "";
       
       const shippingCompany = order.area || "ΤΑΧΥΜΕΤΑΦΟΡΙΚΗ";
       

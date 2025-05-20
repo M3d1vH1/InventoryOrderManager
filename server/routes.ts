@@ -46,6 +46,7 @@ import productionRouter from "./api/production";
 import supplierPaymentsRouter from "./api/supplierPayments";
 import { createSlackService } from "./services/notifications/slackService";
 import { printShippingLabel, printBatchShippingLabels, previewShippingLabel, servePreviewImage } from "./api/labelPrinting";
+import { getCustomerInfoForLabel } from "./api/shipping";
 
 // Function to determine the appropriate storage path based on environment
 function getStoragePath(): string {
@@ -3678,6 +3679,9 @@ A 1
   app.post('/api/print-batch-labels', isAuthenticated, printBatchShippingLabels);
   app.post('/api/preview-label', isAuthenticated, previewShippingLabel);
   app.get('/api/preview-label/:filename', servePreviewImage); // Accessible without auth to allow image display in iframe
+  
+  // Customer information for shipping labels
+  app.get('/api/shipping/customer/:customerName', isAuthenticated, getCustomerInfoForLabel);
   
   // Add CAB EOS 1 Printer Test endpoint
   app.get('/api/printer/test', isAuthenticated, async (req: Request, res: Response) => {
