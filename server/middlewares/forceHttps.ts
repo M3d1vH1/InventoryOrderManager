@@ -10,7 +10,9 @@ export const forceHttps = (req: Request, res: Response, next: NextFunction) => {
   // Trust proxy headers (common in cloud deployments)
   const isSecure = req.secure || (req.headers['x-forwarded-proto'] === 'https');
   
-  if (!isSecure) {
+  // Skip HTTPS redirect for health checks
+  const isHealthCheck = req.path === '/health' || req.path === '/_health' || req.path === '/api/health';
+  if (!isSecure && !isHealthCheck) {
     // Get host from headers or use APP_URL
     const host = req.headers.host || (process.env.APP_URL || '').replace(/^https?:\/\//, '');
     

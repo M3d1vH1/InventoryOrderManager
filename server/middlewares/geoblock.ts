@@ -16,7 +16,9 @@ export function geoBlockMiddleware(req: Request, res: Response, next: NextFuncti
   // Skip blocking for certain paths (like assets, API health checks, etc.)
   const skipPaths = [
     '/api/health',
-    '/public/placeholder-image.svg',
+    '/health',
+    '/_health',
+    '/public/placeholder-image.svg', 
     '/public/simple-logo.svg',
     '/favicon.ico'
   ];
