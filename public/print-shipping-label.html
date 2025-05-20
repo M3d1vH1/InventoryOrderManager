@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Shipping Label</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+    #labelContainer {
+      margin: 20px auto;
+      max-width: 800px;
+    }
+    .controls {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+    .button {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 10px 15px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .input-group {
+      margin-bottom: 10px;
+    }
+    label {
+      display: inline-block;
+      width: 120px;
+    }
+    input {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    @media print {
+      .controls {
+        display: none;
+      }
+      #labelFrame {
+        border: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="labelContainer">
+    <div class="controls">
+      <h1>Shipping Label Printer</h1>
+      <div class="input-group">
+        <label for="orderId">Order ID:</label>
+        <input type="number" id="orderId" value="156">
+      </div>
+      <div class="input-group">
+        <label for="boxNumber">Box Number:</label>
+        <input type="number" id="boxNumber" value="1" min="1">
+      </div>
+      <div class="input-group">
+        <label for="boxCount">Box Count:</label>
+        <input type="number" id="boxCount" value="1" min="1">
+      </div>
+      <button class="button" onclick="loadLabel()">Load Label</button>
+      <button class="button" onclick="printLabel()">Print Label</button>
+    </div>
+    
+    <iframe id="labelFrame" style="width: 100%; height: 600px; border: 1px solid #ddd;"></iframe>
+  </div>
+  
+  <script>
+    // Load label on page load
+    window.onload = function() {
+      loadLabel();
+    };
+    
+    // Load shipping label
+    function loadLabel() {
+      const orderId = document.getElementById('orderId').value;
+      const boxNumber = document.getElementById('boxNumber').value;
+      const boxCount = document.getElementById('boxCount').value;
+      
+      // Fetch the shipping label HTML from our new API endpoint
+      fetch(`/api/orders/${orderId}/new-shipping-label?boxNumber=${boxNumber}&boxCount=${boxCount}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Failed to load shipping label');
+          }
+          return response.json();
+        })
+        .then(data => {
+          // Get the iframe element
+          const iframe = document.getElementById('labelFrame');
+          
+          // Access the iframe's document and write the HTML content
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+          iframeDoc.open();
+          iframeDoc.write(data.html);
+          iframeDoc.close();
+          
+          // Log the print attempt
+          logLabelPrint(orderId, boxNumber, boxCount);
+        })
+        .catch(error => {
+          console.error('Error loading shipping label:', error);
+          alert('Error loading shipping label: ' + error.message);
+        });
+    }
+    
+    // Print the label
+    function printLabel() {
+      const iframe = document.getElementById('labelFrame');
+      
+      if (iframe) {
+        iframe.contentWindow.print();
+      }
+    }
+    
+    // Log label print
+    function logLabelPrint(orderId, boxNumber, boxCount) {
+      fetch('/api/orders/log-label-print', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          orderId,
+          boxNumber,
+          boxCount,
+          method: 'simple-html-print'
+        })
+      }).catch(error => {
+        console.error('Error logging label print:', error);
+      });
+    }
+  </script>
+</body>
+</html>
