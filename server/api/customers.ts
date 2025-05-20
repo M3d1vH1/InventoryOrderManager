@@ -41,8 +41,15 @@ router.get('/search', async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Search query must be at least 2 characters' });
     }
     
-    const customers = await storage.searchCustomers(query);
-    res.json(customers);
+    // Get all customers and filter by name
+    const allCustomers = await storage.getAllCustomers();
+    
+    // Case-insensitive partial name matching
+    const filteredCustomers = allCustomers.filter(customer => 
+      customer.name.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    res.json(filteredCustomers);
   } catch (error) {
     console.error('Error searching customers:', error);
     res.status(500).json({ message: 'Error searching customers' });

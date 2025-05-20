@@ -3259,6 +3259,9 @@ A 1
   // Supplier Payment Tracking routes
   app.use('/api/supplier-payments', isAuthenticated, supplierPaymentsRouter);
   
+  // Customer data access routes
+  app.use('/api/customers', customersRouter);
+  
   // Image upload and fix routes
   app.use('/api/image-fix', imageUploadFixRouter);
   

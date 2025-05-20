@@ -32,16 +32,48 @@ const ShippingLabel: React.FC = () => {
         // Fetch customer data
         if (orderData.customerName) {
           try {
-            // We'll use a simple URL-encoded search approach
+            // Use the customerName to search for matching customer
+            console.log("Searching for customer:", orderData.customerName);
             const customerResponse = await fetch(`/api/customers/search?q=${encodeURIComponent(orderData.customerName)}`);
+            
             if (customerResponse.ok) {
               const customers = await customerResponse.json();
+              console.log("Found customers:", customers);
+              
               if (customers.length > 0) {
                 setCustomer(customers[0]);
+              } else {
+                console.log("No matching customers found");
+                // Set a minimal customer object using order data
+                setCustomer({
+                  name: orderData.customerName,
+                  address: "Not available",
+                  phone: "Not available",
+                  city: "",
+                  country: ""
+                });
               }
+            } else {
+              console.error("Customer API returned error:", await customerResponse.text());
+              // Set a minimal customer object using order data
+              setCustomer({
+                name: orderData.customerName,
+                address: "Not available",
+                phone: "Not available",
+                city: "",
+                country: ""
+              });
             }
           } catch (err) {
             console.error("Error fetching customer data:", err);
+            // Set a minimal customer object using order data
+            setCustomer({
+              name: orderData.customerName,
+              address: "Not available",
+              phone: "Not available",
+              city: "",
+              country: ""
+            });
           }
         }
       } catch (err) {
@@ -144,7 +176,7 @@ const ShippingLabel: React.FC = () => {
         </div>
         
         <div className="font-bold mb-4">
-          Shipping: ΤΑΧΥΜΕΤΑΦΟΡΙΚΗ
+          Shipping: {order.shippingCompany || order.preferredShippingCompany || "ΤΑΧΥΜΕΤΑΦΟΡΙΚΗ"}
         </div>
         
         <div className="text-center text-xl font-bold p-2 border border-gray-300 bg-gray-100 my-4">
