@@ -150,10 +150,15 @@ const LabelPreviewModal: React.FC<LabelPreviewModalProps> = ({
     }
   };
 
-  // Auto-preview when box selection changes
+  // Auto-preview when box selection changes or when component opens
   React.useEffect(() => {
     if (open && boxCount > 0 && currentBox > 0 && currentBox <= boxCount) {
-      handlePreview();
+      // Small delay to ensure component is fully mounted
+      const timer = setTimeout(() => {
+        handlePreview();
+      }, 300);
+      
+      return () => clearTimeout(timer);
     }
   }, [currentBox, open, boxCount]);
 

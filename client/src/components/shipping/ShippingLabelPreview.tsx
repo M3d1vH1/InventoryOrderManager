@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Printer, Download, X } from 'lucide-react';
+import { Printer, X, ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { useTranslation } from 'react-i18next';
@@ -85,6 +85,12 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
   const { toast } = useToast();
   const [isPrinting, setIsPrinting] = useState(false);
   const [currentBox, setCurrentBox] = useState(boxNumber);
+  const [currentLabelContent, setCurrentLabelContent] = useState(labelContent);
+  
+  // Update current label content when current box changes
+  useEffect(() => {
+    setCurrentLabelContent(generateLabelContent(currentBox));
+  }, [currentBox]);
   
   // Generate all label contents
   const generateLabelContent = (boxNum: number) => {
@@ -107,20 +113,14 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
     }
   };
 
-  // Handle print action
-  const handlePrint = () => {
+  // Handle print action for current label only
+  const handlePrintCurrentLabel = () => {
     setIsPrinting(true);
     
-    // For multiple boxes, use the multi-label print view
-    if (totalBoxes > 1) {
-      const url = `/print-labels/${orderId}/${totalBoxes}`;
-      window.open(url, '_blank');
-    } else {
-      // For a single box, use the existing method
-      const boxContent = generateLabelContent(1);
-      const printUrl = `/print-template?content=${encodeURIComponent(boxContent)}&orderNumber=${encodeURIComponent(orderNumber)}&autoPrint=true`;
-      window.open(printUrl, '_blank');
-    }
+    // Print the current box
+    const boxContent = generateLabelContent(currentBox);
+    const printUrl = `/print-template?content=${encodeURIComponent(boxContent)}&orderNumber=${encodeURIComponent(orderNumber)}&autoPrint=true`;
+    window.open(printUrl, '_blank');
     
     // Log the print action to server
     apiRequest({
@@ -128,6 +128,7 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
       method: 'POST',
       body: JSON.stringify({
         orderId,
+        boxNumber: currentBox,
         boxCount: totalBoxes,
         method: 'browser-print'
       }),
@@ -142,10 +143,8 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
     setTimeout(() => {
       setIsPrinting(false);
       toast({
-        title: t('orders.labels.success', 'Labels Ready'),
-        description: totalBoxes > 1 
-          ? t('orders.labels.allLabelsOneView', `All ${totalBoxes} labels are ready for printing in a single view.`)
-          : t('orders.labels.singleLabel', 'Shipping label has been opened for printing.'),
+        title: 'Label Printed',
+        description: `Label for Box ${currentBox} of ${totalBoxes} has been sent to printer`,
       });
     }, 1000);
   };
@@ -154,27 +153,61 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('orders.labels.previewTitle', 'Shipping Label Preview')}</DialogTitle>
+          <DialogTitle>Shipping Label Preview</DialogTitle>
           <DialogDescription>
-            {t('orders.labels.previewDescription', 'Preview for Order')} #{orderNumber} - {t('orders.labels.box', 'Box')} {boxNumber}/{totalBoxes}
+            Order #{orderNumber} - Box {currentBox} of {totalBoxes}
           </DialogDescription>
         </DialogHeader>
         
+        {/* Navigation Controls */}
+        {totalBoxes > 1 && (
+          <div className="flex justify-between items-center border-b pb-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrevBox}
+              disabled={currentBox <= 1 || isPrinting}
+              className="flex items-center"
+            >
+              <ChevronLeft className="mr-1 h-4 w-4" />
+              Previous Box
+            </Button>
+            
+            <div className="font-semibold text-center">
+              Box {currentBox} of {totalBoxes}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNextBox}
+              disabled={currentBox >= totalBoxes || isPrinting}
+              className="flex items-center"
+            >
+              Next Box
+              <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
+        )}
+        
+        {/* Label Preview */}
         <div className="py-4">
-          <FormattedLabel content={labelContent} />
+          <FormattedLabel content={currentLabelContent} />
         </div>
         
-        <DialogFooter className="gap-2">
+        {/* Action Buttons */}
+        <DialogFooter className="flex flex-col sm:flex-row gap-2 justify-between">
           <Button 
-            variant="outline" 
+            variant="default"
             onClick={() => onOpenChange(false)}
+            className="bg-green-600 hover:bg-green-700 text-white"
           >
-            <X className="h-4 w-4 mr-2" />
-            {t('common.cancel', 'Cancel')}
+            <CheckCircle className="h-4 w-4 mr-2" />
+            Finish Label Printing
           </Button>
           
           <Button 
-            onClick={handlePrint}
+            onClick={handlePrintCurrentLabel}
             disabled={isPrinting}
             className="gap-2"
           >
@@ -184,8 +217,8 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
               <Printer className="h-4 w-4" />
             )}
             {isPrinting 
-              ? t('orders.labels.printing', 'Printing...') 
-              : t('orders.labels.print', 'Print Label')}
+              ? "Printing..." 
+              : `Print Box ${currentBox}`}
           </Button>
         </DialogFooter>
       </DialogContent>
