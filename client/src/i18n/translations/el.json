@@ -463,8 +463,27 @@
     "batchError": "Σφάλμα Εκτύπωσης Παρτίδας",
     "batchErrorDescription": "Υπήρξε σφάλμα κατά την εκτύπωση της παρτίδας ετικετών."
   },
+  "orderPickingPage": {
+    "title": "Συλλογή Παραγγελιών",
+    "backToOrders": "Πίσω στις Παραγγελίες",
+    "pendingOrders": "Εκκρεμείς Παραγγελίες",
+    "selectOrderHelp": "Επιλέξτε μια παραγγελία για συλλογή",
+    "noOrdersFound": "Δεν βρέθηκαν εκκρεμείς παραγγελίες",
+    "noOrderSelected": "Δεν έχει επιλεγεί παραγγελία",
+    "selectOrderInstructions": "Επιλέξτε μια παραγγελία από την παραπάνω λίστα για να ξεκινήσετε τη συλλογή",
+    "recentlyPicked": "Πρόσφατα Συλλεχθείσες"
+  },
   "orders": {
     "title": "Παραγγελίες",
+    "itemCount": "{{count}} είδη",
+    "created": "Δημιουργήθηκε",
+    "statusValues": {
+      "pending": "Σε Εκκρεμότητα",
+      "picking": "Σε Συλλογή",
+      "picked": "Συλλέχθηκε", 
+      "shipped": "Απεστάλη",
+      "cancelled": "Ακυρώθηκε"
+    },
     "order": "Παραγγελία",
     "orderList": "Λίστα Παραγγελιών",
     "newOrder": "Νέα Παραγγελία",
