@@ -263,20 +263,54 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
       </html>
     `;
     
-    // Create a new window to print from
-    const printWindow = window.open('', '_blank');
+    // Create a new window to print from with a small size to force our styles to apply
+    const printWindow = window.open('', '_blank', 'width=600,height=400');
     if (printWindow) {
       printWindow.document.write(htmlLabel);
       printWindow.document.close();
       
-      // Trigger print after the content loads
-      printWindow.onload = function() {
+      // Create an absolute link to the logo to ensure it loads correctly
+      const baseUrl = window.location.origin;
+      const logoImg = printWindow.document.querySelector('.logo img');
+      if (logoImg) {
+        logoImg.setAttribute('src', `${baseUrl}/shipping-logo.png`);
+        logoImg.setAttribute('onerror', `this.src='${baseUrl}/simple-logo.svg'; this.onerror=function(){this.outerHTML='<div style="font-weight:bold;font-size:12pt;">OLIVE OIL COMPANY</div>'}`);
+      }
+      
+      // Make sure all resources are loaded before printing
+      const imgElements = Array.from(printWindow.document.querySelectorAll('img'));
+      
+      // Function to check if all images are loaded
+      const checkAllImagesLoaded = () => {
+        const allLoaded = imgElements.every(img => 
+          img.complete && (img.naturalWidth > 0 || img.onerror !== null)
+        );
+        
+        if (allLoaded) {
+          // Wait for CSS to apply
+          setTimeout(() => {
+            printWindow.focus();
+            printWindow.print();
+            // Close window after printing (or after a delay if print is cancelled)
+            setTimeout(() => printWindow.close(), 1000);
+          }, 500);
+        } else {
+          // Check again after a short delay
+          setTimeout(checkAllImagesLoaded, 100);
+        }
+      };
+      
+      // Start checking if images are loaded
+      if (imgElements.length > 0) {
+        checkAllImagesLoaded();
+      } else {
+        // If no images, just print after a delay
         setTimeout(() => {
+          printWindow.focus();
           printWindow.print();
-          // Close window after printing (or after a delay if print is cancelled)
           setTimeout(() => printWindow.close(), 1000);
         }, 500);
-      };
+      }
     }
     
     // Log the print action to server
