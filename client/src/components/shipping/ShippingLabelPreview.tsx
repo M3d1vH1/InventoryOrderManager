@@ -85,18 +85,16 @@ const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
       )}
       
       {/* Shipping Company - Very Important */}
-      {labelData.shippingCompany && (
-        <div style={{ 
-          fontSize: '12pt', 
-          fontWeight: 'bold', 
-          backgroundColor: '#f0f8ff', 
-          padding: '3px 5px',
-          borderRadius: '3px',
-          marginTop: '4px'
-        }}>
-          Shipping: {labelData.shippingCompany}
-        </div>
-      )}
+      <div style={{ 
+        fontSize: '12pt', 
+        fontWeight: 'bold', 
+        backgroundColor: '#f0f8ff', 
+        padding: '3px 5px',
+        borderRadius: '3px',
+        marginTop: '4px'
+      }}>
+        Shipping: N/A
+      </div>
       
       {/* Box Information - Highlighted */}
       <div 
@@ -112,11 +110,6 @@ const FormattedLabel: React.FC<{ content: string }> = ({ content }) => {
         }}
       >
         BOX {labelData.boxNumber} OF {labelData.totalBoxes}
-      </div>
-      
-      {/* Date Information */}
-      <div style={{ fontSize: '10pt', textAlign: 'right' }}>
-        Date: {labelData.date}
       </div>
       
       <div className="mt-2 text-xs text-gray-400 border-t pt-2 text-center">
