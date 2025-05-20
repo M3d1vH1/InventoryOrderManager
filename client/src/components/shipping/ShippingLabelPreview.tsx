@@ -188,7 +188,7 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
             width: 9cm;
             height: 6cm;
             box-sizing: border-box;
-            transform: translateY(-3mm) scale(1.13); /* Increased by another 10% to 1.13 */
+            transform: translateY(-3mm) scale(0.95); /* Reduced to avoid content going outside label */
             transform-origin: top center;
             display: flex;
             justify-content: center; /* Center content horizontally */
@@ -208,34 +208,34 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
             margin-bottom: 0.2cm;
           }
           .logo img {
-            height: 1.44cm; /* Increased from 1.2cm to 1.44cm (20% larger) */
-            max-width: 90%; /* Increased max-width to accommodate larger logo */
+            height: 1.30cm; /* Reduced by 10% from 1.44cm */
+            max-width: 85%; /* Slightly reduced max-width */
           }
           .order-number {
-            font-size: 16.63pt;
+            font-size: 13.3pt; /* Reduced by 20% from 16.63pt */
             font-weight: bold;
             margin-bottom: 0.1cm;
             border-bottom: 1px solid #eee;
             padding-bottom: 0.1cm;
           }
           .customer {
-            font-size: 14.63pt;
+            font-size: 11.7pt; /* Reduced by 20% from 14.63pt */
             font-weight: bold;
             margin-bottom: 0.1cm;
           }
           .address, .phone {
-            font-size: 13.31pt;
+            font-size: 10.65pt; /* Reduced by 20% from 13.31pt */
             margin-bottom: 0.1cm;
           }
           .shipping {
-            font-size: 14.63pt;
+            font-size: 11.7pt; /* Reduced by 20% from 14.63pt */
             font-weight: bold;
             padding: 2px 4px;
             margin-top: 0.1cm;
             margin-bottom: 0.2cm;
           }
           .box-number {
-            font-size: 16.63pt;
+            font-size: 13.3pt; /* Reduced by 20% from 16.63pt */
             font-weight: bold;
             text-align: center;
             margin-top: 0.2cm;
