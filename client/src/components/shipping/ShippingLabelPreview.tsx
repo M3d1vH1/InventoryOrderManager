@@ -232,13 +232,14 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
             font-weight: bold;
             padding: 2px 4px;
             margin-top: 0.1cm;
-            margin-bottom: 0.1cm;
+            margin-bottom: 0.2cm;
           }
           .box-number {
             font-size: 12.5pt;
             font-weight: bold;
             text-align: center;
-            margin: 0.2cm 0;
+            margin-top: 0.2cm;
+            margin-bottom: 0.2cm;
             padding: 4px;
             border: 1px solid #ccc;
             background-color: #f5f5f5;
