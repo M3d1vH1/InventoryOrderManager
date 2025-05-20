@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'wouter';
+import { useParams, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
 
 const ShippingLabel: React.FC = () => {
   const params = useParams();
+  const [location] = useLocation();
   const [order, setOrder] = useState<any>(null);
   const [customer, setCustomer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -13,6 +14,21 @@ const ShippingLabel: React.FC = () => {
 
   // Get the order ID from the URL
   const orderId = params.id ? parseInt(params.id) : null;
+  
+  // Parse box numbers from query params if they exist
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const boxParam = url.searchParams.get('box');
+    const totalParam = url.searchParams.get('total');
+    
+    if (boxParam && !isNaN(parseInt(boxParam))) {
+      setCurrentBox(parseInt(boxParam));
+    }
+    
+    if (totalParam && !isNaN(parseInt(totalParam))) {
+      setBoxCount(parseInt(totalParam));
+    }
+  }, [location]);
 
   useEffect(() => {
     // Load order and customer data
@@ -207,10 +223,12 @@ const ShippingLabel: React.FC = () => {
         </div>
         
         <div className="font-bold mb-4">
-          Shipping: {customer?.custom_shipping_company || 
-                    (customer?.preferred_shipping_company && customer.preferred_shipping_company !== 'other' 
-                     ? customer.preferred_shipping_company 
-                     : "N/A")}
+          Shipping: {
+            customer?.custom_shipping_company ? customer.custom_shipping_company :
+            (customer?.preferred_shipping_company && customer.preferred_shipping_company !== 'other' 
+              ? customer.preferred_shipping_company 
+              : "N/A")
+          }
         </div>
         
         <div className="text-center font-bold p-1 border border-gray-300 bg-gray-100 my-2">

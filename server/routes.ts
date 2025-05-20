@@ -2773,7 +2773,7 @@ A 1
       await storage.addOrderChangelog({
         orderId,
         userId,
-        action: 'label_generated',
+        action: 'label_printed',  // Using proper action type from schema
         changes: {
           boxNumber,
           boxCount
@@ -2783,9 +2783,8 @@ A 1
         console.warn('Failed to log label generation:', err);
       });
       
-      // Return both versions
+      // Return only HTML version - we're deprecating the JScript approach
       res.json({
-        jscript,
         html,
         boxNumber,
         boxCount

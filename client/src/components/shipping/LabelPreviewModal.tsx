@@ -423,25 +423,40 @@ const LabelPreviewModal: React.FC<LabelPreviewModalProps> = ({
             
             <div className="flex space-x-2">
               <Button
-                variant="outline"
-                onClick={handleBrowserPrint}
-                disabled={!previewUrl || printing}
-              >
-                <Printer className="mr-2 h-4 w-4" />
-                Print Current Label
-              </Button>
-              
-              <Button
-                onClick={handlePrint}
-                disabled={!previewUrl || printing}
+                onClick={() => {
+                  // Redirect to the new shipping label system
+                  window.open(`/shipping-label/${orderId}?box=${currentBox}&total=${boxCount}`, '_blank');
+                  
+                  // Log the action
+                  apiRequest({
+                    url: '/api/orders/log-label-print',
+                    method: 'POST',
+                    body: JSON.stringify({
+                      orderId,
+                      boxNumber: currentBox,
+                      boxCount,
+                      method: 'new-system-redirect'
+                    }),
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                  }).catch(error => {
+                    console.error("Failed to log label redirect:", error);
+                  });
+                  
+                  // Show success message
+                  toast({
+                    title: 'Using new label system',
+                    description: 'Opening the new shipping label page'
+                  });
+                  
+                  // Close the modal
+                  onOpenChange(false);
+                }}
                 className="gap-2"
               >
-                {printing ? (
-                  <span className="animate-spin h-4 w-4 border-2 border-t-transparent rounded-full"></span>
-                ) : (
-                  <Printer className="h-4 w-4" />
-                )}
-                {printing ? 'Printing...' : 'Send to Printer'}
+                <Printer className="h-4 w-4" />
+                Open New Label System
               </Button>
             </div>
           </div>
