@@ -159,18 +159,25 @@ const ShippingLabel: React.FC = () => {
       <div className="border border-gray-300 rounded-md p-6 bg-white print:border-0 print:p-0 print:shadow-none">
         <div className="text-center mb-4">
           <img 
-            src="/shipping-logo.png" 
+            src={`${window.location.origin}/shipping-logo.png`}
             alt="Company Logo" 
             className="h-14 mx-auto"
             onError={(e) => {
               console.log("Logo load error, switching to fallback");
               // If the PNG fails, try the SVG as fallback
-              e.currentTarget.src = "/simple-logo.svg";
+              e.currentTarget.src = `${window.location.origin}/simple-logo.svg`;
               // If SVG also fails, handle that error
               e.currentTarget.onerror = () => {
                 console.log("Fallback logo also failed");
-                // Use inline text as last resort
-                e.currentTarget.style.display = 'none';
+                // Create a text fallback
+                const parent = e.currentTarget.parentElement;
+                if (parent) {
+                  e.currentTarget.style.display = 'none';
+                  const textLogo = document.createElement('div');
+                  textLogo.textContent = "OLIVE OIL COMPANY";
+                  textLogo.className = "text-xl font-bold";
+                  parent.appendChild(textLogo);
+                }
               };
             }}
           />
