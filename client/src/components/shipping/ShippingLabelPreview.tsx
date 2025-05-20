@@ -200,10 +200,11 @@ const ShippingLabelPreview: React.FC<ShippingLabelPreviewProps> = ({
           }
           .logo {
             text-align: center;
+            margin-top: 0.2cm;
             margin-bottom: 0.2cm;
           }
           .logo img {
-            height: 1cm;
+            height: 1.2cm;
             max-width: 80%;
           }
           .order-number {
