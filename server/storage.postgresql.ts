@@ -25,6 +25,7 @@ import {
   inventoryHistory, type InventoryHistory, type InsertInventoryHistory,
   inventoryPredictions, type InventoryPrediction, type InsertInventoryPrediction,
   seasonalPatterns, type SeasonalPattern, type InsertSeasonalPattern,
+  barcodeScanLogs, type BarcodeScanLog, type InsertBarcodeScanLog,
   // Production module schemas
   rawMaterials, type RawMaterial, type InsertRawMaterial,
   productionBatches, type ProductionBatch, type InsertProductionBatch,
@@ -245,9 +246,30 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
   
+  // Barcode scanner methods
+  async getProductByBarcode(barcode: string): Promise<Product | undefined> {
+    const result = await this.db.select().from(products).where(eq(products.barcode, barcode));
+    return result.length > 0 ? result[0] : undefined;
+  }
+
   async getProductBySku(sku: string): Promise<Product | undefined> {
     const result = await this.db.select().from(products).where(eq(products.sku, sku));
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async createBarcodeScanLog(log: InsertBarcodeScanLog): Promise<BarcodeScanLog> {
+    const result = await this.db.insert(barcodeScanLogs).values(log).returning();
     return result[0];
+  }
+
+  async getBarcodeScanLogs(limit?: number): Promise<BarcodeScanLog[]> {
+    const query = this.db.select().from(barcodeScanLogs).orderBy(desc(barcodeScanLogs.timestamp));
+    
+    if (limit) {
+      query.limit(limit);
+    }
+    
+    return await query;
   }
   
   async getAllProducts(): Promise<Product[]> {

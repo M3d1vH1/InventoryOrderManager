@@ -97,7 +97,8 @@ const ProductLookup: React.FC<ProductLookupProps> = ({
       
       // Only make request if we have an action URL (not in lookup mode)
       if (actionUrl) {
-        await apiRequest(actionUrl, {
+        await apiRequest({
+          url: actionUrl,
           method: 'POST',
           data: actionData
         });

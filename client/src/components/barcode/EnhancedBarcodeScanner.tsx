@@ -107,7 +107,8 @@ const EnhancedBarcodeScanner: React.FC<EnhancedBarcodeScannerProps> = ({
 
     // Log scan to server for analytics
     try {
-      apiRequest('/api/barcode-logs', {
+      apiRequest({
+        url: '/api/barcode-logs',
         method: 'POST',
         data: {
           barcode: code,
