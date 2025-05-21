@@ -107,13 +107,14 @@ const EnhancedBarcodeScanner: React.FC<EnhancedBarcodeScannerProps> = ({
 
     // Log scan to server for analytics
     try {
+      const userId = Number(localStorage.getItem('userId') || '1');
       apiRequest({
         url: '/api/barcode-logs',
         method: 'POST',
         data: {
           barcode: code,
           scanType: scanMode,
-          userId: Number(localStorage.getItem('userId') || '1'),
+          userId: userId,
           notes: `Barcode scanned in ${scanMode} mode`
         }
       });

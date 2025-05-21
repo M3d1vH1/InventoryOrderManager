@@ -783,25 +783,24 @@ export type CallOutcome = typeof callOutcomes.$inferSelect;
 export const barcodeScanLogs = pgTable('barcode_scan_logs', {
   id: serial('id').primaryKey(),
   barcode: text('barcode').notNull(),
-  mode: text('mode').notNull(),
+  scanType: text('scan_type').notNull(),
   timestamp: timestamp('timestamp', { withTimezone: true }).notNull().defaultNow(),
-  userId: text('user_id').notNull(),
+  userId: integer('user_id').notNull(),
   productId: integer('product_id').references(() => products.id),
-  actionTaken: text('action_taken'),
+  notes: text('notes'),
   quantity: integer('quantity'),
   scanDurationMs: integer('scan_duration_ms'),
   deviceInfo: text('device_info')
 });
 
 export const insertBarcodeScanLogSchema = createInsertSchema(barcodeScanLogs)
-  .omit({ id: true })
+  .omit({ id: true, timestamp: true })
   .extend({
     barcode: z.string().min(1, { message: "Barcode is required" }),
-    mode: z.string().min(1, { message: "Mode is required" }),
-    timestamp: z.date().default(() => new Date()),
-    userId: z.string().min(1, { message: "User ID is required" }),
+    scanType: z.string().min(1, { message: "Scan type is required" }),
+    userId: z.number().int().positive({ message: "Valid User ID is required" }),
     productId: z.number().optional(),
-    actionTaken: z.string().optional(),
+    notes: z.string().optional(),
     quantity: z.number().optional(),
     scanDurationMs: z.number().optional(),
     deviceInfo: z.string().optional()
