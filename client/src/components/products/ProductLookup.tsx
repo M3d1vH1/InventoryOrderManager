@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from 'wouter';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ChevronRight, AlertTriangle, PackagePlus, Check, X, Info, TrendingUp, TrendingDown } from "lucide-react";
+import { ChevronRight, AlertTriangle, PackagePlus, Check, X, Info, TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useTranslation } from "react-i18next";
 import { ScanMode } from "../barcode/EnhancedBarcodeScanner";
@@ -332,7 +333,30 @@ const ProductLookup: React.FC<ProductLookupProps> = ({
                 </div>
               </CardContent>
               <CardFooter>
-                {renderActionButtons()}
+                {scanMode === 'lookup' && (
+                  <div className="flex flex-col space-y-3 w-full">
+                    <Button 
+                      onClick={() => {
+                        if (product) {
+                          window.location.href = `/product-barcode/${product.id}`;
+                          onClose();
+                        }
+                      }}
+                      className="w-full"
+                    >
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      {t("productLookup.viewDetails")}
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={onClose}
+                      className="w-full"
+                    >
+                      {t("productLookup.close")}
+                    </Button>
+                  </div>
+                )}
+                {scanMode !== 'lookup' && renderActionButtons()}
               </CardFooter>
             </Card>
           </div>
