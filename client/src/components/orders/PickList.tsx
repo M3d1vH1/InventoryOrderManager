@@ -34,7 +34,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { MapPin, QrCode, ScanBarcode, Truck, RefreshCcw, CheckCircle2, FileText, Info, Printer, PackageCheck } from "lucide-react";
-import { BarcodeScanner } from "@/components/barcode";
+import { BarcodeScanner, EnhancedBarcodeScanner } from "@/components/barcode";
 import ShippingLabelPreview from "@/components/shipping/ShippingLabelPreview";
 
 interface OrderItem {
@@ -197,6 +197,13 @@ const PickList = ({ order }: { order: Order }) => {
   const handleItemPick = (itemId: number) => {
     setPickedItems(prev => {
       const newState = { ...prev, [itemId]: !prev[itemId] };
+      
+      // Store order item ID in localStorage for barcode scanning
+      if (newState[itemId]) {
+        localStorage.setItem('activeOrderId', order.id.toString());
+        localStorage.setItem('activeOrderItemId', itemId.toString());
+      }
+      
       return newState;
     });
   };
