@@ -112,9 +112,9 @@ const EnhancedBarcodeScanner: React.FC<EnhancedBarcodeScannerProps> = ({
         method: 'POST',
         data: {
           barcode: code,
-          mode: scanMode,
-          timestamp: now.toISOString(),
-          userId: localStorage.getItem('userId') || 'unknown'
+          scanType: scanMode,
+          userId: Number(localStorage.getItem('userId') || '1'),
+          notes: `Barcode scanned in ${scanMode} mode`
         }
       });
     } catch (error) {

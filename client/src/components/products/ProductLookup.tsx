@@ -69,25 +69,33 @@ const ProductLookup: React.FC<ProductLookupProps> = ({
       
       switch (scanMode) {
         case 'inventory':
-          actionUrl = '/api/inventory/update';
+          actionUrl = '/api/inventory/update-by-barcode';
           actionData = { 
-            productId: product.id, 
-            newQuantity: quantity,
-            adjustmentType: 'count'
+            barcode: product.barcode,
+            userId: localStorage.getItem('userId') || '1',
+            quantity: quantity,
+            changeType: 'manual_adjustment',
+            notes: `Stock adjusted via barcode scan to ${quantity} units`
           };
           break;
         case 'picking':
-          actionUrl = '/api/inventory/pick';
+          actionUrl = '/api/inventory/update-by-barcode';
           actionData = { 
-            productId: product.id, 
-            quantity: quantity
+            barcode: product.barcode,
+            userId: localStorage.getItem('userId') || '1',
+            quantity: product.currentStock - quantity,
+            changeType: 'order_fulfillment', 
+            notes: `${quantity} units picked via barcode scan`
           };
           break;
         case 'receiving':
-          actionUrl = '/api/inventory/receive';
+          actionUrl = '/api/inventory/update-by-barcode';
           actionData = { 
-            productId: product.id, 
-            quantity: quantity
+            barcode: product.barcode,
+            userId: localStorage.getItem('userId') || '1',
+            quantity: product.currentStock + quantity,
+            changeType: 'stock_replenishment',
+            notes: `${quantity} units received via barcode scan`
           };
           break;
         default:

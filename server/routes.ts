@@ -3012,6 +3012,12 @@ A 1
   // Slack webhook test route
   app.post('/api/settings/test-slack', isAuthenticated, hasRole(['admin']), testSlackWebhook);
   
+  // Barcode scanning endpoints
+  app.get('/api/products/barcode/:barcode', isAuthenticated, getProductByBarcode);
+  app.post('/api/barcode-logs', isAuthenticated, logBarcodeScan);
+  app.get('/api/barcode-logs/history', isAuthenticated, getBarcodeScanHistory);
+  app.post('/api/inventory/update-by-barcode', isAuthenticated, updateInventoryByBarcode);
+  
   // DEBUG: Temporary endpoint to check notification settings without auth - REMOVE IN PRODUCTION
   app.get('/api/debug/notification-settings', async (req, res) => {
     try {

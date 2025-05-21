@@ -126,7 +126,7 @@ export const updateInventoryByBarcode = async (req: Request, res: Response) => {
     await storage.createBarcodeScanLog({
       barcode,
       productId: product.id,
-      userId: parseInt(userId),
+      userId: typeof userId === 'string' ? parseInt(userId) : userId,
       scanType: 'inventory_update',
       notes: `Updated inventory to ${newQuantity} units`
     });
