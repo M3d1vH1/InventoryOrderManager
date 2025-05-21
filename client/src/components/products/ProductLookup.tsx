@@ -338,7 +338,9 @@ const ProductLookup: React.FC<ProductLookupProps> = ({
                     <Button 
                       onClick={() => {
                         if (product) {
-                          window.location.href = `/product-barcode/${product.id}`;
+                          // Set product in localStorage to open details dialog on products page
+                          localStorage.setItem('open_product_details', product.id.toString());
+                          window.location.href = `/products`;
                           onClose();
                         }
                       }}

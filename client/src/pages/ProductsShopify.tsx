@@ -147,6 +147,29 @@ const Products = () => {
     if (stockParam && ["in", "low", "out"].includes(stockParam)) {
       setStockFilter(stockParam);
     }
+    
+    // Check if we should open a product detail from a barcode scan
+    const productIdToOpen = localStorage.getItem('open_product_details');
+    if (productIdToOpen) {
+      // Clear it immediately to prevent reopening on future visits
+      localStorage.removeItem('open_product_details');
+      
+      // Fetch the product and open its details dialog
+      const fetchProduct = async () => {
+        try {
+          const response = await fetch(`/api/products/${productIdToOpen}`);
+          if (response.ok) {
+            const product = await response.json();
+            setViewingProduct(product);
+            setIsDetailsDialogOpen(true);
+          }
+        } catch (error) {
+          console.error('Error fetching product details:', error);
+        }
+      };
+      
+      fetchProduct();
+    }
   }, [setCurrentPage]);
 
   const { data: products, isLoading } = useQuery<Product[]>({
