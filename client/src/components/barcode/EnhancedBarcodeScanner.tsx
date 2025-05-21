@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -8,6 +8,12 @@ import { ScanBarcode, Search, ListChecks, PackageCheck, Truck } from "lucide-rea
 import { apiRequest } from "@/lib/queryClient";
 import { useTranslation } from "react-i18next";
 
+/**
+ * Enhanced Barcode Scanner Component
+ * 
+ * This component works exclusively with physical barcode scanners.
+ * It provides functionality for global barcode detection without requiring field focus.
+ */
 interface EnhancedBarcodeScannerProps {
   onBarcodeScanned: (barcode: string, mode: ScanMode) => void;
   buttonText?: string;
@@ -32,51 +38,16 @@ const EnhancedBarcodeScanner: React.FC<EnhancedBarcodeScannerProps> = ({
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [barcode, setBarcode] = useState<string>("");
   const [manualBarcode, setManualBarcode] = useState<string>("");
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [isScanning, setIsScanning] = useState<boolean>(false);
   const [scanMode, setScanMode] = useState<ScanMode>(initialMode);
   const [recentScans, setRecentScans] = useState<{barcode: string, timestamp: Date, mode: ScanMode}[]>([]);
   const { toast } = useToast();
-  const videoRef = useRef<HTMLVideoElement>(null);
   const { t } = useTranslation();
-
-  // Check and request camera permissions
-  const requestCameraPermission = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-      setHasPermission(true);
-      setIsScanning(true);
-    } catch (err) {
-      setHasPermission(false);
-      toast({
-        title: t("scanner.cameraPermissionDenied"),
-        description: t("scanner.enterManually"),
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Clean up camera stream when component unmounts or modal closes
-  const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      const tracks = stream.getTracks();
-      tracks.forEach(track => track.stop());
-      videoRef.current.srcObject = null;
-    }
-    setIsScanning(false);
-  };
 
   const handleOpen = () => {
     setIsOpen(true);
-    requestCameraPermission();
   };
 
   const handleClose = () => {
-    stopCamera();
     setIsOpen(false);
     setBarcode("");
     setManualBarcode("");
@@ -161,7 +132,7 @@ const EnhancedBarcodeScanner: React.FC<EnhancedBarcodeScannerProps> = ({
       }
       
       // Process when inside scanner dialog
-      if (isOpen && isScanning) {
+      if (isOpen) {
         // Many barcode scanners send an Enter key after the full code
         if (e.key === 'Enter') {
           if (currentInput) {
@@ -226,14 +197,7 @@ const EnhancedBarcodeScanner: React.FC<EnhancedBarcodeScannerProps> = ({
         clearTimeout(inputTimeout);
       }
     };
-  }, [isOpen, isScanning, barcode, onBarcodeScanned, toast]);
-
-  // Clean up on unmount
-  useEffect(() => {
-    return () => {
-      stopCamera();
-    };
-  }, []);
+  }, [isOpen, barcode, onBarcodeScanned, toast]);
 
   const getModeIcon = (mode: ScanMode) => {
     switch (mode) {
@@ -314,27 +278,6 @@ const EnhancedBarcodeScanner: React.FC<EnhancedBarcodeScannerProps> = ({
           </Tabs>
           
           <div className="space-y-4">
-            {hasPermission === false && (
-              <div className="p-4 border rounded-md bg-amber-50 text-amber-600">
-                <p>{t("scanner.cameraAccessDenied")}</p>
-              </div>
-            )}
-            
-            {hasPermission === true && (
-              <div className="relative bg-black rounded-md overflow-hidden">
-                <video 
-                  ref={videoRef} 
-                  className="w-full h-64 object-cover"
-                  autoPlay 
-                  playsInline 
-                />
-                <div className="absolute inset-0 border-2 border-red-500 border-dashed pointer-events-none">
-                  <div className="absolute top-1/2 left-0 w-full border-t-2 border-red-500 -translate-y-1/2"></div>
-                  <div className="absolute top-0 left-1/2 h-full border-l-2 border-red-500 -translate-x-1/2"></div>
-                </div>
-              </div>
-            )}
-            
             {barcode && (
               <div className="p-4 border rounded-md bg-green-50 text-green-600">
                 <p>{t("scanner.currentBarcode")}: {barcode}</p>
@@ -383,8 +326,6 @@ const EnhancedBarcodeScanner: React.FC<EnhancedBarcodeScannerProps> = ({
             <div className="text-sm text-slate-500">
               <p>{t("scanner.tips.title")}:</p>
               <ul className="list-disc pl-5 space-y-1 mt-1">
-                <li>{t("scanner.tips.position")}</li>
-                <li>{t("scanner.tips.lighting")}</li>
                 <li>{t("scanner.tips.alternatives")}</li>
               </ul>
             </div>
@@ -392,11 +333,6 @@ const EnhancedBarcodeScanner: React.FC<EnhancedBarcodeScannerProps> = ({
           
           <DialogFooter>
             <Button variant="outline" onClick={handleClose}>{t("app.cancel")}</Button>
-            {hasPermission === false && (
-              <Button onClick={() => requestCameraPermission()}>
-                {t("scanner.tryCameraAgain")}
-              </Button>
-            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

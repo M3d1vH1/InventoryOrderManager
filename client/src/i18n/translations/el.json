@@ -2073,5 +2073,37 @@
       "paymentMade": "Πληρωμή Καταβλήθηκε",
       "paymentDue": "Πληρωμή Οφείλεται"
     }
+  },
+  "scanner": {
+    "scanBarcode": "Σάρωση Barcode",
+    "scanProduct": "Σάρωση Προϊόντος"
+  },
+  "productLookup": {
+    "title": {
+      "lookup": "Αναζήτηση Προϊόντος",
+      "inventory": "Ενημέρωση Αποθέματος",
+      "picking": "Συλλογή Προϊόντος",
+      "receiving": "Παραλαβή Προϊόντος"
+    },
+    "productNotFound": "Το προϊόν δεν βρέθηκε",
+    "barcodeNotFound": "Το barcode {barcode} δεν αντιστοιχεί σε κανένα προϊόν",
+    "close": "Κλείσιμο",
+    "viewDetails": "Προβολή Λεπτομερειών",
+    "location": "Τοποθεσία",
+    "unitsPerBox": "Μονάδες ανά Κιβώτιο",
+    "category": "Κατηγορία",
+    "lastUpdated": "Τελευταία Ενημέρωση",
+    "noStockHistory": "Δεν υπάρχει ιστορικό αποθέματος",
+    "quantity": "Ποσότητα",
+    "cancel": "Ακύρωση",
+    "updateCount": "Ενημέρωση Αποθέματος",
+    "confirmPick": "Επιβεβαίωση Συλλογής",
+    "confirmReceive": "Επιβεβαίωση Παραλαβής",
+    "confirm": {
+      "title": "Επιβεβαίωση Ενέργειας",
+      "inventory": "Θα ενημερωθεί το απόθεμα του προϊόντος {product} σε {quantity} μονάδες",
+      "picking": "Θα αφαιρεθούν {quantity} μονάδες του προϊόντος {product} από το απόθεμα",
+      "receiving": "Θα προστεθούν {quantity} μονάδες του προϊόντος {product} στο απόθεμα"
+    }
   }
 }
