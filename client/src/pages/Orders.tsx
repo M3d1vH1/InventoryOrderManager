@@ -1327,15 +1327,15 @@ A 1
                         <span>{t('orders.actions.printOrder') || 'Print Order PDF'}</span>
                       </Button>
                       
-                      {/* Print label button - for picked or shipped orders */}
+                      {/* Reprint shipping label button - for picked or shipped orders */}
                       {(orderDetails.status === 'picked' || orderDetails.status === 'shipped') && (
                         <Button
                           onClick={() => handleOpenPrintLabelDialog(orderDetails)}
                           variant="outline"
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 bg-green-50 hover:bg-green-100 border-green-200"
                         >
-                          <Printer className="h-4 w-4" />
-                          <span>{t('orders.actions.printLabels', 'Print Labels')}</span>
+                          <Printer className="h-4 w-4 text-green-600" />
+                          <span>{t('orders.actions.reprintLabels', 'Reprint Shipping Labels')}</span>
                         </Button>
                       )}
                       

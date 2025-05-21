@@ -702,6 +702,8 @@
       "viewDocument": "Προβολή Εγγράφου",
       "printOrder": "Εκτύπωση PDF Παραγγελίας",
       "printLabels": "Εκτύπωση Ετικετών",
+      "reprintLabels": "Επανεκτύπωση Ετικετών Αποστολής",
+      "sendEmail": "Αποστολή Email",
       "delete": "Διαγραφή Παραγγελίας"
     },
     "details": {
