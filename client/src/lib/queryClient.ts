@@ -31,7 +31,7 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest<T = any>(
-  urlOrOptions: string | RequestInit & { url: string },
+  urlOrOptions: string | RequestInit & { url: string; data?: any },
   options?: RequestInit
 ): Promise<T> {
   let url: string;
@@ -44,6 +44,19 @@ export async function apiRequest<T = any>(
   } else {
     url = urlOrOptions.url;
     fetchOptions = urlOrOptions;
+    
+    // Extract the data property if it exists and convert to JSON
+    if (urlOrOptions.data) {
+      const { data, ...rest } = urlOrOptions;
+      fetchOptions = {
+        ...rest,
+        body: JSON.stringify(data),
+        headers: {
+          ...(urlOrOptions.headers || {}),
+          'Content-Type': 'application/json'
+        }
+      };
+    }
   }
 
   fetchOptions.credentials = 'include';

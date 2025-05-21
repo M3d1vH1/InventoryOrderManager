@@ -22,6 +22,7 @@ import {
   inventoryHistory, type InventoryHistory, type InsertInventoryHistory,
   inventoryPredictions, type InventoryPrediction, type InsertInventoryPrediction,
   seasonalPatterns, type SeasonalPattern, type InsertSeasonalPattern,
+  barcodeScanLogs, type BarcodeScanLog, type InsertBarcodeScanLog,
   // Production module imports
   rawMaterials, type RawMaterial, type InsertRawMaterial,
   productionBatches, type ProductionBatch, type InsertProductionBatch,
@@ -130,6 +131,12 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  
+  // Barcode methods
+  getProductByBarcode(barcode: string): Promise<Product | undefined>;
+  getProductBySku(sku: string): Promise<Product | undefined>;
+  createBarcodeScanLog(log: InsertBarcodeScanLog): Promise<BarcodeScanLog>;
+  getBarcodeScanLogs(limit?: number): Promise<BarcodeScanLog[]>;
   updateUserLastLogin(id: number): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined>;
