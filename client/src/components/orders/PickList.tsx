@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslation } from "react-i18next";
 import {
   Card,
   CardContent,
@@ -77,6 +78,7 @@ interface Order {
 const PickList = ({ order }: { order: Order }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [pickedItems, setPickedItems] = useState<Record<number, boolean>>({});
   const [actualQuantities, setActualQuantities] = useState<Record<number, number>>({});
   const [progress, setProgress] = useState(0);
@@ -623,12 +625,58 @@ A 1
               Sort by Location
             </Button>
             
-            <BarcodeScanner 
-              onBarcodeScanned={handleBarcodeScanned}
-              buttonText={scanMode ? "Cancel Scan" : "Scan Barcode"}
+            <EnhancedBarcodeScanner 
+              onBarcodeScanned={(barcode, mode) => {
+                // Store order ID in localStorage for enhanced scanner integration
+                localStorage.setItem('activeOrderId', order.id.toString());
+                
+                // Process the barcode scan
+                const product = products.find(p => 
+                  p.barcode === barcode || p.sku === barcode
+                );
+                
+                if (!product) {
+                  toast({
+                    title: t("orders.pickList.barcodeNotFound"),
+                    description: `${barcode}`,
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                
+                // Find the order item that uses this product
+                const orderItem = orderItemsWithProducts.find(
+                  item => item.productId === product.id
+                );
+                
+                if (!orderItem) {
+                  toast({
+                    title: t("orders.pickList.productNotInOrder"),
+                    description: product.name,
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                
+                // Store the specific order item ID for the barcode API
+                localStorage.setItem('activeOrderItemId', orderItem.id.toString());
+                
+                // Mark this item as picked
+                handleItemPick(orderItem.id);
+                
+                // Update scanned barcode UI indicator
+                setLastScannedBarcode(barcode);
+                
+                toast({
+                  title: t("orders.pickList.itemPicked"),
+                  description: product.name,
+                });
+              }}
+              buttonText={t("scanner.scanProduct")}
               buttonVariant="outline"
               buttonSize="sm"
-              modalTitle="Scan Product Barcode"
+              modalTitle={t("scanner.scanProduct")}
+              initialMode="picking"
             />
           </div>
         </div>
