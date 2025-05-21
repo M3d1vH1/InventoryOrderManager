@@ -3362,6 +3362,128 @@ A 1
   app.get('/api/inventory-changes/recent', isAuthenticated, getRecentInventoryChanges);
   app.get('/api/inventory-changes/by-type/:type', isAuthenticated, getInventoryChangesByType);
   
+  // Barcode scanning routes
+  app.get('/api/products/barcode/:barcode', isAuthenticated, async (req, res) => {
+    try {
+      const { barcode } = req.params;
+      
+      if (!barcode) {
+        return res.status(400).json({ error: 'Barcode parameter is required' });
+      }
+      
+      // First try exact barcode match
+      let product = await storage.getProductByBarcode(barcode);
+      
+      // If product not found by barcode, try SKU as fallback
+      if (!product) {
+        product = await storage.getProductBySku(barcode);
+      }
+      
+      if (!product) {
+        return res.status(404).json({ error: 'Product not found with this barcode' });
+      }
+      
+      // Get product category name
+      const category = product.categoryId ? await storage.getCategory(product.categoryId) : null;
+      
+      // Return enhanced product info
+      return res.status(200).json({
+        ...product,
+        categoryName: category?.name || null
+      });
+    } catch (error) {
+      console.error('Error getting product by barcode:', error);
+      return res.status(500).json({ error: 'Failed to get product information' });
+    }
+  });
+  
+  app.post('/api/barcode-logs', isAuthenticated, async (req, res) => {
+    try {
+      const { barcode, mode, timestamp, userId } = req.body;
+      
+      if (!barcode || !mode || !timestamp) {
+        return res.status(400).json({ error: 'Barcode, mode, and timestamp are required' });
+      }
+      
+      // Log the scan
+      await storage.createBarcodeScanLog({
+        barcode,
+        mode,
+        timestamp: new Date(timestamp),
+        userId: userId || req.user?.id || 'unknown'
+      });
+      
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      console.error('Error logging barcode scan:', error);
+      return res.status(500).json({ error: 'Failed to log barcode scan' });
+    }
+  });
+  
+  app.get('/api/barcode-logs', isAuthenticated, hasRole(['admin']), async (req, res) => {
+    try {
+      const logs = await storage.getBarcodeScanLogs(50); // Get last 50 logs
+      return res.status(200).json(logs);
+    } catch (error) {
+      console.error('Error getting barcode scan history:', error);
+      return res.status(500).json({ error: 'Failed to get barcode scan history' });
+    }
+  });
+  
+  app.post('/api/inventory/scan-update', isAuthenticated, async (req, res) => {
+    try {
+      const { barcode, quantity, adjustmentType } = req.body;
+      
+      if (!barcode || quantity === undefined || !adjustmentType) {
+        return res.status(400).json({ error: 'Barcode, quantity, and adjustmentType are required' });
+      }
+      
+      // Find product by barcode
+      let product = await storage.getProductByBarcode(barcode);
+      
+      // If product not found by barcode, try SKU as fallback
+      if (!product) {
+        product = await storage.getProductBySku(barcode);
+      }
+      
+      if (!product) {
+        return res.status(404).json({ error: 'Product not found with this barcode' });
+      }
+      
+      // Update inventory
+      const newQuantity = adjustmentType === 'count' 
+        ? parseInt(quantity.toString()) 
+        : product.currentStock + parseInt(quantity.toString());
+      
+      await storage.updateProductStock(product.id, newQuantity);
+      
+      // Log the inventory change
+      await storage.createInventoryChange({
+        productId: product.id,
+        previousStock: product.currentStock,
+        newStock: newQuantity,
+        changeAmount: newQuantity - product.currentStock,
+        type: adjustmentType,
+        reason: 'Barcode scan inventory update',
+        userId: req.user?.id || null,
+        timestamp: new Date()
+      });
+      
+      return res.status(200).json({ 
+        success: true,
+        product: {
+          id: product.id,
+          name: product.name,
+          previousStock: product.currentStock,
+          newStock: newQuantity
+        }
+      });
+    } catch (error) {
+      console.error('Error updating inventory by barcode:', error);
+      return res.status(500).json({ error: 'Failed to update inventory' });
+    }
+  });
+  
   // Call Logs routes
   app.use('/api/call-logs', isAuthenticated, callLogsRouter);
   app.use('/api/prospective-customers', isAuthenticated, prospectiveCustomersRouter);
