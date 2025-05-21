@@ -234,9 +234,6 @@ const EnhancedBarcodeScanner: React.FC<EnhancedBarcodeScannerProps> = ({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{modalTitle}</DialogTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              {t("scanner.scanDescription")}
-            </p>
           </DialogHeader>
           
           <Tabs defaultValue={scanMode} onValueChange={(value) => setScanMode(value as ScanMode)}>

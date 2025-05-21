@@ -2077,7 +2077,6 @@
   "scanner": {
     "scanBarcode": "Σάρωση Barcode",
     "scanProduct": "Σάρωση Προϊόντος",
-    "scanDescription": "Χρησιμοποιήστε φυσικό σαρωτή ή εισάγετε χειροκίνητα το barcode προϊόντος",
     "enterManualBarcode": "Χειροκίνητη Εισαγωγή Barcode",
     "barcodeInputPlaceholder": "Εισάγετε barcode",
     "submit": "Υποβολή",

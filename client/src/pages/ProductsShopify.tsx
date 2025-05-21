@@ -151,13 +151,6 @@ const Products = () => {
     // Check if we should open a product detail from a barcode scan
     const productIdToOpen = localStorage.getItem('open_product_details');
     if (productIdToOpen) {
-      // Check if a specific tab should be opened
-      const tabToOpen = localStorage.getItem('open_product_tab');
-      if (tabToOpen) {
-        setSelectedTab(tabToOpen);
-        localStorage.removeItem('open_product_tab');
-      }
-      
       // Clear it immediately to prevent reopening on future visits
       localStorage.removeItem('open_product_details');
       
