@@ -84,9 +84,11 @@ const ProductLookup: React.FC<ProductLookupProps> = ({
           actionData = { 
             barcode: product.barcode,
             userId: localStorage.getItem('userId') || '1',
-            quantity: product.currentStock - quantity,
+            quantity: Math.max(0, product.currentStock - quantity),
             changeType: 'order_fulfillment', 
-            notes: `${quantity} units picked via barcode scan`
+            notes: `${quantity} units picked via barcode scan`,
+            orderId: localStorage.getItem('activeOrderId') || undefined,
+            orderItemId: localStorage.getItem('activeOrderItemId') || undefined
           };
           break;
         case 'receiving':

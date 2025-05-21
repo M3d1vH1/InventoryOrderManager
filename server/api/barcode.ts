@@ -83,7 +83,7 @@ export const getBarcodeScanHistory = async (req: Request, res: Response) => {
  */
 export const updateInventoryByBarcode = async (req: Request, res: Response) => {
   try {
-    const { barcode, quantity, userId, changeType = 'manual_adjustment', notes } = req.body;
+    const { barcode, quantity, userId, changeType = 'manual_adjustment', notes, orderId, orderItemId } = req.body;
     
     if (!barcode) {
       return res.status(400).json({ message: 'Barcode is required' });
@@ -122,13 +122,51 @@ export const updateInventoryByBarcode = async (req: Request, res: Response) => {
     // Log the inventory change
     const inventoryChange = await storage.createInventoryChange(change);
     
+    // Additional actions for order picking
+    let orderPickingInfo = null;
+    if (changeType === 'order_fulfillment' && orderId) {
+      // Get the order
+      const order = await storage.getOrder(parseInt(orderId));
+      if (order) {
+        // Update the order item if it exists
+        if (orderItemId) {
+          const orderItem = await storage.getOrderItem(parseInt(orderItemId));
+          if (orderItem && orderItem.productId === product.id) {
+            await storage.updateOrderItem(parseInt(orderItemId), {
+              picked: true,
+              pickedAt: new Date(),
+              pickedById: parseInt(userId),
+              actualQuantity: Math.abs(currentStock - newQuantity) // Calculate actual picked quantity
+            });
+          }
+        }
+        
+        // Check if all items are picked for this order
+        const orderItems = await storage.getOrderItems(parseInt(orderId));
+        const allItemsPicked = orderItems.every(item => item.picked);
+        
+        if (allItemsPicked) {
+          // Update order status if all items picked
+          await storage.updateOrder(parseInt(orderId), { status: 'picked' });
+        }
+        
+        orderPickingInfo = {
+          orderId: parseInt(orderId),
+          orderNumber: order.orderNumber,
+          allItemsPicked,
+          status: allItemsPicked ? 'picked' : order.status
+        };
+      }
+    }
+    
     // Log the barcode scan as well
     await storage.createBarcodeScanLog({
       barcode,
       productId: product.id,
       userId: typeof userId === 'string' ? parseInt(userId) : userId,
-      scanType: 'inventory_update',
-      notes: `Updated inventory to ${newQuantity} units`
+      scanType: changeType === 'order_fulfillment' ? 'picking' : 'inventory_update',
+      notes: `Updated inventory to ${newQuantity} units`,
+      orderId: orderId ? parseInt(orderId) : undefined
     });
     
     res.json({
@@ -137,7 +175,8 @@ export const updateInventoryByBarcode = async (req: Request, res: Response) => {
         ...product,
         currentStock: newQuantity
       },
-      inventoryChange
+      inventoryChange,
+      orderPickingInfo
     });
   } catch (error: any) {
     console.error('Error updating inventory by barcode:', error);
