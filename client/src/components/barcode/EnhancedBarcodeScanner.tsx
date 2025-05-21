@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
  * 
  * This component works exclusively with physical barcode scanners.
  * It provides functionality for global barcode detection without requiring field focus.
+ * The component automatically detects barcodes scanned anywhere on the page and processes them.
  */
 interface EnhancedBarcodeScannerProps {
   onBarcodeScanned: (barcode: string, mode: ScanMode) => void;

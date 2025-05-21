@@ -2076,7 +2076,31 @@
   },
   "scanner": {
     "scanBarcode": "Σάρωση Barcode",
-    "scanProduct": "Σάρωση Προϊόντος"
+    "scanProduct": "Σάρωση Προϊόντος",
+    "enterManualBarcode": "Χειροκίνητη Εισαγωγή Barcode",
+    "barcodeInputPlaceholder": "Εισάγετε barcode",
+    "submit": "Υποβολή",
+    "currentBarcode": "Τρέχων Barcode",
+    "emptyBarcode": "Κενό Barcode",
+    "enterValidBarcode": "Παρακαλώ εισάγετε ένα έγκυρο barcode",
+    "barcodeScanned": "Barcode Σαρώθηκε",
+    "recentScans": "Πρόσφατες Σαρώσεις",
+    "tips": {
+      "title": "Συμβουλές",
+      "alternatives": "Μπορείτε να σαρώσετε το barcode από οποιοδήποτε σημείο της σελίδας"
+    },
+    "mode": {
+      "lookup": "Αναζήτηση",
+      "inventory": "Απόθεμα",
+      "picking": "Συλλογή",
+      "receiving": "Παραλαβή"
+    },
+    "modeDescription": {
+      "lookup": "Αναζήτηση και προβολή λεπτομερειών προϊόντος χωρίς αλλαγή αποθέματος",
+      "inventory": "Ενημέρωση αποθέματος προϊόντων",
+      "picking": "Επιλογή προϊόντων για παραγγελίες",
+      "receiving": "Παραλαβή νέων προϊόντων στην αποθήκη"
+    }
   },
   "productLookup": {
     "title": {
