@@ -2809,6 +2809,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate shipping label for multi-label printing
   app.get('/api/orders/:id/generate-label', async (req: Request, res: Response) => {
     try {
+      const QRCode = require('qrcode');
       const orderId = parseInt(req.params.id, 10);
       const boxNumber = parseInt(req.query.boxNumber as string, 10) || 1;
       const boxCount = parseInt(req.query.boxCount as string, 10) || 1;
@@ -2822,6 +2823,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!order) {
         return res.status(404).json({ message: 'Order not found' });
       }
+      
+      // Generate QR code for website
+      const websiteUrl = "https://www.amphoreus.gr";
+      const qrCodeDataUrl = await QRCode.toDataURL(websiteUrl, {
+        errorCorrectionLevel: 'M',
+        margin: 1,
+        width: 100,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
       
       // Generate JScript label content
       const jscript = `
@@ -2865,6 +2878,7 @@ A 1
       display: flex;
       flex-direction: column;
       height: 100%;
+      position: relative;
     }
     .order-number {
       font-size: 12pt;
@@ -2895,6 +2909,13 @@ A 1
       margin-top: auto;
       margin-bottom: 10px;
     }
+    .qr-code {
+      position: absolute;
+      top: 0.5cm;
+      right: 0.5cm;
+      width: 2cm;
+      height: 2cm;
+    }
     .footer {
       font-size: 8pt;
       text-align: center;
@@ -2911,6 +2932,7 @@ A 1
     <div class="box-number">BOX ${boxNumber} OF ${boxCount}</div>
     <div class="order-id">${order.id.toString().padStart(5, '0')}</div>
     <div class="footer">Warehouse Management System</div>
+    <img src="${qrCodeDataUrl}" class="qr-code" alt="www.amphoreus.gr" title="Visit our website"/>
   </div>
 </body>
 </html>
