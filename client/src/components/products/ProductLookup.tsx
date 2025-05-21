@@ -340,6 +340,8 @@ const ProductLookup: React.FC<ProductLookupProps> = ({
                         if (product) {
                           // Set product in localStorage to open details dialog on products page
                           localStorage.setItem('open_product_details', product.id.toString());
+                          // Set the default tab to open (inventory) when redirecting
+                          localStorage.setItem('open_product_tab', 'inventory');
                           window.location.href = `/products`;
                           onClose();
                         }
