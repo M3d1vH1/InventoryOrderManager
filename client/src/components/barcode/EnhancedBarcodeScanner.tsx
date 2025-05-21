@@ -141,12 +141,26 @@ const EnhancedBarcodeScanner: React.FC<EnhancedBarcodeScannerProps> = ({
     handleClose();
   };
 
-  // Simulate barcode scanning with keyboard input - enhanced for real scanner support
+  // Handle physical barcode scanner input - works both in and outside of modal
   useEffect(() => {
     let currentInput = '';
+    let lastKeyTime = 0;
     let inputTimeout: NodeJS.Timeout | null = null;
+    
+    // Typical barcode scanner settings
+    const keyPressDelay = 20; // Typical delay between barcode scanner keystrokes (ms)
+    const resetDelay = 300; // Delay to consider a new barcode scan (ms)
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      const currentTime = new Date().getTime();
+      
+      // Skip handling if user is typing in an input field
+      if (e.target instanceof HTMLInputElement || 
+          e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      
+      // Process when inside scanner dialog
       if (isOpen && isScanning) {
         // Many barcode scanners send an Enter key after the full code
         if (e.key === 'Enter') {
@@ -173,6 +187,34 @@ const EnhancedBarcodeScanner: React.FC<EnhancedBarcodeScannerProps> = ({
             setBarcode(currentInput);
             inputTimeout = null;
           }, 100);
+        }
+      } 
+      // Global barcode detection (when dialog is closed)
+      else {
+        // Check if this is rapid input from a barcode scanner
+        const isRapidInput = (currentTime - lastKeyTime) < keyPressDelay;
+        
+        // Reset buffer if it's been too long since last keystroke
+        if (currentTime - lastKeyTime > resetDelay) {
+          currentInput = '';
+        }
+        
+        lastKeyTime = currentTime;
+        
+        // Build up barcode from rapid sequential keypresses
+        if (/^[a-zA-Z0-9-_]$/.test(e.key)) {
+          currentInput += e.key;
+        }
+        
+        // Process barcode when Enter is pressed (typical for barcode scanners)
+        if (e.key === 'Enter' && currentInput.length > 5) {
+          console.log('Barcode scanned (global):', currentInput);
+          // Open scanner dialog and process barcode
+          setIsOpen(true);
+          setManualBarcode(currentInput);
+          processBarcodeResult(currentInput);
+          currentInput = '';
+          e.preventDefault(); // Prevent form submissions
         }
       }
     };
