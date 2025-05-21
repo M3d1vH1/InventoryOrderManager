@@ -2888,9 +2888,12 @@ A 1
     .customer {
       font-size: 10pt;
       margin-bottom: 5px;
+      max-width: 6cm;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      line-height: 1.2;
+      word-wrap: break-word;
     }
     .date {
       font-size: 10pt;
@@ -2927,11 +2930,11 @@ A 1
 <body>
   <div class="label-container">
     <div class="order-number">Order: ${order.orderNumber}</div>
-    <div class="customer">Customer: ${order.customerName}</div>
+    <div class="customer" title="${order.customerName}">Customer: ${order.customerName}</div>
     <div class="date">Date: ${new Date(order.orderDate).toLocaleDateString()}</div>
     <div class="box-number">BOX ${boxNumber} OF ${boxCount}</div>
     <div class="order-id">${order.id.toString().padStart(5, '0')}</div>
-    <div class="footer">Warehouse Management System</div>
+    <div class="footer">Amphoreus.gr</div>
     <img src="${qrCodeDataUrl}" class="qr-code" alt="www.amphoreus.gr" title="Visit our website"/>
   </div>
 </body>
