@@ -3,7 +3,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/context/NotificationContext";
 import { apiRequest } from "@/lib/queryClient";
-import { Menu, Bell, PlusCircle, PhoneCall, MoreVertical } from "lucide-react";
+import { Menu, Bell, PlusCircle, PhoneCall, MoreVertical, Barcode, Search } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +18,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import OrderForm from "@/components/orders/OrderForm";
 import CallLogForm from "@/components/call-logs/CallLogForm";
+import EnhancedBarcodeScanner, { ScanMode } from "@/components/barcode/EnhancedBarcodeScanner";
+import ProductLookup from "@/components/products/ProductLookup";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 
@@ -28,6 +30,9 @@ const Header = () => {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [showCallLogForm, setShowCallLogForm] = useState(false);
+  const [scannedBarcode, setScannedBarcode] = useState<string | null>(null);
+  const [scanMode, setScanMode] = useState<ScanMode>('lookup');
+  const [showProductLookup, setShowProductLookup] = useState(false);
   const { t } = useTranslation();
 
   const handleLogout = async () => {
@@ -82,6 +87,23 @@ const Header = () => {
               <PhoneCall className="h-4 w-4 flex-shrink-0" />
               <span>{t('callLogs.new')}</span>
             </Button>
+
+            <div className="ml-1">
+              <EnhancedBarcodeScanner 
+                buttonVariant="secondary"
+                buttonSize="sm"
+                showInHeader={true}
+                buttonText={t('scanner.scanBarcode')}
+                modalTitle={t('scanner.scanProduct')}
+                onBarcodeScanned={(barcode, mode) => {
+                  setScannedBarcode(barcode);
+                  setScanMode(mode);
+                  setShowProductLookup(true);
+                }}
+                // Add data attribute for mobile menu to target
+                data-scanner-trigger
+              />
+            </div>
           </div>
           
           {/* Language toggle button removed - now in settings */}
@@ -185,6 +207,13 @@ const Header = () => {
                 <PhoneCall className="h-4 w-4 mr-2" />
                 <span>{t('callLogs.addNewCall')}</span>
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                const scanner = document.querySelector('[data-scanner-trigger]') as HTMLButtonElement;
+                if (scanner) scanner.click();
+              }}>
+                <Barcode className="h-4 w-4 mr-2" />
+                <span>{t('scanner.scanBarcode')}</span>
+              </DropdownMenuItem>
               {/* Language toggle removed - now in settings */}
             </DropdownMenuContent>
           </DropdownMenu>
@@ -218,6 +247,14 @@ const Header = () => {
         open={showCallLogForm}
         onOpenChange={setShowCallLogForm}
         mode="create"
+      />
+      
+      {/* Product Lookup Component */}
+      <ProductLookup
+        isOpen={showProductLookup}
+        onClose={() => setShowProductLookup(false)}
+        barcode={scannedBarcode}
+        scanMode={scanMode}
       />
     </>
   );
