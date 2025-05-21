@@ -1956,6 +1956,118 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
+  // Barcode scanning methods
+  async getProductByBarcode(barcode: string): Promise<Product | undefined> {
+    try {
+      if (!barcode) {
+        return undefined;
+      }
+      
+      const result = await this.db
+        .select()
+        .from(products)
+        .where(eq(products.barcode, barcode));
+      
+      return result.length > 0 ? result[0] : undefined;
+    } catch (error) {
+      console.error("Error getting product by barcode:", error);
+      return undefined;
+    }
+  }
+  
+  async createBarcodeScanLog(scanLog: InsertBarcodeScanLog): Promise<BarcodeScanLog> {
+    try {
+      const [result] = await this.db
+        .insert(barcodeScanLogs)
+        .values({
+          ...scanLog,
+          timestamp: new Date()
+        })
+        .returning();
+      
+      return result;
+    } catch (error) {
+      console.error("Error creating barcode scan log:", error);
+      throw error;
+    }
+  }
+  
+  async getBarcodeScanLogs(options: {
+    userId?: number;
+    productId?: number;
+    barcode?: string;
+    limit?: number;
+  }): Promise<BarcodeScanLog[]> {
+    try {
+      const limit = options?.limit || 100;
+      let query = this.db
+        .select()
+        .from(barcodeScanLogs)
+        .orderBy(desc(barcodeScanLogs.timestamp))
+        .limit(limit);
+      
+      // Apply filters if provided
+      const conditions = [];
+      
+      if (options?.userId) {
+        conditions.push(eq(barcodeScanLogs.userId, options.userId));
+      }
+      
+      if (options?.productId) {
+        conditions.push(eq(barcodeScanLogs.productId, options.productId));
+      }
+      
+      if (options?.barcode) {
+        conditions.push(eq(barcodeScanLogs.barcode, options.barcode));
+      }
+      
+      // Add conditions to query if any exist
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error("Error getting barcode scan logs:", error);
+      return [];
+    }
+  }
+  
+  async updateProductStock(productId: number, newQuantity: number): Promise<Product | undefined> {
+    try {
+      const [updatedProduct] = await this.db
+        .update(products)
+        .set({ 
+          currentStock: newQuantity,
+          lastStockUpdate: new Date()
+        })
+        .where(eq(products.id, productId))
+        .returning();
+      
+      return updatedProduct;
+    } catch (error) {
+      console.error("Error updating product stock:", error);
+      return undefined;
+    }
+  }
+  
+  async createInventoryChange(change: InsertInventoryChange): Promise<InventoryChange> {
+    try {
+      const [newChange] = await this.db
+        .insert(inventoryChanges)
+        .values({
+          ...change,
+          timestamp: new Date()
+        })
+        .returning();
+      
+      return newChange;
+    } catch (error) {
+      console.error("Error creating inventory change:", error);
+      throw error;
+    }
+  }
+  
   async cleanupDuplicateNotificationSettings(): Promise<void> {
     try {
       // Get all notification settings

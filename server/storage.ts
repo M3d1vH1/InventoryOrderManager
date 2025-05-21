@@ -49,6 +49,18 @@ export interface IStorage {
   getCompanySettings(): Promise<CompanySettings | undefined>;
   updateCompanySettings(settings: Partial<InsertCompanySettings>): Promise<CompanySettings | undefined>;
   
+  // Barcode scanning methods
+  getProductByBarcode(barcode: string): Promise<Product | undefined>;
+  createBarcodeScanLog(scanLog: InsertBarcodeScanLog): Promise<BarcodeScanLog>;
+  getBarcodeScanLogs(options?: {
+    userId?: number;
+    productId?: number;
+    barcode?: string;
+    limit?: number;
+  }): Promise<BarcodeScanLog[]>;
+  updateProductStock(productId: number, newQuantity: number): Promise<Product | undefined>;
+  createInventoryChange(change: InsertInventoryChange): Promise<InventoryChange>;
+  
   // Supplier Payment Tracking methods
   // Supplier methods
   getSupplier(id: number): Promise<Supplier | undefined>;
