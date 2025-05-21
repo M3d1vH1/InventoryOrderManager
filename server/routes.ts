@@ -3415,9 +3415,9 @@ A 1
       // Log the scan
       await storage.createBarcodeScanLog({
         barcode,
-        mode,
-        timestamp: new Date(timestamp),
-        userId: userId || req.user?.id || 'unknown'
+        scanType: mode,
+        userId: Number(userId || req.user?.id || '1'),
+        notes: `Barcode scanned in ${mode} mode`
       });
       
       return res.status(200).json({ success: true });

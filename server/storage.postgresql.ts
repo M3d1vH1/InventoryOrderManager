@@ -1977,10 +1977,16 @@ export class DatabaseStorage implements IStorage {
   
   async createBarcodeScanLog(scanLog: InsertBarcodeScanLog): Promise<BarcodeScanLog> {
     try {
+      // Convert userId to number if it's a string
+      const userId = typeof scanLog.userId === 'string' 
+        ? parseInt(scanLog.userId as string, 10) 
+        : scanLog.userId;
+
       const [result] = await this.db
         .insert(barcodeScanLogs)
         .values({
           ...scanLog,
+          userId: userId,
           timestamp: new Date()
         })
         .returning();
