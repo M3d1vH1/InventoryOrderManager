@@ -5,15 +5,16 @@ import path from 'path';
 // Configuration for third build step - pages and business logic
 export default defineConfig({
   plugins: [react()],
+  root: path.resolve(__dirname, 'client'),
   build: {
-    outDir: 'client/dist',
+    outDir: 'dist',
     emptyOutDir: false, // Don't empty the output directory (preserve step 1 & 2 output)
     minify: true,
     sourcemap: false,
     // Focus on pages and business logic in this step
     rollupOptions: {
       input: {
-        pages: path.resolve(__dirname, 'src/pages/index.ts'),
+        app: path.resolve(__dirname, 'client/src/main.tsx'),
       },
       output: {
         manualChunks: {
@@ -29,11 +30,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@components': path.resolve(__dirname, './src/components'),
-      '@lib': path.resolve(__dirname, './src/lib'),
-      '@pages': path.resolve(__dirname, './src/pages'),
-      '@shared': path.resolve(__dirname, './shared'),
+      '@': path.resolve(__dirname, 'client/src'),
+      '@components': path.resolve(__dirname, 'client/src/components'),
+      '@lib': path.resolve(__dirname, 'client/src/lib'),
+      '@pages': path.resolve(__dirname, 'client/src/pages'),
+      '@shared': path.resolve(__dirname, 'shared'),
     },
   },
 });
