@@ -441,9 +441,12 @@ E
           }
         </style>
         <script>
-          // Auto-print when opened directly
-          function printLabel() {
-            window.print();
+          // Automatically prompt for printing when the page loads
+          window.onload = function() {
+            // Short delay to ensure everything is loaded
+            setTimeout(function() {
+              window.print();
+            }, 500);
           }
         </script>
       </head>

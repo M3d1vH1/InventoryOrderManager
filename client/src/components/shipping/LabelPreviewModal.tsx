@@ -233,8 +233,8 @@ const LabelPreviewModal: React.FC<LabelPreviewModalProps> = ({
         `;
       }
       
-      // Open a new window with the content
-      const printWindow = window.open('', '_blank');
+      // Open a new window with the content that will trigger printing automatically
+      const printWindow = window.open('', '_blank', 'toolbar=0,location=0,menubar=0');
       if (printWindow) {
         printWindow.document.write(labelHtml);
         printWindow.document.close();
@@ -426,40 +426,11 @@ const LabelPreviewModal: React.FC<LabelPreviewModalProps> = ({
             
             <div className="flex space-x-2">
               <Button
-                onClick={() => {
-                  // Redirect to the new shipping label system
-                  window.open(`/shipping-label/${orderId}?box=${currentBox}&total=${boxCount}`, '_blank');
-                  
-                  // Log the action
-                  apiRequest({
-                    url: '/api/orders/log-label-print',
-                    method: 'POST',
-                    body: JSON.stringify({
-                      orderId,
-                      boxNumber: currentBox,
-                      boxCount,
-                      method: 'new-system-redirect'
-                    }),
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                  }).catch(error => {
-                    console.error("Failed to log label redirect:", error);
-                  });
-                  
-                  // Show success message
-                  toast({
-                    title: 'Using new label system',
-                    description: 'Opening the new shipping label page'
-                  });
-                  
-                  // Close the modal
-                  onOpenChange(false);
-                }}
+                onClick={handleBrowserPrint}
                 className="gap-2"
               >
                 <Printer className="h-4 w-4" />
-                Open New Label System
+                Print Label
               </Button>
             </div>
           </div>
