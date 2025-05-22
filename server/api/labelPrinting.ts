@@ -112,11 +112,38 @@ export async function previewShippingLabel(req: Request, res: Response) {
     const filename = path.basename(previewPath);
     const publicPath = path.join(process.cwd(), 'public', filename);
     
-    // Copy to public directory for access
+    // Ensure public directory exists
     if (!fs.existsSync(path.dirname(publicPath))) {
       fs.mkdirSync(path.dirname(publicPath), { recursive: true });
     }
     
+    // Clean up old preview files in public directory to prevent accumulation
+    try {
+      const publicDir = path.dirname(publicPath);
+      const files = fs.readdirSync(publicDir);
+      const labelPattern = 'label-preview-';
+      
+      // Keep max 10 most recent files
+      const labelFiles = files
+        .filter(f => f.startsWith(labelPattern) && f.endsWith('.html'))
+        .map(f => ({ name: f, time: fs.statSync(path.join(publicDir, f)).mtime.getTime() }))
+        .sort((a, b) => b.time - a.time); // Sort newest first
+      
+      // Delete older files if we have more than 10
+      if (labelFiles.length > 10) {
+        for (let i = 10; i < labelFiles.length; i++) {
+          try {
+            fs.unlinkSync(path.join(publicDir, labelFiles[i].name));
+          } catch (err) {
+            console.warn(`Failed to delete old public preview file ${labelFiles[i].name}:`, err);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to clean up old public preview files:', err);
+    }
+    
+    // Copy new file to public directory
     fs.copyFileSync(previewPath, publicPath);
     
     // Return the URL to access the preview

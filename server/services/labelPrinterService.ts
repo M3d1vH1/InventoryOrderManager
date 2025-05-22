@@ -421,48 +421,22 @@ E
             background-color: #f0f0f0;
           }
           
-          /* For screen preview only */
+          /* Minimal screen preview styles */
           @media screen {
             body {
-              background-color: #f0f0f0;
-              padding: 20px;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              margin: 0;
+              background-color: #f8f8f8;
             }
             
             .shipping-label {
               margin: 0 auto;
-              border: 1px solid #ccc;
-              background-color: white;
-              box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            }
-            
-            .print-instructions {
-              max-width: ${LABEL_WIDTH_MM}mm;
-              margin: 15px auto 0;
-              padding: 10px;
-              background-color: #fff;
               border: 1px solid #ddd;
-              border-radius: 4px;
-              font-size: 12px;
-              color: #555;
-              text-align: center;
-            }
-            
-            .print-button {
-              display: block;
-              width: 200px;
-              margin: 10px auto;
-              padding: 8px 15px;
-              background-color: #0066cc;
-              color: white;
-              text-align: center;
-              border-radius: 4px;
-              cursor: pointer;
-              font-weight: bold;
-              border: none;
-            }
-            
-            .print-button:hover {
-              background-color: #0055aa;
+              background-color: white;
+              box-shadow: 0 1px 4px rgba(0,0,0,0.1);
             }
           }
         </style>
@@ -492,22 +466,38 @@ E
           </div>
         </div>
         
-        <div class="print-instructions">
-          <p>Ετικέτα αποστολής για την παραγγελία ${orderWithItems.orderNumber}, κιβώτιο ${boxInfo}</p>
-          <p>Διαστάσεις ετικέτας: ${LABEL_WIDTH_MM}mm x ${LABEL_HEIGHT_MM}mm</p>
-          <button class="print-button" onclick="printLabel()">Εκτύπωση</button>
-        </div>
+
       </body>
       </html>
       `;
       
-      // Save HTML to a temporary file
+      // Save HTML to a temporary file, with cleanup of old files
       const tempDir = path.join(process.cwd(), 'temp');
       if (!fs.existsSync(tempDir)) {
         fs.mkdirSync(tempDir, { recursive: true });
       }
       
-      const previewPath = path.join(tempDir, `label-preview-${orderId}-${currentBox}-${Date.now()}.html`);
+      // Clean up old preview files for this order to avoid accumulation
+      try {
+        const files = await fs.promises.readdir(tempDir);
+        const orderPattern = `label-preview-${orderId}-`;
+        
+        // Delete old preview files for this order
+        for (const file of files) {
+          if (file.startsWith(orderPattern) && file.endsWith('.html')) {
+            try {
+              await fs.promises.unlink(path.join(tempDir, file));
+            } catch (err) {
+              console.warn(`Failed to delete old preview file ${file}:`, err);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to clean up old preview files:', err);
+      }
+      
+      // Create a new preview file with a consistent name (without timestamp)
+      const previewPath = path.join(tempDir, `label-preview-${orderId}-${currentBox}.html`);
       await fs.promises.writeFile(previewPath, html, 'utf8');
       
       return previewPath;

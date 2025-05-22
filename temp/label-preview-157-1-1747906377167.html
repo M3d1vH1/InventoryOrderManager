@@ -1,0 +1,163 @@
+
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Shipping Label - Order ORD-0157</title>
+        <meta charset="UTF-8">
+        <style>
+          @page {
+            size: 100mm 70mm;
+            margin: 0;
+          }
+          
+          body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+          }
+          
+          .shipping-label {
+            width: 100mm;
+            height: 70mm;
+            padding: 5mm;
+            box-sizing: border-box;
+            position: relative;
+          }
+          
+          .logo {
+            max-width: 140px;
+            max-height: 40px;
+            display: block;
+            margin: 0 auto 8px;
+          }
+          
+          .content {
+            display: flex;
+            flex-direction: column;
+            height: calc(70mm - 15mm);
+          }
+          
+          .customer-info {
+            margin-bottom: 5mm;
+          }
+          
+          .order-number {
+            font-size: 11pt;
+            margin-bottom: 3mm;
+          }
+          
+          .customer-name {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-bottom: 2mm;
+          }
+          
+          .customer-address, .customer-phone {
+            font-size: 10pt;
+            margin-bottom: 2mm;
+          }
+          
+          .shipping-company {
+            font-size: 11pt;
+            font-weight: bold;
+            border-left: 3px solid #555;
+            padding-left: 3mm;
+            background-color: #f8f8f8;
+            padding: 1mm 2mm 1mm 3mm;
+            margin-bottom: 4mm;
+          }
+          
+          .spacer {
+            flex-grow: 1;
+          }
+          
+          .box-count {
+            font-size: 14pt;
+            font-weight: bold;
+            text-align: center;
+            margin-top: auto;
+            border: 1px solid #ccc;
+            padding: 2mm;
+            background-color: #f0f0f0;
+          }
+          
+          /* For screen preview only */
+          @media screen {
+            body {
+              background-color: #f0f0f0;
+              padding: 20px;
+            }
+            
+            .shipping-label {
+              margin: 0 auto;
+              border: 1px solid #ccc;
+              background-color: white;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            }
+            
+            .print-instructions {
+              max-width: 100mm;
+              margin: 15px auto 0;
+              padding: 10px;
+              background-color: #fff;
+              border: 1px solid #ddd;
+              border-radius: 4px;
+              font-size: 12px;
+              color: #555;
+              text-align: center;
+            }
+            
+            .print-button {
+              display: block;
+              width: 200px;
+              margin: 10px auto;
+              padding: 8px 15px;
+              background-color: #0066cc;
+              color: white;
+              text-align: center;
+              border-radius: 4px;
+              cursor: pointer;
+              font-weight: bold;
+              border: none;
+            }
+            
+            .print-button:hover {
+              background-color: #0055aa;
+            }
+          }
+        </style>
+        <script>
+          // Auto-print when opened directly
+          function printLabel() {
+            window.print();
+          }
+        </script>
+      </head>
+      <body>
+        <div class="shipping-label">
+          <img src="/shipping-logo.png" class="logo" alt="Company Logo" onerror="this.src='/simple-logo.svg'"/>
+          
+          <div class="content">
+            <div class="customer-info">
+              <div class="order-number">Αρ. Παραγγελίας: ORD-0157</div>
+              <div class="customer-name">Ταμβάκης Δημήτριος Νικόλαος</div>
+              <div class="customer-address">Ουρανούπολη 0 , Ιερισσός, Χαλκιδική , 63075</div>
+              <div class="customer-phone">Τηλέφωνο: </div>
+              <div class="shipping-company">Μεταφορική: Προοδευτική Κηφισού 91</div>
+            </div>
+            
+            <div class="spacer"></div>
+            
+            <div class="box-count">Κιβώτιο: 1 / 1</div>
+          </div>
+        </div>
+        
+        <div class="print-instructions">
+          <p>Ετικέτα αποστολής για την παραγγελία ORD-0157, κιβώτιο 1 / 1</p>
+          <p>Διαστάσεις ετικέτας: 100mm x 70mm</p>
+          <button class="print-button" onclick="printLabel()">Εκτύπωση</button>
+        </div>
+      </body>
+      </html>
+      
