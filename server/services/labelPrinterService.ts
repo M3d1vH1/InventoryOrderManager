@@ -313,14 +313,25 @@ E
         shippingCompanyInfo = orderWithItems.area;
       }
       
-      // Build customer address
+      // Build customer address - check both order and customer objects
       const addressParts = [];
+      
+      // Try to get address from order first
       if (orderWithItems.customerAddress) addressParts.push(orderWithItems.customerAddress);
       if (orderWithItems.customerCity) addressParts.push(orderWithItems.customerCity);
       if (orderWithItems.customerState) addressParts.push(orderWithItems.customerState);
       if (orderWithItems.customerPostalCode) addressParts.push(orderWithItems.customerPostalCode);
       
-      const address = addressParts.join(', ');
+      // If no address in order, try to get from customer object
+      if (addressParts.length === 0 && customer) {
+        if (customer.address) addressParts.push(customer.address);
+        if (customer.city) addressParts.push(customer.city);
+        if (customer.state) addressParts.push(customer.state);
+        if (customer.postalCode) addressParts.push(customer.postalCode);
+      }
+      
+      // If still no address, show placeholder
+      const address = addressParts.length > 0 ? addressParts.join(', ') : 'Διεύθυνση μη διαθέσιμη';
       
       // Box info
       const boxInfo = `${currentBox} / ${boxCount}`;
@@ -399,14 +410,8 @@ E
       </head>
       <body>
         <div class="label-container">
-          <!-- Logo at the top with embedded SVG (will always show) -->
-          <div class="logo-container" style="width: 150px; height: 45px; margin: 0 auto 15px auto;">
-            <svg width="150" height="45" viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-              <rect x="0" y="0" width="200" height="50" fill="#f8f8f8" rx="5" ry="5"/>
-              <text x="10" y="30" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#0055aa">Amphoreus</text>
-              <text x="10" y="45" font-family="Arial, sans-serif" font-size="12" fill="#555555">Olive Oil Company</text>
-            </svg>
-          </div>
+          <!-- Logo at the top - using actual image file -->
+          <img src="/shipping-logo.png" class="logo" alt="Company Logo" style="max-width: 150px; max-height: 45px; margin: 0 auto 15px auto; display: block;"/>
           
           <!-- Order number - removed barcode -->
           <div class="order-info">
