@@ -57,8 +57,9 @@ export async function directShippingLabel(req: Request, res: Response) {
       if (customer.postalCode) addressParts.push(customer.postalCode);
       customerAddress = addressParts.length > 0 ? addressParts.join(', ') : 'Διεύθυνση μη διαθέσιμη';
       
-      // Phone - only use the standard phone field from schema
+      // Phone - ensure we extract it correctly and make it more visible
       customerPhone = customer.phone || '';
+      console.log('Customer phone from database:', customerPhone);
     }
     
     // If no shipping company from customer, use order data
