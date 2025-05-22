@@ -131,10 +131,15 @@ export async function generateDirectLabel(req: Request, res: Response) {
     }
     
     .logo {
-      max-width: 140px;
-      max-height: 40px;
+      width: 90mm;
+      height: 35mm;
+      max-width: none;
+      max-height: none;
       display: block;
-      margin: 0 auto 8px;
+      margin: 0 auto 5mm;
+      object-fit: contain;
+      transform: scale(1.5);
+      transform-origin: center;
     }
     
     .content {
@@ -216,7 +221,7 @@ export async function generateDirectLabel(req: Request, res: Response) {
         <div class="order-number">Αρ. Παραγγελίας: ${order.orderNumber}</div>
         <div class="customer-name">${order.customerName || ''}</div>
         <div class="customer-address">${address}</div>
-        <div class="customer-phone">Τηλέφωνο: ${order.customerPhone || ''}</div>
+        ${customer?.phone ? `<div class="customer-phone">Τηλέφωνο: ${customer.phone}</div>` : ''}
         <div class="shipping-company">Μεταφορική: ${shippingCompanyInfo}</div>
       </div>
       
@@ -300,10 +305,15 @@ async function ensureLogoAvailable() {
   if (!fs.existsSync(targetSvgLogo)) {
     console.log('Creating SVG logo for label printing');
     const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
-<svg width="200" height="50" viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="0" width="200" height="50" fill="#f8f8f8" rx="5" ry="5"/>
-  <text x="10" y="30" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#0055aa">Amphoreus</text>
-  <text x="10" y="45" font-family="Arial, sans-serif" font-size="12" fill="#555555">Olive Oil Company</text>
+<svg width="800" height="120" viewBox="0 0 800 120" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="800" height="120" fill="#ffffff" rx="0" ry="0"/>
+  <text x="20" y="70" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="#0055aa">Amphoreus</text>
+  <text x="20" y="100" font-family="Arial, sans-serif" font-size="30" fill="#555555">Olive Oil Company</text>
+  <path d="M650,40 Q670,20 690,40 Q710,60 730,40" stroke="#0055aa" stroke-width="4" fill="none"/>
+  <path d="M650,50 L730,50" stroke="#0055aa" stroke-width="3" fill="none"/>
+  <path d="M660,60 Q690,90 720,60" stroke="#0055aa" stroke-width="4" fill="none"/>
+  <path d="M600,30 Q620,10 640,30" stroke="#0055aa" stroke-width="3" fill="none" opacity="0.5"/>
+  <path d="M740,30 Q760,10 780,30" stroke="#0055aa" stroke-width="3" fill="none" opacity="0.5"/>
 </svg>`;
     fs.writeFileSync(targetSvgLogo, svgContent, 'utf8');
     fs.chmodSync(targetSvgLogo, 0o644);

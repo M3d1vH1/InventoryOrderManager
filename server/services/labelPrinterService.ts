@@ -370,8 +370,10 @@ E
           }
           
           .logo {
-            width: 90mm;
-            height: 35mm;
+            width: 90mm !important;
+            height: 35mm !important;
+            max-width: none !important;
+            max-height: none !important;
             display: block;
             margin: 0 auto 5mm;
             object-fit: contain;
