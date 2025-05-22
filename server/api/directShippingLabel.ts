@@ -57,7 +57,7 @@ export async function directShippingLabel(req: Request, res: Response) {
       if (customer.postalCode) addressParts.push(customer.postalCode);
       customerAddress = addressParts.length > 0 ? addressParts.join(', ') : 'Διεύθυνση μη διαθέσιμη';
       
-      // Phone
+      // Phone - only use the standard phone field from schema
       customerPhone = customer.phone || '';
     }
     
@@ -112,7 +112,8 @@ export async function directShippingLabel(req: Request, res: Response) {
     .logo {
       width: 100%;
       height: auto;
-      max-height: 120px;
+      max-height: 25mm;
+      min-height: 25mm;
       display: block;
       margin: 0 auto 10px;
       object-fit: contain;
