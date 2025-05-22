@@ -95,9 +95,9 @@ const apiLimiter = rateLimit({
 // Apply rate limiting to API routes only
 app.use('/api/', apiLimiter);
 
-// CORS configuration
+// CORS configuration - Make sure it works with Replit preview
 app.use(cors({
-  origin: process.env.APP_URL ? [process.env.APP_URL] : true, // Restrict to the app URL if defined, otherwise allow all
+  origin: true, // Allow all origins for preview access
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
