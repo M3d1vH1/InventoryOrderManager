@@ -132,6 +132,50 @@ function broadcastMessage(message: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Add simple health check endpoint that will work even if other parts fail
+  app.get('/api/health', (req: Request, res: Response) => {
+    res.status(200).json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      memoryUsage: Math.round(process.memoryUsage().rss / 1024 / 1024) + 'MB'
+    });
+  });
+  
+  // Add simple test page that doesn't require database or authentication
+  app.get('/test-deployment', (req: Request, res: Response) => {
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Deployment Test</title>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+            .success { color: green; }
+            .data { background: #f0f0f0; padding: 10px; border-radius: 4px; }
+          </style>
+        </head>
+        <body>
+          <h1>Deployment Test Page</h1>
+          <p class="success">✅ Basic server functionality is working!</p>
+          <p>If you can see this page but other parts of the application aren't working, the issue is likely with:</p>
+          <ul>
+            <li>Database connection settings</li>
+            <li>Authentication system</li>
+            <li>Resource limitations on deployment</li>
+          </ul>
+          <div class="data">
+            <p><strong>Environment:</strong> ${process.env.NODE_ENV || 'development'}</p>
+            <p><strong>Server Time:</strong> ${new Date().toLocaleString()}</p>
+            <p><strong>Memory Usage:</strong> ${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB</p>
+          </div>
+          <p>Try accessing the <a href="/api/health">/api/health</a> endpoint for JSON data.</p>
+        </body>
+      </html>
+    `);
+  });
+
   // Geoblocking control routes
   app.get('/geoblocking-status', getGeoblockingStatus);
   app.get('/toggle-geoblocking', toggleGeoblocking);
