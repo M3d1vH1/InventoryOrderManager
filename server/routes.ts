@@ -2891,22 +2891,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error getting shipping company:", error);
       }
       
-      // Generate JScript label content
+      // Generate JScript label content - removed barcodes
       const jscript = `
 m m
 J
 H 100,0,T
 S l1;0,0,68,71,100
-T 25,25,0,3,pt9;Order: ${order.orderNumber}
-T 25,50,0,3,pt8;Customer: ${order.customerName}
-T 25,75,0,3,pt8;Date: ${new Date(order.orderDate).toLocaleDateString()}
-T 25,100,0,3,pt12;BOX ${boxNumber} OF ${boxCount}
-T 25,130,0,3,pt10;${order.id.toString().padStart(5, '0')}
-T 25,220,0,3,pt8;Warehouse Management System
+
+; Logo will be printed separately from the HTML template
+T 25,25,0,3,pt9;Παραγγελία: ${order.orderNumber}
+T 25,50,0,3,pt8;Πελάτης: ${order.customerName}
+T 25,100,0,3,pt12;ΚΙΒΩΤΙΟ ${boxNumber} ΑΠΟ ${boxCount}
+T 25,130,0,3,pt10;${shippingCompany}
 A 1
 `;
       
-      // Generate HTML version of the label using the style from the working template
+      // Generate HTML version of the label - simplified clean version with no barcodes
       const html = `
 <!DOCTYPE html>
 <html>
@@ -2962,20 +2962,23 @@ A 1
     .box-count {
       font-size: 16px;
       font-weight: bold;
-      margin-top: auto;
       text-align: center;
       border: 1px solid #ccc;
       background-color: #f0f0f0;
       padding: 4px;
+      margin-top: auto;
     }
     .order-number {
       font-size: 12px;
-      margin-bottom: 10px;
+      margin-bottom: 5px;
     }
     .label-content {
       display: flex;
       flex-direction: column;
-      height: calc(6cm - 0.6cm);
+      height: calc(6cm - 0.6cm - 45px);
+    }
+    .customer-info {
+      margin-bottom: 8px;
     }
     .spacer {
       flex-grow: 1;
@@ -2987,7 +2990,7 @@ A 1
     <img src="/shipping-logo.png" class="logo" alt="Company Logo" onerror="this.src='/simple-logo.svg'; this.onerror=null; this.style.display='none';" />
     
     <div class="label-content">
-      <div>
+      <div class="customer-info">
         <div class="order-number">Αρ. Παραγγελίας: ${order.orderNumber}</div>
         <div class="customer-name">${order.customerName}</div>
         <div class="customer-address"></div>
