@@ -43,23 +43,26 @@ app.set('trust proxy', 1);
 // Apply HTTPS redirection for production environments
 app.use(forceHttps);
 
-// Apply geoblocking to restrict access to users in Greece only
-app.use(geoBlockMiddleware);
+// Temporarily disable geoblocking for troubleshooting
+// app.use(geoBlockMiddleware);
 
 // Security middleware
-// Apply Helmet for secure HTTP headers
+// Apply Helmet with relaxed settings for troubleshooting
 app.use(
   helmet({
+    contentSecurityPolicy: false, // Temporarily disable CSP for troubleshooting
+    /*
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow inline scripts for Vite in development
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], 
         connectSrc: ["'self'", "https:"],
         imgSrc: ["'self'", "data:", "blob:"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
         fontSrc: ["'self'", "data:", "https://cdnjs.cloudflare.com"],
       },
     },
+    */
     // Set HSTS header
     hsts: {
       maxAge: 15552000, // 180 days
@@ -71,6 +74,8 @@ app.use(
   })
 );
 
+// Temporarily disabled rate limiting for troubleshooting
+/*
 // Rate limiting - protect against brute force attacks
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -82,6 +87,7 @@ const apiLimiter = rateLimit({
 
 // Apply rate limiting to API routes only
 app.use('/api/', apiLimiter);
+*/
 
 // CORS configuration
 app.use(cors({
