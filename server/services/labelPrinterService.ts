@@ -429,9 +429,7 @@ E
             margin-bottom: 2mm; /* Reduced to fix overflow issues */
           }
           
-          .spacer {
-            flex-grow: 1;
-          }
+          /* Removed spacer */
           
           .box-count {
             font-size: 14pt;
@@ -484,8 +482,6 @@ E
               <div class="customer-phone">Τηλέφωνο: ${customerPhone}</div>
               <div class="shipping-company">Μεταφορική: ${shippingCompanyInfo}</div>
             </div>
-            
-            <div class="spacer"></div>
             
             <div class="box-count">Κιβώτιο: ${boxInfo}</div>
           </div>
