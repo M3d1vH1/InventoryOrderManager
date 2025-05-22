@@ -404,6 +404,7 @@ E
           
           .order-number {
             font-size: 11pt;
+            font-weight: bold;
             margin-bottom: 3mm;
           }
           
@@ -425,7 +426,7 @@ E
             padding-left: 3mm;
             background-color: #f8f8f8;
             padding: 1mm 2mm 1mm 3mm;
-            margin-bottom: 4mm;
+            margin-bottom: 2mm; /* Reduced to fix overflow issues */
           }
           
           .spacer {
@@ -477,7 +478,7 @@ E
           
           <div class="content">
             <div class="customer-info">
-              <div class="order-number">Αρ. Παραγγελίας: ${orderWithItems.orderNumber}</div>
+              <div class="order-number">${orderWithItems.orderNumber}</div>
               <div class="customer-name">${orderWithItems.customerName || ''}</div>
               <div class="customer-address">${address}</div>
               <div class="customer-phone">Τηλέφωνο: ${customerPhone}</div>
