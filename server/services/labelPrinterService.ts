@@ -122,7 +122,14 @@ export class LabelPrinterService {
     if (order.customerPostalCode) addressParts.push(order.customerPostalCode);
     
     const customerAddress = addressParts.join(', ');
-    const customerPhone = order.customerPhone || '';
+    
+    // Get customer phone - check both order and customer objects
+    let customerPhone = '';
+    if (order.customerPhone) {
+      customerPhone = order.customerPhone;
+    } else if (customer && customer.phone) {
+      customerPhone = customer.phone;
+    }
     
     // Box count information
     const boxInfo = `${currentBox} / ${boxCount}`;
@@ -338,6 +345,14 @@ E
       // If still no address, show placeholder
       const address = addressParts.length > 0 ? addressParts.join(', ') : 'Διεύθυνση μη διαθέσιμη';
       
+      // Get customer phone - check both order and customer objects
+      let customerPhone = '';
+      if (orderWithItems.customerPhone) {
+        customerPhone = orderWithItems.customerPhone;
+      } else if (customer && customer.phone) {
+        customerPhone = customer.phone;
+      }
+      
       // Box info
       const boxInfo = `${currentBox} / ${boxCount}`;
       
@@ -465,7 +480,7 @@ E
               <div class="order-number">Αρ. Παραγγελίας: ${orderWithItems.orderNumber}</div>
               <div class="customer-name">${orderWithItems.customerName || ''}</div>
               <div class="customer-address">${address}</div>
-              <div class="customer-phone">Τηλέφωνο: ${orderWithItems.customerPhone || ''}</div>
+              <div class="customer-phone">Τηλέφωνο: ${customerPhone}</div>
               <div class="shipping-company">Μεταφορική: ${shippingCompanyInfo}</div>
             </div>
             

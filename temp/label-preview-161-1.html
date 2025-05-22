@@ -1,0 +1,137 @@
+
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Shipping Label - Order ORD-0161</title>
+        <meta charset="UTF-8">
+        <style>
+          @page {
+            size: 100mm 70mm;
+            margin: 0;
+          }
+          
+          body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+          }
+          
+          .shipping-label {
+            width: 100mm;
+            height: 70mm;
+            padding: 5mm;
+            box-sizing: border-box;
+            position: relative;
+          }
+          
+          .logo {
+            width: 45mm;
+            height: 10mm; /* Reduced height from 17mm to 10mm */
+            display: block;
+            margin: 0 auto 2mm; /* Reduced bottom margin from 5mm to 2mm */
+            object-fit: contain;
+          }
+          
+          .content {
+            display: flex;
+            flex-direction: column;
+            height: calc(70mm - 15mm);
+          }
+          
+          .customer-info {
+            margin-bottom: 5mm;
+          }
+          
+          .order-number {
+            font-size: 11pt;
+            margin-bottom: 3mm;
+          }
+          
+          .customer-name {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-bottom: 2mm;
+          }
+          
+          .customer-address, .customer-phone {
+            font-size: 10pt;
+            margin-bottom: 2mm;
+          }
+          
+          .shipping-company {
+            font-size: 11pt;
+            font-weight: bold;
+            border-left: 3px solid #555;
+            padding-left: 3mm;
+            background-color: #f8f8f8;
+            padding: 1mm 2mm 1mm 3mm;
+            margin-bottom: 4mm;
+          }
+          
+          .spacer {
+            flex-grow: 1;
+          }
+          
+          .box-count {
+            font-size: 14pt;
+            font-weight: bold;
+            text-align: center;
+            margin-top: auto;
+            border: 1px solid #ccc;
+            padding: 2mm;
+            background-color: #f0f0f0;
+          }
+          
+          /* Minimal screen preview styles */
+          @media screen {
+            body {
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              margin: 0;
+              background-color: #f8f8f8;
+            }
+            
+            .shipping-label {
+              margin: 0 auto;
+              border: 1px solid #ddd;
+              background-color: white;
+              box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            }
+          }
+        </style>
+        <script>
+          // Automatically prompt for printing when the page loads
+          window.onload = function() {
+            // Short delay to ensure everything is loaded
+            setTimeout(function() {
+              window.print();
+            }, 500);
+          }
+        </script>
+      </head>
+      <body>
+        <div class="shipping-label">
+          <img src="/shipping-logo.png" class="logo" alt="Company Logo" onerror="this.src='/simple-logo.svg'"/>
+          
+          <div class="content">
+            <div class="customer-info">
+              <div class="order-number">Αρ. Παραγγελίας: ORD-0161</div>
+              <div class="customer-name">Τρομπούκης Ν & ΣΙΑ ΟΕ</div>
+              <div class="customer-address"> Εμπορικό Κέντρο Φαληράκι, Ρόδος, Δωδεκάνησα, 85100</div>
+              <div class="customer-phone">Τηλέφωνο: </div>
+              <div class="shipping-company">Μεταφορική: Speedline 28ης Οκτωβρίου 16</div>
+            </div>
+            
+            <div class="spacer"></div>
+            
+            <div class="box-count">Κιβώτιο: 1 / 1</div>
+          </div>
+        </div>
+        
+
+      </body>
+      </html>
+      
