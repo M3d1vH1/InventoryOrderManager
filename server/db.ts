@@ -22,16 +22,17 @@ if (!connectionString) {
   );
 }
 
-// Configure connection pool with optimized settings
+// Configure connection pool with deployment-optimized settings
 const POOL_CONFIG = {
   connectionString,
-  max: 20,                   // Maximum number of clients (increased for higher throughput)
-  idleTimeoutMillis: 60000,  // Longer idle timeout (1 minute)
-  connectionTimeoutMillis: 10000, // Connection timeout
-  statement_timeout: 30000,  // Statement timeout (30 seconds to prevent long-running queries)
-  query_timeout: 30000,      // Query timeout (30 seconds)
+  max: process.env.NODE_ENV === 'production' ? 10 : 20, // Fewer connections in production
+  idleTimeoutMillis: 30000,  // Shorter idle timeout (30 seconds)
+  connectionTimeoutMillis: 15000, // Extended connection timeout
+  statement_timeout: 20000,  // Statement timeout (20 seconds to prevent long-running queries)
+  query_timeout: 20000,      // Query timeout (20 seconds)
   keepAlive: true,           // Enable TCP keepalive
   keepAliveInitialDelayMillis: 30000, // Delay before starting keepalive probes
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined, // SSL for production
 };
 
 // Create PostgreSQL connection pool with advanced configuration
