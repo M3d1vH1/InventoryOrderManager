@@ -1,11 +1,10 @@
 #!/bin/bash
+# Production startup script for Replit deployment
 
-# This script starts the application in production mode
-# It assumes that you've already built the application with 'npm run build'
+echo "Starting Amphoreus Warehouse Management System in production mode..."
 
-# Set environment to production
+# Ensure proper environment
 export NODE_ENV=production
 
-# Start the server from the built files
-echo "Starting server in production mode..."
+# Start the production server
 node dist/index.js
