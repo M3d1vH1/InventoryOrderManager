@@ -435,7 +435,7 @@ E
             font-size: 14pt;
             font-weight: bold;
             text-align: center;
-            margin-top: auto;
+            margin-top: 0; /* Changed from auto to remove the gap */
             border: 1px solid #ccc;
             padding: 2mm;
             background-color: #f0f0f0;
