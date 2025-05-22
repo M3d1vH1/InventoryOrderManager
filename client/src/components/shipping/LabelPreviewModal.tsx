@@ -275,7 +275,7 @@ const LabelPreviewModal: React.FC<LabelPreviewModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] md:max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t('labels.title', 'Print Shipping Label')}</DialogTitle>
           <DialogDescription>
@@ -355,11 +355,14 @@ const LabelPreviewModal: React.FC<LabelPreviewModalProps> = ({
                 </span>
               </div>
               {isHtmlPreview ? (
-                <iframe
-                  src={previewUrl}
-                  className="w-full h-[400px] border"
-                  title="Label Preview"
-                ></iframe>
+                <div className="overflow-y-auto max-h-[350px]">
+                  <iframe
+                    src={previewUrl}
+                    className="w-full h-[350px] border"
+                    title="Label Preview"
+                    style={{ transform: 'scale(0.95)', transformOrigin: 'top center' }}
+                  ></iframe>
+                </div>
               ) : (
                 <img 
                   src={previewUrl} 
