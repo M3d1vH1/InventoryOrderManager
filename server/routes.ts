@@ -2867,6 +2867,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Order not found' });
       }
       
+      // Get shipping company from the customer data
+      let shippingCompany = "N/A";
+      try {
+        // Find customer based on order's customer name
+        const customerData = await storage.getCustomerByName(order.customerName);
+        if (customerData) {
+          // Use the correct shipping company information based on preference
+          console.log("Customer shipping data:", {
+            preferredShippingCompany: customerData.preferredShippingCompany,
+            billingCompany: customerData.billingCompany,
+            shippingCompany: customerData.shippingCompany
+          });
+          
+          if (customerData.preferredShippingCompany === 'other' && customerData.billingCompany) {
+            shippingCompany = customerData.billingCompany;
+          } else if (customerData.shippingCompany) {
+            shippingCompany = customerData.shippingCompany;
+          }
+        }
+        console.log(`Shipping company for ${order.customerName}: ${shippingCompany}`);
+      } catch (error) {
+        console.error("Error getting shipping company:", error);
+      }
+      
       // Generate JScript label content
       const jscript = `
 m m
@@ -2882,7 +2906,7 @@ T 25,220,0,3,pt8;Warehouse Management System
 A 1
 `;
       
-      // Generate HTML version of the label - removed QR code
+      // Generate HTML version of the label using the style from the working template
       const html = `
 <!DOCTYPE html>
 <html>
@@ -2895,70 +2919,86 @@ A 1
       margin: 0;
     }
     body {
+      font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      font-family: Arial, sans-serif;
-      width: 9cm;
-      height: 6cm;
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
     }
     .label-container {
-      padding: 0.5cm;
-      display: flex;
-      flex-direction: column;
-      height: 100%;
+      width: 9cm; 
+      height: 6cm;
+      padding: 0.3cm;
+      box-sizing: border-box;
       position: relative;
+      background-color: white;
     }
-    .order-number {
-      font-size: 12pt;
+    .logo {
+      display: block;
+      max-width: 150px;
+      max-height: 45px;
+      margin-bottom: 10px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .customer-name {
+      font-size: 14px;
       font-weight: bold;
-      margin-bottom: 5px;
-    }
-    .customer {
-      font-size: 10pt;
-      margin-bottom: 5px;
-      max-width: 6cm;
+      margin-bottom: 4px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      line-height: 1.2;
-      word-wrap: break-word;
     }
-    .date {
-      font-size: 10pt;
+    .customer-address, .customer-phone {
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+    .shipping-company {
+      font-size: 12px;
+      font-weight: bold;
+      margin-bottom: 8px;
+      border-left: 3px solid #666;
+      padding-left: 4px;
+      background-color: #f8f8f8;
+    }
+    .box-count {
+      font-size: 16px;
+      font-weight: bold;
+      margin-top: auto;
+      text-align: center;
+      border: 1px solid #ccc;
+      background-color: #f0f0f0;
+      padding: 4px;
+    }
+    .order-number {
+      font-size: 12px;
       margin-bottom: 10px;
     }
-    .box-number {
-      font-size: 16pt;
-      font-weight: bold;
-      text-align: center;
-      margin: 10px 0;
+    .label-content {
+      display: flex;
+      flex-direction: column;
+      height: calc(6cm - 0.6cm);
     }
-    .order-id {
-      font-size: 12pt;
-      font-weight: bold;
-      text-align: center;
-      margin-top: auto;
-      margin-bottom: 10px;
-    }
-    .footer {
-      font-size: 8pt;
-      text-align: center;
-      color: #666;
-      margin-top: auto;
+    .spacer {
+      flex-grow: 1;
     }
   </style>
 </head>
 <body>
   <div class="label-container">
-    <div class="order-number">Order: ${order.orderNumber}</div>
-    <div class="customer" title="${order.customerName}">Customer: ${order.customerName}</div>
-    <div class="date">Date: ${new Date(order.orderDate).toLocaleDateString()}</div>
-    <div class="box-number">BOX ${boxNumber} OF ${boxCount}</div>
-    <div class="order-id">${order.id.toString().padStart(5, '0')}</div>
-    <div class="footer">Amphoreus.gr</div>
+    <img src="/shipping-logo.png" class="logo" alt="Company Logo" onerror="this.src='/simple-logo.svg'; this.onerror=null; this.style.display='none';" />
+    
+    <div class="label-content">
+      <div>
+        <div class="order-number">Αρ. Παραγγελίας: ${order.orderNumber}</div>
+        <div class="customer-name">${order.customerName}</div>
+        <div class="customer-address"></div>
+        <div class="customer-phone">Τηλέφωνο: </div>
+        <div class="shipping-company">Μεταφορική: ${shippingCompany}</div>
+      </div>
+      
+      <div class="spacer"></div>
+      
+      <div class="box-count">Κιβώτιο: ${boxNumber} / ${boxCount}</div>
+    </div>
   </div>
 </body>
 </html>
