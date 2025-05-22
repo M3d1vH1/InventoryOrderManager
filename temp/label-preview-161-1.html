@@ -26,10 +26,15 @@
           }
           
           .logo {
-            max-width: 140px;
-            max-height: 40px;
+            width: 90mm !important;
+            height: 35mm !important;
+            max-width: none !important;
+            max-height: none !important;
             display: block;
-            margin: 0 auto 8px;
+            margin: 0 auto 5mm;
+            object-fit: contain;
+            transform: scale(1.5);
+            transform-origin: center;
           }
           
           .content {
@@ -102,9 +107,12 @@
           }
         </style>
         <script>
-          // Auto-print when opened directly
-          function printLabel() {
-            window.print();
+          // Automatically prompt for printing when the page loads
+          window.onload = function() {
+            // Short delay to ensure everything is loaded
+            setTimeout(function() {
+              window.print();
+            }, 500);
           }
         </script>
       </head>

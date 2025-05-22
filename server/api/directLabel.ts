@@ -131,15 +131,13 @@ export async function generateDirectLabel(req: Request, res: Response) {
     }
     
     .logo {
-      width: 90mm;
-      height: 35mm;
-      max-width: none;
-      max-height: none;
+      width: 45mm;
+      height: 17mm;
+      max-width: 45mm;
+      max-height: 17mm;
       display: block;
       margin: 0 auto 5mm;
       object-fit: contain;
-      transform: scale(1.5);
-      transform-origin: center;
     }
     
     .content {
@@ -221,7 +219,7 @@ export async function generateDirectLabel(req: Request, res: Response) {
         <div class="order-number">Αρ. Παραγγελίας: ${order.orderNumber}</div>
         <div class="customer-name">${order.customerName || ''}</div>
         <div class="customer-address">${address}</div>
-        ${customer?.phone ? `<div class="customer-phone">Τηλέφωνο: ${customer.phone}</div>` : ''}
+        <div class="customer-phone">Τηλέφωνο: ${customer?.phone || ''}</div>
         <div class="shipping-company">Μεταφορική: ${shippingCompanyInfo}</div>
       </div>
       
