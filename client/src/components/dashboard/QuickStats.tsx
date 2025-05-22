@@ -89,14 +89,14 @@ const QuickStats = () => {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4 mb-6">
       {statCards.map((card, index) => (
         <Link key={index} href={card.path + (card.filter || "")}>
           <div className="bg-white rounded-lg shadow p-4 flex items-center hover:bg-slate-50 transition-colors cursor-pointer group h-full">
             <div className={`rounded-full ${card.bgColor} p-3 mr-4 group-hover:scale-110 transition-transform flex items-center justify-center h-12 w-12 flex-shrink-0`}>
               <span className={card.textColor}>{card.icon}</span>
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <h3 className="text-sm text-slate-500 font-medium truncate">{card.title}</h3>
               <p className="text-2xl font-semibold">{card.value}</p>
             </div>
