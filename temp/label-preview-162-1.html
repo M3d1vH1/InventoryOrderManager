@@ -27,11 +27,9 @@
           
           .logo {
             width: 45mm;
-            height: 17mm;
-            max-width: 45mm;
-            max-height: 17mm;
+            height: 10mm; /* Reduced height from 17mm to 10mm */
             display: block;
-            margin: 0 auto 5mm;
+            margin: 0 auto 2mm; /* Reduced bottom margin from 5mm to 2mm */
             object-fit: contain;
           }
           
@@ -47,6 +45,7 @@
           
           .order-number {
             font-size: 11pt;
+            font-weight: bold;
             margin-bottom: 3mm;
           }
           
@@ -68,18 +67,16 @@
             padding-left: 3mm;
             background-color: #f8f8f8;
             padding: 1mm 2mm 1mm 3mm;
-            margin-bottom: 4mm;
+            margin-bottom: 2mm; /* Reduced to fix overflow issues */
           }
           
-          .spacer {
-            flex-grow: 1;
-          }
+          /* Removed spacer */
           
           .box-count {
             font-size: 14pt;
             font-weight: bold;
             text-align: center;
-            margin-top: auto;
+            margin-top: 0; /* Changed from auto to remove the gap */
             border: 1px solid #ccc;
             padding: 2mm;
             background-color: #f0f0f0;
@@ -120,14 +117,12 @@
           
           <div class="content">
             <div class="customer-info">
-              <div class="order-number">Αρ. Παραγγελίας: ORD-0162</div>
+              <div class="order-number">ORD-0162</div>
               <div class="customer-name">Μανωλιάκης Νικόλαος & ΣΙΑ ΟΕ</div>
               <div class="customer-address">Πολυδώρου 18 , Ρόδος, Δωδεκάνησα, 85100</div>
-              <div class="customer-phone">Τηλέφωνο: </div>
+              <div class="customer-phone">Τηλέφωνο: 2241039010</div>
               <div class="shipping-company">Μεταφορική: Ερμής Ρόδου</div>
             </div>
-            
-            <div class="spacer"></div>
             
             <div class="box-count">Κιβώτιο: 1 / 1</div>
           </div>

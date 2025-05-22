@@ -403,9 +403,9 @@ E
           }
           
           .order-number {
-            font-size: 11pt;
+            font-size: 13pt; /* Increased from 11pt */
             font-weight: bold;
-            margin-bottom: 3mm;
+            margin-bottom: 1mm; /* Reduced from 3mm */
           }
           
           .customer-name {
