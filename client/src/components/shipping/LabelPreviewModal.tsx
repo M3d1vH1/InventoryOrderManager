@@ -395,11 +395,11 @@ const LabelPreviewModal: React.FC<LabelPreviewModalProps> = ({
               className="flex items-center"
             >
               <ChevronLeft className="mr-1 h-4 w-4" />
-              Previous Box
+              Προηγούμενο Κιβώτιο
             </Button>
             
             <div className="font-semibold text-center">
-              Box {currentBox} of {boxCount}
+              Κιβώτιο {currentBox} από {boxCount}
             </div>
             
             <Button
@@ -409,7 +409,7 @@ const LabelPreviewModal: React.FC<LabelPreviewModalProps> = ({
               disabled={currentBox >= boxCount}
               className="flex items-center"
             >
-              Next Box
+              Επόμενο Κιβώτιο
               <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
@@ -421,7 +421,7 @@ const LabelPreviewModal: React.FC<LabelPreviewModalProps> = ({
               onClick={() => onOpenChange(false)}
               className="bg-green-600 hover:bg-green-700 text-white"
             >
-              Finish Label Printing
+              Ολοκλήρωση Εκτύπωσης Ετικέτας
             </Button>
             
             <div className="flex space-x-2">
@@ -456,7 +456,7 @@ const LabelPreviewModal: React.FC<LabelPreviewModalProps> = ({
                 className="gap-2"
               >
                 <Printer className="h-4 w-4" />
-                Print Label
+                Εκτύπωση Ετικέτας
               </Button>
             </div>
           </div>

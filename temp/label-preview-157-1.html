@@ -44,8 +44,9 @@
           }
           
           .order-number {
-            font-size: 11pt;
-            margin-bottom: 3mm;
+            font-size: 13pt; /* Increased from 11pt */
+            font-weight: bold;
+            margin-bottom: 1mm; /* Reduced from 3mm */
           }
           
           .customer-name {
@@ -66,18 +67,16 @@
             padding-left: 3mm;
             background-color: #f8f8f8;
             padding: 1mm 2mm 1mm 3mm;
-            margin-bottom: 4mm;
+            margin-bottom: 2mm; /* Reduced to fix overflow issues */
           }
           
-          .spacer {
-            flex-grow: 1;
-          }
+          /* Removed spacer */
           
           .box-count {
             font-size: 14pt;
             font-weight: bold;
             text-align: center;
-            margin-top: auto;
+            margin-top: 0; /* Changed from auto to remove the gap */
             border: 1px solid #ccc;
             padding: 2mm;
             background-color: #f0f0f0;
@@ -118,14 +117,12 @@
           
           <div class="content">
             <div class="customer-info">
-              <div class="order-number">Αρ. Παραγγελίας: ORD-0157</div>
+              <div class="order-number">ORD-0157</div>
               <div class="customer-name">Ταμβάκης Δημήτριος Νικόλαος</div>
               <div class="customer-address">Ουρανούπολη 0 , Ιερισσός, Χαλκιδική , 63075</div>
               <div class="customer-phone">Τηλέφωνο: 2377071514</div>
               <div class="shipping-company">Μεταφορική: Προοδευτική Κηφισού 91</div>
             </div>
-            
-            <div class="spacer"></div>
             
             <div class="box-count">Κιβώτιο: 1 / 1</div>
           </div>
