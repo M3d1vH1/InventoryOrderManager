@@ -3482,37 +3482,51 @@ A 1
         return res.status(404).json({ error: 'Product not found with this barcode' });
       }
       
-      // Update inventory
+      // Current product stock and calculated new quantity
+      const currentStock = product.currentStock;
       const newQuantity = adjustmentType === 'count' 
         ? parseInt(quantity.toString()) 
-        : product.currentStock + parseInt(quantity.toString());
+        : currentStock + parseInt(quantity.toString());
       
-      await storage.updateProductStock(product.id, newQuantity);
+      // Try to update the product stock with retry mechanism
+      const updatedProduct = await storage.updateProductStock(product.id, newQuantity);
       
-      // Log the inventory change
-      await storage.createInventoryChange({
-        productId: product.id,
-        previousStock: product.currentStock,
-        newStock: newQuantity,
-        changeAmount: newQuantity - product.currentStock,
-        type: adjustmentType,
-        reason: 'Barcode scan inventory update',
-        userId: req.user?.id || null,
-        timestamp: new Date()
-      });
+      if (!updatedProduct) {
+        console.error(`Failed to update stock for product ${product.id}`);
+        return res.status(500).json({ error: 'Failed to update product stock' });
+      }
+      
+      // Log the inventory change (as a separate operation that shouldn't block)
+      try {
+        await storage.createInventoryChange({
+          productId: product.id,
+          quantity: String(newQuantity - currentStock),
+          changeType: adjustmentType === 'count' ? 'manual_adjustment' : 'stock_replenishment',
+          changeDate: new Date(),
+          changedById: req.user?.id || null,
+          notes: 'Barcode scan inventory update'
+        });
+      } catch (inventoryLogError) {
+        // Just log the error but continue - the stock was updated successfully
+        console.error('Failed to log inventory change:', inventoryLogError);
+      }
       
       return res.status(200).json({ 
         success: true,
         product: {
           id: product.id,
           name: product.name,
-          previousStock: product.currentStock,
+          previousStock: currentStock,
           newStock: newQuantity
         }
       });
     } catch (error) {
       console.error('Error updating inventory by barcode:', error);
-      return res.status(500).json({ error: 'Failed to update inventory' });
+      // More descriptive error message for troubleshooting
+      return res.status(500).json({ 
+        error: 'Failed to update inventory', 
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
   

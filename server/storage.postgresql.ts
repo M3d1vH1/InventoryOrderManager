@@ -2040,21 +2040,73 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateProductStock(productId: number, newQuantity: number): Promise<Product | undefined> {
-    try {
-      const [updatedProduct] = await this.db
-        .update(products)
-        .set({ 
-          currentStock: newQuantity,
-          lastStockUpdate: new Date()
-        })
-        .where(eq(products.id, productId))
-        .returning();
-      
-      return updatedProduct;
-    } catch (error) {
-      console.error("Error updating product stock:", error);
-      return undefined;
+    // Maximum number of retry attempts
+    const MAX_RETRIES = 3;
+    // Initial backoff delay in milliseconds
+    const INITIAL_BACKOFF = 100;
+    
+    let retryCount = 0;
+    let lastError: any = null;
+
+    while (retryCount < MAX_RETRIES) {
+      try {
+        console.log(`Updating stock for product ${productId} to ${newQuantity} (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        
+        // First get the current product to ensure it exists
+        const productsList = await this.db.select().from(products).where(eq(products.id, productId));
+        
+        if (productsList.length === 0) {
+          console.error(`Product with ID ${productId} not found`);
+          return undefined;
+        }
+        
+        // Set a timeout for this operation to prevent long-running queries
+        const timeoutPromise = new Promise<null>((_, reject) => {
+          setTimeout(() => reject(new Error('Stock update operation timed out')), 5000);
+        });
+        
+        // The actual update operation
+        const updatePromise = this.db.transaction(async (tx) => {
+          // Update the product stock
+          const [updatedProduct] = await tx
+            .update(products)
+            .set({ 
+              currentStock: newQuantity,
+              lastStockUpdate: new Date()
+            })
+            .where(eq(products.id, productId))
+            .returning();
+          
+          return updatedProduct;
+        });
+        
+        // Race between the timeout and the update operation
+        const updatedProduct = await Promise.race([updatePromise, timeoutPromise]) as Product;
+        
+        console.log(`Successfully updated stock for product ${productId} to ${newQuantity}`);
+        return updatedProduct;
+      } catch (error) {
+        lastError = error;
+        retryCount++;
+        
+        if (retryCount >= MAX_RETRIES) {
+          console.error(`Failed to update stock for product ${productId} after ${MAX_RETRIES} attempts:`, error);
+          // Don't rethrow - just return undefined for consistent behavior with the original function
+          return undefined;
+        }
+        
+        // Calculate exponential backoff delay: INITIAL_BACKOFF * 2^retryCount
+        const backoffDelay = INITIAL_BACKOFF * Math.pow(2, retryCount);
+        console.log(`Retrying stock update for product ${productId} in ${backoffDelay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        
+        // Wait for the backoff period before retrying
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+      }
     }
+    
+    // This should never be reached due to the return in the error handling above,
+    // but TypeScript expects a return value
+    return undefined;
   }
   
   async createInventoryChange(change: InsertInventoryChange): Promise<InventoryChange> {
