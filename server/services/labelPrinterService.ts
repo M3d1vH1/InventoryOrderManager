@@ -486,11 +486,8 @@ E
             <div class="box-count">Κιβώτιο: ${boxInfo}</div>
           </div>
         </div>
-        
-
       </body>
-      </html>
-      `;
+      </html>`;
       
       // Save HTML to a temporary file, with cleanup of old files
       const tempDir = path.join(process.cwd(), 'temp');
