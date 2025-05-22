@@ -372,8 +372,6 @@ E
           .logo {
             width: 45mm;
             height: 17mm;
-            max-width: 45mm;
-            max-height: 17mm;
             display: block;
             margin: 0 auto 5mm;
             object-fit: contain;

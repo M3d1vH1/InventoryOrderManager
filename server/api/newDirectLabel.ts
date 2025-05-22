@@ -78,10 +78,10 @@ export async function generateDirectLabel(req: Request, res: Response) {
     const addressParts = [];
     
     // Try to get address from order first
-    if (order.customerAddress) addressParts.push(order.customerAddress);
-    if (order.customerCity) addressParts.push(order.customerCity);
-    if (order.customerState) addressParts.push(order.customerState);
-    if (order.customerPostalCode) addressParts.push(order.customerPostalCode);
+    if ((order as any).customerAddress) addressParts.push((order as any).customerAddress);
+    if ((order as any).customerCity) addressParts.push((order as any).customerCity);
+    if ((order as any).customerState) addressParts.push((order as any).customerState);
+    if ((order as any).customerPostalCode) addressParts.push((order as any).customerPostalCode);
     
     // If no address in order, try to get from customer object
     if (addressParts.length === 0 && customer) {
@@ -96,6 +96,9 @@ export async function generateDirectLabel(req: Request, res: Response) {
     
     // Box info
     const boxInfo = `${currentBox} / ${boxCount}`;
+    
+    // Get customer phone number
+    const phoneNumber = customer?.phone || '';
     
     // Create simple HTML for direct printing
     const html = `<!DOCTYPE html>
@@ -133,6 +136,8 @@ export async function generateDirectLabel(req: Request, res: Response) {
     .logo {
       width: 45mm;
       height: 17mm;
+      max-width: 45mm;
+      max-height: 17mm;
       display: block;
       margin: 0 auto 5mm;
       object-fit: contain;
@@ -217,7 +222,7 @@ export async function generateDirectLabel(req: Request, res: Response) {
         <div class="order-number">Αρ. Παραγγελίας: ${order.orderNumber}</div>
         <div class="customer-name">${order.customerName || ''}</div>
         <div class="customer-address">${address}</div>
-        <div class="customer-phone">Τηλέφωνο: ${customer?.phone || ''}</div>
+        <div class="customer-phone">Τηλέφωνο: ${phoneNumber}</div>
         <div class="shipping-company">Μεταφορική: ${shippingCompanyInfo}</div>
       </div>
       
@@ -237,11 +242,8 @@ export async function generateDirectLabel(req: Request, res: Response) {
       await storage.addOrderChangelog({
         orderId: orderId,
         userId: (req.user as any)?.id || null,
-        timestamp: new Date(),
-        changeType: 'label_printed',
-        details: `Printed shipping label for box ${currentBox} of ${boxCount}`,
-        previousValue: null,
-        newValue: null
+        action: "label_printed",
+        notes: `Printed shipping label for box ${currentBox} of ${boxCount}`,
       });
     } catch (error) {
       console.warn('Failed to log label printing:', error);
@@ -301,15 +303,10 @@ async function ensureLogoAvailable() {
   if (!fs.existsSync(targetSvgLogo)) {
     console.log('Creating SVG logo for label printing');
     const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
-<svg width="800" height="120" viewBox="0 0 800 120" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="0" width="800" height="120" fill="#ffffff" rx="0" ry="0"/>
-  <text x="20" y="70" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="#0055aa">Amphoreus</text>
-  <text x="20" y="100" font-family="Arial, sans-serif" font-size="30" fill="#555555">Olive Oil Company</text>
-  <path d="M650,40 Q670,20 690,40 Q710,60 730,40" stroke="#0055aa" stroke-width="4" fill="none"/>
-  <path d="M650,50 L730,50" stroke="#0055aa" stroke-width="3" fill="none"/>
-  <path d="M660,60 Q690,90 720,60" stroke="#0055aa" stroke-width="4" fill="none"/>
-  <path d="M600,30 Q620,10 640,30" stroke="#0055aa" stroke-width="3" fill="none" opacity="0.5"/>
-  <path d="M740,30 Q760,10 780,30" stroke="#0055aa" stroke-width="3" fill="none" opacity="0.5"/>
+<svg width="400" height="100" viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="400" height="100" fill="#ffffff" rx="0" ry="0"/>
+  <text x="20" y="60" font-family="Arial, sans-serif" font-size="40" font-weight="bold" fill="#0055aa">Amphoreus</text>
+  <text x="20" y="85" font-family="Arial, sans-serif" font-size="20" fill="#555555">Olive Oil Company</text>
 </svg>`;
     fs.writeFileSync(targetSvgLogo, svgContent, 'utf8');
     fs.chmodSync(targetSvgLogo, 0o644);
