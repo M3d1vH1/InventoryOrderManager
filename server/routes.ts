@@ -47,7 +47,7 @@ import supplierPaymentsRouter from "./api/supplierPayments";
 import customersRouter from "./api/customers";
 import { createSlackService } from "./services/notifications/slackService";
 import { printShippingLabel, printBatchShippingLabels, previewShippingLabel, servePreviewImage } from "./api/labelPrinting";
-import { generateDirectLabel } from "./api/directLabel";
+import { directShippingLabel } from "./api/directShippingLabel";
 import { getCustomerInfoForLabel } from "./api/shipping";
 import { getProductByBarcode, logBarcodeScan, getBarcodeScanHistory, updateInventoryByBarcode } from "./api/barcode";
 
@@ -3070,6 +3070,12 @@ A 1
         message: error.message || 'Error logging label printing' 
       });
     }
+  });
+  
+  // Direct shipping label (returns simple HTML page ready for printing)
+  app.get('/api/direct-label/:orderId/:boxCount?/:currentBox?', (req: Request, res: Response) => {
+    // Call the direct shipping label generator
+    directShippingLabel(req, res);
   });
   
   // Email settings routes

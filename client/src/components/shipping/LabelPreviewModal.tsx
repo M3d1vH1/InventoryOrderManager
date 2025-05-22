@@ -426,7 +426,33 @@ const LabelPreviewModal: React.FC<LabelPreviewModalProps> = ({
             
             <div className="flex space-x-2">
               <Button
-                onClick={handleBrowserPrint}
+                onClick={() => {
+                  // Open the direct shipping label in a new window
+                  window.open(`/api/direct-label/${orderId}/${boxCount}/${currentBox}`, '_blank', 'toolbar=0,location=0,menubar=0');
+                  
+                  // Log the label printing
+                  apiRequest({
+                    url: '/api/orders/log-label-print',
+                    method: 'POST',
+                    body: JSON.stringify({
+                      orderId,
+                      boxNumber: currentBox,
+                      boxCount,
+                      method: 'direct-label'
+                    }),
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                  }).catch(error => {
+                    console.error("Failed to log label printing:", error);
+                  });
+                  
+                  // Show success message
+                  toast({
+                    title: 'Label opened for printing',
+                    description: `Label for box ${currentBox} of ${boxCount} has been opened for printing`
+                  });
+                }}
                 className="gap-2"
               >
                 <Printer className="h-4 w-4" />

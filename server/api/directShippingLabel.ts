@@ -1,0 +1,271 @@
+import { Request, Response } from 'express';
+import { storage } from '../storage';
+import path from 'path';
+import fs from 'fs';
+
+// Constants for label dimensions
+const LABEL_WIDTH_MM = 100;
+const LABEL_HEIGHT_MM = 70;
+
+/**
+ * Generate and serve a simple shipping label HTML page for direct printing
+ */
+export async function directShippingLabel(req: Request, res: Response) {
+  try {
+    // Parse parameters
+    const orderId = parseInt(req.params.orderId);
+    const boxCount = parseInt(req.params.boxCount || '1');
+    const currentBox = parseInt(req.params.currentBox || '1');
+    
+    if (isNaN(orderId)) {
+      return res.status(400).send('Invalid order ID');
+    }
+    
+    // Get order data
+    const order = await storage.getOrder(orderId);
+    if (!order) {
+      return res.status(404).send('Order not found');
+    }
+    
+    // Get customer info
+    let customerAddress = '';
+    let shippingCompany = '';
+    let customerPhone = '';
+    
+    // Get customer info if available
+    let customer = null;
+    if (order.customerName) {
+      customer = await storage.getCustomerByName(order.customerName);
+    }
+    
+    // Build shipping info from customer or order data
+    if (customer) {
+      // Shipping company info
+      if (customer.shippingCompany) {
+        shippingCompany = customer.shippingCompany;
+      } else if (customer.preferredShippingCompany) {
+        shippingCompany = customer.preferredShippingCompany;
+      } else if (customer.billingCompany) {
+        shippingCompany = customer.billingCompany;
+      }
+      
+      // Address
+      const addressParts = [];
+      if (customer.address) addressParts.push(customer.address);
+      if (customer.city) addressParts.push(customer.city);
+      if (customer.state) addressParts.push(customer.state);
+      if (customer.postalCode) addressParts.push(customer.postalCode);
+      customerAddress = addressParts.length > 0 ? addressParts.join(', ') : 'Διεύθυνση μη διαθέσιμη';
+      
+      // Phone
+      customerPhone = customer.phone || '';
+    }
+    
+    // If no shipping company from customer, use order data
+    if (!shippingCompany && order.area) {
+      shippingCompany = order.area;
+    }
+    
+    // If still no address, use a placeholder
+    if (!customerAddress) {
+      customerAddress = 'Διεύθυνση μη διαθέσιμη';
+    }
+    
+    // Box info
+    const boxInfo = `${currentBox} / ${boxCount}`;
+    
+    // Ensure logo is available
+    await ensureLogoAvailable();
+    
+    // Generate simple HTML
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <title>Ετικέτα αποστολής - ${order.orderNumber}</title>
+  <meta charset="UTF-8">
+  <style>
+    @page {
+      size: ${LABEL_WIDTH_MM}mm ${LABEL_HEIGHT_MM}mm;
+      margin: 0;
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    
+    .shipping-label {
+      width: ${LABEL_WIDTH_MM}mm;
+      height: ${LABEL_HEIGHT_MM}mm;
+      padding: 5mm;
+      box-sizing: border-box;
+      position: relative;
+      background-color: white;
+    }
+    
+    .logo {
+      max-width: 140px;
+      max-height: 40px;
+      display: block;
+      margin: 0 auto 8px;
+    }
+    
+    .content {
+      display: flex;
+      flex-direction: column;
+      height: calc(${LABEL_HEIGHT_MM}mm - 15mm);
+    }
+    
+    .customer-info {
+      margin-bottom: 5mm;
+    }
+    
+    .order-number {
+      font-size: 11pt;
+      margin-bottom: 3mm;
+    }
+    
+    .customer-name {
+      font-size: 12pt;
+      font-weight: bold;
+      margin-bottom: 2mm;
+    }
+    
+    .customer-address, .customer-phone {
+      font-size: 10pt;
+      margin-bottom: 2mm;
+    }
+    
+    .shipping-company {
+      font-size: 11pt;
+      font-weight: bold;
+      border-left: 3px solid #555;
+      padding-left: 3mm;
+      background-color: #f8f8f8;
+      padding: 1mm 2mm 1mm 3mm;
+      margin-bottom: 4mm;
+    }
+    
+    .spacer {
+      flex-grow: 1;
+    }
+    
+    .box-count {
+      font-size: 14pt;
+      font-weight: bold;
+      text-align: center;
+      margin-top: auto;
+      border: 1px solid #ccc;
+      padding: 2mm;
+      background-color: #f0f0f0;
+    }
+    
+    @media print {
+      body {
+        background: none;
+      }
+    }
+  </style>
+  <script>
+    // Auto-print when the page loads
+    window.onload = function() {
+      setTimeout(function() {
+        window.print();
+      }, 500);
+    };
+  </script>
+</head>
+<body>
+  <div class="shipping-label">
+    <img src="/shipping-logo.png" class="logo" alt="Company Logo" onerror="this.src='/simple-logo.svg'"/>
+    
+    <div class="content">
+      <div class="customer-info">
+        <div class="order-number">Αρ. Παραγγελίας: ${order.orderNumber}</div>
+        <div class="customer-name">${order.customerName || ''}</div>
+        <div class="customer-address">${customerAddress}</div>
+        <div class="customer-phone">Τηλέφωνο: ${customerPhone}</div>
+        <div class="shipping-company">Μεταφορική: ${shippingCompany}</div>
+      </div>
+      
+      <div class="spacer"></div>
+      
+      <div class="box-count">Κιβώτιο: ${boxInfo}</div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    // Log the print activity (when possible)
+    try {
+      if (req.user) {
+        await storage.addOrderChangelog({
+          orderId,
+          userId: (req.user as any)?.id || null,
+          action: 'label_printed',
+          notes: `Printed shipping label for box ${currentBox} of ${boxCount} using direct HTML`,
+          changes: { boxCount, currentBox, method: 'direct-html' }
+        });
+      }
+    } catch (err) {
+      console.warn('Failed to log label printing activity:', err);
+    }
+
+    // Send the HTML directly
+    res.set('Content-Type', 'text/html');
+    res.send(html);
+    
+  } catch (error: any) {
+    console.error('Error generating direct shipping label:', error);
+    res.status(500).send(`Error generating label: ${error.message}`);
+  }
+}
+
+/**
+ * Ensure the logo is available in the public directory
+ */
+async function ensureLogoAvailable() {
+  // Logo paths
+  const sourceLogo = path.join(process.cwd(), 'attached_assets', 'Frame 40.png');
+  const targetDir = path.join(process.cwd(), 'public');
+  const targetLogo = path.join(targetDir, 'shipping-logo.png');
+  const targetSvgLogo = path.join(targetDir, 'simple-logo.svg');
+  
+  // Ensure directory exists
+  if (!fs.existsSync(targetDir)) {
+    fs.mkdirSync(targetDir, { recursive: true });
+  }
+  
+  // Copy the PNG logo
+  if (fs.existsSync(sourceLogo)) {
+    fs.copyFileSync(sourceLogo, targetLogo);
+    
+    // Set permissions
+    try {
+      fs.chmodSync(targetLogo, 0o644);
+    } catch (err) {
+      console.warn('Failed to update logo permissions:', err);
+    }
+  } else {
+    console.warn(`Logo source file not found at ${sourceLogo}`);
+  }
+  
+  // Create SVG logo if it doesn't exist (as a fallback)
+  if (!fs.existsSync(targetSvgLogo)) {
+    console.log('Creating SVG logo for label printing');
+    const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="50" viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="200" height="50" fill="#f8f8f8" rx="5" ry="5"/>
+  <text x="10" y="30" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#0055aa">Amphoreus</text>
+  <text x="10" y="45" font-family="Arial, sans-serif" font-size="12" fill="#555555">Olive Oil Company</text>
+</svg>`;
+    fs.writeFileSync(targetSvgLogo, svgContent, 'utf8');
+    fs.chmodSync(targetSvgLogo, 0o644);
+  }
+}
