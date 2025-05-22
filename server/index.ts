@@ -10,6 +10,8 @@ import rateLimit from "express-rate-limit";
 import cors from "cors";
 import { forceHttps } from './middlewares/forceHttps';
 import { geoBlockMiddleware } from './middlewares/geoblock';
+// Import monitoring system
+import { initMonitoring } from './monitoring';
 // csurf is disabled by default as it requires proper setup with cookies, but you can enable it if needed
 // import csrf from "csurf";
 
@@ -139,6 +141,14 @@ app.use((req, res, next) => {
   // Setup authentication system
   setupAuth(app);
   log('Authentication system initialized', 'auth');
+  
+  // Initialize comprehensive monitoring system
+  // This will track all requests and performance metrics (CPU, memory, database usage)
+  initMonitoring(app, {
+    performanceInterval: 30000, // Log performance every 30 seconds
+    detailedLogging: process.env.NODE_ENV === 'production' // More detailed in production
+  });
+  log('Monitoring system initialized', 'monitoring');
   
   const server = await registerRoutes(app);
 
