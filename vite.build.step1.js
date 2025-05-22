@@ -5,16 +5,15 @@ import path from 'path';
 // Configuration for first build step - core modules only
 export default defineConfig({
   plugins: [react()],
-  root: path.resolve(__dirname, 'client'),
   build: {
-    outDir: 'dist',
+    outDir: 'client/dist',
     emptyOutDir: true,
     minify: true,
     sourcemap: false,
     // Limit the build to core React modules for the first step
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, 'client/index.html'),
+        main: path.resolve(__dirname, 'index.html'),
       },
       output: {
         manualChunks: {
@@ -26,11 +25,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'client/src'),
-      '@components': path.resolve(__dirname, 'client/src/components'),
-      '@lib': path.resolve(__dirname, 'client/src/lib'),
-      '@pages': path.resolve(__dirname, 'client/src/pages'),
-      '@shared': path.resolve(__dirname, 'shared'),
+      '@': path.resolve(__dirname, './src'),
+      '@components': path.resolve(__dirname, './src/components'),
+      '@lib': path.resolve(__dirname, './src/lib'),
+      '@pages': path.resolve(__dirname, './src/pages'),
+      '@shared': path.resolve(__dirname, './shared'),
     },
   },
 });

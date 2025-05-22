@@ -5,16 +5,15 @@ import path from 'path';
 // Configuration for fourth build step - icons and remaining assets
 export default defineConfig({
   plugins: [react()],
-  root: path.resolve(__dirname, 'client'),
   build: {
-    outDir: 'dist',
+    outDir: 'client/dist',
     emptyOutDir: false, // Don't empty the output directory (preserve previous steps)
     minify: true,
     sourcemap: false,
     // Focus on icons and remaining assets in this step
     rollupOptions: {
       input: {
-        icons: path.resolve(__dirname, 'client/src/main.tsx'),
+        icons: path.resolve(__dirname, 'src/components/icons/index.ts'),
       },
       output: {
         manualChunks: {
@@ -28,11 +27,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'client/src'),
-      '@components': path.resolve(__dirname, 'client/src/components'),
-      '@lib': path.resolve(__dirname, 'client/src/lib'),
-      '@pages': path.resolve(__dirname, 'client/src/pages'),
-      '@shared': path.resolve(__dirname, 'shared'),
+      '@': path.resolve(__dirname, './src'),
+      '@components': path.resolve(__dirname, './src/components'),
+      '@lib': path.resolve(__dirname, './src/lib'),
+      '@pages': path.resolve(__dirname, './src/pages'),
+      '@shared': path.resolve(__dirname, './shared'),
     },
   },
 });
