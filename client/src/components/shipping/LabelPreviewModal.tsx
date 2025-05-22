@@ -355,12 +355,12 @@ const LabelPreviewModal: React.FC<LabelPreviewModalProps> = ({
                 </span>
               </div>
               {isHtmlPreview ? (
-                <div className="overflow-y-auto max-h-[350px]">
+                <div className="overflow-y-auto max-h-[450px]">
                   <iframe
                     src={previewUrl}
-                    className="w-full h-[350px] border"
+                    className="w-full h-[400px] border"
                     title="Label Preview"
-                    style={{ transform: 'scale(0.95)', transformOrigin: 'top center' }}
+                    style={{ transform: 'scale(1)', transformOrigin: 'top center' }}
                   ></iframe>
                 </div>
               ) : (
