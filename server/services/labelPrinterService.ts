@@ -371,9 +371,9 @@ E
           
           .logo {
             width: 45mm;
-            height: 17mm;
+            height: 10mm; /* Reduced height from 17mm to 10mm */
             display: block;
-            margin: 0 auto 5mm;
+            margin: 0 auto 2mm; /* Reduced bottom margin from 5mm to 2mm */
             object-fit: contain;
           }
           
