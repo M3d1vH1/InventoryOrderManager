@@ -4,12 +4,12 @@ const { Pool } = pg;
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { log } from './vite';
 import { existsSync } from 'fs';
-import { WebSocket, neonConfig } from '@neondatabase/serverless';
+import { neonConfig } from '@neondatabase/serverless';
 import ws from 'ws';
 
 // For Neon serverless compatibility
 if (process.env.DATABASE_URL?.includes('neon.tech')) {
-  neonConfig.webSocketConstructor = ws as any;
+  neonConfig.webSocketConstructor = ws;
   log('Using Neon serverless WebSocket configuration', 'database');
 }
 

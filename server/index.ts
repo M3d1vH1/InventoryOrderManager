@@ -45,8 +45,8 @@ app.use(
         scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow inline scripts for Vite in development
         connectSrc: ["'self'", "https:"],
         imgSrc: ["'self'", "data:", "blob:"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        fontSrc: ["'self'", "data:"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+        fontSrc: ["'self'", "data:", "https://cdnjs.cloudflare.com"],
       },
     },
     // Set HSTS header
