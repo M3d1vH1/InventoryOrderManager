@@ -32,7 +32,10 @@ export function geoBlockMiddleware(req: Request, res: Response, next: NextFuncti
   
   // For local development or missing IP, allow access
   if (process.env.NODE_ENV === 'development' || !ip || ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.') || ip.startsWith('10.')) {
-    console.log(`[GeoBlock] Development mode or local IP detected: ${ip} - Access allowed`);
+    // Only log in verbose mode to reduce log spam
+    if (process.env.VERBOSE_LOGGING === 'true') {
+      console.log(`[GeoBlock] Development mode or local IP detected: ${ip} - Access allowed`);
+    }
     return next();
   }
   
