@@ -5,15 +5,16 @@ import path from 'path';
 // Configuration for first build step - core modules only
 export default defineConfig({
   plugins: [react()],
+  root: path.resolve(__dirname, 'client'),
   build: {
-    outDir: 'client/dist',
+    outDir: 'dist',
     emptyOutDir: true,
     minify: true,
     sourcemap: false,
     // Limit the build to core React modules for the first step
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, 'index.html'),
+        main: path.resolve(__dirname, 'client/index.html'),
       },
       output: {
         manualChunks: {
