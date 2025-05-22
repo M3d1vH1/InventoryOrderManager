@@ -112,9 +112,9 @@ export async function directShippingLabel(req: Request, res: Response) {
     .logo {
       width: 100%;
       height: auto;
-      max-height: 40px;
+      max-height: 120px;
       display: block;
-      margin: 0 auto 8px;
+      margin: 0 auto 10px;
       object-fit: contain;
     }
     
@@ -262,13 +262,15 @@ async function ensureLogoAvailable() {
   if (!fs.existsSync(targetSvgLogo)) {
     console.log('Creating SVG logo for label printing');
     const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
-<svg width="400" height="60" viewBox="0 0 400 60" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="0" width="400" height="60" fill="#ffffff" rx="0" ry="0"/>
-  <text x="10" y="35" font-family="Arial, sans-serif" font-size="30" font-weight="bold" fill="#0055aa">Amphoreus</text>
-  <text x="10" y="55" font-family="Arial, sans-serif" font-size="16" fill="#555555">Olive Oil Company</text>
-  <path d="M330,20 Q340,10 350,20 Q360,30 370,20" stroke="#0055aa" stroke-width="3" fill="none"/>
-  <path d="M330,25 L370,25" stroke="#0055aa" stroke-width="2" fill="none"/>
-  <path d="M335,30 Q350,45 365,30" stroke="#0055aa" stroke-width="3" fill="none"/>
+<svg width="800" height="120" viewBox="0 0 800 120" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="800" height="120" fill="#ffffff" rx="0" ry="0"/>
+  <text x="20" y="70" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="#0055aa">Amphoreus</text>
+  <text x="20" y="100" font-family="Arial, sans-serif" font-size="30" fill="#555555">Olive Oil Company</text>
+  <path d="M650,40 Q670,20 690,40 Q710,60 730,40" stroke="#0055aa" stroke-width="4" fill="none"/>
+  <path d="M650,50 L730,50" stroke="#0055aa" stroke-width="3" fill="none"/>
+  <path d="M660,60 Q690,90 720,60" stroke="#0055aa" stroke-width="4" fill="none"/>
+  <path d="M600,30 Q620,10 640,30" stroke="#0055aa" stroke-width="3" fill="none" opacity="0.5"/>
+  <path d="M740,30 Q760,10 780,30" stroke="#0055aa" stroke-width="3" fill="none" opacity="0.5"/>
 </svg>`;
     fs.writeFileSync(targetSvgLogo, svgContent, 'utf8');
     fs.chmodSync(targetSvgLogo, 0o644);
