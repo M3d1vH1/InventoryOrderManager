@@ -3,7 +3,7 @@ import { storage } from '../storage';
 import path from 'path';
 import fs from 'fs';
 
-// Constants for label dimensions
+// Constants for label dimensions (10cm × 7cm)
 const LABEL_WIDTH_MM = 100;
 const LABEL_HEIGHT_MM = 70;
 
@@ -114,7 +114,7 @@ export async function directShippingLabel(req: Request, res: Response) {
     
     .logo-container {
       width: 100%;
-      height: 30mm;
+      height: 35mm;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -123,8 +123,10 @@ export async function directShippingLabel(req: Request, res: Response) {
     
     .logo {
       width: 90mm;
-      height: 30mm;
+      height: 35mm;
       object-fit: contain;
+      transform: scale(1.5);
+      transform-origin: center;
     }
     
     .content {
@@ -224,7 +226,7 @@ export async function directShippingLabel(req: Request, res: Response) {
         <div class="order-number">Αρ. Παραγγελίας: ${order.orderNumber}</div>
         <div class="customer-name">${order.customerName || ''}</div>
         <div class="customer-address">${customerAddress}</div>
-        ${customerPhone ? `<div class="customer-phone">Τηλέφωνο: ${customerPhone}</div>` : ''}
+        <div class="customer-phone">Τηλέφωνο: ${customerPhone}</div>
         <div class="shipping-company">Μεταφορική: ${shippingCompany}</div>
       </div>
       
