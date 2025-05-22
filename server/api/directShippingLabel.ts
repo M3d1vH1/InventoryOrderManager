@@ -110,10 +110,12 @@ export async function directShippingLabel(req: Request, res: Response) {
     }
     
     .logo {
-      max-width: 140px;
+      width: 100%;
+      height: auto;
       max-height: 40px;
       display: block;
       margin: 0 auto 8px;
+      object-fit: contain;
     }
     
     .content {
@@ -260,10 +262,13 @@ async function ensureLogoAvailable() {
   if (!fs.existsSync(targetSvgLogo)) {
     console.log('Creating SVG logo for label printing');
     const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
-<svg width="200" height="50" viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="0" width="200" height="50" fill="#f8f8f8" rx="5" ry="5"/>
-  <text x="10" y="30" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#0055aa">Amphoreus</text>
-  <text x="10" y="45" font-family="Arial, sans-serif" font-size="12" fill="#555555">Olive Oil Company</text>
+<svg width="400" height="60" viewBox="0 0 400 60" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="400" height="60" fill="#ffffff" rx="0" ry="0"/>
+  <text x="10" y="35" font-family="Arial, sans-serif" font-size="30" font-weight="bold" fill="#0055aa">Amphoreus</text>
+  <text x="10" y="55" font-family="Arial, sans-serif" font-size="16" fill="#555555">Olive Oil Company</text>
+  <path d="M330,20 Q340,10 350,20 Q360,30 370,20" stroke="#0055aa" stroke-width="3" fill="none"/>
+  <path d="M330,25 L370,25" stroke="#0055aa" stroke-width="2" fill="none"/>
+  <path d="M335,30 Q350,45 365,30" stroke="#0055aa" stroke-width="3" fill="none"/>
 </svg>`;
     fs.writeFileSync(targetSvgLogo, svgContent, 'utf8');
     fs.chmodSync(targetSvgLogo, 0o644);
