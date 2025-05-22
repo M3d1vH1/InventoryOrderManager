@@ -1,0 +1,164 @@
+
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Shipping Label Preview</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #f0f0f0;
+          }
+          .preview-wrapper {
+            max-width: 100%;
+            overflow: hidden;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 15px;
+          }
+          .preview-header {
+            text-align: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+          }
+          .preview-header h2 {
+            margin: 0;
+            color: #333;
+            font-size: 18px;
+          }
+          .label-container {
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid #ccc;
+            margin: 0 auto;
+            padding: 10px;
+            position: relative;
+            box-sizing: border-box;
+            background-color: white;
+            transform: scale(1);
+            transform-origin: top center;
+          }
+          .logo {
+            display: block;
+            max-width: 150px;
+            max-height: 45px;
+            margin: 0 auto 10px auto;
+          }
+          .customer-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+          }
+          .customer-address, .customer-phone {
+            font-size: 13px;
+            margin-bottom: 5px;
+          }
+          .shipping-company {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background-color: #f8f8f8;
+            padding: 3px;
+            border-left: 3px solid #666;
+          }
+          .box-count {
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+            padding: 3px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+          }
+          .order-number {
+            font-size: 13px;
+            margin-bottom: 5px;
+          }
+          .order-info {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 8px;
+          }
+          .preview-footer {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #666;
+          }
+          .content-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 220px;
+          }
+          .spacer {
+            flex-grow: 1;
+          }
+          
+          /* Print media query to restore proper dimensions for actual printing */
+          @media print {
+            body {
+              background-color: white;
+              padding: 0;
+            }
+            .preview-wrapper {
+              box-shadow: none;
+              padding: 0;
+              max-width: none;
+            }
+            .preview-header, .preview-footer {
+              display: none;
+            }
+            .label-container {
+              width: 100mm;
+              height: 70mm;
+              border: none;
+              padding: 5mm;
+              max-width: none;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="preview-wrapper">
+          <div class="preview-header">
+            <h2>Shipping Label Preview</h2>
+          </div>
+          
+          <div class="label-container">
+            <!-- Logo at the top -->
+            <img src="/shipping-logo.png" class="logo" alt="Company Logo" onerror="this.src='/simple-logo.svg'; this.onerror=null;"/>
+            
+            <div class="content-wrapper">
+              <div>
+                <!-- Order number -->
+                <div class="order-number">Αρ. Παραγγελίας: ORD-0155</div>
+                
+                <!-- Customer information -->
+                <div class="customer-name">La Pasteria - Άγιος Δημήτριος Υποκ/μα Food Center</div>
+                <div class="customer-address">Διεύθυνση μη διαθέσιμη</div>
+                <div class="customer-phone">Τηλέφωνο: </div>
+                
+                <!-- Shipping information -->
+                <div class="shipping-company">Μεταφορική: Amphoreus</div>
+              </div>
+              
+              <div class="spacer"></div>
+              
+              <!-- Box count at bottom -->
+              <div class="box-count">Κιβώτιο: 1 / 1</div>
+            </div>
+          </div>
+          
+          <div class="preview-footer">
+            <p>This is a preview of how the label will appear. The actual printed label will be 100mm x 70mm.</p>
+            <p><em>Note: When printing, the label will automatically be correctly sized.</em></p>
+          </div>
+        </div>
+      </body>
+      </html>
+      

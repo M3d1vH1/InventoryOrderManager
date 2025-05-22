@@ -336,167 +336,166 @@ E
       // Box info
       const boxInfo = `${currentBox} / ${boxCount}`;
       
-      // Create HTML preview with improved layout for screen display
+      // Create a simple, direct HTML for printing
       const html = `
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Shipping Label Preview</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Shipping Label - Order ${orderWithItems.orderNumber}</title>
+        <meta charset="UTF-8">
         <style>
+          @page {
+            size: ${LABEL_WIDTH_MM}mm ${LABEL_HEIGHT_MM}mm;
+            margin: 0;
+          }
+          
           body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 10px;
-            background-color: #f0f0f0;
-          }
-          .preview-wrapper {
-            max-width: 100%;
-            overflow: hidden;
-            margin: 0 auto;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 15px;
-          }
-          .preview-header {
-            text-align: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-          }
-          .preview-header h2 {
-            margin: 0;
-            color: #333;
-            font-size: 18px;
-          }
-          .label-container {
-            width: 100%;
-            max-width: 400px;
-            border: 1px solid #ccc;
-            margin: 0 auto;
-            padding: 10px;
-            position: relative;
-            box-sizing: border-box;
+            padding: 0;
             background-color: white;
-            transform: scale(1);
-            transform-origin: top center;
           }
+          
+          .shipping-label {
+            width: ${LABEL_WIDTH_MM}mm;
+            height: ${LABEL_HEIGHT_MM}mm;
+            padding: 5mm;
+            box-sizing: border-box;
+            position: relative;
+          }
+          
           .logo {
+            max-width: 140px;
+            max-height: 40px;
             display: block;
-            max-width: 150px;
-            max-height: 45px;
-            margin: 0 auto 10px auto;
+            margin: 0 auto 8px;
           }
-          .customer-name {
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 5px;
+          
+          .content {
+            display: flex;
+            flex-direction: column;
+            height: calc(${LABEL_HEIGHT_MM}mm - 15mm);
           }
-          .customer-address, .customer-phone {
-            font-size: 13px;
-            margin-bottom: 5px;
+          
+          .customer-info {
+            margin-bottom: 5mm;
           }
-          .shipping-company {
-            font-size: 13px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            background-color: #f8f8f8;
-            padding: 3px;
-            border-left: 3px solid #666;
-          }
-          .box-count {
-            font-size: 16px;
-            font-weight: bold;
-            text-align: center;
-            margin: 10px 0;
-            padding: 3px;
-            background-color: #f0f0f0;
-            border: 1px solid #ccc;
-          }
+          
           .order-number {
-            font-size: 13px;
-            margin-bottom: 5px;
+            font-size: 11pt;
+            margin-bottom: 3mm;
           }
-          .order-info {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 8px;
+          
+          .customer-name {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-bottom: 2mm;
           }
-          .preview-footer {
-            text-align: center;
-            margin-top: 15px;
-            font-size: 12px;
-            color: #666;
+          
+          .customer-address, .customer-phone {
+            font-size: 10pt;
+            margin-bottom: 2mm;
           }
-          .content-wrapper {
-            display: flex;
-            flex-direction: column;
-            height: 220px;
+          
+          .shipping-company {
+            font-size: 11pt;
+            font-weight: bold;
+            border-left: 3px solid #555;
+            padding-left: 3mm;
+            background-color: #f8f8f8;
+            padding: 1mm 2mm 1mm 3mm;
+            margin-bottom: 4mm;
           }
+          
           .spacer {
             flex-grow: 1;
           }
           
-          /* Print media query to restore proper dimensions for actual printing */
-          @media print {
+          .box-count {
+            font-size: 14pt;
+            font-weight: bold;
+            text-align: center;
+            margin-top: auto;
+            border: 1px solid #ccc;
+            padding: 2mm;
+            background-color: #f0f0f0;
+          }
+          
+          /* For screen preview only */
+          @media screen {
             body {
+              background-color: #f0f0f0;
+              padding: 20px;
+            }
+            
+            .shipping-label {
+              margin: 0 auto;
+              border: 1px solid #ccc;
               background-color: white;
-              padding: 0;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             }
-            .preview-wrapper {
-              box-shadow: none;
-              padding: 0;
-              max-width: none;
+            
+            .print-instructions {
+              max-width: ${LABEL_WIDTH_MM}mm;
+              margin: 15px auto 0;
+              padding: 10px;
+              background-color: #fff;
+              border: 1px solid #ddd;
+              border-radius: 4px;
+              font-size: 12px;
+              color: #555;
+              text-align: center;
             }
-            .preview-header, .preview-footer {
-              display: none;
-            }
-            .label-container {
-              width: ${LABEL_WIDTH_MM}mm;
-              height: ${LABEL_HEIGHT_MM}mm;
+            
+            .print-button {
+              display: block;
+              width: 200px;
+              margin: 10px auto;
+              padding: 8px 15px;
+              background-color: #0066cc;
+              color: white;
+              text-align: center;
+              border-radius: 4px;
+              cursor: pointer;
+              font-weight: bold;
               border: none;
-              padding: 5mm;
-              max-width: none;
+            }
+            
+            .print-button:hover {
+              background-color: #0055aa;
             }
           }
         </style>
+        <script>
+          // Auto-print when opened directly
+          function printLabel() {
+            window.print();
+          }
+        </script>
       </head>
       <body>
-        <div class="preview-wrapper">
-          <div class="preview-header">
-            <h2>Shipping Label Preview</h2>
-          </div>
+        <div class="shipping-label">
+          <img src="/shipping-logo.png" class="logo" alt="Company Logo" onerror="this.src='/simple-logo.svg'"/>
           
-          <div class="label-container">
-            <!-- Logo at the top -->
-            <img src="/shipping-logo.png" class="logo" alt="Company Logo" onerror="this.src='/simple-logo.svg'; this.onerror=null;"/>
-            
-            <div class="content-wrapper">
-              <div>
-                <!-- Order number -->
-                <div class="order-number">Αρ. Παραγγελίας: ${orderWithItems.orderNumber}</div>
-                
-                <!-- Customer information -->
-                <div class="customer-name">${orderWithItems.customerName || ''}</div>
-                <div class="customer-address">${address}</div>
-                <div class="customer-phone">Τηλέφωνο: ${orderWithItems.customerPhone || ''}</div>
-                
-                <!-- Shipping information -->
-                <div class="shipping-company">Μεταφορική: ${shippingCompanyInfo}</div>
-              </div>
-              
-              <div class="spacer"></div>
-              
-              <!-- Box count at bottom -->
-              <div class="box-count">Κιβώτιο: ${boxInfo}</div>
+          <div class="content">
+            <div class="customer-info">
+              <div class="order-number">Αρ. Παραγγελίας: ${orderWithItems.orderNumber}</div>
+              <div class="customer-name">${orderWithItems.customerName || ''}</div>
+              <div class="customer-address">${address}</div>
+              <div class="customer-phone">Τηλέφωνο: ${orderWithItems.customerPhone || ''}</div>
+              <div class="shipping-company">Μεταφορική: ${shippingCompanyInfo}</div>
             </div>
+            
+            <div class="spacer"></div>
+            
+            <div class="box-count">Κιβώτιο: ${boxInfo}</div>
           </div>
-          
-          <div class="preview-footer">
-            <p>This is a preview of how the label will appear. The actual printed label will be ${LABEL_WIDTH_MM}mm x ${LABEL_HEIGHT_MM}mm.</p>
-            <p><em>Note: When printing, the label will automatically be correctly sized.</em></p>
-          </div>
+        </div>
+        
+        <div class="print-instructions">
+          <p>Ετικέτα αποστολής για την παραγγελία ${orderWithItems.orderNumber}, κιβώτιο ${boxInfo}</p>
+          <p>Διαστάσεις ετικέτας: ${LABEL_WIDTH_MM}mm x ${LABEL_HEIGHT_MM}mm</p>
+          <button class="print-button" onclick="printLabel()">Εκτύπωση</button>
         </div>
       </body>
       </html>

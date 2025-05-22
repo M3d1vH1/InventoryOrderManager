@@ -210,9 +210,41 @@ const ShippingLabel: React.FC = () => {
       {/* Server-generated Shipping Label */}
       {labelHtml ? (
         <div className="border border-gray-300 rounded-md bg-white print:border-0 print:p-0 print:shadow-none">
+          <div className="flex justify-between mb-2 print:hidden">
+            <Button 
+              onClick={() => {
+                // Create a new window with just the label HTML
+                const printWindow = window.open('', '_blank');
+                if (printWindow) {
+                  printWindow.document.write(labelHtml);
+                  printWindow.document.close();
+                  // Give time for resources to load then print
+                  setTimeout(() => {
+                    printWindow.print();
+                  }, 500);
+                } else {
+                  alert('Please allow pop-ups to print the label');
+                }
+              }}
+              size="sm"
+              variant="outline"
+              className="mr-2"
+            >
+              <Printer className="mr-2 h-4 w-4" /> Print in New Window
+            </Button>
+            
+            <a 
+              href={`data:text/html;charset=utf-8,${encodeURIComponent(labelHtml)}`}
+              download={`label-order-${order?.orderNumber}-box-${currentBox}.html`}
+              className="text-blue-600 text-sm hover:underline flex items-center"
+            >
+              Download HTML
+            </a>
+          </div>
+          
           <iframe 
             srcDoc={labelHtml}
-            style={{ width: "100%", height: "300px", border: "none" }}
+            style={{ width: "100%", height: "400px", border: "none" }}
             title="Shipping Label"
             id="shipping-label-frame"
           />
