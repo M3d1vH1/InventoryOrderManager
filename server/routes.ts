@@ -47,6 +47,7 @@ import supplierPaymentsRouter from "./api/supplierPayments";
 import customersRouter from "./api/customers";
 import { createSlackService } from "./services/notifications/slackService";
 import { printShippingLabel, printBatchShippingLabels, previewShippingLabel, servePreviewImage } from "./api/labelPrinting";
+import { generateDirectLabel } from "./api/directLabel";
 import { getCustomerInfoForLabel } from "./api/shipping";
 import { getProductByBarcode, logBarcodeScan, getBarcodeScanHistory, updateInventoryByBarcode } from "./api/barcode";
 
