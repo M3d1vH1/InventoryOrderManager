@@ -7,6 +7,14 @@ export const forceHttps = (req: Request, res: Response, next: NextFunction) => {
     return next();
   }
   
+  // Skip for Replit preview access
+  const isReplitPreview = req.headers.host?.includes('.replit.dev') || 
+                         req.headers.host?.includes('localhost') || 
+                         req.headers.host?.includes('127.0.0.1');
+  if (isReplitPreview) {
+    return next();
+  }
+  
   // Trust proxy headers (common in cloud deployments)
   const isSecure = req.secure || (req.headers['x-forwarded-proto'] === 'https');
   
