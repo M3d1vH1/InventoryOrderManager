@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Shipping Label - Order Test</title>
+  <meta charset="UTF-8">
+  <style>
+    @page {
+      size: 100mm 70mm;
+      margin: 0;
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    
+    .shipping-label {
+      width: 100mm;
+      height: 70mm;
+      padding: 5mm;
+      box-sizing: border-box;
+      position: relative;
+      border: 1px solid #ddd;
+      background-color: white;
+    }
+    
+    .logo {
+      width: 45mm;
+      height: 17mm;
+      display: block;
+      margin: 0 auto 5mm;
+      object-fit: contain;
+    }
+    
+    .content {
+      display: flex;
+      flex-direction: column;
+      height: calc(70mm - 15mm);
+    }
+    
+    .customer-info {
+      margin-bottom: 5mm;
+    }
+    
+    .order-number {
+      font-size: 11pt;
+      margin-bottom: 3mm;
+    }
+    
+    .customer-name {
+      font-size: 12pt;
+      font-weight: bold;
+      margin-bottom: 2mm;
+    }
+    
+    .customer-address, .customer-phone {
+      font-size: 10pt;
+      margin-bottom: 2mm;
+    }
+    
+    .shipping-company {
+      font-size: 11pt;
+      font-weight: bold;
+      border-left: 3px solid #555;
+      padding-left: 3mm;
+      background-color: #f8f8f8;
+      padding: 1mm 2mm 1mm 3mm;
+      margin-bottom: 4mm;
+    }
+    
+    .spacer {
+      flex-grow: 1;
+    }
+    
+    .box-count {
+      font-size: 14pt;
+      font-weight: bold;
+      text-align: center;
+      margin-top: auto;
+      border: 1px solid #ccc;
+      padding: 2mm;
+      background-color: #f0f0f0;
+    }
+    
+    @media print {
+      body {
+        background: none;
+      }
+      
+      .shipping-label {
+        border: none;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shipping-label">
+    <img src="/shipping-logo.png" class="logo" alt="Company Logo" onerror="this.src='/simple-logo.svg'"/>
+    
+    <div class="content">
+      <div class="customer-info">
+        <div class="order-number">Αρ. Παραγγελίας: ORD-TEST</div>
+        <div class="customer-name">Test Customer</div>
+        <div class="customer-address">Sample Address, City</div>
+        <div class="customer-phone">Τηλέφωνο: 123-456-7890</div>
+        <div class="shipping-company">Μεταφορική: Sample Shipping</div>
+      </div>
+      
+      <div class="spacer"></div>
+      
+      <div class="box-count">Κιβώτιο: 1 / 5</div>
+    </div>
+  </div>
+</body>
+</html>
