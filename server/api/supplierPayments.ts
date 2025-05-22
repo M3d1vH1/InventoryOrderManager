@@ -5,8 +5,79 @@ import { isAuthenticated } from '../auth';
 import { createInsertSchema } from 'drizzle-zod';
 import { suppliers, supplierInvoices as invoices, supplierPayments as payments, 
          insertSupplierInvoiceSchema, insertSupplierPaymentSchema } from '@shared/schema';
-import { subDays, startOfMonth, endOfMonth } from 'date-fns';
+import { subDays, startOfMonth, endOfMonth, format } from 'date-fns';
 import { pool } from '../db';
+
+// Helper function to update invoice payment status
+async function updateInvoicePaymentStatus(invoiceId: number) {
+  const client = await pool.connect();
+  try {
+    // Get invoice details
+    const invoiceResult = await client.query(
+      `SELECT id, amount, paid_amount, due_date, status FROM supplier_invoices WHERE id = $1`,
+      [invoiceId]
+    );
+    
+    if (invoiceResult.rows.length === 0) {
+      console.error(`Invoice with ID ${invoiceId} not found for status update`);
+      return;
+    }
+    
+    const invoice = invoiceResult.rows[0];
+    
+    // Get total payments for this invoice
+    const paymentsResult = await client.query(
+      `SELECT COALESCE(SUM(amount), 0) as total_paid FROM supplier_payments WHERE invoice_id = $1`,
+      [invoiceId]
+    );
+    
+    const totalPaid = parseFloat(paymentsResult.rows[0].total_paid || 0);
+    const invoiceAmount = parseFloat(invoice.amount);
+    const dueDate = new Date(invoice.due_date);
+    const today = new Date();
+    
+    // Don't update cancelled invoices
+    if (invoice.status === 'cancelled') {
+      return;
+    }
+    
+    // Update paid_amount field
+    await client.query(
+      `UPDATE supplier_invoices SET paid_amount = $1 WHERE id = $2`,
+      [totalPaid, invoiceId]
+    );
+    
+    // Determine new status
+    let newStatus = invoice.status;
+    const diff = Math.abs(invoiceAmount - totalPaid);
+    const tolerance = 0.01; // Small tolerance for floating-point comparisons
+    
+    if (diff <= tolerance) {
+      newStatus = 'paid';
+    } else if (totalPaid > 0) {
+      newStatus = 'partially_paid';
+    } else if (dueDate < today) {
+      newStatus = 'overdue';
+    } else {
+      newStatus = 'pending';
+    }
+    
+    // Only update if status changed
+    if (newStatus !== invoice.status) {
+      console.log(`Updating invoice ${invoiceId} status: ${invoice.status} -> ${newStatus}`);
+      console.log(`Invoice amount: ${invoiceAmount}, Paid amount: ${totalPaid}, Due date: ${format(dueDate, 'yyyy-MM-dd')}`);
+      
+      await client.query(
+        `UPDATE supplier_invoices SET status = $1 WHERE id = $2`,
+        [newStatus, invoiceId]
+      );
+    }
+  } catch (error) {
+    console.error('Error updating invoice payment status:', error);
+  } finally {
+    client.release();
+  }
+}
 
 const router = Router();
 
@@ -477,6 +548,18 @@ router.post('/payments', async (req, res) => {
     if (!invoice) {
       return res.status(400).json({ error: 'Invoice not found' });
     }
+    
+    // Validate that payment amount doesn't exceed remaining invoice amount
+    const existingPayments = await storage.getSupplierPaymentsByInvoice(data.invoiceId);
+    const totalPaidSoFar = existingPayments.reduce((sum, payment) => sum + Number(payment.amount), 0);
+    const remainingAmount = Number(invoice.amount) - totalPaidSoFar;
+    
+    if (Number(data.amount) > remainingAmount + 0.01) { // Small tolerance for rounding errors
+      return res.status(400).json({
+        error: 'Payment validation error',
+        message: `Payment amount (${data.amount}) exceeds remaining invoice amount (${remainingAmount.toFixed(2)})`
+      });
+    }
 
     // Add createdBy if available
     if (req.user && req.user.id) {
@@ -508,9 +591,10 @@ router.post('/payments', async (req, res) => {
         
         const result = await client.query(
           `INSERT INTO supplier_payments 
-            (invoice_id, payment_date, amount, payment_method, reference_number, notes, receipt_path, company, reference) 
+            (invoice_id, payment_date, amount, payment_method, reference_number, notes, receipt_path, company, reference,
+             callback_required, callback_date, callback_notes, callback_completed) 
            VALUES 
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
            RETURNING *`,
           [
             data.invoiceId,
@@ -521,21 +605,18 @@ router.post('/payments', async (req, res) => {
             data.notes || null,
             data.receiptPath || null,
             data.company || null,
-            data.reference || null
+            data.reference || null,
+            data.callbackRequired || false,
+            data.callbackDate ? formatSqlDate(data.callbackDate) : null,
+            data.callbackNotes || null,
+            data.callbackCompleted || false
           ]
         );
         
         console.log("Created payment:", JSON.stringify(result.rows[0], null, 2));
         
-        // Update the invoice's paidAmount with a separate query
-        const paymentsResult = await client.query(
-          `SELECT SUM(amount) as total_paid 
-           FROM supplier_payments 
-           WHERE invoice_id = $1`,
-          [data.invoiceId]
-        );
-        
-        const totalPaid = parseFloat(paymentsResult.rows[0].total_paid || 0);
+        // Use our new helper function to update invoice status
+        await updateInvoicePaymentStatus(data.invoiceId);
         
         // Get invoice amount for comparison
         const invoiceResult = await client.query(
