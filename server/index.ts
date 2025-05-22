@@ -20,6 +20,18 @@ dotenv.config();
 let replitOptimizer;
 if (process.env.NODE_ENV === 'production') {
   try {
+    // Create public directory if it doesn't exist (for production deployment)
+    const fs = require('fs');
+    const publicDir = path.join(process.cwd(), 'server', 'public');
+    if (!fs.existsSync(publicDir)) {
+      fs.mkdirSync(publicDir, { recursive: true });
+      // Create minimal index.html
+      const indexPath = path.join(publicDir, 'index.html');
+      const htmlContent = `<!DOCTYPE html><html><head><title>Amphoreus</title></head><body><h1>Amphoreus Warehouse Management System</h1></body></html>`;
+      fs.writeFileSync(indexPath, htmlContent);
+    }
+    
+    // Try to load the optimizer
     replitOptimizer = require('./utils/replitOptimizer');
     replitOptimizer.optimizeForReplit();
   } catch (err) {
