@@ -408,13 +408,10 @@ E
             </svg>
           </div>
           
-          <!-- Barcode placeholder -->
-          <div class="barcode">Barcode: ${orderWithItems.orderNumber}</div>
-          
-          <!-- Order and Box info in the same line -->
+          <!-- Order number - removed barcode -->
           <div class="order-info">
             <div class="order-number">Αρ. Παραγγελίας: ${orderWithItems.orderNumber}</div>
-            <div class="box-count">BOX: ${boxInfo}</div>
+            <div class="box-count">Κιβώτιο: ${boxInfo}</div>
           </div>
           
           <!-- Customer information -->
