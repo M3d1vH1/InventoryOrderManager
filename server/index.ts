@@ -43,15 +43,13 @@ app.set('trust proxy', 1);
 // Apply HTTPS redirection for production environments
 app.use(forceHttps);
 
-// Temporarily disable geoblocking for troubleshooting
-// app.use(geoBlockMiddleware);
+// Apply geoblocking to restrict access to users in Greece only
+app.use(geoBlockMiddleware);
 
 // Security middleware
-// Apply Helmet with relaxed settings for troubleshooting
+// Apply Helmet for secure HTTP headers
 app.use(
   helmet({
-    contentSecurityPolicy: false, // Temporarily disable CSP for troubleshooting
-    /*
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
@@ -62,7 +60,6 @@ app.use(
         fontSrc: ["'self'", "data:", "https://cdnjs.cloudflare.com"],
       },
     },
-    */
     // Set HSTS header
     hsts: {
       maxAge: 15552000, // 180 days
@@ -74,12 +71,10 @@ app.use(
   })
 );
 
-// Temporarily disabled rate limiting for troubleshooting
-/*
 // Rate limiting - protect against brute force attacks
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 500, // Increased: Limit each IP to 500 requests per windowMs
+  max: 500, // Limit each IP to 500 requests per windowMs
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   message: 'Too many requests from this IP, please try again later'
@@ -87,7 +82,6 @@ const apiLimiter = rateLimit({
 
 // Apply rate limiting to API routes only
 app.use('/api/', apiLimiter);
-*/
 
 // CORS configuration
 app.use(cors({

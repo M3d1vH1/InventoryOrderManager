@@ -22,15 +22,16 @@ if (!connectionString) {
   );
 }
 
-// Ultra-light connection pool specifically for Replit deployment
+// Configure connection pool with deployment-optimized settings
 const POOL_CONFIG = {
   connectionString,
-  max: process.env.NODE_ENV === 'production' ? 2 : 5, // Extremely limited connections for Replit
-  idleTimeoutMillis: 5000,   // Very short idle timeout (5 seconds)
-  connectionTimeoutMillis: 8000, // Short connection timeout
-  statement_timeout: 10000,  // Shorter statement timeout (10 seconds)
-  query_timeout: 10000,      // Shorter query timeout (10 seconds)
-  keepAlive: false,          // Disable keepAlive to reduce overhead
+  max: process.env.NODE_ENV === 'production' ? 10 : 20, // Fewer connections in production
+  idleTimeoutMillis: 30000,  // Shorter idle timeout (30 seconds)
+  connectionTimeoutMillis: 15000, // Extended connection timeout
+  statement_timeout: 20000,  // Statement timeout (20 seconds to prevent long-running queries)
+  query_timeout: 20000,      // Query timeout (20 seconds)
+  keepAlive: true,           // Enable TCP keepalive
+  keepAliveInitialDelayMillis: 30000, // Delay before starting keepalive probes
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined, // SSL for production
 };
 
