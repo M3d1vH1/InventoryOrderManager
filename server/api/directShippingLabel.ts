@@ -107,31 +107,38 @@ export async function directShippingLabel(req: Request, res: Response) {
       box-sizing: border-box;
       position: relative;
       background-color: white;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .logo-container {
+      width: 100%;
+      height: 30mm;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 3mm;
     }
     
     .logo {
-      width: 100%;
-      height: auto;
-      max-height: 25mm;
-      min-height: 25mm;
-      display: block;
-      margin: 0 auto 10px;
+      width: 90mm;
+      height: 30mm;
       object-fit: contain;
     }
     
     .content {
       display: flex;
       flex-direction: column;
-      height: calc(${LABEL_HEIGHT_MM}mm - 15mm);
+      flex: 1;
     }
     
     .customer-info {
-      margin-bottom: 5mm;
+      margin-bottom: 3mm;
     }
     
     .order-number {
       font-size: 11pt;
-      margin-bottom: 3mm;
+      margin-bottom: 2mm;
     }
     
     .customer-name {
@@ -140,19 +147,24 @@ export async function directShippingLabel(req: Request, res: Response) {
       margin-bottom: 2mm;
     }
     
-    .customer-address, .customer-phone {
+    .customer-address {
       font-size: 10pt;
       margin-bottom: 2mm;
+    }
+    
+    .customer-phone {
+      font-size: 10pt;
+      margin-bottom: 2mm;
+      font-weight: bold;
     }
     
     .shipping-company {
       font-size: 11pt;
       font-weight: bold;
       border-left: 3px solid #555;
-      padding-left: 3mm;
-      background-color: #f8f8f8;
       padding: 1mm 2mm 1mm 3mm;
-      margin-bottom: 4mm;
+      background-color: #f8f8f8;
+      margin-bottom: 3mm;
     }
     
     .spacer {
@@ -178,22 +190,40 @@ export async function directShippingLabel(req: Request, res: Response) {
   <script>
     // Auto-print when the page loads
     window.onload = function() {
-      setTimeout(function() {
-        window.print();
-      }, 500);
+      // Make sure the logo is fully loaded before printing
+      const logo = document.querySelector('.logo');
+      
+      // Function to start printing
+      const startPrinting = function() {
+        setTimeout(function() {
+          window.print();
+        }, 500);
+      };
+      
+      // If logo is already complete, print right away
+      if (logo.complete) {
+        startPrinting();
+      } else {
+        // Otherwise wait for it to load
+        logo.onload = startPrinting;
+        // Fallback in case of loading error
+        logo.onerror = startPrinting;
+      }
     };
   </script>
 </head>
 <body>
   <div class="shipping-label">
-    <img src="/shipping-logo.png" class="logo" alt="Company Logo" onerror="this.src='/simple-logo.svg'"/>
+    <div class="logo-container">
+      <img src="/shipping-logo.png" class="logo" alt="Company Logo" onerror="this.src='/simple-logo.svg'"/>
+    </div>
     
     <div class="content">
       <div class="customer-info">
         <div class="order-number">Αρ. Παραγγελίας: ${order.orderNumber}</div>
         <div class="customer-name">${order.customerName || ''}</div>
         <div class="customer-address">${customerAddress}</div>
-        <div class="customer-phone">Τηλέφωνο: ${customerPhone}</div>
+        ${customerPhone ? `<div class="customer-phone">Τηλέφωνο: ${customerPhone}</div>` : ''}
         <div class="shipping-company">Μεταφορική: ${shippingCompany}</div>
       </div>
       
