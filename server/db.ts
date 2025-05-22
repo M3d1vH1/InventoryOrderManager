@@ -22,24 +22,24 @@ if (!connectionString) {
   );
 }
 
-// Configure connection pool with deployment-optimized settings
+// Configure connection pool with Replit-optimized settings
 const POOL_CONFIG = {
   connectionString,
-  max: process.env.NODE_ENV === 'production' ? 10 : 20, // Fewer connections in production
-  idleTimeoutMillis: 30000,  // Shorter idle timeout (30 seconds)
-  connectionTimeoutMillis: 15000, // Extended connection timeout
-  statement_timeout: 20000,  // Statement timeout (20 seconds to prevent long-running queries)
-  query_timeout: 20000,      // Query timeout (20 seconds)
+  max: process.env.NODE_ENV === 'production' ? 5 : 10, // Fewer connections for Replit's limited resources
+  idleTimeoutMillis: 10000,  // Shorter idle timeout (10 seconds)
+  connectionTimeoutMillis: 10000, // Shorter connection timeout for Replit
+  statement_timeout: 15000,  // Statement timeout (15 seconds to prevent long-running queries)
+  query_timeout: 15000,      // Query timeout (15 seconds)
   keepAlive: true,           // Enable TCP keepalive
-  keepAliveInitialDelayMillis: 30000, // Delay before starting keepalive probes
+  keepAliveInitialDelayMillis: 20000, // Reduced delay before starting keepalive probes
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined, // SSL for production
 };
 
 // Create PostgreSQL connection pool with advanced configuration
 const pool = new Pool(POOL_CONFIG);
 
-// Health check interval
-const HEALTH_CHECK_INTERVAL = 60000; // 1 minute
+// Health check interval - more frequent for Replit
+const HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
 let healthCheckInterval: any = null;
 
 // Monitor connection health 

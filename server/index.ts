@@ -10,13 +10,22 @@ import rateLimit from "express-rate-limit";
 import cors from "cors";
 import { forceHttps } from './middlewares/forceHttps';
 import { geoBlockMiddleware } from './middlewares/geoblock';
-// Import monitoring system
-import { initMonitoring } from './monitoring';
 // csurf is disabled by default as it requires proper setup with cookies, but you can enable it if needed
 // import csrf from "csurf";
 
 // Load environment variables from .env file
 dotenv.config();
+
+// Import Replit optimizer for deployment environment
+let replitOptimizer;
+if (process.env.NODE_ENV === 'production') {
+  try {
+    replitOptimizer = require('./utils/replitOptimizer');
+    replitOptimizer.optimizeForReplit();
+  } catch (err) {
+    console.warn('Replit optimizer not available:', err.message);
+  }
+}
 
 // Log critical environment variables at startup
 console.log('Environment variables at startup:', {
@@ -142,13 +151,15 @@ app.use((req, res, next) => {
   setupAuth(app);
   log('Authentication system initialized', 'auth');
   
-  // Initialize comprehensive monitoring system
-  // This will track all requests and performance metrics (CPU, memory, database usage)
-  initMonitoring(app, {
-    performanceInterval: 30000, // Log performance every 30 seconds
-    detailedLogging: process.env.NODE_ENV === 'production' // More detailed in production
-  });
-  log('Monitoring system initialized', 'monitoring');
+  // Add basic memory usage monitoring for deployment
+  if (process.env.NODE_ENV === 'production') {
+    // Check memory usage every minute
+    setInterval(() => {
+      const memUsage = Math.round(process.memoryUsage().rss / 1024 / 1024);
+      log(`Memory usage: ${memUsage}MB`, 'monitoring');
+    }, 60000);
+    log('Basic monitoring initialized', 'monitoring');
+  }
   
   const server = await registerRoutes(app);
 
