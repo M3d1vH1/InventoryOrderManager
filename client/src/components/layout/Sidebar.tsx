@@ -326,21 +326,22 @@ const Sidebar = () => {
             
             {/* Orders menu for warehouse staff */}
             {isWarehouseStaff && (
-              <li className="mb-1">
-                <div>
-                  <button 
-                    className={`flex items-center w-full p-2 text-left rounded ${(isActive("/orders") || isActive("/order-picking")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
-                    title={t('orders.title')}
-                    onClick={() => {
-                      if (isSidebarOpen) {
-                        const submenu = document.getElementById('orders-staff-submenu');
-                        if (submenu) {
-                          submenu.classList.toggle('hidden');
+              <>
+                <li className="mb-1">
+                  <div>
+                    <button 
+                      className={`flex items-center w-full p-2 text-left rounded ${(isActive("/orders") || isActive("/order-picking")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                      title={t('orders.title')}
+                      onClick={() => {
+                        if (isSidebarOpen) {
+                          const submenu = document.getElementById('orders-staff-submenu');
+                          if (submenu) {
+                            submenu.classList.toggle('hidden');
+                          }
+                        } else {
+                          // If sidebar is collapsed, just navigate to order picking
+                          window.location.href = '/order-picking';
                         }
-                      } else {
-                        // If sidebar is collapsed, just navigate to order picking
-                        window.location.href = '/order-picking';
-                      }
                     }}
                   >
                     <span className="flex items-center w-5 h-5">
@@ -368,7 +369,76 @@ const Sidebar = () => {
                     </div>
                   )}
                 </div>
-              </li>
+                </li>
+                
+                {/* Warehouse (Αποθήκη) section for warehouse staff */}
+                <li className="mb-1">
+                  <div>
+                    <button 
+                      className={`flex items-center w-full p-2 text-left rounded ${(isActive("/inventory") || isActive("/inventory-predictions")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                      title={t('app.inventory')}
+                      onClick={() => {
+                        if (isSidebarOpen) {
+                          const submenu = document.getElementById('inventory-staff-submenu');
+                          if (submenu) {
+                            submenu.classList.toggle('hidden');
+                          }
+                        } else {
+                          window.location.href = '/inventory';
+                        }
+                      }}
+                    >
+                      <span className="flex items-center w-5 h-5">
+                        <FaBoxes size={16} />
+                      </span>
+                      {isSidebarOpen && (
+                        <div className="flex justify-between items-center flex-grow">
+                          <span className="ml-2">{t('app.inventory')}</span>
+                          <FaChevronDown size={10} />
+                        </div>
+                      )}
+                    </button>
+                    
+                    {isSidebarOpen && (
+                      <div id="inventory-staff-submenu" className={`pl-7 mt-1 ${!isActive("/inventory") && !isActive("/inventory-predictions") ? 'hidden' : ''}`}>
+                        <Link href="/inventory" onClick={() => setCurrentPage("Inventory")}>
+                          <button 
+                            className={`flex items-center w-full p-2 text-left rounded ${isActive("/inventory") && !isActive("/inventory-predictions") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
+                            title={t('app.inventory')}
+                          >
+                            <FaBoxes size={12} className="mr-2" />
+                            <span>{t('app.inventory')}</span>
+                          </button>
+                        </Link>
+                        <Link href="/inventory-predictions" onClick={() => setCurrentPage(t('inventoryPredictions.title'))}>
+                          <button 
+                            className={`flex items-center w-full p-2 text-left rounded ${isActive("/inventory-predictions") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
+                            title={t('inventoryPredictions.title')}
+                          >
+                            <FaChartLine size={12} className="mr-2" />
+                            <span>{t('inventoryPredictions.title')}</span>
+                          </button>
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </li>
+                
+                {/* Production (Παραγωγή) section for warehouse staff */}
+                <li className="mb-1">
+                  <Link href="/production" onClick={() => setCurrentPage("Production")}>
+                    <button 
+                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/production") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                      title={t('production.title') || "Production"}
+                    >
+                      <span className="flex items-center w-5 h-5">
+                        <FaBoxes size={16} />
+                      </span>
+                      {isSidebarOpen && <span className="ml-2">{t('production.title') || "Production"}</span>}
+                    </button>
+                  </Link>
+                </li>
+              </>
             )}
             
             {/* Settings - visible only to admin users */}
