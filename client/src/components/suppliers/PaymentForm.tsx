@@ -719,6 +719,24 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                     )}
                   />
 
+                  {/* Bank Account field */}
+                  <FormField
+                    control={form.control}
+                    name="bankAccount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('supplierPayments.payment.bankAccount', 'Bank Account Number')}</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder={t('supplierPayments.payment.bankAccountPlaceholder', 'Enter your preferred bank account number')}
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   {/* Reference field */}
                   <FormField
                     control={form.control}
@@ -735,12 +753,12 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                       
                       return (
                         <FormItem>
-                          <FormLabel>RF {t('supplierPayments.payment.reference')}</FormLabel>
+                          <FormLabel>{t('supplierPayments.payment.reference', 'Payment Reference')}</FormLabel>
                           <FormControl>
                             <Input placeholder={placeholder} {...field} />
                           </FormControl>
                           <p className="text-xs text-muted-foreground mt-1">
-                            {t('supplierPayments.payment.rfHelperText')}
+                            {t('supplierPayments.payment.rfHelperText', 'Enter payment reference (e.g., RF number)')}
                           </p>
                           <FormMessage />
                         </FormItem>
