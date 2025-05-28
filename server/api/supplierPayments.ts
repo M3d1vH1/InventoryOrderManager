@@ -592,9 +592,9 @@ router.post('/payments', async (req, res) => {
         const result = await client.query(
           `INSERT INTO supplier_payments 
             (invoice_id, payment_date, amount, payment_method, reference_number, notes, receipt_path, company, reference,
-             callback_required, callback_date, callback_notes, callback_completed) 
+             bank_account, callback_required, callback_date, callback_notes, callback_completed) 
            VALUES 
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
            RETURNING *`,
           [
             data.invoiceId,
@@ -606,6 +606,7 @@ router.post('/payments', async (req, res) => {
             data.receiptPath || null,
             data.company || null,
             data.reference || null,
+            data.bankAccount || null,
             data.callbackRequired || false,
             data.callbackDate ? formatSqlDate(data.callbackDate) : null,
             data.callbackNotes || null,

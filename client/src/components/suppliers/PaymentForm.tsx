@@ -313,15 +313,18 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
   // Form submission handler
   const onSubmit = (data: PaymentFormValues) => {
     // Convert string values to numbers and ensure payment method is in the correct format
-    const { bankAccount, ...paymentData } = data;
     const formattedData = {
-      ...paymentData,
+      ...data,
       invoiceId: parseInt(data.invoiceId),
       amount: parseFloat(data.amount),
       // Make sure paymentMethod is in the correct enum format (snake_case)
       paymentMethod: data.paymentMethod.toLowerCase().replace(' ', '_'),
+      // Ensure all fields including notes and bankAccount are included
+      notes: data.notes || '',
+      bankAccount: data.bankAccount || '',
     };
 
+    console.log('Submitting payment data:', formattedData);
     savePaymentMutation.mutate(formattedData);
   };
 

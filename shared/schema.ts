@@ -1391,6 +1391,7 @@ export const supplierPayments = pgTable("supplier_payments", {
   paymentMethod: paymentMethodEnum("payment_method").notNull(),
   referenceNumber: text("reference_number"),
   reference: text("reference"),
+  bankAccount: text("bank_account"), // User's preferred bank account number
   notes: text("notes"),
   receiptPath: text("receipt_path"),
   callbackRequired: boolean("callback_required").default(false),
@@ -1433,6 +1434,7 @@ export const insertSupplierPaymentSchema = createInsertSchema(supplierPayments)
     paymentMethod: z.enum(['bank_transfer', 'check', 'credit_card', 'cash', 'other']),
     referenceNumber: z.string().optional(),
     reference: z.string().optional(),
+    bankAccount: z.string().optional(),
     notes: z.string().optional(),
     receiptPath: z.string().optional(),
     callbackRequired: z.boolean().default(false),
