@@ -126,9 +126,9 @@ const productSchemas = {
     limit: z.string()
       .regex(/^\d+$/, 'Limit must be a positive integer')
       .transform(Number)
-      .refine(val => val >= 1 && val <= 100, 'Limit must be between 1 and 100')
+      .refine(val => val >= 1 && val <= 200, 'Limit must be between 1 and 200')
       .optional()
-      .default('10')
+      .default('200')
   }),
 
   // Stock update schema
