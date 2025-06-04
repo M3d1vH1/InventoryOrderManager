@@ -55,10 +55,10 @@ const Inventory = () => {
   
   // Memoized unique tags calculation
   const allTags = useMemo(() => {
-    if (!products) return [];
+    if (!products || !Array.isArray(products)) return [];
     const tagSet = new Set<string>();
     products.forEach(product => {
-      if (product.tags && product.tags.length > 0) {
+      if (product?.tags && Array.isArray(product.tags) && product.tags.length > 0) {
         product.tags.forEach(tag => tagSet.add(tag));
       }
     });
@@ -67,13 +67,13 @@ const Inventory = () => {
 
   // Memoized statistics calculations
   const statistics = useMemo(() => {
-    if (!products) return { total: 0, inStock: 0, lowStock: 0, outOfStock: 0 };
+    if (!products || !Array.isArray(products)) return { total: 0, inStock: 0, lowStock: 0, outOfStock: 0 };
     
     return {
       total: products.length,
-      inStock: products.filter(p => p.currentStock > p.minStockLevel).length,
-      lowStock: products.filter(p => p.currentStock > 0 && p.currentStock <= p.minStockLevel).length,
-      outOfStock: products.filter(p => p.currentStock === 0).length
+      inStock: products.filter(p => p?.currentStock > p?.minStockLevel).length,
+      lowStock: products.filter(p => p?.currentStock > 0 && p?.currentStock <= p?.minStockLevel).length,
+      outOfStock: products.filter(p => p?.currentStock === 0).length
     };
   }, [products]);
   
@@ -106,16 +106,18 @@ const Inventory = () => {
   
   // Memoized filtered products calculation
   const filteredProducts = useMemo(() => {
-    if (!products) return [];
+    if (!products || !Array.isArray(products)) return [];
     
     return products.filter(product => {
+      if (!product) return false;
+      
       const matchesSearch = searchText.trim() === "" || 
-        product.name.toLowerCase().includes(searchText.toLowerCase()) || 
-        product.sku.toLowerCase().includes(searchText.toLowerCase()) ||
+        product.name?.toLowerCase().includes(searchText.toLowerCase()) || 
+        product.sku?.toLowerCase().includes(searchText.toLowerCase()) ||
         (product.location && product.location.toLowerCase().includes(searchText.toLowerCase()));
       
       const matchesTag = tagFilter === "all_tags" || 
-        (product.tags && product.tags.some(tag => tag === tagFilter));
+        (product.tags && Array.isArray(product.tags) && product.tags.some(tag => tag === tagFilter));
       
       return matchesSearch && matchesTag;
     });
@@ -123,7 +125,8 @@ const Inventory = () => {
 
   // Memoized low stock products
   const lowStockProducts = useMemo(() => {
-    return products?.filter(product => product.currentStock <= product.minStockLevel) || [];
+    if (!products || !Array.isArray(products)) return [];
+    return products.filter(product => product && product.currentStock <= product.minStockLevel);
   }, [products]);
 
   const updateStockMutation = useMutation({
