@@ -1,11 +1,17 @@
 #!/bin/bash
-# Production startup script for Replit deployment
 
-# Ensure proper environment
+echo "Starting production server..."
+
+# Set production environment variables
 export NODE_ENV=production
-export APP_URL=https://amphoreus.replit.app
+export PORT=5000
 
-echo "Starting Amphoreus Warehouse Management System in production mode..."
+# Ensure build exists
+if [ ! -f "dist/index.js" ]; then
+    echo "Production build not found. Running build first..."
+    ./build-production.sh
+fi
 
-# Start the server directly from TypeScript (faster for Replit than building)
-npx tsx server/index.ts
+# Start the production server
+echo "Starting server on port 5000..."
+node dist/index.js
