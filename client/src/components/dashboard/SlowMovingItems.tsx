@@ -117,7 +117,7 @@ export default function SlowMovingItems() {
 
   // Export data function
   const handleExport = (format: 'csv' | 'excel' | 'pdf') => {
-    const exportData = sortedProducts.map((product: SlowMovingProduct) => ({
+    const exportDataFormatted = sortedProducts.map((product: SlowMovingProduct) => ({
       [t('product.name')]: product.name,
       [t('product.sku')]: product.sku,
       [t('product.category')]: product.category,
