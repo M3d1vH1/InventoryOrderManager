@@ -48,6 +48,18 @@ export default function SlowMovingItems() {
     queryFn: async () => {
       return apiRequest(`/api/inventory/slow-moving?days=${daysThreshold}`);
     },
+    select: (data: any) => {
+      // Handle API response structure: { success: true, data: [...] } or { products: [...] }
+      if (data && typeof data === 'object') {
+        if ('data' in data && Array.isArray(data.data)) {
+          return { products: data.data };
+        }
+        if ('products' in data && Array.isArray(data.products)) {
+          return data;
+        }
+      }
+      return { products: [] };
+    }
   });
 
   const products = data?.products || [];

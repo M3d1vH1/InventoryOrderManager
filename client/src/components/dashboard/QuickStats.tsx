@@ -16,6 +16,14 @@ const QuickStats = () => {
   const { t } = useTranslation();
   const { data: stats, isLoading } = useQuery<Stats>({
     queryKey: ['/api/dashboard/stats'],
+    select: (data: any) => {
+      // Handle API response structure: { success: true, data: {...} }
+      if (data && typeof data === 'object' && 'data' in data) {
+        return data.data;
+      }
+      // Fallback for direct object response
+      return data || {};
+    }
   });
 
   if (isLoading) {

@@ -56,6 +56,14 @@ const RecentOrders = () => {
   const { t } = useTranslation();
   const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ['/api/orders/recent'],
+    select: (data: any) => {
+      // Handle API response structure: { success: true, data: [...] }
+      if (data && typeof data === 'object' && 'data' in data) {
+        return Array.isArray(data.data) ? data.data : [];
+      }
+      // Fallback for direct array response
+      return Array.isArray(data) ? data : [];
+    }
   });
 
   const renderTableBody = () => {

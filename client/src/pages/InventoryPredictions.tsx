@@ -192,7 +192,12 @@ const InventoryPredictions: React.FC = () => {
         if (!response.ok) {
           throw new Error('Failed to fetch products');
         }
-        return response.json();
+        const data = await response.json();
+        // Handle API response structure: { success: true, data: [...] }
+        if (data && typeof data === 'object' && 'data' in data) {
+          return Array.isArray(data.data) ? data.data : [];
+        }
+        return Array.isArray(data) ? data : [];
       } catch (error) {
         console.error('Error fetching products:', error);
         return [];

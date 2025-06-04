@@ -24,6 +24,14 @@ const InventoryAlerts = () => {
   
   const { data: lowStockProducts, isLoading } = useQuery<Product[]>({
     queryKey: ['/api/products/low-stock'],
+    select: (data: any) => {
+      // Handle API response structure: { success: true, data: [...] }
+      if (data && typeof data === 'object' && 'data' in data) {
+        return Array.isArray(data.data) ? data.data : [];
+      }
+      // Fallback for direct array response
+      return Array.isArray(data) ? data : [];
+    }
   });
 
 
