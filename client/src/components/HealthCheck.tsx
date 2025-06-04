@@ -107,7 +107,9 @@ export default function HealthCheck() {
     performHealthCheck();
   }, []);
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status?: string) => {
+    if (!status) return <AlertCircle className="h-4 w-4 text-gray-500" />;
+    
     switch (status) {
       case 'connected':
       case 'ok':
@@ -123,7 +125,9 @@ export default function HealthCheck() {
     }
   };
 
-  const getStatusBadgeVariant = (status: string) => {
+  const getStatusBadgeVariant = (status?: string): "default" | "secondary" | "destructive" | "outline" => {
+    if (!status) return 'outline';
+    
     switch (status) {
       case 'connected':
       case 'ok':
@@ -139,7 +143,9 @@ export default function HealthCheck() {
     }
   };
 
-  const getOverallStatusColor = (overall: string) => {
+  const getOverallStatusColor = (overall?: string) => {
+    if (!overall) return 'text-gray-600 bg-gray-50 border-gray-200';
+    
     switch (overall) {
       case 'healthy':
         return 'text-green-600 bg-green-50 border-green-200';
@@ -181,17 +187,27 @@ export default function HealthCheck() {
         </div>
       </div>
 
+      {isLoading && !healthData && (
+        <Alert>
+          <RefreshCw className="h-4 w-4 animate-spin" />
+          <AlertTitle>Performing Health Check</AlertTitle>
+          <AlertDescription>
+            Checking system dependencies and status...
+          </AlertDescription>
+        </Alert>
+      )}
+
       {healthData && (
         <>
           {/* Overall Status */}
           <Alert className={getOverallStatusColor(healthData.overall)}>
             <Server className="h-4 w-4" />
             <AlertTitle className="flex items-center gap-2">
-              System Status: {healthData.overall.charAt(0).toUpperCase() + healthData.overall.slice(1)}
+              System Status: {healthData.overall ? healthData.overall.charAt(0).toUpperCase() + healthData.overall.slice(1) : 'Unknown'}
               {getStatusIcon(healthData.overall)}
             </AlertTitle>
             <AlertDescription>
-              {healthData.message}
+              {healthData.message || 'No status message available'}
               {lastChecked && (
                 <span className="block text-xs mt-1">
                   Last checked: {lastChecked.toLocaleString()}
@@ -210,19 +226,19 @@ export default function HealthCheck() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between mb-2">
-                  {getStatusIcon(healthData.dependencies.database.status)}
-                  <Badge variant={getStatusBadgeVariant(healthData.dependencies.database.status)}>
-                    {healthData.dependencies.database.status}
+                  {getStatusIcon(healthData.dependencies?.database?.status)}
+                  <Badge variant={getStatusBadgeVariant(healthData.dependencies?.database?.status)}>
+                    {healthData.dependencies?.database?.status || 'unknown'}
                   </Badge>
                 </div>
                 
-                {healthData.dependencies.database.responseTime && (
+                {healthData.dependencies?.database?.responseTime && (
                   <div className="text-xs text-muted-foreground">
                     Response time: {healthData.dependencies.database.responseTime}ms
                   </div>
                 )}
                 
-                {healthData.dependencies.database.error && (
+                {healthData.dependencies?.database?.error && (
                   <div className="text-xs text-red-600 mt-1">
                     {healthData.dependencies.database.error}
                   </div>
@@ -238,21 +254,21 @@ export default function HealthCheck() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between mb-2">
-                  {getStatusIcon(healthData.dependencies.memory.status)}
-                  <Badge variant={getStatusBadgeVariant(healthData.dependencies.memory.status)}>
-                    {healthData.dependencies.memory.status}
+                  {getStatusIcon(healthData.dependencies?.memory?.status)}
+                  <Badge variant={getStatusBadgeVariant(healthData.dependencies?.memory?.status)}>
+                    {healthData.dependencies?.memory?.status || 'unknown'}
                   </Badge>
                 </div>
                 
-                {healthData.dependencies.memory.usage && (
+                {healthData.dependencies?.memory?.usage && (
                   <div className="space-y-2">
                     <Progress 
-                      value={healthData.dependencies.memory.usage.percentage} 
+                      value={healthData.dependencies.memory.usage.percentage || 0} 
                       className="h-2"
                     />
                     <div className="text-xs text-muted-foreground">
-                      {healthData.dependencies.memory.usage.used}MB / {healthData.dependencies.memory.usage.total}MB
-                      ({healthData.dependencies.memory.usage.percentage}%)
+                      {healthData.dependencies.memory.usage.used || 0}MB / {healthData.dependencies.memory.usage.total || 0}MB
+                      ({healthData.dependencies.memory.usage.percentage || 0}%)
                     </div>
                   </div>
                 )}
@@ -267,19 +283,19 @@ export default function HealthCheck() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between mb-2">
-                  {getStatusIcon(healthData.dependencies.uptime.status)}
-                  <Badge variant={getStatusBadgeVariant(healthData.dependencies.uptime.status)}>
-                    {healthData.dependencies.uptime.status}
+                  {getStatusIcon(healthData.dependencies?.uptime?.status)}
+                  <Badge variant={getStatusBadgeVariant(healthData.dependencies?.uptime?.status)}>
+                    {healthData.dependencies?.uptime?.status || 'unknown'}
                   </Badge>
                 </div>
                 
-                {healthData.dependencies.uptime.formatted && (
+                {healthData.dependencies?.uptime?.formatted && (
                   <div className="text-xs text-muted-foreground">
                     {healthData.dependencies.uptime.formatted}
                   </div>
                 )}
                 
-                {healthData.dependencies.uptime.seconds && (
+                {healthData.dependencies?.uptime?.seconds && (
                   <div className="text-xs text-muted-foreground">
                     ({healthData.dependencies.uptime.seconds} seconds)
                   </div>
