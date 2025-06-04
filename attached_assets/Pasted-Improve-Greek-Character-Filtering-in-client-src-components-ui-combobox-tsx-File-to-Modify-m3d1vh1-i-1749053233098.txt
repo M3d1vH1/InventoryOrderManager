@@ -1,0 +1,51 @@
+Improve Greek Character Filtering in client/src/components/ui/combobox.tsx
+File to Modify: m3d1vh1/inventoryordermanager/InventoryOrderManager-878b68774cf84f83702625e4fd305bf5e1530fb0/client/src/components/ui/combobox.tsx
+
+"My custom Combobox component in client/src/components/ui/combobox.tsx has a fuzzyMatch function and prioritization logic within filteredOptions for searching. However, it doesn't handle Greek characters (especially with diacritics) robustly, leading to hardcoded special cases like for 'ΑΚΤΗ'.
+
+Here's the current fuzzyMatch function:
+
+TypeScript
+
+function fuzzyMatch(text: string, query: string): boolean {
+  if (!text || !query) return false;
+  
+  const textLower = text.toLowerCase();
+  const queryLower = query.toLowerCase();
+  
+  if (textLower.includes(queryLower)) return true;
+  
+  // Special case for ΑΚΤΗ
+  if (queryLower.includes("ακτ")) {
+    return textLower.includes("ακτ");
+  }
+  
+  const textWords = textLower.split(/\s+/);
+  const queryWords = queryLower.split(/\s+/);
+  
+  for (const queryWord of queryWords) {
+    if (queryWord.length === 0) continue;
+    const wordMatch = textWords.some(textWord => textWord.includes(queryWord));
+    if (wordMatch) return true;
+  }
+  
+  let matchCount = 0;
+  for (const char of queryLower) {
+    if (textLower.includes(char)) {
+      matchCount++;
+    }
+  }
+  return matchCount > queryLower.length * 0.7;
+}
+And filteredOptions uses this with additional hardcoded priority for 'ακτ'.
+
+I need you to:
+
+Modify the fuzzyMatch function (or the logic directly within filteredOptions if more appropriate):
+Implement robust, diacritic-insensitive filtering for Greek characters (and generally for Unicode). This should involve:
+Normalizing strings using string.normalize("NFD") to decompose combined characters.
+Removing diacritics using a regex like .replace(/[\u0300-\u036f]/g, "").
+Using toLocaleLowerCase('el-GR') (or toLocaleLowerCase() if sufficient) for case-insensitive comparison on the normalized strings.
+Remove Hardcoded Logic: Once the generic Unicode/Greek filtering is improved, remove the special if (queryLower.includes("ακτ")) block from fuzzyMatch and any specific 'ακτ' prioritization from the filteredOptions calculation, as the general solution should cover these cases.
+Maintain Prioritization: Ensure the existing general prioritization logic in filteredOptions (e.g., 'starts with query', 'contains query as word') still works effectively with the new Unicode-aware matching. This logic should now operate on the normalized and lowercased label and search query.
+Provide the complete updated code for the Combobox component in client/src/components/ui/combobox.tsx, focusing on the fuzzyMatch function and the filteredOptions React.useMemo block. Explain the changes and why they provide a more robust solution for searching text with Greek characters."

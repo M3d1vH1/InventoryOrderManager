@@ -4,67 +4,84 @@ import { Check, ChevronsUpDown, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-// Comprehensive Greek character normalization and diacritic removal
-function normalizeGreekText(text: string): string {
+// Robust Unicode normalization and diacritic removal for Greek and other languages
+function normalizeText(text: string): string {
   if (!text) return '';
   
-  // Convert to lowercase first
-  let normalized = text.toLowerCase();
+  // Use Unicode normalization (NFD) to decompose combined characters
+  // This separates base characters from their diacritical marks
+  let normalized = text.normalize('NFD');
   
-  // Greek diacritic mappings - remove accents and breathing marks
-  const greekDiacriticMap: Record<string, string> = {
-    // Vowels with accents
-    'ά': 'α', 'έ': 'ε', 'ή': 'η', 'ί': 'ι', 'ό': 'ο', 'ύ': 'υ', 'ώ': 'ω',
-    // Vowels with dialytika (diaeresis)
-    'ϊ': 'ι', 'ϋ': 'υ',
-    // Vowels with dialytika and accents
-    'ΐ': 'ι', 'ΰ': 'υ',
-    // Uppercase variants (in case normalization missed some)
-    'Ά': 'α', 'Έ': 'ε', 'Ή': 'η', 'Ί': 'ι', 'Ό': 'ο', 'Ύ': 'υ', 'Ώ': 'ω',
-    'Ϊ': 'ι', 'Ϋ': 'υ'
+  // Convert to lowercase using Greek locale for proper handling
+  normalized = normalized.toLocaleLowerCase('el-GR');
+  
+  // Remove diacritical marks using Unicode combining character ranges
+  // This covers accents, breathing marks, and other diacritics for all languages
+  normalized = normalized.replace(/[\u0300-\u036f]/g, '');
+  
+  // Additional Greek-specific cleanup for characters not handled by NFD
+  const greekSpecialCases: Record<string, string> = {
+    'ς': 'σ', // Final sigma to regular sigma
+    'ϊ': 'ι', // Dialytika iota
+    'ϋ': 'υ', // Dialytika upsilon
   };
   
-  // Replace diacritics
-  for (const [accented, base] of Object.entries(greekDiacriticMap)) {
-    normalized = normalized.replace(new RegExp(accented, 'g'), base);
+  // Apply special case mappings
+  for (const [special, base] of Object.entries(greekSpecialCases)) {
+    normalized = normalized.replace(new RegExp(special, 'g'), base);
   }
   
   return normalized;
 }
 
-// Enhanced fuzzy matching for Greek and other non-Latin characters
+// Enhanced fuzzy matching with Unicode normalization for robust multilingual support
 function fuzzyMatch(text: string, query: string): boolean {
   if (!text || !query) return false;
   
-  // Normalize both text and query (remove diacritics, convert to lowercase)
-  const normalizedText = normalizeGreekText(text);
-  const normalizedQuery = normalizeGreekText(query);
+  // Normalize both text and query using Unicode NFD and diacritic removal
+  const normalizedText = normalizeText(text);
+  const normalizedQuery = normalizeText(query);
   
-  // Exact match after normalization
+  // Direct substring match (highest accuracy)
   if (normalizedText.includes(normalizedQuery)) return true;
   
-  // Split into words for word-by-word matching
+  // Word-boundary matching for better relevance
   const textWords = normalizedText.split(/\s+/);
   const queryWords = normalizedQuery.split(/\s+/);
   
-  // Check if any query word is contained in any text word
+  // Check if all query words have matches in text words
+  let matchedWords = 0;
   for (const queryWord of queryWords) {
     if (queryWord.length === 0) continue;
     
-    const wordMatch = textWords.some(textWord => textWord.includes(queryWord));
-    if (wordMatch) return true;
+    const hasWordMatch = textWords.some((textWord: string) => {
+      // Check for word start matching (higher relevance)
+      if (textWord.startsWith(queryWord)) return true;
+      // Check for substring matching within words
+      if (textWord.includes(queryWord)) return true;
+      return false;
+    });
+    
+    if (hasWordMatch) matchedWords++;
   }
   
-  // Character-by-character fuzzy matching for partial matches
+  // If most query words match, consider it a successful match
+  if (queryWords.length > 0 && matchedWords >= Math.ceil(queryWords.length * 0.8)) {
+    return true;
+  }
+  
+  // Character-level fuzzy matching for partial matches
   let matchCount = 0;
-  for (const char of normalizedQuery) {
+  
+  for (let i = 0; i < normalizedQuery.length; i++) {
+    const char = normalizedQuery.charAt(i);
     if (normalizedText.includes(char)) {
       matchCount++;
     }
   }
   
-  // If more than 70% of characters match, consider it a match
-  return matchCount > normalizedQuery.length * 0.7;
+  // Require at least 75% character match for fuzzy matching
+  return matchCount >= normalizedQuery.length * 0.75;
 }
 
 interface ComboboxOption {
@@ -112,8 +129,8 @@ export function Combobox({
     // Create an array for matches with prioritization
     let matches: { option: ComboboxOption; priority: number }[] = [];
     
-    // Normalize the search query for comparison
-    const normalizedQuery = normalizeGreekText(searchQuery);
+    // Normalize the search query for comparison using Unicode normalization
+    const normalizedQuery = normalizeText(searchQuery);
     
     // Analyze each option for priority sorting
     options.forEach(option => {
@@ -122,7 +139,7 @@ export function Combobox({
         return;
       }
       
-      const normalizedLabel = normalizeGreekText(option.label);
+      const normalizedLabel = normalizeText(option.label);
       
       // Calculate priority based on match quality:
       let priority = 0;
