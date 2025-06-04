@@ -27,6 +27,7 @@ import PrinterTest from "@/pages/printerTest";
 import PrintTemplate from "@/pages/PrintTemplate";
 import MultiLabelPrintView from "@/pages/MultiLabelPrintView";
 import ShippingLabel from "@/pages/ShippingLabel";
+import LoggingTest from "@/pages/LoggingTest";
 import Login from "@/pages/Login";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
@@ -90,6 +91,7 @@ function AuthenticatedRouter() {
       <Route path="/unshipped-items" component={UnshippedItems} />
       <Route path="/reports" component={Reports} />
       <Route path="/settings" component={Settings} />
+      <Route path="/settings/logging-test" component={LoggingTest} />
       <Route path="/order-picking" component={OrderPicking} />
       <Route path="/order-picking/:id" component={OrderPicking} />
       <Route path="/product-barcode/:id" component={ProductBarcode} />
