@@ -138,6 +138,14 @@ const Customers = () => {
         url: url,
         method: 'GET'
       });
+    },
+    select: (data: any) => {
+      // Handle API response structure: { success: true, data: [...] }
+      if (data && typeof data === 'object' && 'data' in data) {
+        return Array.isArray(data.data) ? data.data : [];
+      }
+      // Fallback for direct array response
+      return Array.isArray(data) ? data : [];
     }
   });
 
@@ -152,6 +160,15 @@ const Customers = () => {
       });
     },
     enabled: viewDetailsId !== null,
+    select: (data: any) => {
+      if (!data) return null;
+      // Handle API response structure: { success: true, data: {...} }
+      if (data && typeof data === 'object' && 'data' in data) {
+        return data.data;
+      }
+      // Fallback for direct object response
+      return data;
+    }
   });
   
   // Define Order and OrderItem interfaces

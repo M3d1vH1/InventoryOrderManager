@@ -155,6 +155,14 @@ const Orders = () => {
 
   const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ['/api/orders'],
+    select: (data: any) => {
+      // Handle API response structure: { success: true, data: [...] }
+      if (data && typeof data === 'object' && 'data' in data) {
+        return Array.isArray(data.data) ? data.data : [];
+      }
+      // Fallback for direct array response
+      return Array.isArray(data) ? data : [];
+    }
   });
 
   // State for handling partial order approval
@@ -315,10 +323,13 @@ const Orders = () => {
         url: `/api/orders/${selectedOrder?.id}`,
       });
       
+      // Handle API response structure: { success: true, data: {...} }
+      const orderData = response && typeof response === 'object' && 'data' in response ? response.data : response;
+      
       // If order has items, fetch product details for each item
-      if (response.items && response.items.length > 0) {
+      if (orderData.items && orderData.items.length > 0) {
         const itemsWithProducts = await Promise.all(
-          response.items.map(async (item: OrderItem) => {
+          orderData.items.map(async (item: OrderItem) => {
             try {
               const productData = await apiRequest<Product>({
                 url: `/api/products/${item.productId}`,

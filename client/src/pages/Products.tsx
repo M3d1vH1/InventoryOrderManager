@@ -141,7 +141,14 @@ export default function Products() {
   // Query: Get all products
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['/api/products'],
-    select: (data) => data as Product[]
+    select: (data: any) => {
+      // Handle API response structure: { success: true, data: [...] }
+      if (data && typeof data === 'object' && 'data' in data) {
+        return Array.isArray(data.data) ? data.data : [];
+      }
+      // Fallback for direct array response
+      return Array.isArray(data) ? data : [];
+    }
   });
 
   // Filter products based on search, stock filter, and tags

@@ -163,7 +163,15 @@ const UserManagement = () => {
 
   // Query to fetch users
   const { data: users, isLoading, error } = useQuery<UserType[]>({
-    queryKey: ['/api/users']
+    queryKey: ['/api/users'],
+    select: (data: any) => {
+      // Handle API response structure: { success: true, data: [...] }
+      if (data && typeof data === 'object' && 'data' in data) {
+        return Array.isArray(data.data) ? data.data : [];
+      }
+      // Fallback for direct array response
+      return Array.isArray(data) ? data : [];
+    }
   });
 
   // Create user mutation
