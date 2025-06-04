@@ -198,11 +198,18 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = process.env.PORT || 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
+  
+  // Handle port conflicts gracefully
+  server.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`Port ${port} is busy, trying port ${port + 1}`);
+      server.listen(port + 1, "0.0.0.0");
+    } else {
+      throw err;
+    }
+  });
+  
+  server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
     // Log additional information to help with debugging
     log(`Server is running in ${app.get('env')} mode`);
