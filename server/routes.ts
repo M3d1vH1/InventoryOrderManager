@@ -10,6 +10,7 @@ import { validateRequest, commonSchemas } from "./utils/validation";
 import { asyncHandler } from "./middlewares/errorHandler";
 import { ValidationError, NotFoundError, ConflictError } from "./utils/errorUtils";
 import logger from "./utils/logger";
+import { performHealthCheck, getHealthCheckSummary } from "./utils/healthCheck";
 import { UploadedFile } from "express-fileupload";
 import path from "path";
 import fs from "fs";
@@ -4451,6 +4452,65 @@ A 1
       timestamp: new Date().toISOString(),
       features_tested: ['successful_validation_logging', 'data_validation', 'structured_logging']
     });
+  });
+
+  // Health Check Endpoint
+  app.get('/health', async (req: Request, res: Response) => {
+    try {
+      const healthResult = await performHealthCheck();
+      const { statusCode, message } = getHealthCheckSummary(healthResult);
+      
+      res.status(statusCode).json({
+        ...healthResult,
+        message
+      });
+    } catch (error) {
+      logger.error('Health check endpoint error', {
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack
+        } : error
+      });
+      
+      res.status(500).json({
+        status: 'error',
+        message: 'Health check failed',
+        timestamp: new Date().toISOString(),
+        dependencies: {
+          database: { status: 'error', error: 'Health check system failure' },
+          memory: { status: 'error' },
+          uptime: { status: 'error' }
+        },
+        overall: 'unhealthy'
+      });
+    }
+  });
+
+  // API Health Check Endpoint (for authenticated access)
+  app.get('/api/health', async (req: Request, res: Response) => {
+    try {
+      const healthResult = await performHealthCheck();
+      const { statusCode, message } = getHealthCheckSummary(healthResult);
+      
+      res.status(statusCode).json({
+        ...healthResult,
+        message
+      });
+    } catch (error) {
+      logger.error('API health check endpoint error', {
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack
+        } : error
+      });
+      
+      res.status(500).json({
+        status: 'error',
+        message: 'Health check failed',
+        timestamp: new Date().toISOString(),
+        overall: 'unhealthy'
+      });
+    }
   });
   
   return httpServer;

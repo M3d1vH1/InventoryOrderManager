@@ -27,6 +27,7 @@ import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 import { ImageMigration } from '@/components/settings/ImageMigration';
 import LabelTemplateEditorComponent from '@/components/settings/LabelTemplateEditor';
+import HealthCheck from '@/components/HealthCheck';
 
 const companySettingsSchema = z.object({
   companyName: z.string().min(2, { message: "Company name must be at least 2 characters" }),
@@ -2801,6 +2802,10 @@ const Settings = () => {
                     <Cog className="h-4 w-4 mr-2" />
                     Open Logging Test
                   </Button>
+                </div>
+                
+                <div className="space-y-6">
+                  <HealthCheck />
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
