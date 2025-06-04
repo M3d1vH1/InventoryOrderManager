@@ -136,11 +136,11 @@ export class InMemoryCacheManager {
       for (const tag of tags) {
         const keys = this.tagMap.get(tag);
         if (keys) {
-          for (const key of keys) {
+          keys.forEach(key => {
             if (this.cache.del(key) > 0) {
               deletedCount++;
             }
-          }
+          });
           this.tagMap.delete(tag);
         }
       }
@@ -219,12 +219,7 @@ export class RedisCacheManager {
   private stats: { hits: number; misses: number };
 
   constructor(redisUrl?: string) {
-    this.redis = new Redis(redisUrl || process.env.REDIS_URL || 'redis://localhost:6379', {
-      maxRetriesPerRequest: 3,
-      lazyConnect: true,
-      retryDelayOnClusterDown: 300,
-      retryDelayOnFailover: 100
-    });
+    this.redis = new Redis(redisUrl || process.env.REDIS_URL || 'redis://localhost:6379');
 
     this.stats = { hits: 0, misses: 0 };
 
