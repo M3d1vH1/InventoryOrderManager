@@ -188,53 +188,129 @@ const Reports = () => {
   
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ['/api/products'],
+    select: (data: any) => {
+      // Handle API response structure: { success: true, data: [...] }
+      if (data && typeof data === 'object' && 'data' in data) {
+        return Array.isArray(data.data) ? data.data : [];
+      }
+      // Fallback for direct array response
+      return Array.isArray(data) ? data : [];
+    }
   });
 
   const { data: orders = [] } = useQuery<Order[]>({
     queryKey: ['/api/orders'],
+    select: (data: any) => {
+      // Handle API response structure: { success: true, data: [...] }
+      if (data && typeof data === 'object' && 'data' in data) {
+        return Array.isArray(data.data) ? data.data : [];
+      }
+      // Fallback for direct array response
+      return Array.isArray(data) ? data : [];
+    }
   });
 
   const { data: inventoryTrend = [], isLoading: isLoadingInventoryTrend } = useQuery<InventoryTrendItem[]>({
     queryKey: ['/api/analytics/inventory-trend', timeRange],
+    select: (data: any) => {
+      if (data && typeof data === 'object' && 'data' in data) {
+        return Array.isArray(data.data) ? data.data : [];
+      }
+      return Array.isArray(data) ? data : [];
+    }
   });
 
   const { data: ordersTrend = [], isLoading: isLoadingOrdersTrend } = useQuery<OrdersTrendItem[]>({
     queryKey: ['/api/analytics/orders-trend', timeRange],
+    select: (data: any) => {
+      if (data && typeof data === 'object' && 'data' in data) {
+        return Array.isArray(data.data) ? data.data : [];
+      }
+      return Array.isArray(data) ? data : [];
+    }
   });
 
   // Get tag distribution data for charts
   const { data: tagsData = [], isLoading: isLoadingTags } = useQuery<CategoryItem[]>({
     queryKey: ['/api/analytics/product-tags'],
+    select: (data: any) => {
+      if (data && typeof data === 'object' && 'data' in data) {
+        return Array.isArray(data.data) ? data.data : [];
+      }
+      return Array.isArray(data) ? data : [];
+    }
   });
   
   // Keep this for backwards compatibility but it will be removed later
   const { data: categoriesData = [], isLoading: isLoadingCategories } = useQuery<CategoryItem[]>({
     queryKey: ['/api/analytics/product-categories'],
+    select: (data: any) => {
+      if (data && typeof data === 'object' && 'data' in data) {
+        return Array.isArray(data.data) ? data.data : [];
+      }
+      return Array.isArray(data) ? data : [];
+    }
   });
 
   const { data: topSellingProducts = [], isLoading: isLoadingTopProducts } = useQuery<TopSellingProduct[]>({
     queryKey: ['/api/analytics/top-selling-products'],
+    select: (data: any) => {
+      if (data && typeof data === 'object' && 'data' in data) {
+        return Array.isArray(data.data) ? data.data : [];
+      }
+      return Array.isArray(data) ? data : [];
+    }
   });
 
   const { data: inventoryValue, isLoading: isLoadingInventoryValue } = useQuery<InventoryValueReport>({
     queryKey: ['/api/analytics/inventory-value'],
+    select: (data: any) => {
+      if (data && typeof data === 'object' && 'data' in data) {
+        return data.data;
+      }
+      return data;
+    }
   });
 
   const { data: pickingEfficiency, isLoading: isLoadingPickingEfficiency } = useQuery<PickingEfficiencyReport>({
     queryKey: ['/api/analytics/picking-efficiency'],
+    select: (data: any) => {
+      if (data && typeof data === 'object' && 'data' in data) {
+        return data.data;
+      }
+      return data;
+    }
   });
   
   // New analytics data queries for enhanced reporting
   const { data: callLogsSummary, isLoading: isLoadingCallLogs } = useQuery<CallLogsSummary>({
     queryKey: ['/api/analytics/call-logs-summary', timeRange],
+    select: (data: any) => {
+      if (data && typeof data === 'object' && 'data' in data) {
+        return data.data;
+      }
+      return data;
+    }
   });
   
   const { data: customerEngagement, isLoading: isLoadingCustomerEngagement } = useQuery<CustomerEngagement>({
     queryKey: ['/api/analytics/customer-engagement'],
+    select: (data: any) => {
+      if (data && typeof data === 'object' && 'data' in data) {
+        return data.data;
+      }
+      return data;
+    }
   });
   
   const { data: orderQualitySummary, isLoading: isLoadingOrderQuality } = useQuery<OrderQualitySummary>({
     queryKey: ['/api/analytics/order-quality-summary', timeRange],
+    select: (data: any) => {
+      if (data && typeof data === 'object' && 'data' in data) {
+        return data.data;
+      }
+      return data;
+    }
   });
   
   // Inventory prediction queries
@@ -251,7 +327,12 @@ const Reports = () => {
         if (!response.ok) {
           throw new Error('Failed to fetch products requiring reorder');
         }
-        return response.json();
+        const data = await response.json();
+        // Handle API response structure: { success: true, data: [...] }
+        if (data && typeof data === 'object' && 'data' in data) {
+          return Array.isArray(data.data) ? data.data : [];
+        }
+        return Array.isArray(data) ? data : [];
       } catch (error) {
         console.error('Error fetching reorder data:', error);
         return [];
