@@ -141,8 +141,8 @@ function broadcastMessage(message: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Initialize cached services
-  const cachedServices = new CachedServices(storage);
+  // Initialize cached services (cast storage to DatabaseStorage for caching features)
+  const cachedServices = new CachedServices(storage as any);
 
   // Add cache management middleware
   app.use(cacheStats());
@@ -4518,6 +4518,89 @@ A 1
         message: 'Health check failed',
         timestamp: new Date().toISOString(),
         overall: 'unhealthy'
+      });
+    }
+  });
+
+  // ========== CACHED API ENDPOINTS ==========
+  // Add cached versions of frequently accessed endpoints
+
+  // Cached application settings - 10 minute TTL
+  app.get('/api/settings/cached', 
+    cacheResponse({ ttl: 600, tags: ['settings'] }),
+    async (req: Request, res: Response) => {
+      try {
+        const settings = await cachedServices.getApplicationSettings();
+        res.json(settings);
+      } catch (error: any) {
+        logger.error('Error fetching cached settings:', error);
+        res.status(500).json({ error: 'Failed to fetch settings' });
+      }
+    }
+  );
+
+  // Cached dashboard statistics - 2 minute TTL
+  app.get('/api/dashboard/stats/cached',
+    cacheResponse({ ttl: 120, tags: ['dashboard'] }),
+    async (req: Request, res: Response) => {
+      try {
+        const stats = await cachedServices.getDashboardStats();
+        res.json(stats);
+      } catch (error: any) {
+        logger.error('Error fetching cached dashboard stats:', error);
+        res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+      }
+    }
+  );
+
+  // Cached low stock products - 5 minute TTL
+  app.get('/api/inventory/low-stock/cached',
+    cacheResponse({ ttl: 300, tags: ['inventory', 'low-stock'] }),
+    async (req: Request, res: Response) => {
+      try {
+        const products = await cachedServices.getLowStockProducts();
+        res.json(products);
+      } catch (error: any) {
+        logger.error('Error fetching cached low stock products:', error);
+        res.status(500).json({ error: 'Failed to fetch low stock products' });
+      }
+    }
+  );
+
+  // Cache warming endpoint
+  app.post('/api/cache/warm', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      await cachedServices.warmCache();
+      res.json({ success: true, message: 'Cache warmed successfully' });
+    } catch (error: any) {
+      logger.error('Cache warming error:', error);
+      res.status(500).json({ error: 'Failed to warm cache' });
+    }
+  });
+
+  // Cache health check
+  app.get('/api/cache/health', async (req: Request, res: Response) => {
+    try {
+      const stats = await cachedServices.getCacheStats();
+      const health = {
+        status: 'healthy',
+        cacheStats: stats,
+        recommendations: []
+      };
+
+      if (stats.hitRate < 50) {
+        (health.recommendations as string[]).push('Low cache hit rate - consider increasing TTL values');
+      }
+      if (stats.keys > 800) {
+        (health.recommendations as string[]).push('High number of cache keys - consider cache cleanup');
+      }
+
+      res.json(health);
+    } catch (error: any) {
+      logger.error('Cache health check error:', error);
+      res.status(500).json({ 
+        status: 'unhealthy', 
+        error: 'Failed to get cache health status' 
       });
     }
   });
