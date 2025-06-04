@@ -567,25 +567,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Check if product exists
+      const existingProduct = await storage.getProduct(id);
+      if (!existingProduct) {
+        throw new NotFoundError(`Product with ID ${id} not found`);
+      }
+      
+      // Validate category if being updated
+      if (updateData.categoryId) {
+        const category = await storage.getCategory(updateData.categoryId);
+        if (!category) {
+          throw new ValidationError(`Category with ID ${updateData.categoryId} does not exist`);
+        }
+      }
+      
+      // Check SKU uniqueness if being updated
+      if (updateData.sku && updateData.sku !== existingProduct.sku) {
+        const existingProductBySku = await storage.getProductBySku(updateData.sku);
+        if (existingProductBySku) {
+          throw new ConflictError(`Product with SKU '${updateData.sku}' already exists`);
+        }
+      }
+      
+      // Handle file upload if present
+      if (req.files && req.files.image) {
+        const imageFile = req.files.image as UploadedFile;
+        
+        // File validation
+        if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(imageFile.mimetype)) {
+          throw new ValidationError('File must be an image (JPEG, PNG, GIF, or WebP)');
+        }
+        
+        if (imageFile.size > 5 * 1024 * 1024) {
+          throw new ValidationError('File size must be less than 5MB');
+        }
+        
+        // Generate unique filename
+        const filename = `${Date.now()}-${imageFile.name.replace(/\s+/g, '-')}`;
+        const filePath = path.join(PRODUCTS_UPLOAD_PATH, filename);
+        
+        // Move file to uploads directory
+        await imageFile.mv(filePath);
+        
+        updateData.imagePath = `/uploads/products/${filename}`;
+        
+        // Ensure public access
+        ensurePublicAccess(PRODUCTS_UPLOAD_PATH, 'uploads/products');
+        
+        // Copy to public directory
+        const publicFilePath = path.join(process.cwd(), 'public/uploads/products', filename);
+        if (!fs.existsSync(path.dirname(publicFilePath))) {
+          fs.mkdirSync(path.dirname(publicFilePath), { recursive: true });
+        }
+        
+        if (!fs.existsSync(publicFilePath)) {
+          try {
+            fs.copyFileSync(filePath, publicFilePath);
+          } catch (err) {
+            console.error('Failed to copy file to public directory:', err);
+          }
+        }
+        
+        // Delete old image if it exists
+        if (existingProduct.imagePath) {
+          const oldImagePath = path.join(process.cwd(), 'public', existingProduct.imagePath);
+          if (fs.existsSync(oldImagePath)) {
+            try {
+              fs.unlinkSync(oldImagePath);
+            } catch (err) {
+              console.error('Failed to delete old image file:', err);
+            }
+          }
+        }
+      }
+      
+      // Update stock timestamp if stock is being changed
+      if (updateData.currentStock !== undefined) {
+        updateData.lastStockUpdate = new Date();
+      }
+      
       // Get userId from authenticated session
       const userId = (req.user as any)?.id;
       
-      // Pass userId to track inventory changes
+      // Update product
       const updatedProduct = await storage.updateProduct(id, updateData, userId);
       
-      if (!updatedProduct) {
-        return res.status(404).json({ message: 'Product not found' });
-      }
-      
-      // If tags array is present, update the tag associations
+      // Handle tags if present
       if (updateData.tags && Array.isArray(updateData.tags)) {
-        console.log(`Updating tags for product ${id}:`, updateData.tags);
         try {
           // Create tags that don't exist yet and collect their IDs
           const tagIds = await Promise.all(updateData.tags.map(async (tagName: string) => {
             let tag = await storage.getTagByName(tagName);
             if (!tag) {
-              // Tag doesn't exist, create it
               tag = await storage.createTag({ name: tagName });
             }
             return tag.id;
@@ -593,18 +666,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Update the product's tag associations
           await storage.updateProductTags(id, tagIds);
-          console.log(`Successfully updated tags for product ${id}`);
         } catch (tagError) {
           console.error(`Error updating tags for product ${id}:`, tagError);
-          // Continue even if tag update fails, as the product was already updated
+          // Continue even if tag update fails
         }
       }
       
-      res.json(updatedProduct);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
+      res.json({
+        success: true,
+        data: updatedProduct,
+        message: 'Product updated successfully'
+      });
+    })
+  ]);
   
   app.delete('/api/products/:id', isAuthenticated, hasRole(['admin']), async (req, res) => {
     try {
