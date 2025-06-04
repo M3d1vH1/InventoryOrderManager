@@ -236,7 +236,9 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
         invoice, 
         supplierId,
         invoice_supplier_id: invoice?.supplier_id,
-        invoice_supplierId: invoice?.supplierId
+        invoice_supplierId: invoice?.supplierId,
+        paymentNotes: payment.notes,
+        paymentReference: payment.referenceNumber || payment.reference
       });
       
       form.reset({
@@ -319,12 +321,25 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
       amount: parseFloat(data.amount),
       // Make sure paymentMethod is in the correct enum format (snake_case)
       paymentMethod: data.paymentMethod.toLowerCase().replace(' ', '_'),
-      // Ensure all fields including notes and bankAccount are included
-      notes: data.notes || '',
-      bankAccount: data.bankAccount || '',
+      // Ensure all fields including notes and referenceNumber are properly included
+      notes: data.notes || null,
+      referenceNumber: data.referenceNumber || null,
+      bankAccount: data.bankAccount || null,
+      company: data.company || null,
     };
 
-    console.log('Submitting payment data:', formattedData);
+    console.log('Submitting payment data with field details:', {
+      ...formattedData,
+      fieldCheck: {
+        hasNotes: !!data.notes,
+        notesValue: data.notes,
+        hasReference: !!data.referenceNumber,
+        referenceValue: data.referenceNumber,
+        hasCompany: !!data.company,
+        companyValue: data.company
+      }
+    });
+    
     savePaymentMutation.mutate(formattedData);
   };
 
