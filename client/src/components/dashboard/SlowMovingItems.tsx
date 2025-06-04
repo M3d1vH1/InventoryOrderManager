@@ -126,7 +126,7 @@ export default function SlowMovingItems() {
       [t('product.lastUpdated')]: product.lastStockUpdate ? new Date(product.lastStockUpdate).toLocaleDateString() : t('common.never'),
     }));
 
-    exportData(exportData, format, t('dashboard.slowMovingInventory'));
+    exportData(exportDataFormatted, format, t('dashboard.slowMovingInventory'));
   };
 
   // Render badge for products based on days without movement
@@ -134,7 +134,7 @@ export default function SlowMovingItems() {
     if (days > 120) {
       return <Badge variant="destructive">{days} {t('common.days')}</Badge>;
     } else if (days > 90) {
-      return <Badge variant="warning">{days} {t('common.days')}</Badge>;
+      return <Badge variant="destructive">{days} {t('common.days')}</Badge>;
     } else {
       return <Badge variant="outline">{days} {t('common.days')}</Badge>;
     }

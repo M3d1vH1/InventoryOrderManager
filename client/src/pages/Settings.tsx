@@ -736,6 +736,14 @@ const Settings = () => {
   // Get current email settings query
   const { data: emailSettings, isLoading: isLoadingEmailSettings } = useQuery<EmailSettingsData>({
     queryKey: ['/api/email-settings'],
+    select: (data: any) => {
+      // Handle API response structure: { success: true, data: {...} }
+      if (data && typeof data === 'object' && 'data' in data) {
+        return data.data;
+      }
+      // Fallback for direct object response
+      return data;
+    }
   });
   
   // Update form when settings are loaded
@@ -882,7 +890,15 @@ const Settings = () => {
   
   // Company settings query
   const { data: companySettingsData, isLoading: isCompanyLoading } = useQuery<CompanySettingsData>({
-    queryKey: ['/api/company-settings']
+    queryKey: ['/api/company-settings'],
+    select: (data: any) => {
+      // Handle API response structure: { success: true, data: {...} }
+      if (data && typeof data === 'object' && 'data' in data) {
+        return data.data;
+      }
+      // Fallback for direct object response
+      return data;
+    }
   });
   
   // Company settings form
@@ -956,7 +972,15 @@ const Settings = () => {
 
   // Notification settings query
   const { data: notificationSettingsData, isLoading: isNotificationLoading } = useQuery<NotificationSettingsData>({
-    queryKey: ['/api/notification-settings']
+    queryKey: ['/api/notification-settings'],
+    select: (data: any) => {
+      // Handle API response structure: { success: true, data: {...} }
+      if (data && typeof data === 'object' && 'data' in data) {
+        return data.data;
+      }
+      // Fallback for direct object response
+      return data;
+    }
   });
   
   // Update notification form when settings are loaded
