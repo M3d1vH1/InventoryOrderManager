@@ -92,8 +92,9 @@ export const getProtectedData = asyncHandler(async (req: Request, res: Response)
     throw new UnauthorizedError('Authentication required');
   }
   
-  // Check user permissions
-  if (req.user.role !== 'admin') {
+  // Check user permissions (cast to any to avoid TypeScript issues in example)
+  const user = req.user as any;
+  if (user.role !== 'admin') {
     throw new UnauthorizedError('Admin access required');
   }
   
