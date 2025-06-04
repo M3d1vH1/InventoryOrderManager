@@ -242,8 +242,29 @@ export class DatabaseStorage implements IStorage {
 
   // Product methods
   async getProduct(id: number): Promise<Product | undefined> {
-    const result = await this.db.select().from(products).where(eq(products.id, id));
-    return result[0];
+    // Join with categories to get category name
+    const result = await this.db
+      .select({
+        id: products.id,
+        name: products.name,
+        sku: products.sku,
+        barcode: products.barcode,
+        categoryId: products.categoryId,
+        category: categories.name,
+        description: products.description,
+        minStockLevel: products.minStockLevel,
+        currentStock: products.currentStock,
+        location: products.location,
+        unitsPerBox: products.unitsPerBox,
+        imagePath: products.imagePath,
+        tags: products.tags,
+        lastStockUpdate: products.lastStockUpdate
+      })
+      .from(products)
+      .leftJoin(categories, eq(products.categoryId, categories.id))
+      .where(eq(products.id, id));
+    
+    return result[0] as Product | undefined;
   }
   
   // Barcode scanner methods
@@ -273,7 +294,28 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getAllProducts(): Promise<Product[]> {
-    return await this.db.select().from(products);
+    // Join with categories to get category names
+    const result = await this.db
+      .select({
+        id: products.id,
+        name: products.name,
+        sku: products.sku,
+        barcode: products.barcode,
+        categoryId: products.categoryId,
+        category: categories.name,
+        description: products.description,
+        minStockLevel: products.minStockLevel,
+        currentStock: products.currentStock,
+        location: products.location,
+        unitsPerBox: products.unitsPerBox,
+        imagePath: products.imagePath,
+        tags: products.tags,
+        lastStockUpdate: products.lastStockUpdate
+      })
+      .from(products)
+      .leftJoin(categories, eq(products.categoryId, categories.id));
+    
+    return result as Product[];
   }
   
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
@@ -481,12 +523,28 @@ export class DatabaseStorage implements IStorage {
         }
       }
       
-      // First, get the products based on the conditions
+      // First, get the products based on the conditions with category names
       let result;
       if (conditions.length > 0) {
         result = await this.db
-          .select()
+          .select({
+            id: products.id,
+            name: products.name,
+            sku: products.sku,
+            barcode: products.barcode,
+            categoryId: products.categoryId,
+            category: categories.name,
+            description: products.description,
+            minStockLevel: products.minStockLevel,
+            currentStock: products.currentStock,
+            location: products.location,
+            unitsPerBox: products.unitsPerBox,
+            imagePath: products.imagePath,
+            tags: products.tags,
+            lastStockUpdate: products.lastStockUpdate
+          })
           .from(products)
+          .leftJoin(categories, eq(products.categoryId, categories.id))
           .where(and(...conditions));
       } else {
         result = await this.getAllProducts();
