@@ -3712,10 +3712,11 @@ A 1
       try {
         await storage.createInventoryChange({
           productId: product.id,
-          quantityChange: newQuantity - currentStock,
+          userId: req.user?.id || 1,
+          previousQuantity: currentStock,
+          newQuantity: newQuantity,
+          quantityChanged: newQuantity - currentStock,
           changeType: adjustmentType === 'count' ? 'manual_adjustment' : 'stock_replenishment',
-          changeDate: new Date(),
-          changedById: req.user?.id || null,
           notes: 'Barcode scan inventory update'
         });
       } catch (inventoryLogError) {
