@@ -30,6 +30,7 @@ import LabelTemplateEditorComponent from '@/components/settings/LabelTemplateEdi
 import HealthCheck from '@/components/HealthCheck';
 import BundleAnalyzer from '@/components/BundleAnalyzer';
 import PerformanceAnalyzer from '@/components/performance/PerformanceAnalyzer';
+import DatabasePerformanceAnalyzer from '@/components/database/DatabasePerformanceAnalyzer';
 
 const companySettingsSchema = z.object({
   companyName: z.string().min(2, { message: "Company name must be at least 2 characters" }),
@@ -2820,6 +2821,12 @@ const Settings = () => {
                 
                 <div className="space-y-6">
                   <PerformanceAnalyzer />
+                </div>
+                
+                <Separator />
+                
+                <div className="space-y-6">
+                  <DatabasePerformanceAnalyzer />
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
