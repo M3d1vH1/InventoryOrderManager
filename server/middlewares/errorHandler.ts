@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { log } from '../vite';
+import logger, { logError } from '../utils/logger';
 
 interface CustomError extends Error {
   status?: number;
@@ -48,35 +49,20 @@ export function globalErrorHandler(
     params: req.params && Object.keys(req.params).length > 0 ? req.params : undefined
   };
 
-  // Log error details
-  if (process.env.NODE_ENV === 'production') {
-    // In production, log structured error without sensitive details
-    log(`[${requestId}] ${status} Error: ${message}`, 'error');
-    
-    // Only log stack trace for 5xx errors in production
-    if (status >= 500) {
-      console.error(`[${requestId}] Stack trace:`, err.stack);
-    }
-  } else {
-    // In development, log full error details
-    console.error('\n=== ERROR DETAILS ===');
-    console.error(`Request ID: ${requestId}`);
-    console.error(`${req.method} ${req.url}`);
-    console.error(`Status: ${status}`);
-    console.error(`Message: ${message}`);
-    console.error('Stack:', err.stack);
-    
-    if (errorLog.body) {
-      console.error('Request Body:', errorLog.body);
-    }
-    if (errorLog.query && Object.keys(errorLog.query).length > 0) {
-      console.error('Query Params:', errorLog.query);
-    }
-    if (errorLog.params && Object.keys(errorLog.params).length > 0) {
-      console.error('Route Params:', errorLog.params);
-    }
-    console.error('===================\n');
-  }
+  // Use Winston structured logging
+  logError(err, {
+    requestId,
+    method: req.method,
+    url: req.originalUrl || req.url,
+    ip: req.ip,
+    userAgent: req.get('User-Agent'),
+    userId: (req as any).user?.id,
+    username: (req as any).user?.username,
+    status,
+    body: req.body && Object.keys(req.body).length > 0 ? req.body : undefined,
+    query: req.query && Object.keys(req.query).length > 0 ? req.query : undefined,
+    params: req.params && Object.keys(req.params).length > 0 ? req.params : undefined
+  });
 
   // Prepare response based on environment
   let response: any = {

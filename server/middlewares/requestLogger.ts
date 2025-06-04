@@ -26,47 +26,24 @@ export function customRequestLogger(req: Request, res: Response, next: NextFunct
   next();
 }
 
-// Express-winston middleware for detailed request logging
-export const expressWinstonLogger = expressWinston.logger({
-  winstonInstance: logger,
-  meta: true,
-  msg: 'HTTP {{req.method}} {{req.url}} {{res.statusCode}} {{res.responseTime}}ms',
-  expressFormat: false,
-  colorize: false,
-  requestWhitelist: ['url', 'headers', 'method', 'httpVersion', 'originalUrl', 'query'],
-  responseWhitelist: ['statusCode'],
-  dynamicMeta: (req: Request, res: Response) => {
-    return {
-      requestId: req.requestId,
-      ip: req.ip,
-      userAgent: req.get('User-Agent'),
-      userId: (req as any).user?.id,
-      username: (req as any).user?.username
-    };
-  },
-  skip: (req: Request, res: Response) => {
-    // Skip logging for health checks and static assets
-    return req.url === '/api/health' || 
-           req.url.startsWith('/assets/') || 
-           req.url.startsWith('/favicon');
-  }
-});
+// Security event logger
+export function logSecurityEvent(req: Request, event: string, details?: any) {
+  logger.warn(`Security event: ${event}`, {
+    requestId: (req as any).requestId,
+    ip: req.ip,
+    userAgent: req.get('User-Agent'),
+    event,
+    ...details
+  });
+}
 
-// Express-winston error logger
-export const expressWinstonErrorLogger = expressWinston.errorLogger({
-  winstonInstance: logger,
-  meta: true,
-  msg: 'Error processing request {{req.method}} {{req.url}}',
-  dynamicMeta: (req: Request, res: Response, err: Error) => {
-    return {
-      requestId: req.requestId,
-      ip: req.ip,
-      userAgent: req.get('User-Agent'),
-      userId: (req as any).user?.id,
-      username: (req as any).user?.username,
-      errorName: err.name,
-      errorMessage: err.message,
-      stack: err.stack
-    };
-  }
-});
+// Business event logger
+export function logBusinessEvent(req: Request, event: string, details?: any) {
+  logger.info(`Business event: ${event}`, {
+    requestId: (req as any).requestId,
+    userId: (req as any).user?.id,
+    username: (req as any).user?.username,
+    event,
+    ...details
+  });
+}

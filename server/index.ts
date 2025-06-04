@@ -11,6 +11,8 @@ import cors from "cors";
 import { forceHttps } from './middlewares/forceHttps';
 import { geoBlockMiddleware } from './middlewares/geoblock';
 import { globalErrorHandler, notFoundHandler, setupProcessErrorHandlers, asyncHandler } from './middlewares/errorHandler';
+import { addRequestId, customRequestLogger } from './middlewares/requestLogger';
+import logger from './utils/logger';
 // csurf is disabled by default as it requires proper setup with cookies, but you can enable it if needed
 // import csrf from "csurf";
 
@@ -106,6 +108,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
+
+// Add request ID and logging middleware early
+app.use(addRequestId);
+app.use(customRequestLogger);
 
 // Standard middleware
 app.use(express.json({ limit: '1mb' })); // Limit JSON payload size
