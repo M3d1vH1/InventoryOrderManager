@@ -1,7 +1,9 @@
 import React, { Suspense } from "react";
+import "@/lib/icons";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
+import "@/lib/icons";
 import { Toaster } from "@/components/ui/toaster";
 import { DevAutoLogin } from "@/components/DevAutoLogin";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -69,6 +71,7 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { UserProvider } from "@/context/UserContext";
 import { useTranslation } from 'react-i18next';
+import "@/lib/icons";
 import './i18n'; // Import i18n setup explicitly
 
 function AuthenticatedRouter() {
