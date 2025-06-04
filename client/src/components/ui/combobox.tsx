@@ -4,46 +4,67 @@ import { Check, ChevronsUpDown, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-// Special case fuzzy matching for Greek and other non-Latin characters
+// Comprehensive Greek character normalization and diacritic removal
+function normalizeGreekText(text: string): string {
+  if (!text) return '';
+  
+  // Convert to lowercase first
+  let normalized = text.toLowerCase();
+  
+  // Greek diacritic mappings - remove accents and breathing marks
+  const greekDiacriticMap: Record<string, string> = {
+    // Vowels with accents
+    'ά': 'α', 'έ': 'ε', 'ή': 'η', 'ί': 'ι', 'ό': 'ο', 'ύ': 'υ', 'ώ': 'ω',
+    // Vowels with dialytika (diaeresis)
+    'ϊ': 'ι', 'ϋ': 'υ',
+    // Vowels with dialytika and accents
+    'ΐ': 'ι', 'ΰ': 'υ',
+    // Uppercase variants (in case normalization missed some)
+    'Ά': 'α', 'Έ': 'ε', 'Ή': 'η', 'Ί': 'ι', 'Ό': 'ο', 'Ύ': 'υ', 'Ώ': 'ω',
+    'Ϊ': 'ι', 'Ϋ': 'υ'
+  };
+  
+  // Replace diacritics
+  for (const [accented, base] of Object.entries(greekDiacriticMap)) {
+    normalized = normalized.replace(new RegExp(accented, 'g'), base);
+  }
+  
+  return normalized;
+}
+
+// Enhanced fuzzy matching for Greek and other non-Latin characters
 function fuzzyMatch(text: string, query: string): boolean {
   if (!text || !query) return false;
   
-  // Convert to lowercase
-  const textLower = text.toLowerCase();
-  const queryLower = query.toLowerCase();
+  // Normalize both text and query (remove diacritics, convert to lowercase)
+  const normalizedText = normalizeGreekText(text);
+  const normalizedQuery = normalizeGreekText(query);
   
-  // Exact matches always return true
-  if (textLower.includes(queryLower)) return true;
-  
-  // Special case for ΑΚΤΗ and other Greek entries
-  if (queryLower.includes("ακτ")) {
-    return textLower.includes("ακτ");
-  }
+  // Exact match after normalization
+  if (normalizedText.includes(normalizedQuery)) return true;
   
   // Split into words for word-by-word matching
-  const textWords = textLower.split(/\s+/);
-  const queryWords = queryLower.split(/\s+/);
+  const textWords = normalizedText.split(/\s+/);
+  const queryWords = normalizedQuery.split(/\s+/);
   
   // Check if any query word is contained in any text word
   for (const queryWord of queryWords) {
-    // Skip empty words
     if (queryWord.length === 0) continue;
     
-    // Check if any text word contains this query word
     const wordMatch = textWords.some(textWord => textWord.includes(queryWord));
     if (wordMatch) return true;
   }
   
-  // Character-by-character matching for partial matches
+  // Character-by-character fuzzy matching for partial matches
   let matchCount = 0;
-  for (const char of queryLower) {
-    if (textLower.includes(char)) {
+  for (const char of normalizedQuery) {
+    if (normalizedText.includes(char)) {
       matchCount++;
     }
   }
   
   // If more than 70% of characters match, consider it a match
-  return matchCount > queryLower.length * 0.7;
+  return matchCount > normalizedQuery.length * 0.7;
 }
 
 interface ComboboxOption {
@@ -84,68 +105,43 @@ export function Combobox({
     return options.find((option) => option.value === value)
   }, [options, value])
   
-  // Filter options using our fuzzy matching algorithm with improved prioritization
+  // Filter options using enhanced Greek character-aware fuzzy matching
   const filteredOptions = React.useMemo(() => {
     if (!searchQuery) return options;
     
     // Create an array for matches with prioritization
     let matches: { option: ComboboxOption; priority: number }[] = [];
     
-    // Convert search query to lowercase for case-insensitive matching
-    const lowerQuery = searchQuery.toLowerCase();
-    
-    // Special case debugging for ΑΚΤΗ search
-    if (lowerQuery.includes('ακτ')) {
-      console.log('Searching for ΑΚΤΗ with query:', searchQuery);
-      
-      // Find all options containing "ΑΚΤΗ"
-      const aktiOptions = options.filter(option => 
-        option.label.toLowerCase().includes('ακτ')
-      );
-      
-      if (aktiOptions.length > 0) {
-        console.log('Found ΑΚΤΗ options:', aktiOptions);
-      } else {
-        console.log('No ΑΚΤΗ options found in available options');
-      }
-    }
+    // Normalize the search query for comparison
+    const normalizedQuery = normalizeGreekText(searchQuery);
     
     // Analyze each option for priority sorting
     options.forEach(option => {
-      const lowerLabel = option.label.toLowerCase();
-      
-      // Skip non-matching options
+      // Skip non-matching options using our enhanced fuzzy match
       if (!fuzzyMatch(option.label, searchQuery)) {
         return;
       }
       
-      // Calculate priority:
+      const normalizedLabel = normalizeGreekText(option.label);
+      
+      // Calculate priority based on match quality:
       let priority = 0;
       
-      // ULTRA HIGH PRIORITY: exact match for ΑΚΤΗ
-      // If searching for "ακτη" and option has "ΑΚΤΗ" (regardless of case)
-      if (lowerQuery.includes('ακτ') && lowerLabel.includes('ακτ')) {
-        // Give highest priority to exact matches for ΑΚΤΗ
-        priority = 1000;
-        
-        // Even higher if it starts with ΑΚΤΗ
-        if (lowerLabel.startsWith('ακτ')) {
-          priority = 2000;
-        }
-      }
-      // Highest priority: starts with the exact query
-      else if (lowerLabel.startsWith(lowerQuery)) {
+      // Highest priority: starts with the normalized query
+      if (normalizedLabel.startsWith(normalizedQuery)) {
         priority = 100;
       }
-      // High priority: contains the exact query as a word
-      else if (lowerLabel.includes(` ${lowerQuery}`) || lowerLabel.includes(`${lowerQuery} `)) {
+      // High priority: contains the normalized query as a whole word
+      else if (normalizedLabel.includes(` ${normalizedQuery}`) || 
+               normalizedLabel.includes(`${normalizedQuery} `) ||
+               normalizedLabel === normalizedQuery) {
         priority = 80;
       }
-      // Medium priority: contains the exact query somewhere
-      else if (lowerLabel.includes(lowerQuery)) {
+      // Medium priority: contains the normalized query anywhere
+      else if (normalizedLabel.includes(normalizedQuery)) {
         priority = 60;
       }
-      // Low priority: fuzzy match
+      // Lower priority: fuzzy match (word-based or character-based)
       else {
         priority = 20;
       }
@@ -153,13 +149,13 @@ export function Combobox({
       matches.push({ option, priority });
     });
     
-    // Sort by priority (highest first)
-    matches.sort((a, b) => b.priority - a.priority);
-    
-    // Debug sorting for ΑΚΤΗ
-    if (lowerQuery.includes('ακτ')) {
-      console.log('Sorted matches:', matches.map(m => `${m.option.label} (priority: ${m.priority})`));
-    }
+    // Sort by priority (highest first), then alphabetically by label
+    matches.sort((a, b) => {
+      if (a.priority !== b.priority) {
+        return b.priority - a.priority;
+      }
+      return a.option.label.localeCompare(b.option.label, 'el'); // Greek locale for proper sorting
+    });
     
     // Return just the sorted options
     return matches.map(match => match.option);
@@ -218,9 +214,9 @@ export function Combobox({
                     value === option.value ? "bg-gray-100 dark:bg-gray-800" : ""
                   )}
                   onClick={() => {
-                    console.log('Option clicked:', option.value);
                     onChange(option.value);
                     setOpen(false);
+                    setSearchQuery(""); // Clear search when option is selected
                   }}
                 >
                   <span>{option.label}</span>
