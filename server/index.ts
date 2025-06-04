@@ -179,12 +179,6 @@ app.use((req, res, next) => {
   
   const server = await registerRoutes(app);
 
-  // 404 handler for undefined routes (must be after all route registrations)
-  app.use(notFoundHandler);
-
-  // Global error handler (must be last middleware)
-  app.use(globalErrorHandler);
-
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
@@ -194,6 +188,12 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
+  // 404 handler for undefined routes (must be after all route registrations AND static serving)
+  app.use(notFoundHandler);
+
+  // Global error handler (must be last middleware)
+  app.use(globalErrorHandler);
+
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
@@ -202,14 +202,15 @@ app.use((req, res, next) => {
   // Handle port conflicts gracefully
   server.on('error', (err: any) => {
     if (err.code === 'EADDRINUSE') {
-      console.log(`Port ${port} is busy, trying port ${port + 1}`);
-      server.listen(port + 1, "0.0.0.0");
+      const nextPort = Number(port) + 1;
+      console.log(`Port ${port} is busy, trying port ${nextPort}`);
+      server.listen(nextPort, "0.0.0.0");
     } else {
       throw err;
     }
   });
   
-  server.listen(port, "0.0.0.0", () => {
+  server.listen(Number(port), "0.0.0.0", () => {
     log(`serving on port ${port}`);
     // Log additional information to help with debugging
     log(`Server is running in ${app.get('env')} mode`);
