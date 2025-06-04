@@ -1,6 +1,6 @@
-import axios from 'axios';
 import { Order, CallLog, NotificationSettings, Product } from '../../../shared/schema';
 import { IStorage } from '../../storage';
+import { RobustHttpClient, HttpRequestError } from '../../utils/robustHttpClient';
 
 interface SlackMessage {
   text: string;
@@ -9,9 +9,29 @@ interface SlackMessage {
 
 export class SlackNotificationService {
   private storage: IStorage;
+  private httpClient: RobustHttpClient;
   
   constructor(storage: IStorage) {
     this.storage = storage;
+    // Configure robust HTTP client with Slack-specific settings
+    this.httpClient = new RobustHttpClient(
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Warehouse-Management-System/1.0'
+        }
+      },
+      {
+        timeout: 15000, // 15 seconds for Slack webhooks
+        maxRetries: 3,
+        retryDelay: 2000, // 2 seconds initial delay
+        maxRetryDelay: 30000, // 30 seconds max delay
+        retryStatusCodes: [408, 429, 500, 502, 503, 504],
+        onRetry: (attempt, error) => {
+          console.log(`Slack notification retry attempt ${attempt}: ${error.message}`);
+        }
+      }
+    );
   }
   
   // Get notification settings
@@ -36,11 +56,7 @@ export class SlackNotificationService {
       console.log('Sending Slack message to webhook URL:', webhookUrl);
       console.log('Message payload:', JSON.stringify(message, null, 2));
       
-      const response = await axios.post(webhookUrl, message, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await this.httpClient.post(webhookUrl, message);
       
       console.log('Slack API response status:', response.status, response.statusText);
       console.log('Slack API response data:', response.data || 'No response data');
@@ -48,11 +64,12 @@ export class SlackNotificationService {
       return true;
     } catch (error) {
       console.error('Error sending Slack notification:', error);
-      if (axios.isAxiosError(error)) {
-        console.error('Axios error details:', {
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: error.response?.data,
+      if (error instanceof HttpRequestError) {
+        console.error('Robust HTTP client error details:', {
+          statusCode: error.statusCode,
+          attempts: error.attempts,
+          isTimeout: error.isTimeout,
+          isNetworkError: error.isNetworkError,
           message: error.message
         });
       }
