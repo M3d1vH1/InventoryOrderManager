@@ -6,6 +6,9 @@ import { insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCu
 import { eq } from "drizzle-orm";
 import { isAuthenticated, hasRole } from "./auth";
 import { hashPassword } from "./auth";
+import { validateRequest, commonSchemas } from "./utils/validation";
+import { asyncHandler } from "./middlewares/errorHandler";
+import { ValidationError, NotFoundError, ConflictError } from "./utils/errorUtils";
 import { UploadedFile } from "express-fileupload";
 import path from "path";
 import fs from "fs";
@@ -229,22 +232,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize Slack notification service
   const slackService = createSlackService(storage);
   
+  // Product validation schemas
+  const createProductSchema = insertProductSchema.extend({
+    name: z.string()
+      .min(2, 'Product name must be at least 2 characters')
+      .max(100, 'Product name must not exceed 100 characters')
+      .trim(),
+    sku: z.string()
+      .min(3, 'SKU must be at least 3 characters')
+      .max(50, 'SKU must not exceed 50 characters')
+      .regex(/^[A-Z0-9-_]+$/i, 'SKU can only contain letters, numbers, hyphens, and underscores')
+      .trim()
+      .transform(val => val.toUpperCase()),
+    categoryId: z.number()
+      .int('Category ID must be an integer')
+      .positive('Category ID must be positive'),
+    currentStock: z.number()
+      .int('Current stock must be an integer')
+      .min(0, 'Current stock cannot be negative')
+      .max(100000, 'Current stock cannot exceed 100,000'),
+    minStockLevel: z.number()
+      .int('Minimum stock level must be an integer')
+      .min(0, 'Minimum stock level cannot be negative')
+      .max(10000, 'Minimum stock level cannot exceed 10,000'),
+    barcode: z.string()
+      .min(8, 'Barcode must be at least 8 characters')
+      .max(20, 'Barcode must not exceed 20 characters')
+      .regex(/^[0-9]+$/, 'Barcode can only contain numbers')
+      .optional(),
+    description: z.string()
+      .max(1000, 'Description must not exceed 1000 characters')
+      .trim()
+      .optional(),
+    location: z.string()
+      .max(100, 'Location must not exceed 100 characters')
+      .trim()
+      .optional(),
+    unitsPerBox: z.number()
+      .int('Units per box must be an integer')
+      .positive('Units per box must be positive')
+      .max(1000, 'Units per box cannot exceed 1,000')
+      .optional(),
+    tags: z.array(z.string().trim().min(1)).optional().default([])
+  });
+
+  const updateProductSchema = createProductSchema.partial();
+  
+  const searchQuerySchema = z.object({
+    q: z.string()
+      .max(100, 'Search query must not exceed 100 characters')
+      .trim()
+      .optional(),
+    tag: z.string()
+      .max(50, 'Tag filter must not exceed 50 characters')
+      .trim()
+      .optional(),
+    stockStatus: z.enum(['low', 'normal', 'high'], {
+      errorMap: () => ({ message: 'Stock status must be one of: low, normal, high' })
+    }).optional(),
+    page: z.string()
+      .regex(/^\d+$/, 'Page must be a positive integer')
+      .transform(Number)
+      .refine(val => val >= 1, 'Page must be at least 1')
+      .optional()
+      .default('1'),
+    limit: z.string()
+      .regex(/^\d+$/, 'Limit must be a positive integer')
+      .transform(Number)
+      .refine(val => val >= 1 && val <= 100, 'Limit must be between 1 and 100')
+      .optional()
+      .default('10')
+  });
+  
   // API routes
   const apiRouter = app.route('/api');
   
-  // Product routes
-  app.get('/api/products', async (req, res) => {
-    try {
-      const query = req.query.q as string || '';
-      const tag = req.query.tag as string;
-      const stockStatus = req.query.stockStatus as string;
+  // Product routes with validation
+  app.get('/api/products', [
+    validateRequest({ query: searchQuerySchema }),
+    asyncHandler(async (req: Request, res: Response) => {
+      const { q, tag, stockStatus, page, limit } = req.query as any;
       
-      const products = await storage.searchProducts(query, tag, stockStatus);
-      res.json(products);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
+      const products = await storage.searchProducts(q, tag, stockStatus);
+      
+      // Apply pagination
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedProducts = products.slice(startIndex, endIndex);
+      
+      res.json({
+        success: true,
+        data: paginatedProducts,
+        pagination: {
+          page,
+          limit,
+          total: products.length,
+          totalPages: Math.ceil(products.length / limit),
+          hasNext: endIndex < products.length,
+          hasPrev: page > 1
+        }
+      });
+    })
+  ]);
   
   app.get('/api/products/low-stock', async (req, res) => {
     try {
@@ -265,28 +354,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get('/api/products/:id', async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
+  app.get('/api/products/:id', [
+    validateRequest({ params: commonSchemas.idParam }),
+    asyncHandler(async (req: Request, res: Response) => {
+      const { id } = req.params as any;
+      
       const product = await storage.getProduct(id);
       
       if (!product) {
-        return res.status(404).json({ message: 'Product not found' });
+        throw new NotFoundError(`Product with ID ${id} not found`);
       }
       
-      res.json(product);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
+      res.json({
+        success: true,
+        data: product
+      });
+    })
+  ]);
   
-  app.post('/api/products', async (req, res) => {
-    try {
+  app.post('/api/products', [
+    validateRequest({ body: createProductSchema }),
+    asyncHandler(async (req: Request, res: Response) => {
+      const productData = req.body;
       let imagePath = null;
+      
+      // Check if category exists
+      const category = await storage.getCategory(productData.categoryId);
+      if (!category) {
+        throw new ValidationError(`Category with ID ${productData.categoryId} does not exist`);
+      }
+      
+      // Check if SKU already exists
+      const existingProduct = await storage.getProductBySku(productData.sku);
+      if (existingProduct) {
+        throw new ConflictError(`Product with SKU '${productData.sku}' already exists`);
+      }
       
       // Handle file upload if present
       if (req.files && req.files.image) {
         const imageFile = req.files.image as UploadedFile;
+        
+        // File validation
+        if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(imageFile.mimetype)) {
+          throw new ValidationError('File must be an image (JPEG, PNG, GIF, or WebP)');
+        }
+        
+        if (imageFile.size > 5 * 1024 * 1024) {
+          throw new ValidationError('File size must be less than 5MB');
+        }
         
         // Generate unique filename
         const filename = `${Date.now()}-${imageFile.name.replace(/\s+/g, '-')}`;
@@ -298,16 +413,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Set image path for storage (URL path)
         imagePath = `/uploads/products/${filename}`;
         
-        // Ensure public access (in case symlink was removed)
+        // Ensure public access
         ensurePublicAccess(PRODUCTS_UPLOAD_PATH, 'uploads/products');
         
-        // If symlink failed, copy the file directly as fallback
+        // Copy to public directory as fallback
         const publicFilePath = path.join(process.cwd(), 'public/uploads/products', filename);
         if (!fs.existsSync(path.dirname(publicFilePath))) {
           fs.mkdirSync(path.dirname(publicFilePath), { recursive: true });
         }
         
-        // Only copy if symlink doesn't exist and the file isn't already in public
         if (!fs.existsSync(publicFilePath)) {
           try {
             fs.copyFileSync(filePath, publicFilePath);
@@ -317,98 +431,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Get body data and handle tags properly
-      let reqBody = { ...req.body };
-      
-      // Handle tags properly if they're coming from form data
-      if (reqBody.tags) {
-        // If tags is a string that looks like JSON array, parse it
-        if (typeof reqBody.tags === 'string' && 
-           (reqBody.tags.startsWith('[') || reqBody.tags === '[]')) {
-          try {
-            reqBody.tags = JSON.parse(reqBody.tags);
-          } catch (e) {
-            console.error('Error parsing tags JSON:', e);
-            reqBody.tags = []; // Default to empty array if parsing fails
-          }
-        } 
-        // Ensure tags is always an array
-        if (!Array.isArray(reqBody.tags)) {
-          reqBody.tags = [];
-        }
-      }
-      
-      // Handle tags[] array format - our new implementation sends individual tags this way
-      if (req.body['tags[]'] && (!reqBody.tags || reqBody.tags.length === 0)) {
-        console.log('Found tags[] format in create product:', req.body['tags[]']);
-        // If it's a single value, convert to array
-        if (!Array.isArray(req.body['tags[]'])) {
-          reqBody.tags = [req.body['tags[]']];
-        } else {
-          reqBody.tags = req.body['tags[]'];
-        }
-      }
-      
-      // Use tagsJson as a fallback if available
-      if (req.body.tagsJson && (!reqBody.tags || reqBody.tags.length === 0)) {
-        try {
-          reqBody.tags = JSON.parse(req.body.tagsJson);
-          console.log('Using tagsJson fallback in create product:', reqBody.tags);
-        } catch (e) {
-          console.error('Error parsing tagsJson:', e);
-        }
-      }
-      
-      console.log('Creating product with data:', JSON.stringify(reqBody));
-      
-      // Parse and validate product data with default categoryId
-      const productData = insertProductSchema.parse({
-        ...reqBody,
-        imagePath: imagePath || reqBody.imagePath,
-        categoryId: 1 // Set default categoryId for all products
+      // Create product
+      const newProduct = await storage.createProduct({
+        ...productData,
+        imagePath,
+        lastStockUpdate: new Date()
       });
       
-      const product = await storage.createProduct(productData);
-      
-      // If tags array is present, update the tag associations
-      if (productData.tags && Array.isArray(productData.tags)) {
-        console.log(`Creating tag associations for new product ${product.id}:`, productData.tags);
+      // Handle tags if present
+      if (productData.tags && Array.isArray(productData.tags) && productData.tags.length > 0) {
         try {
           // Create tags that don't exist yet and collect their IDs
           const tagIds = await Promise.all(productData.tags.map(async (tagName: string) => {
             let tag = await storage.getTagByName(tagName);
             if (!tag) {
-              // Tag doesn't exist, create it
               tag = await storage.createTag({ name: tagName });
             }
             return tag.id;
           }));
           
           // Add the tags to the product
-          await storage.updateProductTags(product.id, tagIds);
-          console.log(`Successfully created tags for product ${product.id}`);
+          await storage.updateProductTags(newProduct.id, tagIds);
         } catch (tagError) {
-          console.error(`Error creating tags for product ${product.id}:`, tagError);
-          // Continue even if tag update fails, as the product was already created
+          console.error(`Error creating tags for product ${newProduct.id}:`, tagError);
+          // Continue even if tag update fails
         }
       }
       
-      res.status(201).json(product);
-    } catch (error: any) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: 'Validation error', errors: error.errors });
-      }
-      res.status(500).json({ message: error.message });
-    }
-  });
+      res.status(201).json({
+        success: true,
+        data: newProduct,
+        message: 'Product created successfully'
+      });
+    })
+  ]);
   
-  app.patch('/api/products/:id', isAuthenticated, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      let updateData = {
-        ...req.body,
-        categoryId: 1 // Ensure categoryId is always set to 1
-      };
+  app.patch('/api/products/:id', [
+    isAuthenticated,
+    validateRequest({ 
+      params: commonSchemas.idParam,
+      body: updateProductSchema 
+    }),
+    asyncHandler(async (req: Request, res: Response) => {
+      const { id } = req.params as any;
+      const updateData = req.body;
       
       // Handle tags properly if they're coming from form data
       if (updateData.tags) {
