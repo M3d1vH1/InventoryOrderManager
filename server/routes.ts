@@ -48,6 +48,7 @@ import reportsRouter from "./api/reports";
 import productionRouter from "./api/production";
 import supplierPaymentsRouter from "./api/supplierPayments";
 import customersRouter from "./api/customers";
+import { testAllLoggingFeatures, testRequestLogging, testValidationErrorLogging } from "./api/testLogging";
 import { createSlackService } from "./services/notifications/slackService";
 import { printShippingLabel, printBatchShippingLabels, previewShippingLabel, servePreviewImage } from "./api/labelPrinting";
 import { directShippingLabel } from "./api/directShippingLabel";
@@ -4267,6 +4268,11 @@ A 1
       });
     }
   });
+
+  // Winston Logging Test Endpoints
+  app.get('/api/test/logging', testAllLoggingFeatures);
+  app.get('/api/test/request-logging', testRequestLogging);
+  app.post('/api/test/validation-logging', testValidationErrorLogging);
   
   return httpServer;
 }
