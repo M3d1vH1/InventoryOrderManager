@@ -312,7 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     limit: z.string()
       .regex(/^\d+$/, 'Limit must be a positive integer')
       .transform(Number)
-      .refine(val => val >= 1 && val <= 100, 'Limit must be between 1 and 100')
+      .refine(val => val >= 1 && val <= 500, 'Limit must be between 1 and 500')
       .optional()
       .default('10')
   });
