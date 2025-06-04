@@ -50,6 +50,7 @@ import callLogsRouter from "./api/callLogs";
 import prospectiveCustomersRouter from "./api/prospectiveCustomers";
 import reportsRouter from "./api/reports";
 import productionRouter from "./api/production";
+import { getEfficientOrdersList, getEfficientOrderDetails, getEfficientCustomerHistory, getEfficientInventorySummary } from "./api/efficientOrderQueries";
 import supplierPaymentsRouter from "./api/supplierPayments";
 import customersRouter from "./api/customers";
 import { testAllLoggingFeatures, testRequestLogging, testValidationErrorLogging } from "./api/testLogging";
@@ -4604,6 +4605,21 @@ A 1
       });
     }
   });
+
+  // ========== EFFICIENT DRIZZLE ORM QUERIES ==========
+  // Prevent N+1 query problems with optimized query patterns
+
+  // Efficient orders listing - prevents N+1 by batch loading related data
+  app.get('/api/orders/efficient', isAuthenticated, getEfficientOrdersList);
+
+  // Efficient single order with full details
+  app.get('/api/orders/:id/efficient', isAuthenticated, getEfficientOrderDetails);
+
+  // Efficient customer order history with aggregated data
+  app.get('/api/customers/:customerName/orders/efficient', isAuthenticated, getEfficientCustomerHistory);
+
+  // Efficient inventory summary by category
+  app.get('/api/inventory/summary/efficient', isAuthenticated, getEfficientInventorySummary);
   
   return httpServer;
 }
