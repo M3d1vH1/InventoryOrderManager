@@ -10,11 +10,15 @@ import rateLimit from "express-rate-limit";
 import cors from "cors";
 import { forceHttps } from './middlewares/forceHttps';
 import { geoBlockMiddleware } from './middlewares/geoblock';
+import { globalErrorHandler, notFoundHandler, setupProcessErrorHandlers, asyncHandler } from './middlewares/errorHandler';
 // csurf is disabled by default as it requires proper setup with cookies, but you can enable it if needed
 // import csrf from "csurf";
 
 // Load environment variables from .env file
 dotenv.config();
+
+// Setup process-level error handlers
+setupProcessErrorHandlers();
 
 // Import Replit optimizer for deployment environment
 let replitOptimizer;
@@ -35,7 +39,7 @@ if (process.env.NODE_ENV === 'production') {
     replitOptimizer = require('./utils/replitOptimizer');
     replitOptimizer.optimizeForReplit();
   } catch (err) {
-    console.warn('Replit optimizer not available:', err.message);
+    console.warn('Replit optimizer not available:', err instanceof Error ? err.message : String(err));
   }
 }
 
@@ -175,30 +179,11 @@ app.use((req, res, next) => {
   
   const server = await registerRoutes(app);
 
-  // Global error handler
-  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    
-    // Log the error (but not in production for sensitive data)
-    if (process.env.NODE_ENV !== 'production') {
-      console.error(`[ERROR] ${req.method} ${req.path} - ${status}: ${message}`);
-      console.error(err.stack);
-    } else {
-      // In production, log minimal information to avoid leaking sensitive data
-      log(`Error ${status}: ${message}`, 'error');
-    }
-    
-    // Don't expose error details in production
-    const responseError = process.env.NODE_ENV === 'production' && status === 500
-      ? { message: 'Internal Server Error' }
-      : { message, ...(process.env.NODE_ENV !== 'production' ? { stack: err.stack } : {}) };
-    
-    res.status(status).json(responseError);
-    
-    // Don't throw the error after handling it
-    // This prevents the server from crashing on unhandled errors
-  });
+  // 404 handler for undefined routes (must be after all route registrations)
+  app.use(notFoundHandler);
+
+  // Global error handler (must be last middleware)
+  app.use(globalErrorHandler);
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
