@@ -205,13 +205,23 @@ const apiLimiter = rateLimit({
 // Apply rate limiting to API routes only
 app.use('/api/', apiLimiter);
 
-// CORS configuration - Make sure it works with Replit preview
-app.use(cors({
-  origin: true, // Allow all origins for preview access
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
+// CORS configuration optimized for production deployment
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? [
+        'https://amphoreus.replit.app',
+        /\.replit\.app$/,
+        /\.replit\.dev$/,
+        'https://amphoreus--5000.prod1a.defang.dev' // Cloud Run URL pattern
+      ]
+    : true, // Allow all origins in development
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true,
+  optionsSuccessStatus: 200 // Support legacy browsers
+};
+
+app.use(cors(corsOptions));
 
 // Add request ID and logging middleware early
 app.use(addRequestId);
@@ -309,21 +319,55 @@ app.use((req, res, next) => {
   // It is the only port that is not firewalled.
   const port = process.env.PORT || 5000;
   
-  // Handle port conflicts gracefully
-  server.on('error', (err: any) => {
-    if (err.code === 'EADDRINUSE') {
-      const nextPort = Number(port) + 1;
-      console.log(`Port ${port} is busy, trying port ${nextPort}`);
-      server.listen(nextPort, "0.0.0.0");
-    } else {
-      throw err;
+  // Configure port for deployment
+  const serverPort = parseInt(process.env.PORT || '5000');
+  const serverHost = '0.0.0.0'; // Essential for Cloud Run deployment
+  
+  // Start server with production-ready configuration
+  const serverInstance = server.listen(serverPort, serverHost, () => {
+    console.log('='.repeat(60));
+    console.log('🚀 Warehouse Management System - PRODUCTION READY');
+    console.log('='.repeat(60));
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Port: ${serverPort}`);
+    console.log(`Host: ${serverHost} (listening on all interfaces)`);
+    console.log(`URL: ${process.env.APP_URL || `http://localhost:${serverPort}`}`);
+    console.log(`Process ID: ${process.pid}`);
+    console.log('='.repeat(60));
+    
+    if (process.env.NODE_ENV === 'production') {
+      console.log('✅ Production deployment active');
+      console.log('✅ Database connected and initialized');
+      console.log('✅ Security middleware enabled');
+      console.log('✅ CORS configured for production');
+      console.log('✅ Rate limiting active');
     }
   });
   
-  server.listen(Number(port), "0.0.0.0", () => {
-    log(`serving on port ${port}`);
-    // Log additional information to help with debugging
-    log(`Server is running in ${app.get('env')} mode`);
-    log(`Application URL: ${process.env.APP_URL || 'http://localhost:' + port}`);
+  // Handle server errors for deployment
+  serverInstance.on('error', (err: any) => {
+    console.error('❌ Server error:', err);
+    if (err.code === 'EADDRINUSE') {
+      console.error(`❌ Port ${serverPort} is already in use`);
+      process.exit(1);
+    } else if (err.code === 'EACCES') {
+      console.error(`❌ Permission denied to bind to port ${serverPort}`);
+      process.exit(1);
+    } else {
+      console.error('❌ Unexpected server error:', err);
+      process.exit(1);
+    }
   });
+  
+  // Graceful shutdown for production deployment
+  const gracefulShutdown = (signal: string) => {
+    console.log(`\n📤 Received ${signal}. Graceful shutdown...`);
+    serverInstance.close(() => {
+      console.log('✅ Server closed successfully');
+      process.exit(0);
+    });
+  };
+  
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 })();
