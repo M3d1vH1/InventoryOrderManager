@@ -174,6 +174,14 @@ const Products = () => {
 
   const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: ['/api/products'],
+    select: (data: any) => {
+      // Handle API response structure: { success: true, data: [...] }
+      if (data && typeof data === 'object' && 'data' in data) {
+        return Array.isArray(data.data) ? data.data : [];
+      }
+      // Fallback for direct array response
+      return Array.isArray(data) ? data : [];
+    }
   });
 
   const form = useForm<ProductFormValues>({
@@ -457,10 +465,10 @@ const Products = () => {
 
   // Get all unique tags across all products
   const allTags = React.useMemo(() => {
-    if (!products) return [];
+    if (!products || !Array.isArray(products)) return [];
     const tagSet = new Set<string>();
     products.forEach(product => {
-      if (product.tags && product.tags.length > 0) {
+      if (product.tags && Array.isArray(product.tags) && product.tags.length > 0) {
         product.tags.forEach(tag => tagSet.add(tag));
       }
     });
