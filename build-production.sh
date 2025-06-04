@@ -16,7 +16,7 @@ npm install
 
 # Build frontend and backend
 echo "Building application..."
-npm run build
+npx vite build && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
 
 # Verify build files exist
 if [ ! -f "dist/index.js" ]; then
