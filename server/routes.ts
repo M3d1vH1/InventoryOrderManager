@@ -10,6 +10,8 @@ import { validateRequest, commonSchemas } from "./utils/validation";
 import { asyncHandler } from "./middlewares/errorHandler";
 import { ValidationError, NotFoundError, ConflictError } from "./utils/errorUtils";
 import logger from "./utils/logger";
+import { cacheResponse, smartCache, cacheStats, cacheManagement } from "./middleware/cacheMiddleware";
+import { CachedServices } from "./services/cachedServices";
 import { performHealthCheck, getHealthCheckSummary } from "./utils/healthCheck";
 import { UploadedFile } from "express-fileupload";
 import path from "path";
@@ -139,6 +141,13 @@ function broadcastMessage(message: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Initialize cached services
+  const cachedServices = new CachedServices(storage);
+
+  // Add cache management middleware
+  app.use(cacheStats());
+  app.use(cacheManagement());
+
   // Add simple health check endpoint that will work even if other parts fail
   app.get('/api/health', (req: Request, res: Response) => {
     res.status(200).json({
