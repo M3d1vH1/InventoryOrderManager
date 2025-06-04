@@ -305,7 +305,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // API routes
-  const apiRouter = app.route('/api');
   
   // Product routes with validation
   app.get('/api/products', [
@@ -474,7 +473,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }),
     asyncHandler(async (req: Request, res: Response) => {
       const { id } = req.params as any;
-      const updateData = req.body;
+      let updateData = req.body;
       
       // Handle tags properly if they're coming from form data
       if (updateData.tags) {
@@ -3306,7 +3305,7 @@ A 1
         partialFulfillmentApproved: false,
         partialFulfillmentApprovedById: null,
         partialFulfillmentApprovedAt: null,
-        percentage_shipped: '0',
+        percentage_shipped: 0,
         estimatedShippingDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
         actualShippingDate: null,
         priority: 'medium' as const, // Add priority field
@@ -3713,7 +3712,7 @@ A 1
       try {
         await storage.createInventoryChange({
           productId: product.id,
-          quantity: String(newQuantity - currentStock),
+          quantityChange: newQuantity - currentStock,
           changeType: adjustmentType === 'count' ? 'manual_adjustment' : 'stock_replenishment',
           changeDate: new Date(),
           changedById: req.user?.id || null,
