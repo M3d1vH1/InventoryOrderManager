@@ -198,7 +198,7 @@ export class CachedServices {
       log.debug('Fetching recent orders from database');
       const allOrders = await this.storage.getAllOrders();
       const orders = allOrders
-        .sort((a, b) => new Date(b.createdAt || b.orderDate).getTime() - new Date(a.createdAt || a.orderDate).getTime())
+        .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime())
         .slice(0, limit);
 
       // Cache for 3 minutes with orders tag (moderately changing data)
