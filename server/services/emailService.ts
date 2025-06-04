@@ -5,6 +5,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { storage } from '../storage';
 import { Order, Customer } from '@shared/schema';
+import { RobustHttpClient, HttpRequestError } from '../utils/robustHttpClient';
+import { withDatabaseErrorHandling } from '../utils/errorUtils';
 
 // Get the directory name in ES modules
 const __filename = fileURLToPath(import.meta.url);
