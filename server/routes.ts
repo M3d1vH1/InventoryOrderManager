@@ -4270,9 +4270,187 @@ A 1
   });
 
   // Winston Logging Test Endpoints
-  app.get('/api/test/logging', testAllLoggingFeatures);
-  app.get('/api/test/request-logging', testRequestLogging);
-  app.post('/api/test/validation-logging', testValidationErrorLogging);
+  app.get('/api/test/logging', async (req: Request, res: Response) => {
+    const requestId = req.requestId;
+    const scenario = req.query.scenario as string || 'default';
+    
+    try {
+      logger.info('Starting comprehensive logging test', {
+        requestId,
+        scenario,
+        testType: 'comprehensive',
+        userId: req.user?.id,
+        userAgent: req.headers['user-agent']
+      });
+
+      const features_tested: string[] = [];
+      
+      // Test different logging scenarios
+      switch (scenario) {
+        case 'error':
+          features_tested.push('error_handling', 'stack_traces', 'error_context');
+          logger.error('Intentional test error for logging demonstration', {
+            requestId,
+            scenario,
+            errorType: 'test_error',
+            errorDetails: {
+              message: 'This is a controlled test error',
+              code: 'TEST_ERROR_001',
+              timestamp: new Date().toISOString()
+            }
+          });
+          break;
+
+        case 'security':
+          features_tested.push('security_events', 'suspicious_activity', 'audit_trail');
+          logger.warn('Security event test - suspicious activity detected', {
+            requestId,
+            securityEvent: {
+              type: 'suspicious_login_attempt',
+              ip: req.ip,
+              userAgent: req.headers['user-agent'],
+              timestamp: new Date().toISOString(),
+              severity: 'medium'
+            },
+            userId: req.user?.id
+          });
+          break;
+
+        case 'business':
+          features_tested.push('business_events', 'structured_metadata', 'contextual_logging');
+          logger.info('Business event test - order processing simulation', {
+            requestId,
+            businessEvent: {
+              type: 'order_processing',
+              orderId: 'TEST-ORDER-12345',
+              customerId: 'CUST-789',
+              amount: 149.99,
+              currency: 'EUR',
+              processingStage: 'validation',
+              timestamp: new Date().toISOString()
+            }
+          });
+          break;
+
+        case 'performance':
+          features_tested.push('performance_monitoring', 'timing_measurements', 'resource_tracking');
+          const startTime = Date.now();
+          await new Promise(resolve => setTimeout(resolve, 100));
+          const endTime = Date.now();
+          
+          logger.info('Performance monitoring test', {
+            requestId,
+            performance: {
+              operation: 'test_performance_logging',
+              processingTime: `${endTime - startTime}ms`,
+              memoryUsage: process.memoryUsage()
+            }
+          });
+          break;
+
+        default:
+          features_tested.push('info_logging', 'debug_logging', 'structured_output', 'correlation_ids');
+          logger.info('Standard logging flow test', {
+            requestId,
+            testData: {
+              message: 'This is an info level log message',
+              level: 'info',
+              timestamp: new Date().toISOString()
+            }
+          });
+          break;
+      }
+
+      features_tested.push('request_correlation', 'contextual_info', 'json_structure');
+
+      res.json({
+        success: true,
+        message: `Comprehensive logging test completed for scenario: ${scenario}`,
+        requestId,
+        timestamp: new Date().toISOString(),
+        features_tested
+      });
+
+    } catch (error) {
+      logger.error('Error in comprehensive logging test', {
+        requestId,
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack
+        } : error
+      });
+
+      res.status(500).json({
+        success: false,
+        message: 'Comprehensive logging test failed',
+        requestId,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  app.get('/api/test/request-logging', async (req: Request, res: Response) => {
+    const requestId = req.requestId;
+    const delay = parseInt(req.query.delay as string) || 100;
+    
+    logger.info('Starting request logging test', {
+      requestId,
+      testType: 'request_logging',
+      simulatedDelay: `${delay}ms`
+    });
+
+    await new Promise(resolve => setTimeout(resolve, delay));
+
+    res.json({
+      success: true,
+      message: 'Request logging test completed successfully',
+      requestId,
+      timestamp: new Date().toISOString(),
+      features_tested: ['automatic_request_logging', 'response_timing', 'request_correlation']
+    });
+  });
+
+  app.post('/api/test/validation-logging', async (req: Request, res: Response) => {
+    const requestId = req.requestId;
+    
+    logger.info('Starting validation error logging test', {
+      requestId,
+      testType: 'validation_logging',
+      requestBody: req.body
+    });
+
+    const testField = req.body?.testField;
+    
+    if (!testField || testField.trim() === '') {
+      logger.warn('Validation error occurred (expected for test)', {
+        requestId,
+        validationError: 'testField is required and cannot be empty',
+        testPurpose: 'demonstrate_validation_error_logging'
+      });
+
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error test completed - validation failed as expected',
+        requestId,
+        timestamp: new Date().toISOString(),
+        features_tested: ['validation_error_logging', 'field_level_errors', 'structured_error_details']
+      });
+    }
+
+    logger.info('Validation test passed successfully', {
+      requestId,
+      validatedData: { testField },
+      testOutcome: 'validation_success'
+    });
+
+    res.json({
+      success: true,
+      message: 'Validation test completed - data validated successfully',
+      requestId,
+      timestamp: new Date().toISOString(),
+      features_tested: ['successful_validation_logging', 'data_validation', 'structured_logging']
+    });
+  });
   
   return httpServer;
 }
