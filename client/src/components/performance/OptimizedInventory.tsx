@@ -9,6 +9,7 @@ import OptimizedProductRow from "./OptimizedProductRow";
 import {
   Table,
   TableBody,
+  TableCell,
   TableHead,
   TableHeader,
   TableRow,
