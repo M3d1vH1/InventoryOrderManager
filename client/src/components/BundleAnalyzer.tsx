@@ -408,21 +408,35 @@ const BundleAnalyzer: React.FC = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="border-l-4 border-red-500 pl-4 py-2">
-                  <h4 className="font-semibold text-red-700">Remove FontAwesome (-300KB)</h4>
+                  <h4 className="font-semibold text-red-700">Switch to React FontAwesome (-280KB)</h4>
                   <p className="text-sm text-muted-foreground">
-                    You already have lucide-react. FontAwesome is redundant and adds 300KB.
+                    Replace global CSS imports with tree-shakable React components. Already installed and configured.
                   </p>
-                  <Button size="sm" variant="outline" className="mt-2">
-                    <Package className="h-3 w-3 mr-1" />
-                    npm uninstall @fortawesome/fontawesome-free
-                  </Button>
+                  <div className="flex gap-2 mt-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => window.open('/fontawesome-optimization-guide.md', '_blank')}
+                    >
+                      <FileText className="h-3 w-3 mr-1" />
+                      View Migration Guide
+                    </Button>
+                    <Button size="sm" variant="destructive">
+                      <Package className="h-3 w-3 mr-1" />
+                      Remove CSS Import
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="border-l-4 border-orange-500 pl-4 py-2">
-                  <h4 className="font-semibold text-orange-700">Optimize Icon Imports (-100KB)</h4>
+                  <h4 className="font-semibold text-orange-700">Optimize Icon Usage (-50KB)</h4>
                   <p className="text-sm text-muted-foreground">
-                    Import specific icons instead of entire packages to enable tree-shaking.
+                    Import only specific icons you use instead of entire icon packages.
                   </p>
+                  <div className="mt-2 text-xs bg-gray-100 p-2 rounded">
+                    <div className="text-red-600">- import '@fortawesome/fontawesome-free/css/all.css'</div>
+                    <div className="text-green-600">+ import {'{ faHome, faUser }'} from '@/lib/icons'</div>
+                  </div>
                 </div>
 
                 <div className="border-l-4 border-yellow-500 pl-4 py-2">
@@ -430,6 +444,9 @@ const BundleAnalyzer: React.FC = () => {
                   <p className="text-sm text-muted-foreground">
                     PDF generation, charts, and calendar components can be loaded on demand.
                   </p>
+                  <Badge variant="outline" className="mt-1 text-xs">
+                    Page-level lazy loading already implemented
+                  </Badge>
                 </div>
               </CardContent>
             </Card>
@@ -475,20 +492,37 @@ const BundleAnalyzer: React.FC = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>Commands to Run</CardTitle>
+                <CardTitle>Implementation Commands</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="bg-muted p-3 rounded font-mono text-sm">
-                  # Remove FontAwesome<br/>
-                  npm uninstall @fortawesome/fontawesome-free
+              <CardContent className="space-y-3">
+                <div>
+                  <h5 className="font-semibold text-sm mb-2">1. Remove FontAwesome CSS Import</h5>
+                  <div className="bg-muted p-3 rounded font-mono text-sm">
+                    # Comment out or delete in client/src/assets/fontawesome.css:<br/>
+                    # @import url('/@fortawesome/fontawesome-free/css/all.min.css');
+                  </div>
                 </div>
-                <div className="bg-muted p-3 rounded font-mono text-sm">
-                  # Analyze unused dependencies<br/>
-                  npx depcheck
+                
+                <div>
+                  <h5 className="font-semibold text-sm mb-2">2. Import Optimized Icon Library</h5>
+                  <div className="bg-muted p-3 rounded font-mono text-sm">
+                    # Add to your main App.tsx:<br/>
+                    import '@/lib/icons';
+                  </div>
                 </div>
-                <div className="bg-muted p-3 rounded font-mono text-sm">
-                  # Run full bundle analysis<br/>
-                  ANALYZE=true npm run build
+                
+                <div>
+                  <h5 className="font-semibold text-sm mb-2">3. Uninstall Old FontAwesome Package</h5>
+                  <div className="bg-muted p-3 rounded font-mono text-sm">
+                    npm uninstall @fortawesome/fontawesome-free
+                  </div>
+                </div>
+                
+                <div>
+                  <h5 className="font-semibold text-sm mb-2">4. Verify Bundle Size Reduction</h5>
+                  <div className="bg-muted p-3 rounded font-mono text-sm">
+                    ANALYZE=true npm run build
+                  </div>
                 </div>
               </CardContent>
             </Card>
