@@ -521,6 +521,17 @@ router.get('/payments/:id', async (req, res) => {
 router.post('/payments', async (req, res) => {
   try {
     console.log("Payment creation request data:", JSON.stringify(req.body, null, 2));
+    console.log("Payment creation - field analysis:", {
+      hasNotes: 'notes' in req.body,
+      notesValue: req.body.notes,
+      notesType: typeof req.body.notes,
+      hasReferenceNumber: 'referenceNumber' in req.body,
+      referenceNumberValue: req.body.referenceNumber,
+      hasReference: 'reference' in req.body,
+      referenceValue: req.body.reference,
+      hasCompany: 'company' in req.body,
+      companyValue: req.body.company
+    });
     
     // Validate with schema that now handles type coercion
     let data;

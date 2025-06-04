@@ -301,12 +301,12 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
       dueDate: data.dueDate,        // Send full Date object, schema will handle it
       amount: data.amount,          // Schema will handle number coercion
       paidAmount: paidAmount,       // Allow undefined to be passed through
-      company: data.company || '', // Company name as free text
-      reference: data.reference || '', // General reference field
-      rfNumber: data.rfNumber || '', // Specific RF number field for payments
+      company: data.company || null, // Company name as free text
+      reference: data.reference || null, // General reference field
+      rfNumber: data.rfNumber || null, // Specific RF number field for payments
       status: data.status,
-      notes: data.notes || '',
-      attachmentPath: data.attachmentPath || '',
+      notes: data.notes || null,
+      attachmentPath: data.attachmentPath || null,
       isRecurring: data.isRecurring,
       recurringCycle: data.isRecurring && data.recurringCycle ? data.recurringCycle : undefined,
     };
