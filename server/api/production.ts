@@ -1,903 +1,324 @@
-import { Router } from 'express';
-import { storage } from '../storage';
-import { isAuthenticated } from '../auth';
-import { zodErrorParser } from '../utils';
-import { 
-  insertRawMaterialSchema,
-  insertProductionRecipeSchema,
-  insertRecipeIngredientSchema,
-  insertProductionBatchSchema,
-  insertProductionOrderSchema,
-  insertMaterialConsumptionSchema,
-  insertProductionLogSchema,
-  insertProductionQualityCheckSchema
-} from '@shared/schema';
+import { Request, Response } from 'express';
 import { z } from 'zod';
+import { storage } from '../storage';
+import { asyncHandler } from '../middlewares/errorHandler';
+import { validateRequest, commonSchemas } from '../utils/validation';
+import { ValidationError, NotFoundError } from '../utils/errorUtils';
 
-const router = Router();
+// Raw material validation schemas
+const rawMaterialSchemas = {
+  create: z.object({
+    name: z.string().min(2, 'Material name must be at least 2 characters').max(100),
+    sku: z.string().min(2, 'SKU is required').max(50),
+    quantity: z.number().nonnegative('Quantity must be zero or positive'),
+    unit: z.enum(['kg', 'liter', 'piece', 'box', 'bottle', 'label', 'cap'], {
+      errorMap: () => ({ message: 'Invalid unit type' })
+    }),
+    cost: z.number().nonnegative('Cost must be zero or positive'),
+    supplier: z.string().optional(),
+    supplierSku: z.string().optional(),
+    minimumStock: z.number().nonnegative('Minimum stock must be zero or positive'),
+    location: z.string().optional(),
+    notes: z.string().optional(),
+    type: z.enum(['olive', 'bottle', 'cap', 'label', 'box', 'filter', 'other'], {
+      errorMap: () => ({ message: 'Invalid material type' })
+    }),
+  }),
 
-// Raw Materials endpoints
-router.get('/raw-materials', isAuthenticated, async (req, res) => {
+  update: z.object({
+    name: z.string().min(2).max(100).optional(),
+    sku: z.string().min(2).max(50).optional(),
+    quantity: z.number().nonnegative().optional(),
+    unit: z.enum(['kg', 'liter', 'piece', 'box', 'bottle', 'label', 'cap']).optional(),
+    cost: z.number().nonnegative().optional(),
+    supplier: z.string().optional(),
+    supplierSku: z.string().optional(),
+    minimumStock: z.number().nonnegative().optional(),
+    location: z.string().optional(),
+    notes: z.string().optional(),
+    type: z.enum(['olive', 'bottle', 'cap', 'label', 'box', 'filter', 'other']).optional(),
+  }),
+
+  search: z.object({
+    q: z.string().max(100).trim().optional(),
+    type: z.enum(['olive', 'bottle', 'cap', 'label', 'box', 'filter', 'other', 'all']).optional().default('all'),
+    stockStatus: z.enum(['low', 'normal', 'out', 'all']).optional().default('all'),
+    page: z.string().regex(/^\d+$/).transform(Number).refine(val => val >= 1).optional().default('1'),
+    limit: z.string().regex(/^\d+$/).transform(Number).refine(val => val >= 1 && val <= 100).optional().default('50')
+  })
+};
+
+/**
+ * GET /api/production/dashboard-stats - Get dashboard statistics
+ */
+export const getDashboardStats = asyncHandler(async (req: Request, res: Response) => {
   try {
-    const materials = await storage.getAllRawMaterials();
-    res.json(materials);
-  } catch (error) {
-    console.error('Error fetching raw materials:', error);
-    res.status(500).json({ error: 'Failed to fetch raw materials' });
-  }
-});
+    const [materials, recipes, batches, orders] = await Promise.all([
+      storage.getRawMaterials(),
+      storage.getRecipes(),
+      storage.getProductionBatches(),
+      storage.getProductionOrders()
+    ]);
 
-router.get('/raw-materials/low-stock', isAuthenticated, async (req, res) => {
-  try {
-    const materials = await storage.getLowStockRawMaterials();
-    res.json(materials);
-  } catch (error) {
-    console.error('Error fetching low stock materials:', error);
-    res.status(500).json({ error: 'Failed to fetch low stock materials' });
-  }
-});
+    // Calculate material statistics
+    const materialStats = {
+      total: materials.length,
+      lowStock: materials.filter((m: any) => m.quantity <= m.minimumStock && m.quantity > 0).length,
+      outOfStock: materials.filter((m: any) => m.quantity <= 0).length,
+      recentlyAdded: materials.filter((m: any) => {
+        const createdDate = new Date(m.createdAt || 0);
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return createdDate > weekAgo;
+      }).length
+    };
 
-router.get('/raw-materials/search', isAuthenticated, async (req, res) => {
-  try {
-    const query = req.query.q as string || '';
-    const type = req.query.type as string;
-    const materials = await storage.searchRawMaterials(query, type);
-    res.json(materials);
-  } catch (error) {
-    console.error('Error searching raw materials:', error);
-    res.status(500).json({ error: 'Failed to search raw materials' });
-  }
-});
+    // Calculate recipe statistics
+    const recipeStats = {
+      total: recipes.length,
+      active: recipes.filter((r: any) => r.status === 'active').length,
+      draft: recipes.filter((r: any) => r.status === 'draft').length,
+      archived: recipes.filter((r: any) => r.status === 'discontinued').length
+    };
 
-router.get('/raw-materials/:id', isAuthenticated, async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid ID format' });
-    }
-    
-    const material = await storage.getRawMaterial(id);
-    if (!material) {
-      return res.status(404).json({ error: 'Material not found' });
-    }
-    
-    res.json(material);
-  } catch (error) {
-    console.error(`Error fetching raw material ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to fetch raw material' });
-  }
-});
+    // Calculate batch statistics
+    const batchStats = {
+      total: batches.length,
+      inProgress: batches.filter((b: any) => b.status === 'in_progress').length,
+      completed: batches.filter((b: any) => b.status === 'completed').length,
+      planned: batches.filter((b: any) => b.status === 'planned').length
+    };
 
-router.post('/raw-materials', isAuthenticated, async (req, res) => {
-  try {
-    const parsedData = insertRawMaterialSchema.safeParse(req.body);
-    if (!parsedData.success) {
-      return res.status(400).json({ errors: zodErrorParser(parsedData.error) });
-    }
-    
-    const material = await storage.createRawMaterial(parsedData.data);
-    res.status(201).json(material);
-  } catch (error) {
-    console.error('Error creating raw material:', error);
-    res.status(500).json({ error: 'Failed to create raw material' });
-  }
-});
+    // Calculate order statistics
+    const orderStats = {
+      total: orders.length,
+      pending: orders.filter((o: any) => o.status === 'pending').length,
+      inProgress: orders.filter((o: any) => o.status === 'in_progress').length,
+      completed: orders.filter((o: any) => o.status === 'completed').length
+    };
 
-router.patch('/raw-materials/:id', isAuthenticated, async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid ID format' });
-    }
-    
-    // Partial validation using zod schema
-    const validationSchema = insertRawMaterialSchema.partial();
-    const parsedData = validationSchema.safeParse(req.body);
-    if (!parsedData.success) {
-      return res.status(400).json({ errors: zodErrorParser(parsedData.error) });
-    }
-    
-    const updatedMaterial = await storage.updateRawMaterial(id, parsedData.data);
-    if (!updatedMaterial) {
-      return res.status(404).json({ error: 'Material not found' });
-    }
-    
-    res.json(updatedMaterial);
-  } catch (error) {
-    console.error(`Error updating raw material ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to update raw material' });
-  }
-});
-
-router.patch('/raw-materials/:id/stock', isAuthenticated, async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid ID format' });
-    }
-    
-    const stockUpdateSchema = z.object({
-      quantity: z.number().int(),
-      notes: z.string().optional()
+    res.json({
+      success: true,
+      data: {
+        materials: materialStats,
+        recipes: recipeStats,
+        batches: batchStats,
+        orders: orderStats
+      }
     });
-    
-    const parsedData = stockUpdateSchema.safeParse(req.body);
-    if (!parsedData.success) {
-      return res.status(400).json({ errors: zodErrorParser(parsedData.error) });
-    }
-    
-    const { quantity, notes } = parsedData.data;
-    const updatedMaterial = await storage.updateRawMaterialStock(id, quantity, notes);
-    if (!updatedMaterial) {
-      return res.status(404).json({ error: 'Material not found' });
-    }
-    
-    res.json(updatedMaterial);
   } catch (error) {
-    console.error(`Error updating raw material stock ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to update raw material stock' });
+    throw new Error(`Failed to fetch dashboard statistics: ${error}`);
   }
 });
 
-router.delete('/raw-materials/:id', isAuthenticated, async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid ID format' });
-    }
+/**
+ * GET /api/production/raw-materials - Search and list raw materials
+ */
+export const getRawMaterials = [
+  validateRequest({ query: rawMaterialSchemas.search }),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { q, type, stockStatus, page, limit } = req.query as any;
     
-    const success = await storage.deleteRawMaterial(id);
-    if (!success) {
-      return res.status(404).json({ error: 'Material not found or could not be deleted' });
-    }
-    
-    res.status(204).end();
-  } catch (error) {
-    console.error(`Error deleting raw material ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to delete raw material' });
-  }
-});
-
-// Production Recipes endpoints
-router.get('/recipes', isAuthenticated, async (req, res) => {
-  try {
-    const recipes = await storage.getAllRecipes();
-    res.json(recipes);
-  } catch (error) {
-    console.error('Error fetching recipes:', error);
-    res.status(500).json({ error: 'Failed to fetch recipes' });
-  }
-});
-
-router.get('/recipes/:id', isAuthenticated, async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid ID format' });
-    }
-    
-    const recipe = await storage.getRecipe(id);
-    if (!recipe) {
-      return res.status(404).json({ error: 'Recipe not found' });
-    }
-    
-    // Get recipe ingredients
-    const ingredients = await storage.getRecipeIngredients(id);
-    
-    res.json({ ...recipe, ingredients });
-  } catch (error) {
-    console.error(`Error fetching recipe ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to fetch recipe' });
-  }
-});
-
-router.post('/recipes', isAuthenticated, async (req, res) => {
-  try {
-    const { recipe, ingredients } = req.body;
-    
-    // Validate recipe data
-    const parsedRecipe = insertProductionRecipeSchema.safeParse(recipe);
-    if (!parsedRecipe.success) {
-      return res.status(400).json({ errors: { recipe: zodErrorParser(parsedRecipe.error) } });
-    }
-    
-    // Create the recipe first
-    const createdRecipe = await storage.createRecipe(parsedRecipe.data);
-    
-    // If ingredients are provided, add them
-    if (Array.isArray(ingredients) && ingredients.length > 0) {
-      // Validate each ingredient
-      const ingredientSchema = insertRecipeIngredientSchema.omit({ id: true });
+    try {
+      const allMaterials = await storage.getRawMaterials();
       
-      for (const ingredient of ingredients) {
-        const parsedIngredient = ingredientSchema.safeParse({
-          ...ingredient,
-          recipeId: createdRecipe.id
-        });
-        
-        if (parsedIngredient.success) {
-          await storage.addRecipeIngredient(parsedIngredient.data);
-        }
-      }
-    }
-    
-    // Return the complete recipe with ingredients
-    const fullRecipe = await storage.getRecipe(createdRecipe.id);
-    const recipeIngredients = await storage.getRecipeIngredients(createdRecipe.id);
-    
-    res.status(201).json({ ...fullRecipe, ingredients: recipeIngredients });
-  } catch (error) {
-    console.error('Error creating recipe:', error);
-    res.status(500).json({ error: 'Failed to create recipe' });
-  }
-});
-
-router.patch('/recipes/:id', isAuthenticated, async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid ID format' });
-    }
-    
-    const { recipe, ingredients } = req.body;
-    
-    // Validate recipe data if provided
-    if (recipe) {
-      const validationSchema = insertProductionRecipeSchema.partial();
-      const parsedData = validationSchema.safeParse(recipe);
-      if (!parsedData.success) {
-        return res.status(400).json({ errors: { recipe: zodErrorParser(parsedData.error) } });
+      // Apply filters
+      let filteredMaterials = allMaterials;
+      
+      // Search filter
+      if (q) {
+        const searchTerm = q.toLowerCase();
+        filteredMaterials = filteredMaterials.filter((material: any) =>
+          material.name.toLowerCase().includes(searchTerm) ||
+          material.sku.toLowerCase().includes(searchTerm) ||
+          material.supplier?.toLowerCase().includes(searchTerm) ||
+          material.type.toLowerCase().includes(searchTerm)
+        );
       }
       
-      const updatedRecipe = await storage.updateRecipe(id, parsedData.data);
-      if (!updatedRecipe) {
-        return res.status(404).json({ error: 'Recipe not found' });
-      }
-    }
-    
-    // Update ingredients if provided
-    if (Array.isArray(ingredients)) {
-      // Get existing ingredients
-      const existingIngredients = await storage.getRecipeIngredients(id);
-      
-      // For each existing ingredient, check if it's in the new list
-      for (const existing of existingIngredients) {
-        const matchingIngredient = ingredients.find(i => i.id === existing.id);
-        
-        if (!matchingIngredient) {
-          // Ingredient was removed, delete it
-          await storage.removeRecipeIngredient(existing.id);
-        } else if (
-          matchingIngredient.materialId !== existing.materialId ||
-          matchingIngredient.quantity !== existing.quantity
-        ) {
-          // Ingredient was updated
-          await storage.updateRecipeIngredient(existing.id, {
-            materialId: matchingIngredient.materialId,
-            quantity: matchingIngredient.quantity,
-            notes: matchingIngredient.notes
-          });
-        }
+      // Type filter
+      if (type !== 'all') {
+        filteredMaterials = filteredMaterials.filter((material: any) => material.type === type);
       }
       
-      // Add new ingredients
-      for (const ingredient of ingredients) {
-        if (!ingredient.id) {
-          // This is a new ingredient
-          const parsedIngredient = insertRecipeIngredientSchema
-            .omit({ id: true })
-            .safeParse({
-              ...ingredient,
-              recipeId: id
-            });
-          
-          if (parsedIngredient.success) {
-            await storage.addRecipeIngredient(parsedIngredient.data);
+      // Stock status filter
+      if (stockStatus !== 'all') {
+        filteredMaterials = filteredMaterials.filter((material: any) => {
+          switch (stockStatus) {
+            case 'out':
+              return material.quantity <= 0;
+            case 'low':
+              return material.quantity > 0 && material.quantity <= material.minimumStock;
+            case 'normal':
+              return material.quantity > material.minimumStock;
+            default:
+              return true;
           }
+        });
+      }
+      
+      // Apply pagination
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedMaterials = filteredMaterials.slice(startIndex, endIndex);
+      
+      res.json({
+        success: true,
+        data: paginatedMaterials,
+        pagination: {
+          page,
+          limit,
+          total: filteredMaterials.length,
+          totalPages: Math.ceil(filteredMaterials.length / limit),
+          hasNext: endIndex < filteredMaterials.length,
+          hasPrev: page > 1
+        }
+      });
+    } catch (error) {
+      throw new Error(`Failed to fetch raw materials: ${error}`);
+    }
+  })
+];
+
+/**
+ * GET /api/production/raw-materials/:id - Get a single raw material
+ */
+export const getRawMaterial = [
+  validateRequest({ params: commonSchemas.idParam }),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params as any;
+    
+    try {
+      const material = await storage.getRawMaterial(id);
+      
+      if (!material) {
+        throw new NotFoundError(`Raw material with ID ${id} not found`);
+      }
+      
+      res.json({
+        success: true,
+        data: material
+      });
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        throw error;
+      }
+      throw new Error(`Failed to fetch raw material: ${error}`);
+    }
+  })
+];
+
+/**
+ * POST /api/production/raw-materials - Create a new raw material
+ */
+export const createRawMaterial = [
+  validateRequest({ body: rawMaterialSchemas.create }),
+  asyncHandler(async (req: Request, res: Response) => {
+    const materialData = req.body;
+    
+    try {
+      // Check if SKU already exists
+      const existingMaterial = await storage.getRawMaterialBySku(materialData.sku);
+      if (existingMaterial) {
+        throw new ValidationError(`Raw material with SKU '${materialData.sku}' already exists`);
+      }
+      
+      const newMaterial = await storage.createRawMaterial({
+        ...materialData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      
+      res.status(201).json({
+        success: true,
+        data: newMaterial,
+        message: 'Raw material created successfully'
+      });
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+      throw new Error(`Failed to create raw material: ${error}`);
+    }
+  })
+];
+
+/**
+ * PATCH /api/production/raw-materials/:id - Update a raw material
+ */
+export const updateRawMaterial = [
+  validateRequest({ 
+    params: commonSchemas.idParam,
+    body: rawMaterialSchemas.update 
+  }),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params as any;
+    const updateData = req.body;
+    
+    try {
+      const existingMaterial = await storage.getRawMaterial(id);
+      if (!existingMaterial) {
+        throw new NotFoundError(`Raw material with ID ${id} not found`);
+      }
+      
+      // Check SKU uniqueness if being updated
+      if (updateData.sku && updateData.sku !== existingMaterial.sku) {
+        const existingBySku = await storage.getRawMaterialBySku(updateData.sku);
+        if (existingBySku) {
+          throw new ValidationError(`Raw material with SKU '${updateData.sku}' already exists`);
         }
       }
-    }
-    
-    // Return the updated recipe with ingredients
-    const updatedRecipe = await storage.getRecipe(id);
-    if (!updatedRecipe) {
-      return res.status(404).json({ error: 'Recipe not found' });
-    }
-    
-    const updatedIngredients = await storage.getRecipeIngredients(id);
-    
-    res.json({ ...updatedRecipe, ingredients: updatedIngredients });
-  } catch (error) {
-    console.error(`Error updating recipe ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to update recipe' });
-  }
-});
-
-router.delete('/recipes/:id', isAuthenticated, async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid ID format' });
-    }
-    
-    const success = await storage.deleteRecipe(id);
-    if (!success) {
-      return res.status(404).json({ error: 'Recipe not found or could not be deleted' });
-    }
-    
-    res.status(204).end();
-  } catch (error) {
-    console.error(`Error deleting recipe ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to delete recipe' });
-  }
-});
-
-// Production Batches endpoints
-router.get('/batches', isAuthenticated, async (req, res) => {
-  try {
-    let batches;
-    if (req.query.status) {
-      batches = await storage.getProductionBatchesByStatus(req.query.status as string);
-    } else {
-      batches = await storage.getAllProductionBatches();
-    }
-    res.json(batches);
-  } catch (error) {
-    console.error('Error fetching production batches:', error);
-    res.status(500).json({ error: 'Failed to fetch production batches' });
-  }
-});
-
-router.get('/batches/:id', isAuthenticated, async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid ID format' });
-    }
-    
-    const batch = await storage.getProductionBatch(id);
-    if (!batch) {
-      return res.status(404).json({ error: 'Production batch not found' });
-    }
-    
-    res.json(batch);
-  } catch (error) {
-    console.error(`Error fetching production batch ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to fetch production batch' });
-  }
-});
-
-router.post('/batches', isAuthenticated, async (req, res) => {
-  try {
-    const parsedData = insertProductionBatchSchema.safeParse(req.body);
-    if (!parsedData.success) {
-      return res.status(400).json({ errors: zodErrorParser(parsedData.error) });
-    }
-    
-    const batch = await storage.createProductionBatch(parsedData.data);
-    res.status(201).json(batch);
-  } catch (error) {
-    console.error('Error creating production batch:', error);
-    res.status(500).json({ error: 'Failed to create production batch' });
-  }
-});
-
-router.patch('/batches/:id', isAuthenticated, async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid ID format' });
-    }
-    
-    // Validate request data
-    const validationSchema = insertProductionBatchSchema.partial();
-    const parsedData = validationSchema.safeParse(req.body);
-    if (!parsedData.success) {
-      return res.status(400).json({ errors: zodErrorParser(parsedData.error) });
-    }
-    
-    const updatedBatch = await storage.updateProductionBatch(id, parsedData.data);
-    if (!updatedBatch) {
-      return res.status(404).json({ error: 'Production batch not found' });
-    }
-    
-    res.json(updatedBatch);
-  } catch (error) {
-    console.error(`Error updating production batch ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to update production batch' });
-  }
-});
-
-router.patch('/batches/:id/status', isAuthenticated, async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid ID format' });
-    }
-    
-    const statusSchema = z.object({
-      status: z.enum(['planned', 'in_progress', 'completed', 'quality_check', 'approved', 'rejected']),
-      notes: z.string().optional()
-    });
-    
-    const parsedData = statusSchema.safeParse(req.body);
-    if (!parsedData.success) {
-      return res.status(400).json({ errors: zodErrorParser(parsedData.error) });
-    }
-    
-    const { status, notes } = parsedData.data;
-    const updatedBatch = await storage.updateProductionBatchStatus(id, status, notes);
-    if (!updatedBatch) {
-      return res.status(404).json({ error: 'Production batch not found' });
-    }
-    
-    res.json(updatedBatch);
-  } catch (error) {
-    console.error(`Error updating production batch status ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to update production batch status' });
-  }
-});
-
-router.delete('/batches/:id', isAuthenticated, async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid ID format' });
-    }
-    
-    const success = await storage.deleteProductionBatch(id);
-    if (!success) {
-      return res.status(404).json({ error: 'Production batch not found or could not be deleted' });
-    }
-    
-    res.status(204).end();
-  } catch (error) {
-    console.error(`Error deleting production batch ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to delete production batch' });
-  }
-});
-
-// Production Orders endpoints
-router.get('/orders', isAuthenticated, async (req, res) => {
-  try {
-    let orders;
-    
-    if (req.query.status) {
-      orders = await storage.getProductionOrdersByStatus(req.query.status as string);
-    } else if (req.query.batchId) {
-      const batchId = parseInt(req.query.batchId as string);
-      if (isNaN(batchId)) {
-        return res.status(400).json({ error: 'Invalid batch ID format' });
+      
+      const updatedMaterial = await storage.updateRawMaterial(id, {
+        ...updateData,
+        updatedAt: new Date()
+      });
+      
+      res.json({
+        success: true,
+        data: updatedMaterial,
+        message: 'Raw material updated successfully'
+      });
+    } catch (error) {
+      if (error instanceof ValidationError || error instanceof NotFoundError) {
+        throw error;
       }
-      orders = await storage.getProductionOrdersByBatch(batchId);
-    } else {
-      orders = await storage.getAllProductionOrders();
+      throw new Error(`Failed to update raw material: ${error}`);
     }
-    
-    res.json(orders);
-  } catch (error) {
-    console.error('Error fetching production orders:', error);
-    res.status(500).json({ error: 'Failed to fetch production orders' });
-  }
-});
+  })
+];
 
-router.get('/orders/:id', isAuthenticated, async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid ID format' });
-    }
+/**
+ * DELETE /api/production/raw-materials/:id - Delete a raw material
+ */
+export const deleteRawMaterial = [
+  validateRequest({ params: commonSchemas.idParam }),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params as any;
     
-    const order = await storage.getProductionOrder(id);
-    if (!order) {
-      return res.status(404).json({ error: 'Production order not found' });
-    }
-    
-    // Get material consumptions for this order
-    const consumptions = await storage.getMaterialConsumptions(id);
-    
-    // Get production logs for this order
-    const logs = await storage.getProductionLogs(id);
-    
-    res.json({ ...order, consumptions, logs });
-  } catch (error) {
-    console.error(`Error fetching production order ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to fetch production order' });
-  }
-});
-
-router.post('/orders', isAuthenticated, async (req, res) => {
-  try {
-    const parsedData = insertProductionOrderSchema.safeParse(req.body);
-    if (!parsedData.success) {
-      return res.status(400).json({ errors: zodErrorParser(parsedData.error) });
-    }
-    
-    const order = await storage.createProductionOrder(parsedData.data);
-    
-    // Add initial production log
-    await storage.addProductionLog({
-      productionOrderId: order.id,
-      eventType: 'start',
-      description: 'Production order created',
-      createdById: (req.user as any)?.id || 1
-    });
-    
-    res.status(201).json(order);
-  } catch (error) {
-    console.error('Error creating production order:', error);
-    res.status(500).json({ error: 'Failed to create production order' });
-  }
-});
-
-router.patch('/orders/:id', isAuthenticated, async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid ID format' });
-    }
-    
-    // Validate request data
-    const validationSchema = insertProductionOrderSchema.partial();
-    const parsedData = validationSchema.safeParse(req.body);
-    if (!parsedData.success) {
-      return res.status(400).json({ errors: zodErrorParser(parsedData.error) });
-    }
-    
-    const updatedOrder = await storage.updateProductionOrder(id, parsedData.data);
-    if (!updatedOrder) {
-      return res.status(404).json({ error: 'Production order not found' });
-    }
-    
-    // Add update log if there was an actual change
-    if (Object.keys(parsedData.data).length > 0) {
-      await storage.addProductionLog({
-        productionOrderId: id,
-        eventType: 'material_added', // Using a valid event type
-        description: 'Production order updated',
-        createdById: (req.user as any)?.id || 1
-      });
-    }
-    
-    res.json(updatedOrder);
-  } catch (error) {
-    console.error(`Error updating production order ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to update production order' });
-  }
-});
-
-router.patch('/orders/:id/status', isAuthenticated, async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid ID format' });
-    }
-    
-    const statusSchema = z.object({
-      status: z.enum(['planned', 'material_check', 'in_progress', 'completed', 'partially_completed', 'cancelled']),
-      notes: z.string().optional()
-    });
-    
-    const parsedData = statusSchema.safeParse(req.body);
-    if (!parsedData.success) {
-      return res.status(400).json({ errors: zodErrorParser(parsedData.error) });
-    }
-    
-    const { status, notes } = parsedData.data;
-    const updatedOrder = await storage.updateProductionOrderStatus(id, status, notes);
-    if (!updatedOrder) {
-      return res.status(404).json({ error: 'Production order not found' });
-    }
-    
-    // Add status change log
-    await storage.addProductionLog({
-      productionOrderId: id,
-      eventType: status === 'completed' ? 'completed' : (status === 'in_progress' ? 'start' : 'material_added'), // Using valid event type
-      description: notes || `Status changed to ${status}`,
-      createdById: (req.user as any)?.id || 1
-    });
-    
-    res.json(updatedOrder);
-  } catch (error) {
-    console.error(`Error updating production order status ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to update production order status' });
-  }
-});
-
-router.delete('/orders/:id', isAuthenticated, async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid ID format' });
-    }
-    
-    const success = await storage.deleteProductionOrder(id);
-    if (!success) {
-      return res.status(404).json({ error: 'Production order not found or could not be deleted' });
-    }
-    
-    res.status(204).end();
-  } catch (error) {
-    console.error(`Error deleting production order ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to delete production order' });
-  }
-});
-
-// Material Consumptions endpoints
-router.post('/orders/:orderId/consumptions', isAuthenticated, async (req, res) => {
-  try {
-    const orderId = parseInt(req.params.orderId);
-    if (isNaN(orderId)) {
-      return res.status(400).json({ error: 'Invalid order ID format' });
-    }
-    
-    // Make sure the order exists
-    const order = await storage.getProductionOrder(orderId);
-    if (!order) {
-      return res.status(404).json({ error: 'Production order not found' });
-    }
-    
-    // Validate consumption data
-    const validationSchema = insertMaterialConsumptionSchema.omit({ id: true });
-    const parsedData = validationSchema.safeParse({
-      ...req.body,
-      productionOrderId: orderId
-    });
-    
-    if (!parsedData.success) {
-      return res.status(400).json({ errors: zodErrorParser(parsedData.error) });
-    }
-    
-    // Add the consumption
-    const consumption = await storage.addMaterialConsumption(parsedData.data);
-    
-    // Add material added log
-    await storage.addProductionLog({
-      productionOrderId: orderId,
-      eventType: 'material_added',
-      description: `Added ${consumption.quantity} units of material #${consumption.materialId}`,
-      createdById: (req.user as any)?.id || 1
-    });
-    
-    res.status(201).json(consumption);
-  } catch (error) {
-    console.error(`Error adding material consumption to order ${req.params.orderId}:`, error);
-    res.status(500).json({ error: 'Failed to add material consumption' });
-  }
-});
-
-router.patch('/consumptions/:id', isAuthenticated, async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid ID format' });
-    }
-    
-    // Validate request data
-    const validationSchema = insertMaterialConsumptionSchema.partial();
-    const parsedData = validationSchema.safeParse(req.body);
-    if (!parsedData.success) {
-      return res.status(400).json({ errors: zodErrorParser(parsedData.error) });
-    }
-    
-    const updatedConsumption = await storage.updateMaterialConsumption(id, parsedData.data);
-    if (!updatedConsumption) {
-      return res.status(404).json({ error: 'Consumption not found' });
-    }
-    
-    res.json(updatedConsumption);
-  } catch (error) {
-    console.error(`Error updating material consumption ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to update material consumption' });
-  }
-});
-
-router.delete('/consumptions/:id', isAuthenticated, async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid ID format' });
-    }
-    
-    const success = await storage.removeMaterialConsumption(id);
-    if (!success) {
-      return res.status(404).json({ error: 'Consumption not found or could not be deleted' });
-    }
-    
-    res.status(204).end();
-  } catch (error) {
-    console.error(`Error deleting material consumption ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to delete material consumption' });
-  }
-});
-
-// Production Logs endpoints
-router.post('/orders/:orderId/logs', isAuthenticated, async (req, res) => {
-  try {
-    const orderId = parseInt(req.params.orderId);
-    if (isNaN(orderId)) {
-      return res.status(400).json({ error: 'Invalid order ID format' });
-    }
-    
-    // Make sure the order exists
-    const order = await storage.getProductionOrder(orderId);
-    if (!order) {
-      return res.status(404).json({ error: 'Production order not found' });
-    }
-    
-    // Validate log data
-    const validationSchema = insertProductionLogSchema.omit({ id: true });
-    const parsedData = validationSchema.safeParse({
-      ...req.body,
-      productionOrderId: orderId,
-      createdById: (req.user as any)?.id || 1
-    });
-    
-    if (!parsedData.success) {
-      return res.status(400).json({ errors: zodErrorParser(parsedData.error) });
-    }
-    
-    // Add the log
-    const log = await storage.addProductionLog(parsedData.data);
-    res.status(201).json(log);
-  } catch (error) {
-    console.error(`Error adding production log to order ${req.params.orderId}:`, error);
-    res.status(500).json({ error: 'Failed to add production log' });
-  }
-});
-
-// Material Consumption endpoints
-router.get('/orders/:orderId/consumed-materials', isAuthenticated, async (req, res) => {
-  try {
-    const orderId = parseInt(req.params.orderId);
-    if (isNaN(orderId)) {
-      return res.status(400).json({ error: 'Invalid production order ID format' });
-    }
-    
-    const consumedMaterials = await storage.getConsumedMaterialsByProductionOrder(orderId);
-    res.json(consumedMaterials);
-  } catch (error) {
-    console.error(`Error fetching consumed materials for order ${req.params.orderId}:`, error);
-    res.status(500).json({ error: 'Failed to fetch consumed materials' });
-  }
-});
-
-router.post('/material-consumption', isAuthenticated, async (req, res) => {
-  try {
-    const parsedData = insertMaterialConsumptionSchema.safeParse(req.body);
-    if (!parsedData.success) {
-      return res.status(400).json({ errors: zodErrorParser(parsedData.error) });
-    }
-    
-    // Add the consumption record
-    const consumption = await storage.addMaterialConsumption({
-      ...parsedData.data,
-      createdById: req.user?.id || 1,
-    });
-    
-    // Update raw material stock (reduce it by the consumed amount)
-    await storage.updateRawMaterialStock(
-      parsedData.data.materialId, 
-      -parsedData.data.quantity, 
-      `Consumed in production order ${parsedData.data.productionOrderId}`
-    );
-    
-    res.status(201).json(consumption);
-  } catch (error) {
-    console.error('Error recording material consumption:', error);
-    res.status(500).json({ error: 'Failed to record material consumption' });
-  }
-});
-
-// Get recipe materials by recipeId
-router.get('/recipes/:id/materials', isAuthenticated, async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid recipe ID format' });
-    }
-    
-    const materials = await storage.getRecipeIngredients(id);
-    
-    // Fetch additional details for each material
-    const enrichedMaterials = await Promise.all(
-      materials.map(async (material) => {
-        const rawMaterial = await storage.getRawMaterial(material.materialId);
-        return {
-          ...material,
-          materialName: rawMaterial ? rawMaterial.name : 'Unknown Material',
-          unit: material.unit || rawMaterial?.unit || 'unit'
-        };
-      })
-    );
-    
-    res.json(enrichedMaterials);
-  } catch (error) {
-    console.error(`Error fetching recipe materials for recipe ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to fetch recipe materials' });
-  }
-});
-
-// Quality Check endpoints
-router.get('/orders/:orderId/quality-checks', isAuthenticated, async (req, res) => {
-  try {
-    const orderId = parseInt(req.params.orderId);
-    if (isNaN(orderId)) {
-      return res.status(400).json({ error: 'Invalid production order ID format' });
-    }
-    
-    const qualityChecks = await storage.getQualityChecksByProductionOrder(orderId);
-    res.json(qualityChecks);
-  } catch (error) {
-    console.error(`Error fetching quality checks for order ${req.params.orderId}:`, error);
-    res.status(500).json({ error: 'Failed to fetch quality checks' });
-  }
-});
-
-router.post('/quality-checks', isAuthenticated, async (req, res) => {
-  try {
-    const parsedData = insertProductionQualityCheckSchema.safeParse(req.body);
-    if (!parsedData.success) {
-      return res.status(400).json({ errors: zodErrorParser(parsedData.error) });
-    }
-    
-    // Add the quality check
-    const qualityCheck = await storage.addProductionQualityCheck({
-      ...parsedData.data,
-      createdById: req.user?.id || 1,
-    });
-    
-    // Get all quality checks for this order
-    const allChecks = await storage.getQualityChecksByProductionOrder(parsedData.data.productionOrderId);
-    
-    // Determine if all checks have passed
-    const allPassed = allChecks.every(check => check.passed);
-    
-    // If we have completed all required checks
-    const coreCheckTypes = ['appearance', 'odor', 'taste', 'color'];
-    const coreChecksCompleted = coreCheckTypes.every(checkType => 
-      allChecks.some(check => check.checkType === checkType)
-    );
-    
-    // Check if all checks are complete and all passed
-    const completedAllChecks = coreChecksCompleted && allPassed;
-    
-    // Check if all checks are complete but some failed
-    const completedWithFailures = coreChecksCompleted && !allPassed;
-    
-    // If we have completed all checks, update the order status
-    if (completedAllChecks || completedWithFailures) {
-      // Update order status based on quality check results
-      const newStatus = completedAllChecks ? 'approved' : 'rejected';
+    try {
+      const material = await storage.getRawMaterial(id);
+      if (!material) {
+        throw new NotFoundError(`Raw material with ID ${id} not found`);
+      }
       
-      await storage.updateProductionOrderStatus(
-        parsedData.data.productionOrderId, 
-        newStatus,
-        `Quality check completed. Status: ${newStatus}`
-      );
+      // Check if material is used in any recipes (if this check is needed)
+      // const isUsedInRecipes = await storage.isRawMaterialUsedInRecipes(id);
+      // if (isUsedInRecipes) {
+      //   throw new ValidationError('Cannot delete raw material that is used in recipes');
+      // }
       
-      // Add a log entry
-      await storage.addProductionLog({
-        productionOrderId: parsedData.data.productionOrderId,
-        eventType: 'quality_check',
-        description: `Quality check completed. Result: ${newStatus}`,
-        createdById: req.user?.id || 1
+      await storage.deleteRawMaterial(id);
+      
+      res.json({
+        success: true,
+        message: 'Raw material deleted successfully'
       });
+    } catch (error) {
+      if (error instanceof NotFoundError || error instanceof ValidationError) {
+        throw error;
+      }
+      throw new Error(`Failed to delete raw material: ${error}`);
     }
-    
-    // Return the quality check along with status info
-    res.status(201).json({
-      ...qualityCheck,
-      allPassed,
-      coreChecksCompleted,
-      closed: completedAllChecks || completedWithFailures
-    });
-  } catch (error) {
-    console.error('Error recording quality check:', error);
-    res.status(500).json({ error: 'Failed to record quality check' });
-  }
-});
-
-// zodErrorParser is now imported from ../utils
-
-export default router;
+  })
+];
