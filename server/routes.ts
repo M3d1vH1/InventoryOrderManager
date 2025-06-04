@@ -9,6 +9,7 @@ import { hashPassword } from "./auth";
 import { validateRequest, commonSchemas } from "./utils/validation";
 import { asyncHandler } from "./middlewares/errorHandler";
 import { ValidationError, NotFoundError, ConflictError } from "./utils/errorUtils";
+import logger from "./utils/logger";
 import { UploadedFile } from "express-fileupload";
 import path from "path";
 import fs from "fs";
@@ -4271,7 +4272,7 @@ A 1
 
   // Winston Logging Test Endpoints
   app.get('/api/test/logging', async (req: Request, res: Response) => {
-    const requestId = req.requestId;
+    const requestId = (req as any).requestId;
     const scenario = req.query.scenario as string || 'default';
     
     try {
@@ -4390,7 +4391,7 @@ A 1
   });
 
   app.get('/api/test/request-logging', async (req: Request, res: Response) => {
-    const requestId = req.requestId;
+    const requestId = (req as any).requestId;
     const delay = parseInt(req.query.delay as string) || 100;
     
     logger.info('Starting request logging test', {
@@ -4411,7 +4412,7 @@ A 1
   });
 
   app.post('/api/test/validation-logging', async (req: Request, res: Response) => {
-    const requestId = req.requestId;
+    const requestId = (req as any).requestId;
     
     logger.info('Starting validation error logging test', {
       requestId,

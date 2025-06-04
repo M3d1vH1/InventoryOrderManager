@@ -2775,6 +2775,70 @@ const Settings = () => {
             </CardContent>
           </Card>
         </TabsContent>
+        
+        <TabsContent value="developer" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Developer Tools</CardTitle>
+              <CardDescription>
+                Tools for testing and debugging system functionality
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <h4 className="font-medium">Winston Logging System Test</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Test comprehensive logging features including structured JSON output, 
+                      request correlation IDs, error handling, and validation logging.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => window.open('/settings/logging-test', '_blank')}
+                    variant="outline"
+                  >
+                    <Cog className="h-4 w-4 mr-2" />
+                    Open Logging Test
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-slate-50 rounded-lg">
+                    <h5 className="font-medium text-sm mb-2">Logging Features</h5>
+                    <ul className="text-xs space-y-1 text-muted-foreground">
+                      <li>• Structured JSON logging format</li>
+                      <li>• Request correlation IDs</li>
+                      <li>• Automatic request/response logging</li>
+                      <li>• Error stack trace logging</li>
+                      <li>• Daily rotating log files</li>
+                    </ul>
+                  </div>
+                  
+                  <div className="p-4 bg-slate-50 rounded-lg">
+                    <h5 className="font-medium text-sm mb-2">Test Capabilities</h5>
+                    <ul className="text-xs space-y-1 text-muted-foreground">
+                      <li>• Comprehensive logging scenarios</li>
+                      <li>• Request timing measurements</li>
+                      <li>• Validation error testing</li>
+                      <li>• Security event logging</li>
+                      <li>• Business event tracking</li>
+                    </ul>
+                  </div>
+                </div>
+                
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Development Environment</AlertTitle>
+                  <AlertDescription>
+                    These tools are intended for development and testing purposes. 
+                    All logging activity is visible in the browser console and stored in daily rotating log files.
+                  </AlertDescription>
+                </Alert>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
@@ -3387,70 +3451,6 @@ const EmailTemplateEditor = () => {
             </div>
           )}
         </div>
-        
-        <TabsContent value="developer" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Developer Tools</CardTitle>
-              <CardDescription>
-                Tools for testing and debugging system functionality
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="space-y-1">
-                    <h4 className="font-medium">Winston Logging System Test</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Test comprehensive logging features including structured JSON output, 
-                      request correlation IDs, error handling, and validation logging.
-                    </p>
-                  </div>
-                  <Button 
-                    onClick={() => window.open('/settings/logging-test', '_blank')}
-                    variant="outline"
-                  >
-                    <Cog className="h-4 w-4 mr-2" />
-                    Open Logging Test
-                  </Button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-slate-50 rounded-lg">
-                    <h5 className="font-medium text-sm mb-2">Logging Features</h5>
-                    <ul className="text-xs space-y-1 text-muted-foreground">
-                      <li>• Structured JSON logging format</li>
-                      <li>• Request correlation IDs</li>
-                      <li>• Automatic request/response logging</li>
-                      <li>• Error stack trace logging</li>
-                      <li>• Daily rotating log files</li>
-                    </ul>
-                  </div>
-                  
-                  <div className="p-4 bg-slate-50 rounded-lg">
-                    <h5 className="font-medium text-sm mb-2">Test Capabilities</h5>
-                    <ul className="text-xs space-y-1 text-muted-foreground">
-                      <li>• Comprehensive logging scenarios</li>
-                      <li>• Request timing measurements</li>
-                      <li>• Validation error testing</li>
-                      <li>• Security event logging</li>
-                      <li>• Business event tracking</li>
-                    </ul>
-                  </div>
-                </div>
-                
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Development Environment</AlertTitle>
-                  <AlertDescription>
-                    These tools are intended for development and testing purposes. 
-                    All logging activity is visible in the browser console and stored in daily rotating log files.
-                  </AlertDescription>
-                </Alert>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </div>
     </div>
   );
