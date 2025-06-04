@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Card, 
   CardContent, 
@@ -23,98 +24,148 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import { Search, Plus, Edit, Trash2 } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 import RawMaterialForm from './RawMaterialForm';
 
-// Mock data for demonstration
-const mockMaterials = [
-  {
-    id: 1,
-    name: 'Extra Virgin Olive Oil',
-    sku: 'RAW-EVOO-01',
-    quantity: 1500,
-    unit: 'liter',
-    cost: 8.5,
-    supplier: 'Local Olive Farm',
-    supplierSku: 'EVOO-PREMIUM',
-    minimumStock: 500,
-    location: 'Warehouse A - Tank 1',
-    notes: 'Premium quality, early harvest',
-    type: 'olive'
-  },
-  {
-    id: 2,
-    name: 'Clear Glass Bottle 750ml',
-    sku: 'PKG-BOT-750',
-    quantity: 10000,
-    unit: 'piece',
-    cost: 0.65,
-    supplier: 'Glass Manufacturing Inc.',
-    supplierSku: 'BOT-750-CL',
-    minimumStock: 2000,
-    location: 'Warehouse B - Shelf 3',
-    notes: 'Clear glass, high quality finish',
-    type: 'bottle'
-  },
-  {
-    id: 3,
-    name: 'Premium Cork Cap',
-    sku: 'PKG-CAP-PRE',
-    quantity: 12000,
-    unit: 'piece',
-    cost: 0.25,
-    supplier: 'Packaging Solutions Ltd.',
-    supplierSku: 'CORK-CAP-01',
-    minimumStock: 3000,
-    location: 'Warehouse B - Shelf 5',
-    notes: 'Natural cork with wooden top',
-    type: 'cap'
-  },
-  {
-    id: 4,
-    name: 'Premium Label Design A',
-    sku: 'PKG-LBL-A',
-    quantity: 8000,
-    unit: 'piece',
-    cost: 0.15,
-    supplier: 'Print Perfect',
-    supplierSku: 'LBL-PREM-A',
-    minimumStock: 2000,
-    location: 'Warehouse B - Cabinet 2',
-    notes: 'Waterproof, high-quality print',
-    type: 'label'
-  },
-  {
-    id: 5,
-    name: 'Gift Box for 3 Bottles',
-    sku: 'PKG-BOX-3',
-    quantity: 500,
-    unit: 'piece',
-    cost: 1.75,
-    supplier: 'Box and Packaging Co.',
-    supplierSku: 'GB-OIL-3',
-    minimumStock: 100,
-    location: 'Warehouse C - Section 2',
-    notes: 'Premium cardboard with magnetic closure',
-    type: 'box'
-  }
-];
+interface RawMaterial {
+  id: number;
+  name: string;
+  sku: string;
+  quantity: number;
+  unit: string;
+  cost: number;
+  supplier?: string;
+  supplierSku?: string;
+  minimumStock: number;
+  location?: string;
+  notes?: string;
+  type: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function RawMaterialsList() {
   const { t } = useTranslation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
-  const [materials, setMaterials] = useState(mockMaterials);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingMaterial, setEditingMaterial] = useState<any>(null);
-  
-  const filteredMaterials = searchTerm 
-    ? materials.filter(material => 
-        material.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        material.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        material.supplier?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        material.type.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+  const [editingMaterial, setEditingMaterial] = useState<RawMaterial | null>(null);
+
+  // Fetch raw materials
+  const { data: materialsData, isLoading, error } = useQuery({
+    queryKey: ['/api/production/raw-materials', { q: searchTerm }],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (searchTerm) params.append('q', searchTerm);
+      
+      const response = await fetch(`/api/production/raw-materials?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch raw materials');
+      }
+      const result = await response.json();
+      return result.success ? result.data : [];
+    },
+  });
+
+  // Create material mutation
+  const createMaterialMutation = useMutation({
+    mutationFn: (materialData: any) => 
+      apiRequest('/api/production/raw-materials', {
+        method: 'POST',
+        body: JSON.stringify(materialData),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/production/raw-materials'] });
+      toast({
+        title: t('success'),
+        description: t('production.materialCreated'),
+      });
+      setDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: error.message || t('production.createMaterialError'),
+      });
+    },
+  });
+
+  // Update material mutation
+  const updateMaterialMutation = useMutation({
+    mutationFn: ({ id, ...materialData }: any) => 
+      apiRequest(`/api/production/raw-materials/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(materialData),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/production/raw-materials'] });
+      toast({
+        title: t('success'),
+        description: t('production.materialUpdated'),
+      });
+      setDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: error.message || t('production.updateMaterialError'),
+      });
+    },
+  });
+
+  // Delete material mutation
+  const deleteMaterialMutation = useMutation({
+    mutationFn: (id: number) => 
+      apiRequest(`/api/production/raw-materials/${id}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/production/raw-materials'] });
+      toast({
+        title: t('success'),
+        description: t('production.materialDeleted'),
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: error.message || t('production.deleteMaterialError'),
+      });
+    },
+  });
+
+  const materials = materialsData || [];
+
+  const handleCreateMaterial = (materialData: any) => {
+    createMaterialMutation.mutate(materialData);
+  };
+
+  const handleUpdateMaterial = (materialData: any) => {
+    if (editingMaterial) {
+      updateMaterialMutation.mutate({ ...materialData, id: editingMaterial.id });
+    }
+  };
+
+  const handleDeleteMaterial = (id: number) => {
+    if (confirm(t('confirmDelete'))) {
+      deleteMaterialMutation.mutate(id);
+    }
+  };
+
+  const handleOpenDialog = (material?: RawMaterial) => {
+    setEditingMaterial(material || null);
+    setDialogOpen(true);
+  };
+
+  // Search is handled by the API now, so we don't need client-side filtering
+  const filteredMaterials = materials;
     : materials;
 
   const handleAddNew = () => {
