@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { useSidebar } from "@/context/SidebarContext";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -53,8 +53,8 @@ const Inventory = () => {
     queryKey: ['/api/products'],
   });
   
-  // Get all unique tags
-  const allTags = React.useMemo(() => {
+  // Memoized unique tags calculation
+  const allTags = useMemo(() => {
     if (!products) return [];
     const tagSet = new Set<string>();
     products.forEach(product => {
@@ -64,9 +64,21 @@ const Inventory = () => {
     });
     return Array.from(tagSet).sort();
   }, [products]);
+
+  // Memoized statistics calculations
+  const statistics = useMemo(() => {
+    if (!products) return { total: 0, inStock: 0, lowStock: 0, outOfStock: 0 };
+    
+    return {
+      total: products.length,
+      inStock: products.filter(p => p.currentStock > p.minStockLevel).length,
+      lowStock: products.filter(p => p.currentStock > 0 && p.currentStock <= p.minStockLevel).length,
+      outOfStock: products.filter(p => p.currentStock === 0).length
+    };
+  }, [products]);
   
-  // Handle barcode scanning result
-  const handleBarcodeScanned = (barcode: string) => {
+  // Stable event handlers using useCallback
+  const handleBarcodeScanned = useCallback((barcode: string) => {
     setSearchText(barcode);
     
     const foundProduct = products?.find(p => p.sku === barcode);
@@ -77,7 +89,6 @@ const Inventory = () => {
         description: `Found ${foundProduct.name} (SKU: ${foundProduct.sku})`,
       });
       
-      // Scroll to the highlighted product row
       setTimeout(() => {
         highlightedRowRef.current?.scrollIntoView({
           behavior: 'smooth',
@@ -91,22 +102,29 @@ const Inventory = () => {
         variant: "destructive",
       });
     }
-  };
+  }, [products, toast]);
   
-  // Filter products based on search text and tag
-  const filteredProducts = products?.filter(product => {
-    // Text search filter
-    const matchesSearch = searchText.trim() === "" || 
-      product.name.toLowerCase().includes(searchText.toLowerCase()) || 
-      product.sku.toLowerCase().includes(searchText.toLowerCase()) ||
-      (product.location && product.location.toLowerCase().includes(searchText.toLowerCase()));
+  // Memoized filtered products calculation
+  const filteredProducts = useMemo(() => {
+    if (!products) return [];
     
-    // Tag filter
-    const matchesTag = tagFilter === "all_tags" || 
-      (product.tags && product.tags.some(tag => tag === tagFilter));
-    
-    return matchesSearch && matchesTag;
-  });
+    return products.filter(product => {
+      const matchesSearch = searchText.trim() === "" || 
+        product.name.toLowerCase().includes(searchText.toLowerCase()) || 
+        product.sku.toLowerCase().includes(searchText.toLowerCase()) ||
+        (product.location && product.location.toLowerCase().includes(searchText.toLowerCase()));
+      
+      const matchesTag = tagFilter === "all_tags" || 
+        (product.tags && product.tags.some(tag => tag === tagFilter));
+      
+      return matchesSearch && matchesTag;
+    });
+  }, [products, searchText, tagFilter]);
+
+  // Memoized low stock products
+  const lowStockProducts = useMemo(() => {
+    return products?.filter(product => product.currentStock <= product.minStockLevel) || [];
+  }, [products]);
 
   const updateStockMutation = useMutation({
     mutationFn: async ({ id, stock }: { id: number; stock: number }) => {
@@ -133,13 +151,13 @@ const Inventory = () => {
     }
   });
 
-  const handleStockChange = (id: number, currentStock: number) => {
+  const handleStockChange = useCallback((id: number, currentStock: number) => {
     updateStockMutation.mutate({ id, stock: currentStock });
-  };
+  }, [updateStockMutation]);
 
-  const getLowStockProducts = () => {
-    return products?.filter(product => product.currentStock <= product.minStockLevel) || [];
-  };
+  const handleTagClick = useCallback((tag: string) => {
+    setTagFilter(tag);
+  }, []);
 
   const getStockStatusClass = (currentStock: number, minStockLevel: number) => {
     if (currentStock === 0) return "text-red-600";
@@ -162,7 +180,7 @@ const Inventory = () => {
           </div>
           <div>
             <h3 className="text-sm text-slate-500 font-medium">Total Products</h3>
-            <p className="text-2xl font-semibold">{products?.length || 0}</p>
+            <p className="text-2xl font-semibold">{statistics.total}</p>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-4 flex items-center">
@@ -171,9 +189,7 @@ const Inventory = () => {
           </div>
           <div>
             <h3 className="text-sm text-slate-500 font-medium">In Stock</h3>
-            <p className="text-2xl font-semibold">
-              {products?.filter(p => p.currentStock > p.minStockLevel).length || 0}
-            </p>
+            <p className="text-2xl font-semibold">{statistics.inStock}</p>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-4 flex items-center">
@@ -182,9 +198,7 @@ const Inventory = () => {
           </div>
           <div>
             <h3 className="text-sm text-slate-500 font-medium">Low Stock</h3>
-            <p className="text-2xl font-semibold">
-              {products?.filter(p => p.currentStock > 0 && p.currentStock <= p.minStockLevel).length || 0}
-            </p>
+            <p className="text-2xl font-semibold">{statistics.lowStock}</p>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-4 flex items-center">
@@ -193,9 +207,7 @@ const Inventory = () => {
           </div>
           <div>
             <h3 className="text-sm text-slate-500 font-medium">Out of Stock</h3>
-            <p className="text-2xl font-semibold">
-              {products?.filter(p => p.currentStock === 0).length || 0}
-            </p>
+            <p className="text-2xl font-semibold">{statistics.outOfStock}</p>
           </div>
         </div>
       </div>
@@ -209,14 +221,14 @@ const Inventory = () => {
             <div className="py-4 text-center">
               <span className="text-slate-500">Loading inventory data...</span>
             </div>
-          ) : getLowStockProducts().length === 0 ? (
+          ) : lowStockProducts.length === 0 ? (
             <div className="py-4 text-center">
               <i className="fas fa-check-circle text-green-500 text-3xl mb-2"></i>
               <p className="text-green-600">No low stock items. All inventory levels are healthy.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {getLowStockProducts().map(product => {
+              {lowStockProducts.map((product) => {
                 const borderColor = product.currentStock === 0 ? 'border-red-500 bg-red-50' : 'border-amber-500 bg-amber-50';
                 const textColor = product.currentStock === 0 ? 'text-red-600' : 'text-amber-600';
 
@@ -231,12 +243,12 @@ const Inventory = () => {
                         <p className="text-xs text-slate-500 mt-1">SKU: {product.sku}</p>
                         {product.tags && product.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {product.tags.map(tag => (
+                            {product.tags.map((tag: string) => (
                               <Badge 
                                 key={tag} 
                                 variant="outline" 
                                 className="cursor-pointer text-xs"
-                                onClick={() => setTagFilter(tag)}
+                                onClick={() => handleTagClick(tag)}
                               >
                                 {tag}
                               </Badge>
@@ -361,12 +373,12 @@ const Inventory = () => {
                           <div>{product.name}</div>
                           {product.tags && product.tags.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-1">
-                              {product.tags.map(tag => (
+                              {product.tags.map((tag: string) => (
                                 <Badge 
                                   key={tag} 
                                   variant="outline" 
                                   className="cursor-pointer"
-                                  onClick={() => setTagFilter(tag)}
+                                  onClick={() => handleTagClick(tag)}
                                 >
                                   {tag}
                                 </Badge>
