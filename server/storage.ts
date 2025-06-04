@@ -348,9 +348,9 @@ export interface IStorage {
   importSeasonalPatterns(patterns: InsertSeasonalPattern[]): Promise<number>; // Returns count of imported patterns
   
   // Raw Materials methods
-  getRawMaterials(): Promise<RawMaterial[]>;
   getRawMaterial(id: number): Promise<RawMaterial | undefined>;
   getRawMaterialBySku(sku: string): Promise<RawMaterial | undefined>;
+  getAllRawMaterials(): Promise<RawMaterial[]>;
   createRawMaterial(material: InsertRawMaterial): Promise<RawMaterial>;
   updateRawMaterial(id: number, material: Partial<InsertRawMaterial>): Promise<RawMaterial | undefined>;
   deleteRawMaterial(id: number): Promise<boolean>;

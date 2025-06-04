@@ -911,169 +911,116 @@ export const insertSeasonalPatternSchema = createInsertSchema(seasonalPatterns)
 export type InsertSeasonalPattern = z.infer<typeof insertSeasonalPatternSchema>;
 export type SeasonalPattern = typeof seasonalPatterns.$inferSelect;
 
-// ====== Production Management Models ======
+// Production Module Types
 
-// Material Type Enum
+// Raw Material Type Enum
 export const materialTypeEnum = pgEnum('material_type', [
-  'olive',
-  'bottle',
-  'cap',
+  'liquid',
+  'packaging',
   'label',
+  'cap',
   'box',
-  'filter',
   'other'
 ]);
 
-// Material Unit Enum
+// Material Units Enum
 export const materialUnitEnum = pgEnum('material_unit', [
-  'kg',
   'liter',
-  'piece',
-  'box',
-  'bottle',
-  'label',
-  'cap'
+  'kg',
+  'piece'
 ]);
 
-// Raw Materials
+// Production Status Enum
+export const productionStatusEnum = pgEnum('production_status', [
+  'planned',
+  'in_progress',
+  'completed',
+  'quality_check',
+  'approved',
+  'rejected'
+]);
+
+// Production Order Status Enum
+export const productionOrderStatusEnum = pgEnum('production_order_status', [
+  'planned',
+  'material_check',
+  'in_progress',
+  'completed',
+  'partially_completed',
+  'cancelled'
+]);
+
+// Production Event Type Enum
+export const productionEventEnum = pgEnum('production_event_type', [
+  'start',
+  'pause',
+  'resume',
+  'material_added',
+  'completed',
+  'quality_check',
+  'issue'
+]);
+
+// Raw Materials Schema - Track materials like olive oil, bottles, caps, labels
 export const rawMaterials = pgTable("raw_materials", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  sku: text("sku").notNull().unique(),
-  quantity: numeric("quantity", { precision: 10, scale: 2 }).notNull().default('0'),
-  unit: materialUnitEnum("unit").notNull(),
-  cost: numeric("cost", { precision: 10, scale: 2 }).notNull().default('0'),
-  supplier: text("supplier"),
-  supplierSku: text("supplier_sku"),
-  minimumStock: numeric("minimum_stock", { precision: 10, scale: 2 }).notNull().default('0'),
-  location: text("location"),
-  notes: text("notes"),
   type: materialTypeEnum("type").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  sku: text("sku").notNull().unique(),
+  currentStock: numeric("current_stock").notNull().default("0"),
+  minStockLevel: numeric("min_stock_level").notNull().default("10"),
+  unit: materialUnitEnum("unit").notNull(),
+  unitCost: numeric("unit_cost"),
+  description: text("description"),
+  location: text("location"),
+  supplierId: integer("supplier_id"),
+  lastStockUpdate: timestamp("last_stock_update").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const insertRawMaterialSchema = createInsertSchema(rawMaterials)
-  .omit({ id: true, createdAt: true, updatedAt: true })
+  .omit({ id: true, createdAt: true, updatedAt: true, lastStockUpdate: true })
   .extend({
-    name: z.string().min(2, { message: "Material name must be at least 2 characters" }).max(100),
-    sku: z.string().min(2, { message: "SKU is required" }).max(50),
-    quantity: z.number().nonnegative({ message: "Quantity must be zero or positive" }),
-    unit: z.enum(['kg', 'liter', 'piece', 'box', 'bottle', 'label', 'cap']),
-    cost: z.number().nonnegative({ message: "Cost must be zero or positive" }),
-    supplier: z.string().optional(),
-    supplierSku: z.string().optional(),
-    minimumStock: z.number().nonnegative({ message: "Minimum stock must be zero or positive" }),
+    name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+    type: z.enum(['liquid', 'packaging', 'label', 'cap', 'box', 'other']),
+    sku: z.string().min(2, { message: "SKU must be at least 2 characters" }),
+    currentStock: z.number().or(z.string().transform(val => Number(val))).default(0),
+    minStockLevel: z.number().or(z.string().transform(val => Number(val))).default(10),
+    unit: z.enum(['liter', 'kg', 'piece']),
+    unitCost: z.number().or(z.string().transform(val => Number(val))).optional(),
+    description: z.string().optional(),
     location: z.string().optional(),
-    notes: z.string().optional(),
-    type: z.enum(['olive', 'bottle', 'cap', 'label', 'box', 'filter', 'other']),
+    supplierId: z.number().optional(),
   });
 
 export type InsertRawMaterial = z.infer<typeof insertRawMaterialSchema>;
 export type RawMaterial = typeof rawMaterials.$inferSelect;
 
-// Recipe Status Enum
-export const recipeStatusEnum = pgEnum('recipe_status', [
-  'active',
-  'draft',
-  'discontinued'
-]);
-
-// Recipe Yield Unit Enum
-export const recipeYieldUnitEnum = pgEnum('recipe_yield_unit', [
-  'kg',
-  'liter',
-  'piece'
-]);
-
-// Production Recipes
-export const productionRecipes = pgTable("production_recipes", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  sku: text("sku").notNull().unique(),
-  productId: integer("product_id").notNull(),
-  description: text("description"),
-  yield: numeric("yield", { precision: 10, scale: 2 }).notNull(),
-  yieldUnit: recipeYieldUnitEnum("yield_unit").notNull(),
-  status: recipeStatusEnum("status").notNull().default('draft'),
-  isDefault: boolean("is_default").default(false),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
-
-export const insertProductionRecipeSchema = createInsertSchema(productionRecipes)
-  .omit({ id: true, createdAt: true, updatedAt: true })
-  .extend({
-    name: z.string().min(2, { message: "Recipe name must be at least 2 characters" }),
-    sku: z.string().min(2, { message: "SKU is required" }),
-    productId: z.number().positive({ message: "Valid product ID is required" }),
-    description: z.string().optional(),
-    yield: z.number().positive({ message: "Yield must be positive" }),
-    yieldUnit: z.enum(['kg', 'liter', 'piece']),
-    status: z.enum(['active', 'draft', 'discontinued']).default('draft'),
-    isDefault: z.boolean().default(false),
-  });
-
-export type InsertProductionRecipe = z.infer<typeof insertProductionRecipeSchema>;
-export type ProductionRecipe = typeof productionRecipes.$inferSelect;
-
-// Recipe Materials (Many-to-Many)
-export const recipeMaterials = pgTable("recipe_materials", {
-  id: serial("id").primaryKey(),
-  recipeId: integer("recipe_id").notNull(),
-  materialId: integer("material_id").notNull(),
-  quantity: numeric("quantity", { precision: 10, scale: 2 }).notNull(),
-  unit: materialUnitEnum("unit").notNull(),
-  notes: text("notes"),
-});
-
-export const insertRecipeMaterialSchema = createInsertSchema(recipeMaterials)
-  .omit({ id: true })
-  .extend({
-    recipeId: z.number().positive({ message: "Valid recipe ID is required" }),
-    materialId: z.number().positive({ message: "Valid material ID is required" }),
-    quantity: z.number().positive({ message: "Quantity must be positive" }),
-    unit: z.enum(['kg', 'liter', 'piece', 'box', 'bottle', 'label', 'cap']),
-    notes: z.string().optional(),
-  });
-
-export type InsertRecipeMaterial = z.infer<typeof insertRecipeMaterialSchema>;
-export type RecipeMaterial = typeof recipeMaterials.$inferSelect;
-
-// Production Batch Status Enum
-export const productionBatchStatusEnum = pgEnum('production_batch_status', [
-  'planned',
-  'in_progress',
-  'completed',
-  'cancelled'
-]);
-
-// Production Batches
+// Production Batches Schema - Track batches of olive oil production
 export const productionBatches = pgTable("production_batches", {
   id: serial("id").primaryKey(),
   batchNumber: text("batch_number").notNull().unique(),
-  recipeId: integer("recipe_id").notNull(),
-  plannedQuantity: numeric("planned_quantity", { precision: 10, scale: 2 }).notNull(),
-  actualQuantity: numeric("actual_quantity", { precision: 10, scale: 2 }),
-  status: productionBatchStatusEnum("status").notNull().default('planned'),
-  startDate: timestamp("start_date"),
+  startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date"),
+  status: productionStatusEnum("status").notNull().default('planned'),
+  quantity: numeric("quantity").notNull(),
+  unit: materialUnitEnum("unit").notNull().default('liter'),
   notes: text("notes"),
-  createdById: integer("created_by_id"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const insertProductionBatchSchema = createInsertSchema(productionBatches)
   .omit({ id: true, createdAt: true, updatedAt: true })
   .extend({
-    batchNumber: z.string().min(2, { message: "Batch number is required" }),
-    recipeId: z.number().positive({ message: "Valid recipe ID is required" }),
-    plannedQuantity: z.number().positive({ message: "Planned quantity must be positive" }),
-    actualQuantity: z.number().nonnegative().optional(),
-    status: z.enum(['planned', 'in_progress', 'completed', 'cancelled']).default('planned'),
-    startDate: z.date().optional(),
-    endDate: z.date().optional(),
+    batchNumber: z.string().min(1, { message: "Batch number is required" }),
+    startDate: z.string().min(1).transform(val => new Date(val)),
+    endDate: z.string().optional().transform(val => val ? new Date(val) : undefined),
+    status: z.enum(['planned', 'in_progress', 'completed', 'quality_check', 'approved', 'rejected']).default('planned'),
+    quantity: z.number().or(z.string().transform(val => Number(val))),
+    unit: z.enum(['liter', 'kg', 'piece']).default('liter'),
     notes: z.string().optional(),
     createdById: z.number().optional(),
   });
@@ -1081,51 +1028,36 @@ export const insertProductionBatchSchema = createInsertSchema(productionBatches)
 export type InsertProductionBatch = z.infer<typeof insertProductionBatchSchema>;
 export type ProductionBatch = typeof productionBatches.$inferSelect;
 
-// Production Order Status Enum
-export const productionOrderStatusEnum = pgEnum('production_order_status', [
-  'pending',
-  'in_progress',
-  'completed',
-  'cancelled'
-]);
-
-// Production Orders
-export const productionOrders = pgTable("production_orders", {
+// Production Recipes Schema - Define what raw materials are needed for a product
+export const productionRecipes = pgTable("production_recipes", {
   id: serial("id").primaryKey(),
-  orderNumber: text("order_number").notNull().unique(),
-  productId: integer("product_id").notNull(),
-  requestedQuantity: numeric("requested_quantity", { precision: 10, scale: 2 }).notNull(),
-  completedQuantity: numeric("completed_quantity", { precision: 10, scale: 2 }).default('0'),
-  status: productionOrderStatusEnum("status").notNull().default('pending'),
-  priority: text("priority").notNull().default('normal'), // low, normal, high, urgent
-  dueDate: timestamp("due_date"),
-  notes: text("notes"),
-  requestedById: integer("requested_by_id"),
-  assignedToId: integer("assigned_to_id"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  productId: integer("product_id").references(() => products.id).notNull(),
+  name: text("name").notNull(),
+  sku: text("sku").notNull(),
+  description: text("description"),
+  yield: numeric("yield").notNull().default("1"),
+  yieldUnit: text("yield_unit").notNull().default("liter"),
+  status: text("status").notNull().default("active"),
+  isDefault: boolean("is_default").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const insertProductionOrderSchema = createInsertSchema(productionOrders)
+export const insertProductionRecipeSchema = createInsertSchema(productionRecipes)
   .omit({ id: true, createdAt: true, updatedAt: true })
   .extend({
-    orderNumber: z.string().min(2, { message: "Order number is required" }),
-    productId: z.number().positive({ message: "Valid product ID is required" }),
-    requestedQuantity: z.number().positive({ message: "Requested quantity must be positive" }),
-    completedQuantity: z.number().nonnegative().default(0),
-    status: z.enum(['pending', 'in_progress', 'completed', 'cancelled']).default('pending'),
-    priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
-    dueDate: z.date().optional(),
-    notes: z.string().optional(),
-    requestedById: z.number().optional(),
-    assignedToId: z.number().optional(),
+    productId: z.number().min(1, { message: "Product is required" }),
+    name: z.string().min(1, { message: "Recipe name is required" }),
+    sku: z.string().min(1, { message: "Recipe SKU is required" }),
+    description: z.string().optional(),
+    yield: z.number().min(0.1, { message: "Yield must be greater than 0" }),
+    yieldUnit: z.enum(["liter", "kg", "piece"], { message: "Valid unit is required" }),
+    status: z.enum(["draft", "active", "discontinued"], { message: "Valid status is required" }),
+    isDefault: z.boolean().default(true),
   });
 
-export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
-export type ProductionOrder = typeof productionOrders.$inferSelect;
-
-export type InsertRawMaterial = z.infer<typeof insertRawMaterialSchema>;
-export type RawMaterial = typeof rawMaterials.$inferSelect;
+export type InsertProductionRecipe = z.infer<typeof insertProductionRecipeSchema>;
+export type ProductionRecipe = typeof productionRecipes.$inferSelect;
 
 // Recipe Ingredients Schema - The raw materials needed for each recipe
 export const recipeIngredients = pgTable("recipe_ingredients", {
