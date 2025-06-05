@@ -17,7 +17,13 @@ const SidebarContext = createContext<SidebarContextType>({
 export const useSidebar = () => useContext(SidebarContext);
 
 export const SidebarProvider = ({ children }: { children: React.ReactNode }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  // Start with closed sidebar on mobile, open on desktop
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 768; // md breakpoint
+    }
+    return true;
+  });
   const [currentPage, setCurrentPage] = useState("Dashboard");
 
   const toggleSidebar = () => {

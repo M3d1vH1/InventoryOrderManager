@@ -48,8 +48,22 @@ const Sidebar = () => {
   const isAdmin = user?.role === 'admin';
 
   return (
-    <div className="relative">
-      <aside className={`${isSidebarOpen ? "w-64" : "w-16"} bg-slate-800 text-white h-screen flex-shrink-0 transition-all duration-300 md:block fixed md:relative z-40 inset-y-0 left-0 flex flex-col`}>
+    <>
+      {/* Mobile overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+          onClick={toggleSidebar}
+        />
+      )}
+      
+      <div className="relative">
+        <aside className={`
+          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+          ${isSidebarOpen ? "w-64" : "w-64 md:w-16"}
+          bg-slate-800 text-white h-screen flex-shrink-0 transition-all duration-300 
+          fixed md:relative z-40 inset-y-0 left-0 flex flex-col
+        `}>
         <div className="p-4 border-b border-slate-700 flex items-center justify-center mb-1">
           {isSidebarOpen ? (
             <h1 className="text-xl font-semibold">{t('app.title')}</h1>
@@ -478,7 +492,8 @@ const Sidebar = () => {
           </button>
         </div>
       </aside>
-    </div>
+      </div>
+    </>
   );
 };
 
