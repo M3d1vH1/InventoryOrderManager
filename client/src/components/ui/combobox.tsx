@@ -226,9 +226,9 @@ export function Combobox({
               className="max-h-[200px] overflow-auto py-1"
               style={{ scrollBehavior: 'smooth' }}
             >
-              {filteredOptions.map((option) => (
+              {filteredOptions.map((option, index) => (
                 <div
-                  key={option.value}
+                  key={`${option.value}-${index}`}
                   className={cn(
                     "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-2 text-sm outline-none",
                     "hover:bg-gray-100 dark:hover:bg-gray-800",

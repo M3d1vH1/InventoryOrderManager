@@ -50,7 +50,7 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
     enabled: isOpen,
   });
   
-  const { data: products, isLoading, refetch } = useQuery<Product[]>({
+  const { data: productsResponse, isLoading, refetch } = useQuery<{success: boolean, data: Product[]}>({
     queryKey: ['/api/products', searchTerm, selectedTag, stockStatus],
     queryFn: async () => {
       const searchParams = new URLSearchParams();
@@ -68,6 +68,9 @@ const ProductSearch = ({ isOpen, onClose, onSelectProduct }: ProductSearchProps)
     },
     enabled: isOpen,
   });
+
+  // Extract products array from response with fallback
+  const products = Array.isArray(productsResponse?.data) ? productsResponse.data : [];
 
   // Function to handle click outside the modal
   const handleClickOutside = useCallback((event: MouseEvent) => {
