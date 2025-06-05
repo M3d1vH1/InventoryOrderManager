@@ -9,6 +9,11 @@
             "date": 1749045292372,
             "name": "/home/runner/workspace/logs/exceptions-2025-06-04.log",
             "hash": "6025df96ae2365e6f01ae0ee7171e7497857727e093195e0f185712a308ac2d6"
+        },
+        {
+            "date": 1749108785924,
+            "name": "/home/runner/workspace/logs/exceptions-2025-06-05.log",
+            "hash": "e9124c9a0ba9c62ab05152b7021ef8e677121945828db2df4608880b7d9d86a8"
         }
     ],
     "hashType": "sha256"
