@@ -186,6 +186,12 @@ const OrderForm = ({
 
   const { data: customers, isLoading: isLoadingCustomers } = useQuery<Customer[]>({
     queryKey: ['/api/customers'],
+    select: (data: any) => {
+      // Ensure we always return an array
+      if (Array.isArray(data)) return data;
+      if (data && Array.isArray(data.data)) return data.data;
+      return [];
+    }
   });
   
   // Customer form using react-hook-form
@@ -309,7 +315,7 @@ const OrderForm = ({
 
   // Initialize orderItems from initialData if provided
   useEffect(() => {
-    if (initialData?.items && initialData.items.length > 0) {
+    if (initialData?.items && Array.isArray(initialData.items) && initialData.items.length > 0) {
       // Always set order items from initialData when in edit mode
       console.log("Initializing orderItems from initialData:", initialData.items);
       setOrderItems(initialData.items.map(item => ({
@@ -1119,7 +1125,7 @@ const OrderForm = ({
                   
                   <div className="space-y-4">
                     {/* Display grouped by order */}
-                    {Object.values(groupedUnshippedProducts).map((group) => (
+                    {Object.values(groupedUnshippedProducts || {}).map((group) => (
                       <div key={group.orderNumber} className="border border-amber-200 rounded-md bg-white p-3">
                         <div className="flex items-center justify-between mb-3 pb-2 border-b border-amber-100">
                           <div>
@@ -1175,7 +1181,7 @@ const OrderForm = ({
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                          {group.items.map((product) => (
+                          {(group.items || []).map((product) => (
                             <div 
                               key={product.id}
                               className="bg-amber-50 border border-amber-200 rounded-md p-3 hover:border-amber-400 transition-colors"
@@ -1302,7 +1308,7 @@ const OrderForm = ({
                         </tr>
                       </thead>
                       <tbody>
-                        {orderItems.map((item, index) => (
+                        {(orderItems || []).map((item, index) => (
                           <tr key={index} className="border-b border-slate-200">
                             <td className="py-4 px-4">
                               <div className="text-base font-medium">{item.product?.name}</div>
