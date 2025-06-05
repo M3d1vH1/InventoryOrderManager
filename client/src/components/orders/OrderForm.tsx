@@ -97,7 +97,7 @@ const orderFormSchema = z.object({
   priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
   items: z.array(z.object({ 
     productId: z.number(), 
-    quantity: z.number() // Allow any number, including zero, to permit users to enter quantity manually
+    quantity: z.number().min(1, { message: "Quantity must be at least 1" })
   })).min(1, { message: "At least one product is required" })
 });
 
@@ -741,10 +741,15 @@ const OrderForm = ({
     setOrderItems([...orderItems, { 
       productId: product.id, 
       product,
-      quantity: 0 // Start with empty (zero) quantity instead of defaulting to 1
+      quantity: 1 // Start with quantity 1 for immediate usability
     }]);
     
     setIsProductSearchOpen(false);
+    
+    toast({
+      title: t('orders.form.productAdded'),
+      description: t('orders.form.productAddedToOrder', { name: product.name }),
+    });
   };
 
   const removeProduct = (index: number) => {
