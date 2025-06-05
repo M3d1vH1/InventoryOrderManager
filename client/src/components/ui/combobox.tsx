@@ -119,12 +119,16 @@ export function Combobox({
   
   // Find the selected option
   const selectedOption = React.useMemo(() => {
-    return options.find((option) => option.value === value)
+    const safeOptions = Array.isArray(options) ? options : [];
+    return safeOptions.find((option) => option.value === value)
   }, [options, value])
   
   // Filter options using enhanced Greek character-aware fuzzy matching
   const filteredOptions = React.useMemo(() => {
-    if (!searchQuery) return options;
+    // Ensure options is always an array to prevent "p.map is not a function" error
+    const safeOptions = Array.isArray(options) ? options : [];
+    
+    if (!searchQuery) return safeOptions;
     
     // Create an array for matches with prioritization
     let matches: { option: ComboboxOption; priority: number }[] = [];
@@ -133,7 +137,7 @@ export function Combobox({
     const normalizedQuery = normalizeText(searchQuery);
     
     // Analyze each option for priority sorting
-    options.forEach(option => {
+    safeOptions.forEach(option => {
       // Skip non-matching options using our enhanced fuzzy match
       if (!fuzzyMatch(option.label, searchQuery)) {
         return;
