@@ -803,7 +803,26 @@ A 1
 
         {showOrderForm && (
           <div className="p-4 border-b border-slate-200">
-            <OrderForm />
+            <OrderForm 
+              onSuccess={() => {
+                // Hide the form after successful order creation
+                setShowOrderForm(false);
+                // Reset any selected order state
+                setSelectedOrder(null);
+                setIsEditMode(false);
+                // Show success message
+                toast({
+                  title: t('orders.orderCreated'),
+                  description: t('orders.orderCreatedSuccessfully'),
+                });
+              }}
+              onCancel={() => {
+                // Hide the form when user cancels
+                setShowOrderForm(false);
+                setSelectedOrder(null);
+                setIsEditMode(false);
+              }}
+            />
           </div>
         )}
 
