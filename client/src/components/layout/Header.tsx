@@ -50,7 +50,7 @@ const Header = () => {
 
   return (
     <>
-      <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 flex-shrink-0">
+      <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 flex-shrink-0 relative z-50">
         <div className="flex items-center">
           <Button 
             variant="ghost"
