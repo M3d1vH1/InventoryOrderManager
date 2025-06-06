@@ -315,37 +315,60 @@ const Orders = () => {
   });
 
   // Fetch specific order details with product details
-  const { data: orderDetails, isLoading: isOrderDetailsLoading } = useQuery<Order>({
+  const { data: orderDetails, isLoading: isOrderDetailsLoading, error: orderDetailsError } = useQuery<Order>({
     queryKey: ['/api/orders', selectedOrder?.id],
     enabled: !!selectedOrder,
+    retry: 2,
+    retryDelay: 1000,
     queryFn: async () => {
-      const response = await apiRequest({
-        url: `/api/orders/${selectedOrder?.id}`,
-      });
-      
-      // Handle API response structure: { success: true, data: {...} }
-      const orderData = response && typeof response === 'object' && 'data' in response ? response.data : response;
-      
-      // If order has items, fetch product details for each item
-      if (orderData.items && orderData.items.length > 0) {
-        const itemsWithProducts = await Promise.all(
-          orderData.items.map(async (item: OrderItem) => {
-            try {
-              const productData = await apiRequest<Product>({
-                url: `/api/products/${item.productId}`,
-              });
-              return { ...item, product: productData };
-            } catch (error) {
-              console.error(`Failed to fetch product ${item.productId}:`, error);
-              return item;
-            }
-          })
-        );
+      try {
+        const response = await apiRequest({
+          url: `/api/orders/${selectedOrder?.id}`,
+        });
         
-        return { ...response, items: itemsWithProducts };
+        // Handle API response structure: { success: true, data: {...} }
+        const orderData = response && typeof response === 'object' && 'data' in response ? response.data : response;
+        
+        // Ensure we have a valid order object
+        if (!orderData || typeof orderData !== 'object') {
+          throw new Error('Invalid order data received');
+        }
+        
+        // If order has items, fetch product details for each item
+        if (Array.isArray(orderData.items) && orderData.items.length > 0) {
+          const itemsWithProducts = await Promise.allSettled(
+            orderData.items.map(async (item: OrderItem) => {
+              try {
+                const productResponse = await apiRequest({
+                  url: `/api/products/${item.productId}`,
+                });
+                
+                // Handle product API response structure
+                const productData = productResponse && typeof productResponse === 'object' && 'data' in productResponse 
+                  ? productResponse.data 
+                  : productResponse;
+                
+                return { ...item, product: productData };
+              } catch (error) {
+                console.error(`Failed to fetch product ${item.productId}:`, error);
+                return item;
+              }
+            })
+          );
+          
+          // Process settled promises and extract successful results
+          const processedItems = itemsWithProducts.map(result => 
+            result.status === 'fulfilled' ? result.value : null
+          ).filter(Boolean);
+          
+          return { ...orderData, items: processedItems };
+        }
+        
+        return orderData;
+      } catch (error) {
+        console.error('Order details fetch error:', error);
+        throw error;
       }
-      
-      return response;
     },
   });
 
@@ -1184,45 +1207,61 @@ A 1
             </DialogDescription>
           </DialogHeader>
 
-          {selectedOrder && orderDetails && (
+          {selectedOrder && (
             <div className="space-y-4">
-              {!isEditMode ? (
+              {orderDetailsError ? (
+                <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                  <AlertTriangle className="h-12 w-12 text-red-500" />
+                  <div className="text-center">
+                    <h3 className="text-lg font-medium text-red-600 mb-2">Failed to load order details</h3>
+                    <p className="text-sm text-slate-600 mb-4">
+                      {orderDetailsError?.message || 'An error occurred while loading the order details.'}
+                    </p>
+                    <Button 
+                      onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/orders', selectedOrder.id] })}
+                      variant="outline"
+                    >
+                      Retry
+                    </Button>
+                  </div>
+                </div>
+              ) : !isEditMode && orderDetails ? (
                 // View mode
                 <div className="space-y-4 py-2">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <h3 className="text-sm font-medium text-slate-500">{t('orders.details.customer')}</h3>
-                      <p className="text-lg font-medium">{orderDetails.customerName}</p>
+                      <p className="text-lg font-medium">{orderDetails.customerName || selectedOrder.customerName}</p>
                     </div>
                     <div>
                       <h3 className="text-sm font-medium text-slate-500">{t('orders.details.orderDate')}</h3>
                       <p className="text-lg font-medium">
-                        {format(new Date(orderDetails.orderDate), "MMMM d, yyyy")}
+                        {format(new Date(orderDetails.orderDate || selectedOrder.orderDate), "MMMM d, yyyy")}
                       </p>
                     </div>
                     <div>
                       <h3 className="text-sm font-medium text-slate-500">{t('orders.details.status')}</h3>
-                      <div className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-medium ${getStatusBadgeClass(orderDetails.status)}`}>
-                        {t(`orders.statusValues.${orderDetails.status}`)}
+                      <div className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-medium ${getStatusBadgeClass(orderDetails.status || selectedOrder.status)}`}>
+                        {t(`orders.statusValues.${orderDetails.status || selectedOrder.status}`)}
                       </div>
                     </div>
                     <div>
                       <h3 className="text-sm font-medium text-slate-500">{t('orders.details.priority')}</h3>
-                      <div className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-medium ${getPriorityBadgeClass(orderDetails.priority)}`}>
-                        {t(`orders.form.priorities.${orderDetails.priority || 'medium'}`)}
+                      <div className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-medium ${getPriorityBadgeClass(orderDetails.priority || selectedOrder.priority)}`}>
+                        {t(`orders.form.priorities.${orderDetails.priority || selectedOrder.priority || 'medium'}`)}
                       </div>
                     </div>
                     <div>
                       <h3 className="text-sm font-medium text-slate-500">{t('orders.details.totalItems')}</h3>
-                      <p className="text-lg font-medium">{orderDetails.items?.length || 0}</p>
+                      <p className="text-lg font-medium">{orderDetails.items?.length || selectedOrder.items?.length || 0}</p>
                     </div>
                   </div>
 
-                  {orderDetails.notes && (
+                  {(orderDetails.notes || selectedOrder.notes) && (
                     <div>
                       <h3 className="text-sm font-medium text-slate-500">{t('orders.details.notes')}</h3>
                       <p className="text-slate-700 bg-slate-50 p-2 rounded border border-slate-200">
-                        {orderDetails.notes}
+                        {orderDetails.notes || selectedOrder.notes}
                       </p>
                     </div>
                   )}
@@ -1246,18 +1285,18 @@ A 1
                                 {t('orders.loadingOrderItems')}
                               </TableCell>
                             </TableRow>
-                          ) : orderDetails.items && orderDetails.items.length > 0 ? (
-                            orderDetails.items.map((item) => (
-                              <TableRow key={item.id}>
+                          ) : Array.isArray(orderDetails?.items) && orderDetails.items.length > 0 ? (
+                            orderDetails.items.map((item, index) => (
+                              <TableRow key={`${item.id}-${index}`}>
                                 <TableCell className="font-medium">
-                                  {item.product ? item.product.name : `Product #${item.productId}`}
+                                  {item.product?.name || `Product #${item.productId}`}
                                 </TableCell>
                                 <TableCell>
-                                  {item.product ? item.product.sku : "N/A"}
+                                  {item.product?.sku || "N/A"}
                                 </TableCell>
                                 <TableCell>
-                                  <span className="font-medium">{item.quantity}</span>
-                                  {item.product?.unitsPerBox && item.product.unitsPerBox > 0 && (
+                                  <span className="font-medium">{item.quantity || 0}</span>
+                                  {item.product?.unitsPerBox && item.product.unitsPerBox > 0 && item.quantity && (
                                     <span className="text-xs text-slate-500 ml-1">
                                       ({Math.ceil(item.quantity / item.product.unitsPerBox)} box{Math.ceil(item.quantity / item.product.unitsPerBox) !== 1 ? 'es' : ''})
                                     </span>
@@ -1270,7 +1309,7 @@ A 1
                             ))
                           ) : (
                             <TableRow>
-                              <TableCell colSpan={4} className="text-center">
+                              <TableCell colSpan={4} className="text-center py-4">
                                 {t('orders.noItemsFound')}
                               </TableCell>
                             </TableRow>
