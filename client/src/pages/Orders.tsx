@@ -138,6 +138,9 @@ const Orders = () => {
   const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
   
+  // ADD a new state variable for the dialog's visibility
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  
   // Check if we're on a view or edit route
   const [isViewRoute, viewParams] = useRoute('/orders/:id');
   const [isEditRoute, editParams] = useRoute('/orders/:id/edit');
@@ -285,6 +288,7 @@ const Orders = () => {
           // Only set if not already selected to prevent dialog reset
           if (!selectedOrder || selectedOrder.id !== order.id) {
             setSelectedOrder(order);
+            setIsFormOpen(true); // Open dialog when accessing via URL
           }
           // Only set edit mode if not already in the correct state
           if (isEditRoute && !isEditMode) {
@@ -571,22 +575,24 @@ const Orders = () => {
   };
   
   const handleViewOrder = (order: Order) => {
-    // Use setLocation to update the URL for better bookmarking and navigation
     setLocation(`/orders/${order.id}`);
     setSelectedOrder(order);
     setIsEditMode(false);
+    setIsFormOpen(true); // Open the dialog
   };
   
   const handleEditOrder = (order: Order) => {
-    // Use setLocation to update the URL for better bookmarking and navigation
     setLocation(`/orders/${order.id}/edit`);
     setSelectedOrder(order);
     setIsEditMode(true);
+    setIsFormOpen(true); // Open the dialog
   };
   
   const handleCloseDialog = () => {
+    setIsFormOpen(false); // Set the dialog to be closed
     setSelectedOrder(null);
     setIsEditMode(false);
+    setLocation('/orders'); // Reset the URL
   };
   
   const handleGoToPickList = (orderId: number) => {
@@ -1191,9 +1197,8 @@ A 1
 
       {/* Order Details Dialog */}
       <Dialog 
-        open={!!selectedOrder} 
+        open={isFormOpen} 
         onOpenChange={(open) => {
-          // Only close on explicit user action, not during form initialization
           if (!open) {
             handleCloseDialog();
           }
@@ -1346,13 +1351,23 @@ A 1
               ) : (
                 // Edit mode with OrderForm
                 <>
-                  {console.log("Order details being passed to OrderForm:", orderDetails)}
-                  <OrderForm 
-                    initialData={orderDetails}
-                    isEditMode={true}
-                    onCancel={handleCloseDialog}
-                    onSuccess={handleCloseDialog}
-                  />
+                  {isOrderDetailsLoading ? (
+                    <div className="flex justify-center items-center py-20">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    </div>
+                  ) : orderDetailsError ? (
+                    <div className="text-red-500 text-center py-10">
+                      <p>Error loading order details.</p>
+                      <p>{orderDetailsError.message}</p>
+                    </div>
+                  ) : (
+                    <OrderForm 
+                      initialData={orderDetails}
+                      isEditMode={true}
+                      onCancel={handleCloseDialog}
+                      onSuccess={handleCloseDialog} // Ensure this calls the updated closing logic
+                    />
+                  )}
                 </>
               )}
               
