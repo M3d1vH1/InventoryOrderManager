@@ -1118,26 +1118,47 @@ export class MemStorage implements IStorage {
     const existingOrder = this.orders.get(id);
     if (!existingOrder) return undefined;
     
-    const previousValues = { ...existingOrder };
+    // Filter out unchanged values to avoid unnecessary changelog entries
+    const actualChanges: Partial<InsertOrder> = {};
+    const previousValues: Record<string, any> = {};
+    let hasChanges = false;
     
-    // Add update tracking
+    for (const [key, newValue] of Object.entries(orderData)) {
+      const existingValue = (existingOrder as any)[key];
+      
+      // Compare values, handling different data types
+      const valuesAreDifferent = JSON.stringify(existingValue) !== JSON.stringify(newValue);
+      
+      if (valuesAreDifferent) {
+        (actualChanges as any)[key] = newValue;
+        previousValues[key] = existingValue;
+        hasChanges = true;
+      }
+    }
+    
+    // If no actual changes, return existing order without updating
+    if (!hasChanges) {
+      return existingOrder;
+    }
+    
+    // Add update tracking only when there are actual changes
     const now = new Date();
     const updatedOrder = { 
       ...existingOrder,
-      ...orderData,
+      ...actualChanges,
       updatedById: updatedById || existingOrder.updatedById,
       lastUpdated: now
     };
     
     this.orders.set(id, updatedOrder);
     
-    // Add changelog entry if we have a user ID
-    if (updatedById) {
+    // Add changelog entry only if we have actual changes and a user ID
+    if (updatedById && hasChanges) {
       await this.addOrderChangelog({
         orderId: id,
         userId: updatedById,
         action: 'update',
-        changes: { ...orderData },
+        changes: actualChanges,
         previousValues: previousValues,
         notes: "Order updated"
       });

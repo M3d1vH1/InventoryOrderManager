@@ -741,12 +741,32 @@ export class DatabaseStorage implements IStorage {
     const existingOrder = await this.getOrder(id);
     if (!existingOrder) return undefined;
     
-    // Track the previous values
-    const previousValues = { ...existingOrder };
+    // Filter out unchanged values to avoid unnecessary changelog entries
+    const actualChanges: Partial<InsertOrder> = {};
+    const previousValues: Record<string, any> = {};
+    let hasChanges = false;
     
-    // Add last updated timestamp
+    for (const [key, newValue] of Object.entries(orderData)) {
+      const existingValue = (existingOrder as any)[key];
+      
+      // Compare values, handling different data types
+      const valuesAreDifferent = JSON.stringify(existingValue) !== JSON.stringify(newValue);
+      
+      if (valuesAreDifferent) {
+        (actualChanges as any)[key] = newValue;
+        previousValues[key] = existingValue;
+        hasChanges = true;
+      }
+    }
+    
+    // If no actual changes, return existing order without updating
+    if (!hasChanges) {
+      return existingOrder;
+    }
+    
+    // Add last updated timestamp only when there are actual changes
     const updateWithTimestamp = { 
-      ...orderData,
+      ...actualChanges,
       lastUpdated: new Date()
     };
     
@@ -762,13 +782,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(orders.id, id))
       .returning();
     
-    // Add changelog entry if we have a user ID
-    if (updatedById) {
+    // Add changelog entry only if we have actual changes and a user ID
+    if (updatedById && hasChanges) {
       await this.addOrderChangelog({
         orderId: id,
         userId: updatedById,
         action: 'update',
-        changes: { ...orderData },
+        changes: actualChanges,
         previousValues: previousValues,
         notes: "Order updated"
       });
