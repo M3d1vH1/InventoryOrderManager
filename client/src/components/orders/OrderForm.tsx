@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -334,8 +334,18 @@ const OrderForm = ({
         quantity: item.quantity
       }));
       form.setValue('items', formattedItems, { shouldValidate: false });
+      
+      // Mark form as initialized after initial setup is complete
+      setTimeout(() => setIsFormInitialized(true), 1000);
     }
   }, [isEditMode, form]);
+  
+  // Mark form as initialized for new orders
+  useEffect(() => {
+    if (!isEditMode) {
+      setIsFormInitialized(true);
+    }
+  }, [isEditMode]);
   
   // Function to fetch and set the area from a customer's previous orders
   const fetchCustomerAreaFromPreviousOrders = async (customerName: string) => {
@@ -443,105 +453,127 @@ const OrderForm = ({
   // Import the notification context
   const { playNotificationSound } = useNotifications();
   
+  // Track previous customer name to avoid infinite loops
+  const previousCustomerNameRef = useRef<string>('');
+  const [isFormInitialized, setIsFormInitialized] = useState(false);
+  
   // Effect to fetch previous products when customer changes
   useEffect(() => {
-    const customerName = form.watch('customerName');
-    
-    // Clear previous products when customer name changes
-    if (!customerName || customerName.trim() === '') {
-      setPreviousProducts([]);
-      setUnshippedProducts([]);
-      setUnshippedItemsWarning(null);
-      return;
-    }
-    
-    // Don't fetch for very short names (likely just typing)
-    if (customerName.length < 3) {
-      return;
-    }
-    
-    // Check if this matches a known customer (not just typing a new name)
-    const matchedCustomer = customers?.find(c => 
-      c.name.toLowerCase() === customerName.toLowerCase()
-    );
-    
-    if (matchedCustomer) {
-      // Fetch if customer has unshipped items immediately for notification
-      const checkForUnshippedItems = async () => {
-        try {
-          const encodedName = encodeURIComponent(customerName);
-          const response = await fetch(`/api/customers/${encodedName}/has-unshipped-items`);
-          if (response.ok) {
-            const data = await response.json();
-            setUnshippedItemsWarning(data);
-            
-            // Play a notification sound if customer has unfulfilled items
-            if (data.hasUnshippedItems) {
-              // Use the notification context to play a sound
-              playNotificationSound('warning');
+    const subscription = form.watch((value) => {
+      const currentCustomerName = value.customerName || '';
+      
+      // Don't run during initial form setup in edit mode
+      if (!isFormInitialized) {
+        previousCustomerNameRef.current = currentCustomerName;
+        return;
+      }
+      
+      // Only proceed if customer name actually changed
+      if (currentCustomerName === previousCustomerNameRef.current) {
+        return;
+      }
+      
+      // Update the ref with the new customer name
+      previousCustomerNameRef.current = currentCustomerName;
+      
+      // Clear previous products when customer name changes
+      if (!currentCustomerName || currentCustomerName.trim() === '') {
+        setPreviousProducts([]);
+        setUnshippedProducts([]);
+        setUnshippedItemsWarning(null);
+        return;
+      }
+      
+      // Don't fetch for very short names (likely just typing)
+      if (currentCustomerName.length < 3) {
+        return;
+      }
+      
+      // Check if this matches a known customer (not just typing a new name)
+      const matchedCustomer = customers?.find(c => 
+        c.name.toLowerCase() === currentCustomerName.toLowerCase()
+      );
+      
+      if (matchedCustomer) {
+        // Fetch if customer has unshipped items immediately for notification
+        const checkForUnshippedItems = async () => {
+          try {
+            const encodedName = encodeURIComponent(currentCustomerName);
+            const response = await fetch(`/api/customers/${encodedName}/has-unshipped-items`);
+            if (response.ok) {
+              const data = await response.json();
+              setUnshippedItemsWarning(data);
+              
+              // Play a notification sound if customer has unfulfilled items
+              if (data.hasUnshippedItems) {
+                // Use the notification context to play a sound
+                playNotificationSound('warning');
+              }
+            } else {
+              console.error("Failed to check for unshipped items:", await response.text());
+              setUnshippedItemsWarning(null);
             }
-          } else {
-            console.error("Failed to check for unshipped items:", await response.text());
+          } catch (error) {
+            console.error("Error checking for unshipped items:", error);
             setUnshippedItemsWarning(null);
           }
-        } catch (error) {
-          console.error("Error checking for unshipped items:", error);
-          setUnshippedItemsWarning(null);
-        }
-      };
-      
-      // Fetch previous products for this customer
-      const fetchPreviousProducts = async () => {
-        try {
-          const encodedName = encodeURIComponent(customerName);
-          const response = await fetch(`/api/customers/${encodedName}/previous-products`);
-          if (response.ok) {
-            const data = await response.json();
-            setPreviousProducts(data);
-          } else {
-            console.error("Failed to fetch previous products:", await response.text());
+        };
+        
+        // Fetch previous products for this customer
+        const fetchPreviousProducts = async () => {
+          try {
+            const encodedName = encodeURIComponent(currentCustomerName);
+            const response = await fetch(`/api/customers/${encodedName}/previous-products`);
+            if (response.ok) {
+              const data = await response.json();
+              setPreviousProducts(data);
+            } else {
+              console.error("Failed to fetch previous products:", await response.text());
+              setPreviousProducts([]);
+            }
+          } catch (error) {
+            console.error("Error fetching previous products:", error);
             setPreviousProducts([]);
           }
-        } catch (error) {
-          console.error("Error fetching previous products:", error);
-          setPreviousProducts([]);
-        }
-      };
-      
-      // Fetch unshipped products from previous orders
-      const fetchUnshippedProducts = async () => {
-        try {
-          const encodedName = encodeURIComponent(customerName);
-          const response = await fetch(`/api/customers/${encodedName}/unshipped-products`);
-          if (response.ok) {
-            const data = await response.json();
-            setUnshippedProducts(data);
-          } else {
-            console.error("Failed to fetch unshipped products:", await response.text());
+        };
+        
+        // Fetch unshipped products from previous orders
+        const fetchUnshippedProducts = async () => {
+          try {
+            const encodedName = encodeURIComponent(currentCustomerName);
+            const response = await fetch(`/api/customers/${encodedName}/unshipped-products`);
+            if (response.ok) {
+              const data = await response.json();
+              setUnshippedProducts(data);
+            } else {
+              console.error("Failed to fetch unshipped products:", await response.text());
+              setUnshippedProducts([]);
+            }
+          } catch (error) {
+            console.error("Error fetching unshipped products:", error);
             setUnshippedProducts([]);
           }
-        } catch (error) {
-          console.error("Error fetching unshipped products:", error);
-          setUnshippedProducts([]);
-        }
-      };
-      
-      // Execute all fetches
-      checkForUnshippedItems();
-      fetchPreviousProducts();
-      fetchUnshippedProducts();
-      
-      // Fetch and set area from previous orders
-      fetchCustomerAreaFromPreviousOrders(customerName);
-      
-      // Set shipping company from customer data
-      setShippingCompanyFromCustomer(matchedCustomer);
-    } else {
-      setPreviousProducts([]);
-      setUnshippedProducts([]);
-      setUnshippedItemsWarning(null);
-    }
-  }, [customers, playNotificationSound]);
+        };
+        
+        // Execute all fetches
+        checkForUnshippedItems();
+        fetchPreviousProducts();
+        fetchUnshippedProducts();
+        
+        // Fetch and set area from previous orders
+        fetchCustomerAreaFromPreviousOrders(currentCustomerName);
+        
+        // Set shipping company from customer data
+        setShippingCompanyFromCustomer(matchedCustomer);
+      } else {
+        setPreviousProducts([]);
+        setUnshippedProducts([]);
+        setUnshippedItemsWarning(null);
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [customers, playNotificationSound, form]);
 
   useEffect(() => {
     // Skip this entire effect during edit mode initialization
