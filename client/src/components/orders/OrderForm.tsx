@@ -313,18 +313,26 @@ const OrderForm = ({
     }
   }, [form, initialData, isEditMode]);
 
-  // Initialize orderItems from initialData if provided
+  // Initialize orderItems from initialData if provided - this must run before other effects
   useEffect(() => {
-    if (initialData?.items && Array.isArray(initialData.items) && initialData.items.length > 0) {
+    if (isEditMode && initialData?.items && Array.isArray(initialData.items) && initialData.items.length > 0) {
       // Always set order items from initialData when in edit mode
       console.log("Initializing orderItems from initialData:", initialData.items);
-      setOrderItems(initialData.items.map(item => ({
+      const mappedItems = initialData.items.map(item => ({
         productId: item.productId,
         product: item.product,
         quantity: item.quantity
-      })));
+      }));
+      setOrderItems(mappedItems);
+      
+      // Also set the form items immediately to prevent clearing
+      const formattedItems = mappedItems.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity
+      }));
+      form.setValue('items', formattedItems, { shouldValidate: false });
     }
-  }, [initialData, isEditMode]);
+  }, [initialData, isEditMode, form]);
   
   // Function to fetch and set the area from a customer's previous orders
   const fetchCustomerAreaFromPreviousOrders = async (customerName: string) => {
@@ -533,8 +541,15 @@ const OrderForm = ({
   }, [form.watch('customerName'), customers, playNotificationSound]);
 
   useEffect(() => {
-    // Update form items field when orderItems changes
+    // Update form items field when orderItems changes (but not during initial edit mode setup)
     console.log("orderItems changed, updating form items", orderItems);
+    
+    // Skip this effect if we're in edit mode and orderItems is empty but initialData has items
+    if (isEditMode && orderItems.length === 0 && initialData?.items && initialData.items.length > 0) {
+      console.log("Skipping form update - edit mode initialization in progress");
+      return;
+    }
+    
     if (orderItems.length >= 0) {
       const formattedItems = orderItems.map(item => ({
         productId: item.productId,
@@ -549,7 +564,7 @@ const OrderForm = ({
         console.log("Current form items after update:", currentItems);
       }, 100);
     }
-  }, [orderItems, form]);
+  }, [orderItems, form, isEditMode, initialData]);
 
   // Effect to sync form.items back to orderItems when form changes (critical for edit mode)
   useEffect(() => {
