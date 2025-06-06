@@ -326,6 +326,8 @@ const OrderForm = ({
         product: item.product,
         quantity: item.quantity
       }));
+      
+      console.log("Setting orderItems to:", mappedItems);
       setOrderItems(mappedItems);
       
       // Also set the form items immediately to prevent clearing
@@ -333,12 +335,15 @@ const OrderForm = ({
         productId: item.productId,
         quantity: item.quantity
       }));
+      
+      console.log("Setting form items to:", formattedItems);
       form.setValue('items', formattedItems, { shouldValidate: false });
       
       // Allow some time for the form to update, then disable the initialization flag
       setTimeout(() => {
+        console.log("Disabling initialization flag, current orderItems length:", mappedItems.length);
         setIsInitializingEditMode(false);
-      }, 100);
+      }, 200);
     }
   }, [initialData, isEditMode, form]);
   
