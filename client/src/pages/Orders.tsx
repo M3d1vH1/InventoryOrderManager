@@ -1367,6 +1367,7 @@ A 1
                     </div>
                   ) : (
                     <OrderForm 
+                      key={`order-form-${orderDetails?.id || selectedOrder?.id}`}
                       initialData={orderDetails}
                       isEditMode={true}
                       onCancel={handleCloseDialog}

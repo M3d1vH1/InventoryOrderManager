@@ -177,6 +177,9 @@ const OrderForm = ({
   const [unshippedProducts, setUnshippedProducts] = useState<UnshippedProduct[]>([]);
   const [isInitializingEditMode, setIsInitializingEditMode] = useState(false);
   
+  // Add ref to track if form has been initialized to prevent repeated resets
+  const hasInitialized = useRef(false);
+  
   // Grouped unshipped products by order
   const groupedUnshippedProducts: GroupedUnshippedProducts = useMemo(() => {
     const grouped: GroupedUnshippedProducts = {};
@@ -287,10 +290,11 @@ const OrderForm = ({
     }
   });
   
-  // Reset form with initialData when in edit mode
+  // Reset form with initialData when in edit mode (only once per order)
   useEffect(() => {
-    if (isEditMode && initialData) {
+    if (isEditMode && initialData && !hasInitialized.current) {
       console.log("Resetting form with initialData in edit mode");
+      hasInitialized.current = true;
       
       // Clean up the customer name if it has ID prefix (format: "ID:Name")
       let customerName = initialData.customerName || "";
@@ -324,6 +328,11 @@ const OrderForm = ({
       });
     }
   }, [form, initialData, isEditMode]);
+  
+  // Reset the initialization flag when switching between orders
+  useEffect(() => {
+    hasInitialized.current = false;
+  }, [initialData?.id]);
 
   // Set form items from orderItems when in edit mode
   useEffect(() => {
@@ -575,10 +584,11 @@ const OrderForm = ({
     return () => subscription.unsubscribe();
   }, [customers, playNotificationSound, form]);
 
+  // Stable effect for orderItems sync - only when not in edit mode initialization
   useEffect(() => {
-    // Skip this entire effect during edit mode initialization
-    if (isInitializingEditMode) {
-      console.log("Skipping orderItems sync - edit mode initialization in progress");
+    // Skip this entire effect during edit mode initialization or if form hasn't been initialized
+    if (isInitializingEditMode || (isEditMode && !hasInitialized.current)) {
+      console.log("Skipping orderItems sync - edit mode initialization in progress or form not initialized");
       return;
     }
     
@@ -605,7 +615,7 @@ const OrderForm = ({
         console.log("Current form items after update:", currentItems);
       }, 100);
     }
-  }, [orderItems, form, isEditMode, initialData, isInitializingEditMode]);
+  }, [orderItems, form, isInitializingEditMode]);
 
   // Effect to sync form.items back to orderItems when form changes (critical for edit mode)
   useEffect(() => {
