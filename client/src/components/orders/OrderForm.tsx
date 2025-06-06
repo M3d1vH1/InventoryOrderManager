@@ -825,9 +825,11 @@ const OrderForm = ({
   };
 
   const updateQuantity = (index: number, quantity: number) => {
+    console.log("updateQuantity called with:", { index, quantity, currentOrderItems: orderItems.length });
     const newItems = [...orderItems];
     // Set the quantity with a minimum value of 1 to prevent negative or zero quantities
     newItems[index].quantity = Math.max(1, quantity);
+    console.log("Updated quantity for item at index", index, "from", orderItems[index]?.quantity, "to", newItems[index].quantity);
     setOrderItems(newItems);
   };
 
