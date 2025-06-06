@@ -541,7 +541,7 @@ const OrderForm = ({
       setUnshippedProducts([]);
       setUnshippedItemsWarning(null);
     }
-  }, [form.watch('customerName'), customers, playNotificationSound]);
+  }, [customers, playNotificationSound]);
 
   useEffect(() => {
     // Skip this entire effect during edit mode initialization
