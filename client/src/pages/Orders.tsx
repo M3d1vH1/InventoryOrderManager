@@ -326,8 +326,10 @@ const Orders = () => {
     
     return matchesSearch && matchesStatus && matchesPriority;
   }).sort((a, b) => {
-    // Sort by date, showing the latest first
-    return new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime();
+    // Sort by order number, showing the highest order number first
+    const orderNumA = parseInt(a.orderNumber.replace(/[^0-9]/g, '')) || 0;
+    const orderNumB = parseInt(b.orderNumber.replace(/[^0-9]/g, '')) || 0;
+    return orderNumB - orderNumA;
   });
 
   // Fetch specific order details with product details
