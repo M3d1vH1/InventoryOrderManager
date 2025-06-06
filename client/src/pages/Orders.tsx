@@ -156,7 +156,7 @@ const Orders = () => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: orders, isLoading } = useQuery<Order[]>({
+  const { data: orders, isLoading: isLoadingOrders } = useQuery<Order[]>({
     queryKey: ['/api/orders'],
     select: (data: any) => {
       // Handle API response structure: { success: true, data: [...] }
@@ -278,6 +278,11 @@ const Orders = () => {
   
   // Handle route params for order ID when viewing or editing a specific order
   useEffect(() => {
+    // ADD THIS GUARD AT THE TOP OF THE HOOK
+    if (isLoadingOrders) {
+      return;
+    }
+    
     if ((isViewRoute || isEditRoute) && params && params.id) {
       // Check if the order ID is a valid number
       const orderId = parseInt(params.id, 10);
@@ -307,7 +312,7 @@ const Orders = () => {
         }
       }
     }
-  }, [isViewRoute, isEditRoute, params, orders, toast, setLocation, selectedOrder, isEditMode]);
+  }, [isViewRoute, isEditRoute, params, orders, isLoadingOrders, toast, setLocation, selectedOrder, isEditMode]);
 
   const filteredOrders = orders?.filter(order => {
     const matchesSearch = searchTerm === "" || 
@@ -1015,7 +1020,7 @@ A 1
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? (
+              {isLoadingOrders ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8">
                     {t('orders.loadingOrders')}
@@ -1169,7 +1174,7 @@ A 1
         <div className="p-4 border-t border-slate-200 text-sm">
           <div className="flex items-center justify-between">
             <span className="text-slate-600">
-              {isLoading 
+              {isLoadingOrders 
                 ? t('orders.loadingOrders') 
                 : filteredOrders 
                   ? t('orders.showingOrders', {count: filteredOrders.length, total: orders?.length || 0}) 
@@ -1358,7 +1363,7 @@ A 1
                   ) : orderDetailsError ? (
                     <div className="text-red-500 text-center py-10">
                       <p>Error loading order details.</p>
-                      <p>{orderDetailsError.message}</p>
+                      <p>{String(orderDetailsError)}</p>
                     </div>
                   ) : (
                     <OrderForm 
