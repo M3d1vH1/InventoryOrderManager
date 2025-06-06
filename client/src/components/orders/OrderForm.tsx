@@ -131,7 +131,18 @@ const OrderForm = ({
   const { t } = useTranslation();
   const { user } = useAuth();
   const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
-  const [orderItems, setOrderItems] = useState<OrderItemInput[]>([]);
+  // Initialize orderItems with data from initialData if in edit mode
+  const [orderItems, setOrderItems] = useState<OrderItemInput[]>(() => {
+    if (isEditMode && initialData?.items && Array.isArray(initialData.items)) {
+      console.log("Initializing orderItems state with initialData:", initialData.items);
+      return initialData.items.map(item => ({
+        productId: item.productId,
+        product: item.product,
+        quantity: item.quantity
+      }));
+    }
+    return [];
+  });
   const [isNewCustomerDialogOpen, setIsNewCustomerDialogOpen] = useState(false);
   const [currentSearchValue, setCurrentSearchValue] = useState("");
   
@@ -314,38 +325,17 @@ const OrderForm = ({
     }
   }, [form, initialData, isEditMode]);
 
-  // Initialize orderItems from initialData if provided - this must run before other effects
+  // Set form items from orderItems when in edit mode
   useEffect(() => {
-    if (isEditMode && initialData?.items && Array.isArray(initialData.items) && initialData.items.length > 0) {
-      setIsInitializingEditMode(true);
-      
-      // Always set order items from initialData when in edit mode
-      console.log("Initializing orderItems from initialData:", initialData.items);
-      const mappedItems = initialData.items.map(item => ({
-        productId: item.productId,
-        product: item.product,
-        quantity: item.quantity
-      }));
-      
-      console.log("Setting orderItems to:", mappedItems);
-      setOrderItems(mappedItems);
-      
-      // Also set the form items immediately to prevent clearing
-      const formattedItems = mappedItems.map(item => ({
+    if (isEditMode && orderItems.length > 0) {
+      console.log("Setting form items from orderItems in edit mode:", orderItems);
+      const formattedItems = orderItems.map(item => ({
         productId: item.productId,
         quantity: item.quantity
       }));
-      
-      console.log("Setting form items to:", formattedItems);
       form.setValue('items', formattedItems, { shouldValidate: false });
-      
-      // Allow some time for the form to update, then disable the initialization flag
-      setTimeout(() => {
-        console.log("Disabling initialization flag, current orderItems length:", mappedItems.length);
-        setIsInitializingEditMode(false);
-      }, 200);
     }
-  }, [initialData, isEditMode, form]);
+  }, [isEditMode, form]);
   
   // Function to fetch and set the area from a customer's previous orders
   const fetchCustomerAreaFromPreviousOrders = async (customerName: string) => {
@@ -554,12 +544,18 @@ const OrderForm = ({
   }, [form.watch('customerName'), customers, playNotificationSound]);
 
   useEffect(() => {
+    // Skip this entire effect during edit mode initialization
+    if (isInitializingEditMode) {
+      console.log("Skipping orderItems sync - edit mode initialization in progress");
+      return;
+    }
+    
     // Update form items field when orderItems changes (but not during initial edit mode setup)
     console.log("orderItems changed, updating form items", orderItems);
     
-    // Skip this effect if we're in edit mode and orderItems is empty but initialData has items
+    // Additional safety check for edit mode with empty orderItems
     if (isEditMode && orderItems.length === 0 && initialData?.items && initialData.items.length > 0) {
-      console.log("Skipping form update - edit mode initialization in progress");
+      console.log("Skipping form update - edit mode with empty orderItems but initialData exists");
       return;
     }
     
@@ -577,7 +573,7 @@ const OrderForm = ({
         console.log("Current form items after update:", currentItems);
       }, 100);
     }
-  }, [orderItems, form, isEditMode, initialData]);
+  }, [orderItems, form, isEditMode, initialData, isInitializingEditMode]);
 
   // Effect to sync form.items back to orderItems when form changes (critical for edit mode)
   useEffect(() => {
