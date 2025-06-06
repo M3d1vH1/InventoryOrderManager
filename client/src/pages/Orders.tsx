@@ -1225,45 +1225,53 @@ A 1
                     </Button>
                   </div>
                 </div>
-              ) : !isEditMode && orderDetails ? (
-                // View mode
+              ) : !isEditMode ? (
+                // View mode - use orderDetails if available, fallback to selectedOrder
                 <div className="space-y-4 py-2">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h3 className="text-sm font-medium text-slate-500">{t('orders.details.customer')}</h3>
-                      <p className="text-lg font-medium">{orderDetails.customerName || selectedOrder.customerName}</p>
+                  {isOrderDetailsLoading ? (
+                    <div className="flex justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                     </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-slate-500">{t('orders.details.orderDate')}</h3>
-                      <p className="text-lg font-medium">
-                        {format(new Date(orderDetails.orderDate || selectedOrder.orderDate), "MMMM d, yyyy")}
-                      </p>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-slate-500">{t('orders.details.status')}</h3>
-                      <div className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-medium ${getStatusBadgeClass(orderDetails.status || selectedOrder.status)}`}>
-                        {t(`orders.statusValues.${orderDetails.status || selectedOrder.status}`)}
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <h3 className="text-sm font-medium text-slate-500">{t('orders.details.customer')}</h3>
+                          <p className="text-lg font-medium">{orderDetails?.customerName || selectedOrder.customerName}</p>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium text-slate-500">{t('orders.details.orderDate')}</h3>
+                          <p className="text-lg font-medium">
+                            {format(new Date(orderDetails?.orderDate || selectedOrder.orderDate), "MMMM d, yyyy")}
+                          </p>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium text-slate-500">{t('orders.details.status')}</h3>
+                          <div className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-medium ${getStatusBadgeClass(orderDetails?.status || selectedOrder.status)}`}>
+                            {t(`orders.statusValues.${orderDetails?.status || selectedOrder.status}`)}
+                          </div>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium text-slate-500">{t('orders.details.priority')}</h3>
+                          <div className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-medium ${getPriorityBadgeClass(orderDetails?.priority || selectedOrder.priority)}`}>
+                            {t(`orders.form.priorities.${orderDetails?.priority || selectedOrder.priority || 'medium'}`)}
+                          </div>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium text-slate-500">{t('orders.details.totalItems')}</h3>
+                          <p className="text-lg font-medium">{orderDetails?.items?.length || selectedOrder.items?.length || 0}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-slate-500">{t('orders.details.priority')}</h3>
-                      <div className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-medium ${getPriorityBadgeClass(orderDetails.priority || selectedOrder.priority)}`}>
-                        {t(`orders.form.priorities.${orderDetails.priority || selectedOrder.priority || 'medium'}`)}
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-slate-500">{t('orders.details.totalItems')}</h3>
-                      <p className="text-lg font-medium">{orderDetails.items?.length || selectedOrder.items?.length || 0}</p>
-                    </div>
-                  </div>
 
-                  {(orderDetails.notes || selectedOrder.notes) && (
-                    <div>
-                      <h3 className="text-sm font-medium text-slate-500">{t('orders.details.notes')}</h3>
-                      <p className="text-slate-700 bg-slate-50 p-2 rounded border border-slate-200">
-                        {orderDetails.notes || selectedOrder.notes}
-                      </p>
-                    </div>
+                      {(orderDetails?.notes || selectedOrder.notes) && (
+                        <div>
+                          <h3 className="text-sm font-medium text-slate-500">{t('orders.details.notes')}</h3>
+                          <p className="text-slate-700 bg-slate-50 p-2 rounded border border-slate-200">
+                            {orderDetails?.notes || selectedOrder.notes}
+                          </p>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   <div>
@@ -1341,12 +1349,12 @@ A 1
               )}
               
               <DialogFooter className="flex justify-between sm:justify-between gap-2">
-                {!isEditMode && (
+                {!isEditMode && (orderDetails || selectedOrder) && (
                   <>
                     <div className="flex gap-2">
-                      {orderDetails.status === 'pending' && (
+                      {(orderDetails?.status || selectedOrder.status) === 'pending' && (
                         <Button
-                          onClick={() => handleGoToPickList(orderDetails.id)}
+                          onClick={() => handleGoToPickList(orderDetails?.id || selectedOrder.id)}
                           variant="secondary"
                           className="flex items-center gap-2"
                         >
@@ -1366,7 +1374,7 @@ A 1
                       
                       {/* Document upload button for any order */}
                       <Button
-                        onClick={() => handleOpenDocumentUpload(orderDetails)}
+                        onClick={() => handleOpenDocumentUpload(orderDetails || selectedOrder)}
                         variant="outline"
                         className="flex items-center gap-2"
                       >
@@ -1375,9 +1383,9 @@ A 1
                       </Button>
                       
                       {/* Document view button in dialog - for any order with document */}
-                      {orderDetails.hasShippingDocument && (
+                      {(orderDetails?.hasShippingDocument || selectedOrder.hasShippingDocument) && (
                         <Button
-                          onClick={() => handleViewDocument(orderDetails.id)}
+                          onClick={() => handleViewDocument(orderDetails?.id || selectedOrder.id)}
                           variant="outline"
                           className="flex items-center gap-2"
                         >
@@ -1388,7 +1396,7 @@ A 1
                       
                       {/* Print order PDF button */}
                       <Button
-                        onClick={() => handlePrintOrderPdf(orderDetails.id)}
+                        onClick={() => handlePrintOrderPdf(orderDetails?.id || selectedOrder.id)}
                         variant="outline"
                         className="flex items-center gap-2"
                       >
@@ -1397,9 +1405,9 @@ A 1
                       </Button>
                       
                       {/* Reprint shipping label button - for picked or shipped orders */}
-                      {(orderDetails.status === 'picked' || orderDetails.status === 'shipped') && (
+                      {((orderDetails?.status || selectedOrder.status) === 'picked' || (orderDetails?.status || selectedOrder.status) === 'shipped') && (
                         <Button
-                          onClick={() => handleOpenPrintLabelDialog(orderDetails)}
+                          onClick={() => handleOpenPrintLabelDialog(orderDetails || selectedOrder)}
                           variant="outline"
                           className="flex items-center gap-2 bg-green-50 hover:bg-green-100 border-green-200"
                         >
@@ -1409,9 +1417,9 @@ A 1
                       )}
                       
                       {/* Send email notification button - only for shipped orders */}
-                      {orderDetails.status === 'shipped' && (
+                      {(orderDetails?.status || selectedOrder.status) === 'shipped' && (
                         <Button
-                          onClick={() => handleSendEmail(orderDetails.id)}
+                          onClick={() => handleSendEmail(orderDetails?.id || selectedOrder.id)}
                           variant="outline"
                           className="flex items-center gap-2"
                         >
