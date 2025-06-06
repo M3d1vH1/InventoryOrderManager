@@ -535,7 +535,7 @@ const OrderForm = ({
   useEffect(() => {
     // Update form items field when orderItems changes
     console.log("orderItems changed, updating form items", orderItems);
-    if (orderItems.length > 0) {
+    if (orderItems.length >= 0) {
       const formattedItems = orderItems.map(item => ({
         productId: item.productId,
         quantity: item.quantity
@@ -550,6 +550,36 @@ const OrderForm = ({
       }, 100);
     }
   }, [orderItems, form]);
+
+  // Effect to sync form.items back to orderItems when form changes (critical for edit mode)
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'items' && value.items && Array.isArray(value.items)) {
+        // Only update orderItems if the form items are different from current orderItems
+        const formItems = value.items;
+        const currentItemsString = JSON.stringify(orderItems.map(item => ({ productId: item.productId, quantity: item.quantity })));
+        const formItemsString = JSON.stringify(formItems);
+        
+        if (formItemsString !== currentItemsString) {
+          console.log("Form items changed, syncing to orderItems state:", formItems);
+          
+          // Update orderItems to match form items, preserving product data where possible
+          const updatedOrderItems = formItems.map(formItem => {
+            const existingItem = orderItems.find(item => item.productId === formItem.productId);
+            return {
+              productId: formItem.productId,
+              quantity: formItem.quantity,
+              product: existingItem?.product
+            };
+          });
+          
+          setOrderItems(updatedOrderItems);
+        }
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form, orderItems]);
 
   const createOrderMutation = useMutation({
     mutationFn: async (values: OrderFormValues) => {
