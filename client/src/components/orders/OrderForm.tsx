@@ -164,6 +164,7 @@ const OrderForm = ({
   
   const [previousProducts, setPreviousProducts] = useState<ProductWithOrderCount[]>([]);
   const [unshippedProducts, setUnshippedProducts] = useState<UnshippedProduct[]>([]);
+  const [isInitializingEditMode, setIsInitializingEditMode] = useState(false);
   
   // Grouped unshipped products by order
   const groupedUnshippedProducts: GroupedUnshippedProducts = useMemo(() => {
@@ -316,6 +317,8 @@ const OrderForm = ({
   // Initialize orderItems from initialData if provided - this must run before other effects
   useEffect(() => {
     if (isEditMode && initialData?.items && Array.isArray(initialData.items) && initialData.items.length > 0) {
+      setIsInitializingEditMode(true);
+      
       // Always set order items from initialData when in edit mode
       console.log("Initializing orderItems from initialData:", initialData.items);
       const mappedItems = initialData.items.map(item => ({
@@ -331,6 +334,11 @@ const OrderForm = ({
         quantity: item.quantity
       }));
       form.setValue('items', formattedItems, { shouldValidate: false });
+      
+      // Allow some time for the form to update, then disable the initialization flag
+      setTimeout(() => {
+        setIsInitializingEditMode(false);
+      }, 100);
     }
   }, [initialData, isEditMode, form]);
   
@@ -569,7 +577,7 @@ const OrderForm = ({
   // Effect to sync form.items back to orderItems when form changes (critical for edit mode)
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
-      if (name === 'items' && value.items && Array.isArray(value.items)) {
+      if (name === 'items' && value.items && Array.isArray(value.items) && !isInitializingEditMode) {
         // Only update orderItems if the form items are different from current orderItems
         const formItems = value.items;
         const currentItemsString = JSON.stringify(orderItems.map(item => ({ productId: item.productId, quantity: item.quantity })));
@@ -579,14 +587,20 @@ const OrderForm = ({
           console.log("Form items changed, syncing to orderItems state:", formItems);
           
           // Update orderItems to match form items, preserving product data where possible
-          const updatedOrderItems = formItems.map(formItem => {
-            const existingItem = orderItems.find(item => item.productId === formItem.productId);
-            return {
-              productId: formItem.productId,
-              quantity: formItem.quantity,
-              product: existingItem?.product
-            };
-          });
+          const updatedOrderItems = formItems
+            .filter((formItem): formItem is { productId: number; quantity: number } => 
+              formItem != null && 
+              typeof formItem.productId === 'number' && 
+              typeof formItem.quantity === 'number'
+            )
+            .map(formItem => {
+              const existingItem = orderItems.find(item => item.productId === formItem.productId);
+              return {
+                productId: formItem.productId,
+                quantity: formItem.quantity,
+                product: existingItem?.product || undefined
+              } as OrderItemInput;
+            });
           
           setOrderItems(updatedOrderItems);
         }
@@ -594,7 +608,7 @@ const OrderForm = ({
     });
     
     return () => subscription.unsubscribe();
-  }, [form, orderItems]);
+  }, [form, orderItems, isInitializingEditMode]);
 
   const createOrderMutation = useMutation({
     mutationFn: async (values: OrderFormValues) => {
