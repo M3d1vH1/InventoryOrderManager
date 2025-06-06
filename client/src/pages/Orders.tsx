@@ -296,10 +296,9 @@ const Orders = () => {
             setIsFormOpen(true); // Open dialog when accessing via URL
           }
           // Only set edit mode if not already in the correct state
+          // Removed the automatic reset logic that was causing the dialog to close
           if (isEditRoute && !isEditMode) {
             setIsEditMode(true);
-          } else if (!isEditRoute && isEditMode) {
-            setIsEditMode(false);
           }
         } else {
           // Order not found - show toast and redirect to orders list
