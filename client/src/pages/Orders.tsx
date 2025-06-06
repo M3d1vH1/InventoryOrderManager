@@ -282,8 +282,16 @@ const Orders = () => {
         // Find the order with the matching ID
         const order = orders.find(o => o.id === orderId);
         if (order) {
-          setSelectedOrder(order);
-          setIsEditMode(isEditRoute); // Set edit mode based on the route
+          // Only set if not already selected to prevent dialog reset
+          if (!selectedOrder || selectedOrder.id !== order.id) {
+            setSelectedOrder(order);
+          }
+          // Only set edit mode if not already in the correct state
+          if (isEditRoute && !isEditMode) {
+            setIsEditMode(true);
+          } else if (!isEditRoute && isEditMode) {
+            setIsEditMode(false);
+          }
         } else {
           // Order not found - show toast and redirect to orders list
           toast({
@@ -295,7 +303,7 @@ const Orders = () => {
         }
       }
     }
-  }, [isViewRoute, isEditRoute, params, orders, toast, setLocation]);
+  }, [isViewRoute, isEditRoute, params, orders, toast, setLocation, selectedOrder, isEditMode]);
 
   const filteredOrders = orders?.filter(order => {
     const matchesSearch = searchTerm === "" || 
@@ -1185,9 +1193,9 @@ A 1
       <Dialog 
         open={!!selectedOrder} 
         onOpenChange={(open) => {
+          // Only close on explicit user action, not during form initialization
           if (!open) {
             handleCloseDialog();
-            setLocation('/orders');
           }
         }}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
