@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useSidebar } from '@/context/SidebarContext';
-import { PageHeader } from '@/components/common/PageHeader';
+import { PageHeader } from '@/components/common';
 import { useParams, useLocation } from 'wouter';
 import {
   Card,
@@ -35,8 +35,7 @@ import {
   RefreshCw,
   Tag
 } from 'lucide-react';
-import CallLogForm from '@/components/call-logs/CallLogForm';
-import CallLogDetail from '@/components/call-logs/CallLogDetail';
+import { CallLogForm, CallLogDetail } from '@/components/call-logs';
 
 type CallLog = {
   id: number;

@@ -1,11 +1,11 @@
 import express from 'express';
 import { storage } from '../storage';
-import { hasRole } from '../auth';
+import { hasPermission } from '../auth';
 
 const router = express.Router();
 
 // Endpoint to fix the call logs subject field
-router.post('/fix-call-logs-subject', hasRole(['admin']), async (req, res) => {
+router.post('/fix-call-logs-subject', hasPermission('manage_call_logs'), async (req, res) => {
   try {
     // Get all call logs
     const callLogs = await storage.getAllCallLogs();

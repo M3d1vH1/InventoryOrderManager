@@ -9,8 +9,8 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";
 import { BarcodeGenerator } from "@/components/barcode";
-import { InventoryChangeHistory } from "@/components/inventory/InventoryChangeHistory";
-import { ProductImage } from "@/components/products/ProductImage";
+import { InventoryChangeHistory } from "@/components/inventory";
+import { ProductImage } from "@/components/products";
 import { 
   MapPin, 
   Package, 

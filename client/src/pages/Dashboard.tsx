@@ -1,9 +1,6 @@
 import { useEffect } from "react";
 import { useSidebar } from "@/context/SidebarContext";
-import QuickStats from "@/components/dashboard/QuickStats";
-import RecentOrders from "@/components/dashboard/RecentOrders";
-import InventoryAlerts from "@/components/dashboard/InventoryAlerts";
-import SlowMovingItems from "@/components/dashboard/SlowMovingItems";
+import { QuickStats, RecentOrders, InventoryAlerts, SlowMovingItems } from '@/components/dashboard';
 
 const Dashboard = () => {
   const { setCurrentPage } = useSidebar();

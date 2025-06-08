@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import PickList from "@/components/orders/PickList";
+import { PickList } from '@/components/orders';
 import { useLocation, Link } from "wouter";
 import { ArrowLeft, Clipboard } from "lucide-react";
 

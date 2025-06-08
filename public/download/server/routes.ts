@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from 'zod';
 import { insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCustomerSchema, insertUserSchema, insertCategorySchema, type Product } from "@shared/schema";
-import { isAuthenticated, hasRole } from "./auth";
+import { isAuthenticated, hasPermission } from "./auth";
 import { hashPassword } from "./auth";
 import { UploadedFile } from "express-fileupload";
 import path from "path";
@@ -714,7 +714,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up WebSocket server
   // User management routes
   // Get all users (admin only)
-  app.get('/api/users', isAuthenticated, hasRole(['admin']), async (req, res) => {
+  app.get('/api/users', isAuthenticated, hasPermission('manage_users'), async (req, res) => {
     try {
       const users = await storage.getAllUsers();
       // Don't send password hashes in response
@@ -726,7 +726,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get user by ID (admin only)
-  app.get('/api/users/:id', isAuthenticated, hasRole(['admin']), async (req, res) => {
+  app.get('/api/users/:id', isAuthenticated, hasPermission('manage_users'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const user = await storage.getUser(id);
@@ -744,7 +744,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Create new user (admin only)
-  app.post('/api/users', isAuthenticated, hasRole(['admin']), async (req, res) => {
+  app.post('/api/users', isAuthenticated, hasPermission('manage_users'), async (req, res) => {
     try {
       // Parse and validate user data
       const userData = insertUserSchema.parse(req.body);
@@ -776,7 +776,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Update user (admin only)
-  app.patch('/api/users/:id', isAuthenticated, hasRole(['admin']), async (req, res) => {
+  app.patch('/api/users/:id', isAuthenticated, hasPermission('manage_users'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const userData = insertUserSchema.partial().parse(req.body);
@@ -812,7 +812,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Delete user (admin only)
-  app.delete('/api/users/:id', isAuthenticated, hasRole(['admin']), async (req, res) => {
+  app.delete('/api/users/:id', isAuthenticated, hasPermission('manage_users'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       
@@ -858,7 +858,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/categories', isAuthenticated, hasRole(['admin']), async (req, res) => {
+  app.post('/api/categories', isAuthenticated, hasPermission('manage_categories'), async (req, res) => {
     try {
       const categoryData = insertCategorySchema.parse(req.body);
       
@@ -878,7 +878,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.patch('/api/categories/:id', isAuthenticated, hasRole(['admin']), async (req, res) => {
+  app.patch('/api/categories/:id', isAuthenticated, hasPermission('manage_categories'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const categoryData = insertCategorySchema.partial().parse(req.body);
@@ -906,7 +906,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.delete('/api/categories/:id', isAuthenticated, hasRole(['admin']), async (req, res) => {
+  app.delete('/api/categories/:id', isAuthenticated, hasPermission('manage_categories'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       

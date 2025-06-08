@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { ScanBarcode } from "lucide-react";
+import { Button } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui';
+import { Input } from '@/components/ui';
+import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
+import { ScanBarcode, X } from 'lucide-react';
 
 interface BarcodeScannerProps {
   onBarcodeScanned: (barcode: string) => void;

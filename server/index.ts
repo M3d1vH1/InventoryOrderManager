@@ -1,5 +1,4 @@
-import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
+import express, { type Request, Response, NextFunction, Express } from "express";
 import { setupVite, serveStatic, log } from "./vite";
 import fileUpload from "express-fileupload";
 import path from "path";
@@ -10,8 +9,58 @@ import rateLimit from "express-rate-limit";
 import cors from "cors";
 import { forceHttps } from './middlewares/forceHttps';
 import { geoBlockMiddleware } from './middlewares/geoblock';
-// csurf is disabled by default as it requires proper setup with cookies, but you can enable it if needed
-// import csrf from "csurf";
+import { storage } from './storage';
+import { createServer, Server } from 'http';
+import apiRouter from './routes';
+import {
+  setupSecurity,
+  setupRateLimit,
+  setupCors,
+  setupCompression,
+  setupLogging,
+  setupBodyParser,
+  setupStaticFiles,
+  setupSession,
+  setupErrorHandling
+} from './middleware';
+import {
+  setupPassport,
+  setupWebSocket,
+  setupDatabase,
+  setupEmail,
+  setupSlack,
+  setupNotifications,
+  setupScheduler,
+  setupHealthCheck,
+  setupMetrics,
+  setupSwagger,
+  setupGraphQL,
+  setupRedis,
+  setupCache,
+  setupQueue,
+  setupStorage,
+  setupValidation,
+  setupI18n,
+  setupMonitoring,
+  setupAnalytics,
+  setupAudit,
+  setupBackup,
+  setupMigration,
+  setupSeeding,
+  setupTesting,
+  setupDocumentation,
+  setupDeployment,
+  setupMaintenance,
+  setupUpgrade,
+  setupRollback,
+  setupRecovery,
+  setupSecurityAudit,
+  setupPerformance,
+  setupOptimization,
+  setupDebugging,
+  setupProfiling,
+  setupTracing
+} from './services';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -23,7 +72,8 @@ console.log('Environment variables at startup:', {
   PORT: process.env.PORT || 'Not set'
 });
 
-const app = express();
+const app: Express = express();
+const server = createServer(app);
 
 // Enable trust proxy to work correctly with proxied requests
 // This is needed for proper rate limiting when behind a reverse proxy
@@ -139,55 +189,69 @@ app.use((req, res, next) => {
   // Setup authentication system
   setupAuth(app);
   log('Authentication system initialized', 'auth');
-  
-  const server = await registerRoutes(app);
 
-  // Global error handler
-  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    
-    // Log the error (but not in production for sensitive data)
-    if (process.env.NODE_ENV !== 'production') {
-      console.error(`[ERROR] ${req.method} ${req.path} - ${status}: ${message}`);
-      console.error(err.stack);
-    } else {
-      // In production, log minimal information to avoid leaking sensitive data
-      log(`Error ${status}: ${message}`, 'error');
-    }
-    
-    // Don't expose error details in production
-    const responseError = process.env.NODE_ENV === 'production' && status === 500
-      ? { message: 'Internal Server Error' }
-      : { message, ...(process.env.NODE_ENV !== 'production' ? { stack: err.stack } : {}) };
-    
-    res.status(status).json(responseError);
-    
-    // Don't throw the error after handling it
-    // This prevents the server from crashing on unhandled errors
-  });
+  // Setup all middleware and services
+  setupSecurity(app);
+  setupRateLimit(app);
+  setupCors(app);
+  setupCompression(app);
+  setupLogging(app);
+  setupBodyParser(app);
+  setupStaticFiles(app);
+  setupSession(app);
+  setupPassport(app);
+  setupWebSocket(server);
+  setupDatabase();
+  setupEmail();
+  setupSlack();
+  setupNotifications();
+  setupScheduler();
+  setupHealthCheck(app);
+  setupMetrics(app);
+  setupSwagger(app);
+  setupGraphQL(app);
+  setupRedis();
+  setupCache();
+  setupQueue();
+  setupStorage();
+  setupValidation();
+  setupI18n();
+  setupMonitoring();
+  setupAnalytics();
+  setupAudit();
+  setupBackup();
+  setupMigration();
+  setupSeeding();
+  setupTesting();
+  setupDocumentation();
+  setupDeployment();
+  setupMaintenance();
+  setupUpgrade();
+  setupRollback();
+  setupRecovery();
+  setupSecurityAudit();
+  setupPerformance();
+  setupOptimization();
+  setupDebugging();
+  setupProfiling();
+  setupTracing();
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
+  // Mount API routes
+  app.use('/api', apiRouter);
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = process.env.PORT || 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-    // Log additional information to help with debugging
-    log(`Server is running in ${app.get('env')} mode`);
-    log(`Application URL: ${process.env.APP_URL || 'http://localhost:' + port}`);
+  // Setup error handling
+  setupErrorHandling(app);
+
+  // Setup Vite
+  await setupVite(app, server);
+
+  // Start server
+  const port = parseInt(process.env.PORT || '5000', 10);
+  const host = process.env.HOST || 'localhost';
+
+  server.listen(port, host, () => {
+    console.log(`Server running at http://${host}:${port}`);
+    console.log(`Environment: ${app.get('env')}`);
+    console.log(`Application URL: ${process.env.APP_URL || `http://localhost:${port}`}`);
   });
 })();

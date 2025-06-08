@@ -1,167 +1,21 @@
 import React from "react";
-import { Switch, Route, useLocation } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { DevAutoLogin } from "@/components/DevAutoLogin";
-import NotFound from "@/pages/not-found";
-import Dashboard from "@/pages/Dashboard";
-import Orders from "@/pages/Orders";
-import ProductsShopify from "@/pages/ProductsShopify";
-import Inventory from "@/pages/Inventory";
-import Reports from "@/pages/Reports";
-import Settings from "@/pages/Settings";
-import OrderPicking from "@/pages/OrderPicking";
-import ProductBarcode from "@/pages/ProductBarcode";
-import Customers from "@/pages/Customers";
-import Categories from "@/pages/Categories";
-import UnshippedItems from "@/pages/UnshippedItems";
-import OrderQuality from "@/pages/OrderQuality";
-import CallLogs from "@/pages/CallLogs";
-import SimpleCalendar from "@/pages/SimpleCalendar";
-import InventoryPredictions from "@/pages/InventoryPredictions";
-import Production from "@/pages/Production";
-import SupplierPayments from "@/pages/SupplierPayments";
-import CalendarTest from "@/pages/CalendarTest";
-import PrinterTest from "@/pages/printerTest";
-import PrintTemplate from "@/pages/PrintTemplate";
-import MultiLabelPrintView from "@/pages/MultiLabelPrintView";
-import ShippingLabel from "@/pages/ShippingLabel";
-import Login from "@/pages/Login";
-import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
-import { SidebarProvider } from "@/context/SidebarContext";
-import { AuthProvider, useAuth } from "@/context/AuthContext";
-import { NotificationProvider } from "@/context/NotificationContext";
-import { UserProvider } from "@/context/UserContext";
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/toaster';
+import { ThemeProvider } from '@/components/theme-provider';
+import { AuthProvider } from '@/contexts/auth-context';
+import { Sidebar, Header } from '@/components/layout';
+import Login from '@/pages/auth/login';
+import Dashboard from '@/pages/dashboard';
+import Products from '@/pages/products';
+import Orders from '@/pages/orders';
+import Customers from '@/pages/customers';
+import Settings from '@/pages/settings';
+import { ProtectedRoute } from '@/components/protected-route';
 import { useTranslation } from 'react-i18next';
 import './i18n'; // Import i18n setup explicitly
 
-function AuthenticatedRouter() {
-  const { user, isLoading } = useAuth();
-  const [location] = useLocation();
-
-  // If still loading auth state, show nothing (could add a loading spinner)
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
-  }
-
-  // Show warehouse staff only order picking and unshipped items
-  if (user?.role === 'warehouse') {
-    return (
-      <Switch>
-        <Route path="/order-picking" component={OrderPicking} />
-        <Route path="/order-picking/:id" component={OrderPicking} />
-        <Route path="/product-barcode/:id" component={ProductBarcode} />
-        <Route path="/unshipped-items" component={UnshippedItems} />
-        <Route path="/orders/unshipped-items" component={UnshippedItems} />
-        <Route>
-          {/* Redirect to order picking for warehouse staff if on any other route */}
-          {location !== '/order-picking' && 
-           location !== '/unshipped-items' &&
-           location !== '/orders/unshipped-items' && 
-           (window.location.href = '/order-picking')}
-          <OrderPicking />
-        </Route>
-      </Switch>
-    );
-  }
-
-  return (
-    <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/orders/unshipped-items" component={UnshippedItems} />
-      <Route path="/orders/:id/edit" component={Orders} />
-      <Route path="/orders/:id" component={Orders} />
-      <Route path="/orders" component={Orders} />
-      <Route path="/order-quality" component={OrderQuality} />
-      <Route path="/order-errors" component={OrderQuality} />
-      <Route path="/products" component={ProductsShopify} />
-      <Route path="/categories" component={Categories} />
-      <Route path="/customers" component={Customers} />
-      <Route path="/inventory" component={Inventory} />
-      <Route path="/unshipped-items" component={UnshippedItems} />
-      <Route path="/reports" component={Reports} />
-      <Route path="/settings" component={Settings} />
-      <Route path="/order-picking" component={OrderPicking} />
-      <Route path="/order-picking/:id" component={OrderPicking} />
-      <Route path="/product-barcode/:id" component={ProductBarcode} />
-      <Route path="/call-logs" component={CallLogs} />
-      <Route path="/call-logs/:id" component={CallLogs} />
-      <Route path="/calendar" component={SimpleCalendar} />
-      <Route path="/calendar-test" component={CalendarTest} />
-      <Route path="/inventory-predictions" component={InventoryPredictions} />
-      <Route path="/production" component={Production} />
-      <Route path="/supplier-payments" component={SupplierPayments} />
-      <Route path="/printer-test" component={PrinterTest} />
-      {/* Fallback to 404 */}
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
-
-function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
-  const [location] = useLocation();
-
-  // If loading auth state, show minimal loading indicator
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
-  }
-
-  // Handle special routes that don't need authentication
-  if (location === '/login') {
-    return <Login />;
-  }
-  
-  // Print template and other printing pages don't need authentication
-  if (location === '/print-template') {
-    return <PrintTemplate />;
-  }
-  
-  if (location.startsWith('/shipping-label/')) {
-    return <ShippingLabel />;
-  }
-  
-  // Multi-label print view doesn't need authentication
-  const printLabelsMatch = location.match(/\/print-labels\/(\d+)\/(\d+)/);
-  if (printLabelsMatch) {
-    return <MultiLabelPrintView />;
-  }
-
-  // If not authenticated and not on login page, redirect to login
-  if (!isAuthenticated) {
-    // Redirect to login page
-    window.location.href = '/login';
-    return null;
-  }
-
-  // Show authenticated routes
-  return <AuthenticatedRouter />;
-}
-
-function Layout() {
-  const { isAuthenticated, isLoading } = useAuth();
-  const [location] = useLocation();
-
-  // Special pages that don't need authentication or layout
-  if (location === '/login' || location === '/print-template' || isLoading || !isAuthenticated) {
-    return <Router />;
-  }
-
-  return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-auto p-4 bg-slate-50">
-          <Router />
-        </main>
-      </div>
-    </div>
-  );
-}
+const queryClient = new QueryClient();
 
 function App() {
   const { t, i18n } = useTranslation();
@@ -199,18 +53,59 @@ function App() {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <UserProvider>
-          <NotificationProvider>
-            <SidebarProvider>
-              <Layout />
-              <Toaster />
-              {/* Add our development auto-login component */}
-              {import.meta.env.DEV && <DevAutoLogin />}
-            </SidebarProvider>
-          </NotificationProvider>
-        </UserProvider>
-      </AuthProvider>
+      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+        <AuthProvider>
+          <Router>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route element={<Layout />}>
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/products"
+                  element={
+                    <ProtectedRoute>
+                      <Products />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/orders"
+                  element={
+                    <ProtectedRoute>
+                      <Orders />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/customers"
+                  element={
+                    <ProtectedRoute>
+                      <Customers />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/settings"
+                  element={
+                    <ProtectedRoute>
+                      <Settings />
+                    </ProtectedRoute>
+                  }
+                />
+              </Route>
+            </Routes>
+          </Router>
+          <Toaster />
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

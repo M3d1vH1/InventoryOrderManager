@@ -13,7 +13,7 @@ import {
   Upload, FileText, FilePlus, FileInput, X,
   Trash2, Mail, Printer, ShoppingCart, FileOutput
 } from "lucide-react";
-import { OrderChangelog } from "@/components/orders/OrderChangelog";
+import { OrderChangelog, OrderForm } from '@/components/orders';
 import LabelPreviewModal from "@/components/shipping/LabelPreviewModal";
 
 import {
@@ -56,7 +56,6 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Label
 } from "@/components/ui/label";
-import OrderForm from "@/components/orders/OrderForm";
 
 interface Product {
   id: number;

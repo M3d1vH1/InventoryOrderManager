@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useTranslation } from 'react-i18next';
-import CategoryManager from "@/components/products/CategoryManager";
+import { CategoryManager } from '@/components/products';
 import { useAuth } from "@/context/AuthContext";
 import { useLocation } from "wouter";
 

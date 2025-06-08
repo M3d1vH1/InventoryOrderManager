@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { el } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { useSidebar } from '@/context/SidebarContext';
-import ProductPredictionDashboard from '@/components/inventory/ProductPredictionDashboard';
+import { ProductPredictionDashboard } from '@/components/inventory';
 
 import {
   Card,

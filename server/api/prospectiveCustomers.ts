@@ -1,7 +1,7 @@
 import express from 'express';
 import { storage } from '../storage';
-import { insertProspectiveCustomerSchema } from '@shared/schema';
-import { hasRole } from '../auth';
+import { insertProspectiveCustomerSchema, ProspectiveCustomer } from '@shared/schema';
+import { hasPermission } from '../auth';
 import { User } from '@shared/schema';
 
 const router = express.Router();
@@ -89,32 +89,23 @@ router.post('/', async (req, res) => {
 });
 
 // Update a prospective customer
-router.patch('/:id', async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid prospective customer ID' });
-    }
-    
-    // Get the existing prospective customer to check if it exists
-    const existingProspectiveCustomer = await storage.getProspectiveCustomer(id);
-    if (!existingProspectiveCustomer) {
-      return res.status(404).json({ error: 'Prospective customer not found' });
-    }
-    
-    // Set the updatedAt date
-    req.body.updatedAt = new Date();
-    
-    const updatedProspectiveCustomer = await storage.updateProspectiveCustomer(id, req.body);
-    res.json(updatedProspectiveCustomer);
+    const data = insertProspectiveCustomerSchema.parse(req.body);
+    const updated = await storage.updateProspectiveCustomer(id, {
+      ...data,
+      updatedAt: new Date() // Add updatedAt field
+    });
+    res.json(updated);
   } catch (error) {
     console.error('Error updating prospective customer:', error);
-    res.status(400).json({ error: 'Invalid update data', details: error });
+    res.status(500).json({ error: 'Failed to update prospective customer' });
   }
 });
 
 // Delete a prospective customer
-router.delete('/:id', hasRole(['admin']), async (req, res) => {
+router.delete('/:id', hasPermission('manage_prospects'), async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) {

@@ -7,7 +7,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useSidebar } from '@/context/SidebarContext';
-import { PageHeader } from '@/components/common/PageHeader';
+import { PageHeader } from '@/components/common';
 import { useLocation } from 'wouter';
 import {
   Card,

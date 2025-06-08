@@ -8,6 +8,15 @@ import { FaTachometerAlt, FaShoppingCart, FaBox, FaWarehouse,
   FaList, FaTruckLoading, FaClipboardCheck, FaClipboardList,
   FaBell, FaBoxes, FaAngleDoubleLeft, FaAngleDoubleRight,
   FaMoneyBillWave } from 'react-icons/fa';
+import { NavLink } from 'react-router-dom';
+
+const navigation = [
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Products', href: '/products', icon: Package },
+  { name: 'Orders', href: '/orders', icon: ShoppingCart },
+  { name: 'Customers', href: '/customers', icon: Users },
+  { name: 'Settings', href: '/settings', icon: Settings },
+];
 
 const Sidebar = () => {
   const { isSidebarOpen, toggleSidebar, setCurrentPage } = useSidebar();

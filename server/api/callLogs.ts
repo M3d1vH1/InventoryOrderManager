@@ -1,7 +1,7 @@
 import express from 'express';
 import { storage } from '../storage';
 import { insertCallLogSchema, insertCallOutcomeSchema, quickCallLogSchema, CallLog } from '@shared/schema';
-import { hasRole } from '../auth';
+import { hasPermission } from '../auth';
 import { User } from '@shared/schema';
 import { createSlackService } from '../services/notifications/slackService';
 
@@ -310,7 +310,7 @@ router.patch('/:id', async (req, res) => {
 });
 
 // Delete a call log
-router.delete('/:id', hasRole(['admin']), async (req, res) => {
+router.delete('/:id', hasPermission('manage_call_logs'), async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) {
@@ -424,7 +424,7 @@ router.post('/outcomes/:id/complete', async (req, res) => {
 });
 
 // Delete a call outcome
-router.delete('/outcomes/:id', hasRole(['admin']), async (req, res) => {
+router.delete('/outcomes/:id', hasPermission('manage_call_logs'), async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) {

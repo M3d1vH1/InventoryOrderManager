@@ -7,8 +7,10 @@ import bcrypt from 'bcryptjs';
 import { storage } from './storage';
 import { log } from './vite';
 import pg from 'pg';
-import { User } from '@shared/schema';
+import { User, roles, userRoles } from '@shared/schema';
 import { loginLimiter } from './middlewares/loginRateLimit';
+import { eq } from 'drizzle-orm';
+import { pool } from './db';
 
 // Configure session storage
 const PgSession = pgSession(session);
@@ -36,7 +38,7 @@ export function setupAuth(app: Express) {
       maxAge: 1000 * 60 * 60 * 24, // 24 hours
       secure: false, // Allow cookies over HTTP for now (even in production)
       httpOnly: true, // Prevents JavaScript from reading cookies (XSS protection)
-      sameSite: 'lax', // Changed from strict to allow redirects
+      sameSite: 'lax' as const, // Changed from strict to allow redirects
       path: '/', // Restrict cookie to base path
     },
   };
@@ -145,51 +147,6 @@ export function setupAuth(app: Express) {
     const { password, ...safeUser } = req.user as User;
     res.json(safeUser);
   });
-
-  // Development-only auto-login endpoint
-  app.get('/api/dev-login', async (req, res) => {
-    // Only available in development mode
-    if (process.env.NODE_ENV === 'production') {
-      return res.status(404).json({ message: 'Not found' });
-    }
-
-    try {
-      // Get the admin user
-      const users = await storage.getAllUsers();
-      const adminUser = users.find(user => user.role === 'admin');
-
-      if (!adminUser) {
-        return res.status(500).json({ 
-          message: 'No admin user found. Try restarting the server to create default admin.' 
-        });
-      }
-
-      // Log the user in
-      req.login(adminUser, (err) => {
-        if (err) {
-          return res.status(500).json({ message: 'Login failed', error: err.message });
-        }
-
-        // Don't send password in response
-        const { password, ...safeUser } = adminUser;
-        
-        return res.json({ 
-          success: true, 
-          message: 'Auto-login successful',
-          user: safeUser
-        });
-      });
-    } catch (error: any) {
-      console.error('Dev login error:', error);
-      res.status(500).json({ 
-        message: 'Auto-login failed', 
-        error: error.message 
-      });
-    }
-  });
-
-  // Default admin user creation (if no admin exists)
-  createDefaultAdminUser();
 }
 
 // Helper middleware functions for role-based access control
@@ -200,48 +157,43 @@ export function isAuthenticated(req: Request, res: Response, next: NextFunction)
   res.status(401).json({ message: 'Unauthorized' });
 }
 
-export function hasRole(roles: string[]) {
-  return (req: Request, res: Response, next: NextFunction) => {
+export function hasPermission(permission: string) {
+  return async (req: Request, res: Response, next: NextFunction) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
     
-    const user = req.user as User;
-    if (roles.includes(user.role)) {
-      return next();
+    try {
+      const user = req.user as User;
+      const userPermissions = await storage.getPermissionsForRole(user.role);
+      
+      if (userPermissions.includes(permission)) {
+        return next();
+      }
+      
+      res.status(403).json({ message: 'Forbidden - Insufficient permissions' });
+    } catch (error) {
+      console.error(`[auth] Error checking permissions: ${error}`);
+      res.status(500).json({ message: 'Internal server error while checking permissions' });
     }
-    
-    res.status(403).json({ message: 'Forbidden - Insufficient permissions' });
   };
-}
-
-// Create default admin user if none exists
-async function createDefaultAdminUser() {
-  try {
-    const users = await storage.getAllUsers();
-    const adminExists = users.some(user => user.role === 'admin');
-    
-    if (!adminExists) {
-      // Create a default admin user
-      const hashedPassword = await bcrypt.hash('admin123', 10);
-      
-      await storage.createUser({
-        username: 'admin',
-        password: hashedPassword,
-        fullName: 'Administrator',
-        role: 'admin',
-        email: 'admin@example.com',
-        active: true
-      });
-      
-      log('Default admin user created. Username: admin, Password: admin123', 'auth');
-    }
-  } catch (error) {
-    log(`Error creating default admin user: ${error}`, 'auth');
-  }
 }
 
 // Helper function to hash passwords
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);
+}
+
+// Helper function to check if a user has a specific role
+export async function hasRole(userId: number, roleName: string): Promise<boolean> {
+  try {
+    const result = await pool.query(
+      'SELECT r.name FROM roles r JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = $1 AND r.name = $2',
+      [userId, roleName]
+    );
+    return result.rows.length > 0;
+  } catch (error) {
+    console.error(`[auth] Error checking role: ${error}`);
+    return false;
+  }
 }

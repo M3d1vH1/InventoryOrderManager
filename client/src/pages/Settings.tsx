@@ -1,32 +1,30 @@
 import { useState, useEffect } from 'react';
-import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui';
+import { Button } from '@/components/ui';
+import { Input } from '@/components/ui';
+import { Textarea } from '@/components/ui';
+import { Separator } from '@/components/ui';
+import { Switch } from '@/components/ui';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
+import { Badge } from '@/components/ui';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useNotifications } from '@/context/NotificationContext';
-import { AlertCircle, Bell, Cog, Edit, Globe, HelpCircle, Mail, Plus, Printer, Save, Send, Tag, Trash2, UserCog, Variable, Volume2, VolumeX, Link2, Slack, Database, HardDrive } from 'lucide-react';
+import { AlertCircle, Bell, Cog, Edit, Globe, HelpCircle, Mail, Plus, Printer, Save, Send, Tag, Trash2, UserCog, Variable, Volume2, VolumeX, Link2, Slack, Database, HardDrive, Shield } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
-import { ImageMigration } from '@/components/settings/ImageMigration';
-import LabelTemplateEditorComponent from '@/components/settings/LabelTemplateEditor';
+import { ImageMigration, LabelTemplateEditor } from '@/components/settings';
 
 const companySettingsSchema = z.object({
   companyName: z.string().min(2, { message: "Company name must be at least 2 characters" }),
@@ -1094,6 +1092,10 @@ const Settings = () => {
           <TabsTrigger value="users">
             <UserCog className="h-4 w-4 mr-2" />
             Users & Permissions
+          </TabsTrigger>
+          <TabsTrigger value="security">
+            <Shield className="h-4 w-4 mr-2" />
+            Security
           </TabsTrigger>
           <TabsTrigger value="maintenance">
             <Database className="h-4 w-4 mr-2" />
@@ -2575,7 +2577,7 @@ const Settings = () => {
                 </Alert>
                 
                 {/* Replace with our new LabelTemplateEditor component */}
-                <LabelTemplateEditorComponent />
+                <LabelTemplateEditor />
               </div>
             </CardContent>
           </Card>
@@ -2771,619 +2773,121 @@ const Settings = () => {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
-    </div>
-  );
-};
-
-// Label Template Editor Component (Deprecated - keeping for reference)
-const LabelTemplateEditor = () => {
-  const { toast } = useToast();
-  const [selectedTemplate, setSelectedTemplate] = useState('shipping-label');
-  const [isEditing, setIsEditing] = useState(false);
-  const [showVariableHelp, setShowVariableHelp] = useState(false);
-  
-  // Template form
-  const shippingLabelForm = useForm<z.infer<typeof templateEditSchema>>({
-    resolver: zodResolver(templateEditSchema),
-    defaultValues: {
-      content: '',
-    }
-  });
-  
-  // Get template content query
-  const { data: labelTemplateData, isLoading: isLoadingLabelTemplate, refetch: refetchLabelTemplate } = useQuery({
-    queryKey: ['/api/label-templates', selectedTemplate],
-    enabled: !!selectedTemplate,
-    queryFn: async () => {
-      const response = await apiRequest(`/api/label-templates/${selectedTemplate}`, {
-        method: 'GET',
-      });
-      return response;
-    }
-  });
-  
-  // Effect to update form when template data changes
-  useEffect(() => {
-    if (labelTemplateData && labelTemplateData.content) {
-      shippingLabelForm.reset({
-        content: labelTemplateData.content,
-      });
-    }
-  }, [labelTemplateData, shippingLabelForm]);
-  
-  // Update template mutation
-  const updateTemplateMutation = useMutation({
-    mutationFn: async (values: z.infer<typeof templateEditSchema>) => {
-      return apiRequest(`/api/label-templates/${selectedTemplate}`, {
-        method: 'PUT',
-        body: JSON.stringify(values),
-      });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Template Updated",
-        description: "The label template has been updated successfully.",
-      });
-      setIsEditing(false);
-      refetchLabelTemplate();
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to update template. " + (error instanceof Error ? error.message : String(error)),
-        variant: "destructive",
-      });
-    }
-  });
-  
-  // Template selection options
-  const templateOptions = [
-    { value: 'shipping-label', label: 'Standard Shipping Label' },
-    // Add more templates as needed
-  ];
-  
-  // Available variables for templates
-  const availableVariables = [
-    { name: "orderNumber", description: "Order number/ID" },
-    { name: "customerName", description: "Customer's full name" },
-    { name: "customerAddress", description: "Customer's full address" },
-    { name: "customerCity", description: "Customer's city" },
-    { name: "customerState", description: "Customer's state/province" },
-    { name: "customerPostalCode", description: "Customer's postal code" },
-    { name: "customerCountry", description: "Customer's country" },
-    { name: "shippingCompany", description: "Name of shipping company used" },
-    { name: "trackingNumber", description: "Shipping tracking number (if available)" },
-    { name: "items", description: "List of order items (use with {{#each items}})" },
-    { name: "this.name", description: "Product name (use inside {{#each items}})" },
-    { name: "this.quantity", description: "Product quantity (use inside {{#each items}})" },
-    { name: "companyName", description: "Your company name (from settings)" },
-    { name: "shippingDate", description: "The shipping date" },
-  ];
-  
-  // Insert a variable at cursor position
-  const insertVariable = (variable: string) => {
-    // Get textarea element
-    const textarea = document.querySelector('textarea[name="content"]') as HTMLTextAreaElement;
-    if (!textarea) return;
-    
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const text = shippingLabelForm.getValues().content;
-    const before = text.substring(0, start);
-    const after = text.substring(end, text.length);
-    
-    // Insert the variable at cursor position
-    const newText = `${before}{${variable}}${after}`;
-    shippingLabelForm.setValue('content', newText);
-    
-    // Set focus back to textarea and place cursor after inserted variable
-    setTimeout(() => {
-      textarea.focus();
-      const newCursorPos = start + variable.length + 2; // +2 for the {}
-      textarea.setSelectionRange(newCursorPos, newCursorPos);
-    }, 0);
-  };
-  
-  // Handler for template form submission
-  const onTemplateSubmit = (values: z.infer<typeof templateEditSchema>) => {
-    updateTemplateMutation.mutate(values);
-  };
-  
-  if (isEditing) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h3 className="text-lg font-medium">Edit Label Template</h3>
-            <p className="text-sm text-slate-500">Editing template for the CAB EOS1 printer using JScript</p>
-          </div>
-          
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setIsEditing(false);
-                if (labelTemplateData && labelTemplateData.content) {
-                  shippingLabelForm.reset({
-                    content: labelTemplateData.content,
-                  });
-                }
-              }}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={shippingLabelForm.handleSubmit(onTemplateSubmit)}
-              disabled={updateTemplateMutation.isPending}
-            >
-              {updateTemplateMutation.isPending ? "Saving..." : "Save Template"}
-            </Button>
-          </div>
-        </div>
         
-        <div className="grid grid-cols-1 gap-6">
-          <div className="space-y-4">
-            <div className="mb-4 flex justify-between items-center">
-              <h4 className="font-medium">Edit {templateOptions.find(t => t.value === selectedTemplate)?.label}</h4>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setShowVariableHelp(!showVariableHelp)}
-              >
-                <HelpCircle className="h-4 w-4 mr-2" />
-                {showVariableHelp ? "Hide Variables" : "Show Variables"}
-              </Button>
-            </div>
-            
-            {showVariableHelp && (
-              <div className="bg-slate-50 p-4 rounded-md mb-4">
-                <h5 className="font-medium mb-2">Available Variables</h5>
-                <p className="text-sm mb-2">Click a variable to insert it at cursor position:</p>
-                <div className="flex flex-wrap gap-2">
-                  {availableVariables.map((variable) => (
-                    <Badge 
-                      key={variable.name} 
-                      variant="outline" 
-                      className="cursor-pointer hover:bg-slate-100"
-                      onClick={() => insertVariable(variable.name)}
-                    >
-                      {variable.name}
-                    </Badge>
-                  ))}
-                </div>
-                <div className="mt-3 space-y-2">
-                  <Alert className="bg-yellow-50 border-yellow-200">
-                    <AlertTitle className="text-yellow-800 text-xs font-medium">
-                      CAB EOS1 JScript Format
-                    </AlertTitle>
-                    <AlertDescription className="text-yellow-800 text-xs">
-                      This template uses JScript for the CAB EOS1 printer. Variables are enclosed in curly braces like {`{variable}`}. 
-                      Refer to the <a href="#" className="underline">CAB programming manual</a> for JScript syntax.
-                    </AlertDescription>
-                  </Alert>
-                </div>
-              </div>
-            )}
-            
-            <Form {...shippingLabelForm}>
-              <div className="space-y-4">
-                <FormField
-                  control={shippingLabelForm.control}
-                  name="content"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Template JScript</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          {...field} 
-                          className="font-mono text-sm h-[500px]"
-                          spellCheck={false}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        JScript code for label printing. Variable format: {`{variable_name}`}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </Form>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
-  return (
-    <Card className="mt-4">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium">Shipping Label Editor</CardTitle>
-        <CardDescription>
-          Edit the shipping label template for the CAB EOS1 printer
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="flex items-center space-x-4">
-            <Select 
-              value={selectedTemplate} 
-              onValueChange={setSelectedTemplate}
-            >
-              <SelectTrigger className="w-[300px]">
-                <SelectValue placeholder="Select a template" />
-              </SelectTrigger>
-              <SelectContent>
-                {templateOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Button onClick={() => setIsEditing(true)}>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Template
-            </Button>
-            
-            <Button 
-              onClick={async () => {
-                try {
-                  const response = await fetch('/api/printer/test');
-                  const data = await response.json();
+        <TabsContent value="security" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Security Settings</CardTitle>
+              <CardDescription>
+                Manage authentication and permission settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Role Permissions</h3>
+                  <p className="text-sm text-slate-500">
+                    Configure what actions each role can perform in the system
+                  </p>
                   
-                  if (data.success) {
-                    toast({
-                      title: "Δοκιμή εκτυπωτή",
-                      description: "Η εντολή εκτύπωσης στάλθηκε στον εκτυπωτή CAB EOS 1 επιτυχώς!",
-                      variant: "default"
-                    });
-                  } else {
-                    toast({
-                      title: "Σφάλμα εκτυπωτή",
-                      description: data.message || "Προέκυψε σφάλμα κατά την εκτύπωση",
-                      variant: "destructive"
-                    });
-                  }
-                } catch (error) {
-                  console.error("Printer test error:", error);
-                  toast({
-                    title: "Σφάλμα εκτυπωτή",
-                    description: "Δεν ήταν δυνατή η επικοινωνία με τον εκτυπωτή. Ελέγξτε τη σύνδεση και τις ρυθμίσεις.",
-                    variant: "destructive"
-                  });
-                }
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <Printer className="h-4 w-4 mr-2" />
-              Δοκιμή Εκτυπωτή
-            </Button>
-          </div>
-          
-          {isLoadingLabelTemplate ? (
-            <div className="text-center py-4">
-              <div className="flex justify-center items-center gap-2">
-                <span className="animate-spin">
-                  <svg className="h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                </span>
-                <span>Loading template...</span>
-              </div>
-            </div>
-          ) : labelTemplateData ? (
-            <div className="mt-4">
-              <Alert className="bg-blue-50 border-blue-200">
-                <AlertTitle className="text-blue-800">Template Loaded</AlertTitle>
-                <AlertDescription className="text-blue-800">
-                  The template for {templateOptions.find(t => t.value === selectedTemplate)?.label} is loaded. Click Edit Template to modify it.
-                </AlertDescription>
-              </Alert>
-            </div>
-          ) : (
-            <div className="mt-4">
-              <Alert className="bg-yellow-50 border-yellow-200">
-                <AlertTitle className="text-yellow-800">Template Not Found</AlertTitle>
-                <AlertDescription className="text-yellow-800">
-                  This template doesn't exist yet. Click Edit Template to create it.
-                </AlertDescription>
-              </Alert>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-// Email Template Editor Component
-const EmailTemplateEditor = () => {
-  const { toast } = useToast();
-  const [selectedTemplate, setSelectedTemplate] = useState('order-shipped');
-  const [isEditing, setIsEditing] = useState(false);
-  const [showVariableHelp, setShowVariableHelp] = useState(false);
-  
-  // Template form
-  const emailTemplateForm = useForm<z.infer<typeof templateEditSchema>>({
-    resolver: zodResolver(templateEditSchema),
-    defaultValues: {
-      content: '',
-    }
-  });
-  
-  // Get template content query
-  const { data: emailTemplateData, isLoading: isLoadingEmailTemplate, refetch: refetchEmailTemplate } = useQuery({
-    queryKey: ['/api/email-settings/templates', selectedTemplate],
-    enabled: !!selectedTemplate,
-    queryFn: async () => {
-      const response = await apiRequest(`/api/email-settings/templates/${selectedTemplate}`, {
-        method: 'GET',
-      });
-      return response;
-    }
-  });
-  
-  // Effect to update form when template data changes
-  useEffect(() => {
-    if (emailTemplateData && emailTemplateData.content) {
-      emailTemplateForm.reset({
-        content: emailTemplateData.content,
-      });
-    }
-  }, [emailTemplateData, emailTemplateForm]);
-  
-  // Update template mutation
-  const updateTemplateMutation = useMutation({
-    mutationFn: async (values: z.infer<typeof templateEditSchema>) => {
-      return apiRequest(`/api/email-settings/templates/${selectedTemplate}`, {
-        method: 'PUT',
-        body: JSON.stringify(values),
-      });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Template Updated",
-        description: "The email template has been updated successfully.",
-      });
-      setIsEditing(false);
-      refetchEmailTemplate();
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to update template. " + (error instanceof Error ? error.message : String(error)),
-        variant: "destructive",
-      });
-    }
-  });
-  
-  // Template selection options
-  const templateOptions = [
-    { value: 'order-shipped', label: 'Order Shipped Notification' },
-    // Add more templates as needed
-  ];
-  
-  // Available variables for templates
-  const availableVariables = [
-    { name: "customerName", description: "Customer's full name" },
-    { name: "orderNumber", description: "Order number/ID" },
-    { name: "items", description: "List of order items (use with {{#each items}})" },
-    { name: "this.name", description: "Product name (use inside {{#each items}})" },
-    { name: "this.quantity", description: "Product quantity (use inside {{#each items}})" },
-    { name: "trackingNumber", description: "Shipping tracking number (if available)" },
-    { name: "shippingCompany", description: "Name of shipping company used" },
-    { name: "notes", description: "Additional order notes" },
-    { name: "companyName", description: "Your company name (from settings)" },
-    { name: "currentYear", description: "Current year (automatically inserted)" },
-  ];
-  
-  // Insert a variable at cursor position
-  const insertVariable = (variable: string) => {
-    // Get textarea element
-    const textarea = document.querySelector('textarea[name="content"]') as HTMLTextAreaElement;
-    if (!textarea) return;
-    
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const text = emailTemplateForm.getValues().content;
-    const before = text.substring(0, start);
-    const after = text.substring(end, text.length);
-    
-    // Insert the variable at cursor position
-    const newText = `${before}{{${variable}}}${after}`;
-    emailTemplateForm.setValue('content', newText);
-    
-    // Set focus back to textarea and place cursor after inserted variable
-    setTimeout(() => {
-      textarea.focus();
-      const newCursorPos = start + variable.length + 4; // +4 for the {{}}
-      textarea.setSelectionRange(newCursorPos, newCursorPos);
-    }, 0);
-  };
-  
-  // Handler for template form submission
-  const onTemplateSubmit = (values: z.infer<typeof templateEditSchema>) => {
-    updateTemplateMutation.mutate(values);
-  };
-  
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h3 className="text-lg font-medium">Email Templates</h3>
-          <p className="text-sm text-slate-500">Customize notification emails sent to customers</p>
-        </div>
-        
-        <div className="flex gap-2">
-          {isEditing ? (
-            <>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setIsEditing(false);
-                  if (emailTemplateData && emailTemplateData.content) {
-                    emailTemplateForm.reset({
-                      content: emailTemplateData.content,
-                    });
-                  }
-                }}
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={emailTemplateForm.handleSubmit(onTemplateSubmit)}
-                disabled={updateTemplateMutation.isPending}
-              >
-                {updateTemplateMutation.isPending ? "Saving..." : "Save Template"}
-              </Button>
-            </>
-          ) : (
-            <Button onClick={() => setIsEditing(true)}>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Template
-            </Button>
-          )}
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 gap-6">
-        <div className="space-y-4">
-          <div className="flex items-center space-x-4">
-            <Select 
-              value={selectedTemplate} 
-              onValueChange={setSelectedTemplate}
-              disabled={isEditing}
-            >
-              <SelectTrigger className="w-[300px]">
-                <SelectValue placeholder="Select a template" />
-              </SelectTrigger>
-              <SelectContent>
-                {templateOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {isLoadingEmailTemplate ? (
-            <div className="text-center py-4">
-              <div className="flex justify-center items-center gap-2">
-                <span className="animate-spin">
-                  <svg className="h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                </span>
-                <span>Loading template...</span>
-              </div>
-            </div>
-          ) : (
-            <div className="border rounded-md">
-              {isEditing ? (
-                <div className="p-4">
-                  {/* Template editor with variable helper */}
-                  <div className="mb-4 flex justify-between items-center">
-                    <h4 className="font-medium">Edit Template</h4>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setShowVariableHelp(!showVariableHelp)}
-                    >
-                      <HelpCircle className="h-4 w-4 mr-2" />
-                      {showVariableHelp ? "Hide Variables" : "Show Variables"}
-                    </Button>
-                  </div>
-                  
-                  {showVariableHelp && (
-                    <div className="bg-slate-50 p-4 rounded-md mb-4">
-                      <h5 className="font-medium mb-2">Available Variables</h5>
-                      <p className="text-sm mb-2">Click a variable to insert it at cursor position:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {availableVariables.map((variable) => (
-                          <Badge 
-                            key={variable.name} 
-                            variant="outline" 
-                            className="cursor-pointer hover:bg-slate-100"
-                            onClick={() => insertVariable(variable.name)}
-                          >
-                            {variable.name}
-                          </Badge>
-                        ))}
-                      </div>
-                      <div className="mt-3 space-y-2">
-                        <p className="text-xs text-slate-500">
-                          <strong>Conditional blocks:</strong> Use <code className="bg-slate-100 px-1">{"{{#if variableName}}"}</code> content <code className="bg-slate-100 px-1">{"{{/if}}"}</code>
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          <strong>Loops:</strong> Use <code className="bg-slate-100 px-1">{"{{#each items}}"}</code> content <code className="bg-slate-100 px-1">{"{{/each}}"}</code>
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <Form {...emailTemplateForm}>
-                    <div className="space-y-4">
-                      <FormField
-                        control={emailTemplateForm.control}
-                        name="content"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Template HTML</FormLabel>
-                            <FormControl>
-                              <Textarea 
-                                {...field} 
-                                className="font-mono text-sm h-[500px]"
-                                spellCheck={false}
+                  <div className="space-y-4">
+                    {['admin', 'warehouse', 'front_office'].map((role) => (
+                      <Card key={role}>
+                        <CardHeader>
+                          <CardTitle className="text-base capitalize">{role.replace('_', ' ')}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            {[
+                              'manage_users',
+                              'manage_products',
+                              'manage_orders',
+                              'manage_customers',
+                              'view_reports',
+                              'manage_settings'
+                            ].map((permission) => (
+                              <FormField
+                                key={permission}
+                                control={permissionForm.control}
+                                name={`${role}.${permission}`}
+                                render={({ field }) => (
+                                  <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                                    <div className="space-y-0.5">
+                                      <FormLabel className="text-base capitalize">
+                                        {permission.replace('_', ' ')}
+                                      </FormLabel>
+                                      <FormDescription>
+                                        Allow {role} to {permission.replace('_', ' ')}
+                                      </FormDescription>
+                                    </div>
+                                    <FormControl>
+                                      <Switch
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                      />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
                               />
-                            </FormControl>
-                            <FormDescription>
-                              HTML + Handlebars syntax for dynamic content. Variable format: {`{{variable_name}}`}
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </Form>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
-              ) : (
-                <div className="p-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <h4 className="font-medium">Template Preview</h4>
-                    <div className="flex items-center">
-                      <HelpCircle className="h-4 w-4 mr-2 text-slate-400" />
-                      <span className="text-sm text-slate-500">
-                        This template will be used for order shipped notifications
-                      </span>
-                    </div>
-                  </div>
-                  <div className="bg-slate-50 p-4 rounded-md overflow-auto max-h-[500px]">
-                    <pre className="text-xs font-mono whitespace-pre-wrap">{emailTemplateData?.content || 'No template content available'}</pre>
-                  </div>
-                  
-                  <div className="mt-4 p-4 border rounded-md bg-slate-50">
-                    <h5 className="font-medium text-sm mb-2">Available Variables</h5>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {availableVariables.map((variable) => (
-                        <div key={variable.name} className="text-xs">
-                          <code className="bg-slate-200 px-1 rounded">{`{{${variable.name}}}`}</code>
-                          <span className="text-slate-500 ml-2">{variable.description}</span>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Authentication Settings</h3>
+                  <p className="text-sm text-slate-500">
+                    Configure how users authenticate with the system
+                  </p>
+
+                  <FormField
+                    control={securityForm.control}
+                    name="requireStrongPasswords"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Strong Passwords</FormLabel>
+                          <FormDescription>
+                            Require passwords to meet complexity requirements
+                          </FormDescription>
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={securityForm.control}
+                    name="sessionTimeout"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Session Timeout</FormLabel>
+                        <FormDescription>
+                          Set the duration for user sessions
+                        </FormDescription>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="Minutes" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

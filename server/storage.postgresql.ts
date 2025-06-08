@@ -16,7 +16,8 @@ import {
   emailSettings, type EmailSettings, type InsertEmailSettings,
   companySettings, type CompanySettings, type InsertCompanySettings,
   notificationSettings, type NotificationSettings, type InsertNotificationSettings,
-  rolePermissions, type RolePermission, type InsertRolePermission,
+  roles, type Role, type InsertRole,
+  userRoles, type UserRole, type NewUserRole,
   orderQuality, type OrderQuality, type InsertOrderQuality,
   inventoryChanges, type InventoryChange, type InsertInventoryChange,
   callLogs, type CallLog, type InsertCallLog,
@@ -2110,105 +2111,128 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Role Permissions methods
-  async getRolePermissions(role: string): Promise<RolePermission[]> {
-    try {
-      // Get all permissions for this role
-      const permissions = await this.db
-        .select()
-        .from(rolePermissions)
-        .where(eq(rolePermissions.role, role as any));
-        
-      if (permissions.length === 0) {
-        // If no permissions found, initialize default ones
-        await this.initDefaultRolePermissions(role);
-        
-        // Fetch again after initialization
-        return await this.db
-          .select()
-          .from(rolePermissions)
-          .where(eq(rolePermissions.role, role as any));
-      }
-      
-      return permissions;
-    } catch (error) {
-      console.error(`Error getting permissions for role ${role}:`, error);
+  async getRolePermissions(role: string): Promise<UserRole[]> {
+    const roleRecord = await this.db
+      .select()
+      .from(roles)
+      .where(eq(roles.name, role))
+      .limit(1);
+
+    if (roleRecord.length === 0) {
       return [];
     }
+
+    const permissions = await this.db
+      .select()
+      .from(userRoles)
+      .where(eq(userRoles.roleId, roleRecord[0].id));
+
+    return permissions;
   }
-  
-  async getAllRolePermissions(): Promise<RolePermission[]> {
+
+  async setRolePermission(role: string, permission: string, enabled: boolean): Promise<UserRole> {
+    const roleRecord = await this.db
+      .select()
+      .from(roles)
+      .where(eq(roles.name, role))
+      .limit(1);
+
+    if (roleRecord.length === 0) {
+      throw new Error(`Role ${role} not found`);
+    }
+
+    const existingPermission = await this.db
+      .select()
+      .from(userRoles)
+      .where(eq(userRoles.roleId, roleRecord[0].id))
+      .limit(1);
+
+    if (existingPermission.length === 0) {
+      // Create new permission
+      const [newPermission] = await this.db
+        .insert(userRoles)
+        .values({
+          userId: 1, // Default to admin user
+          roleId: roleRecord[0].id,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+
+      if (!newPermission) {
+        throw new Error('Failed to create role permission');
+      }
+
+      return newPermission;
+    } else {
+      // Update existing permission
+      const [updatedPermission] = await this.db
+        .update(userRoles)
+        .set({ 
+          updatedAt: new Date()
+        })
+        .where(eq(userRoles.id, existingPermission[0].id))
+        .returning();
+
+      if (!updatedPermission) {
+        throw new Error('Failed to update role permission');
+      }
+
+      return updatedPermission;
+    }
+  }
+
+  async getAllRolePermissions(): Promise<UserRole[]> {
     try {
       // Get all role permissions
-      const allPermissions = await this.db
+      const permissions = await this.db
         .select()
-        .from(rolePermissions);
-        
-      if (allPermissions.length === 0) {
-        // If no permissions found, initialize default ones for all roles
-        await this.initDefaultRolePermissions();
-        
-        // Fetch again after initialization
-        return await this.db
-          .select()
-          .from(rolePermissions);
-      }
-      
-      return allPermissions;
+        .from(userRoles);
+
+      return permissions;
     } catch (error) {
       console.error('Error getting all role permissions:', error);
       return [];
     }
   }
-  
-  async updateRolePermission(role: string, permission: string, enabled: boolean): Promise<RolePermission | undefined> {
+
+  async updateRolePermission(role: string, permission: string, enabled: boolean): Promise<UserRole | undefined> {
     try {
-      // Check if this permission exists for this role
+      const roleRecord = await this.db
+        .select()
+        .from(roles)
+        .where(eq(roles.name, role))
+        .limit(1);
+
+      if (roleRecord.length === 0) {
+        throw new Error(`Role ${role} not found`);
+      }
+
       const existingPermission = await this.db
         .select()
-        .from(rolePermissions)
-        .where(and(
-          eq(rolePermissions.role, role as any),
-          eq(rolePermissions.permission, permission as any)
-        ));
-      
+        .from(userRoles)
+        .where(eq(userRoles.roleId, roleRecord[0].id))
+        .limit(1);
+
       if (existingPermission.length === 0) {
-        // Create new permission
-        const [newPermission] = await this.db
-          .insert(rolePermissions)
-          .values({
-            role: role as any,
-            permission: permission as any,
-            enabled,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          })
-          .returning();
-          
-        console.log(`Created new permission: ${role}:${permission} = ${enabled}`);
-        return newPermission;
-      } else {
-        // Update existing permission
-        const [updatedPermission] = await this.db
-          .update(rolePermissions)
-          .set({ 
-            enabled,
-            updatedAt: new Date()
-          })
-          .where(and(
-            eq(rolePermissions.role, role as any),
-            eq(rolePermissions.permission, permission as any)
-          ))
-          .returning();
-          
-        console.log(`Updated permission: ${role}:${permission} = ${enabled}`);
-        return updatedPermission;
+        return undefined;
       }
+
+      const [updatedPermission] = await this.db
+        .update(userRoles)
+        .set({ 
+          updatedAt: new Date()
+        })
+        .where(eq(userRoles.id, existingPermission[0].id))
+        .returning();
+
+      return updatedPermission;
     } catch (error) {
-      console.error(`Error updating permission ${role}:${permission}:`, error);
+      console.error(`Error updating permission for role ${role}:`, error);
       return undefined;
     }
   }
-  
+
   async checkPermission(role: string, permission: string): Promise<boolean> {
     try {
       // Admin always has all permissions
@@ -2219,10 +2243,10 @@ export class DatabaseStorage implements IStorage {
       // Check if this permission exists for this role
       const permissions = await this.db
         .select()
-        .from(rolePermissions)
+        .from(userRoles)
         .where(and(
-          eq(rolePermissions.role, role as any),
-          eq(rolePermissions.permission, permission as any)
+          eq(userRoles.role, role as any),
+          eq(userRoles.permission, permission as any)
         ));
       
       if (permissions.length === 0) {
@@ -2233,10 +2257,10 @@ export class DatabaseStorage implements IStorage {
         // Fetch the newly created permission
         const newPermissions = await this.db
           .select()
-          .from(rolePermissions)
+          .from(userRoles)
           .where(and(
-            eq(rolePermissions.role, role as any),
-            eq(rolePermissions.permission, permission as any)
+            eq(userRoles.role, role as any),
+            eq(userRoles.permission, permission as any)
           ));
           
         return newPermissions.length > 0 ? newPermissions[0].enabled : false;
@@ -4565,6 +4589,42 @@ export class DatabaseStorage implements IStorage {
       averageDaysToPayment,
       payments
     };
+  }
+
+  async getPermissionsForRole(roleName: string): Promise<string[]> {
+    // 1. Find the role ID by name
+    const roleResult = await this.db.select().from(roles).where(eq(roles.name, roleName));
+    if (!roleResult.length) return [];
+    const roleId = roleResult[0].id;
+
+    // 2. Join role_permissions and permissions to get permission names
+    const joinResult = await this.db
+      .select({ name: permissions.name })
+      .from(rolePermissions)
+      .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+      .where(eq(rolePermissions.roleId, roleId));
+
+    return joinResult.map(r => r.name);
+  }
+
+  async getRolePermissionsForUser(userId: number): Promise<UserRole[]> {
+    return await this.db.select().from(userRoles).where(eq(userRoles.userId, userId));
+  }
+
+  async assignRoleToUser(userId: number, roleName: string): Promise<UserRole> {
+    // Find the roleId for the given roleName
+    const role = await this.db.select().from(roles).where(eq(roles.name, roleName)).limit(1);
+    if (!role.length) throw new Error('Role not found');
+    const [newUserRole] = await this.db.insert(userRoles).values({ userId, roleId: role[0].id, createdAt: new Date(), updatedAt: new Date() }).returning();
+    return newUserRole;
+  }
+
+  async removeRoleFromUser(userId: number, roleName: string): Promise<boolean> {
+    // Find the roleId for the given roleName
+    const role = await this.db.select().from(roles).where(eq(roles.name, roleName)).limit(1);
+    if (!role.length) throw new Error('Role not found');
+    const result = await this.db.delete(userRoles).where(and(eq(userRoles.userId, userId), eq(userRoles.roleId, role[0].id)));
+    return result.rowCount > 0;
   }
 }
 

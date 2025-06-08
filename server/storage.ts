@@ -13,7 +13,6 @@ import {
   emailSettings, type EmailSettings, type InsertEmailSettings,
   companySettings, type CompanySettings, type InsertCompanySettings,
   notificationSettings, type NotificationSettings, type InsertNotificationSettings,
-  rolePermissions, type RolePermission, type InsertRolePermission,
   orderQuality, type OrderQuality, type InsertOrderQuality,
   inventoryChanges, type InventoryChange, type InsertInventoryChange,
   callLogs, type CallLog, type InsertCallLog,
@@ -31,10 +30,10 @@ import {
   materialConsumptions, type MaterialConsumption, type InsertMaterialConsumption,
   productionLogs, type ProductionLog, type InsertProductionLog,
   productionQualityChecks, type ProductionQualityCheck, type InsertProductionQualityCheck,
-  // Supplier payment tracking imports
   suppliers, type Supplier, type InsertSupplier,
   supplierInvoices, type SupplierInvoice, type InsertSupplierInvoice, 
-  supplierPayments, type SupplierPayment, type InsertSupplierPayment
+  supplierPayments, type SupplierPayment, type InsertSupplierPayment,
+  userRoles, type UserRole
 } from "@shared/schema";
 import { DatabaseStorage, initStorage } from './storage.postgresql';
 import { log } from './vite';
@@ -441,6 +440,11 @@ export interface IStorage {
       paymentMethod: string;
     }[];
   }>;
+
+  getPermissionsForRole(roleName: string): Promise<string[]>;
+  getRolePermissionsForUser(userId: number): Promise<UserRole[]>;
+  assignRoleToUser(userId: number, roleName: string): Promise<UserRole>;
+  removeRoleFromUser(userId: number, roleName: string): Promise<boolean>;
 }
 
 // We're keeping the MemStorage class definition for fallback
@@ -2783,6 +2787,58 @@ export class MemStorage implements IStorage {
     } catch (error) {
       console.error("Error initializing sample data:", error);
     }
+  }
+
+  async getPermissionsForRole(roleName: string): Promise<string[]> {
+    // This is a simple in-memory implementation for demonstration.
+    // In production, this should query the rolePermissions and permissions tables.
+    const permissions: string[] = [];
+    for (const rp of Array.from(this.rolePermissionsMap.values())) {
+      if (rp.role === roleName && rp.enabled) {
+        permissions.push(rp.permission);
+      }
+    }
+    return permissions;
+  }
+
+  async getRolePermissionsForUser(userId: number): Promise<UserRole[]> {
+    // This is a simple in-memory implementation for demonstration.
+    // In production, this should query the userRoles and roles tables.
+    const roles: UserRole[] = [];
+    for (const ur of Array.from(this.rolePermissionsMap.values())) {
+      if (ur.userId === userId && ur.enabled) {
+        roles.push(ur.role);
+      }
+    }
+    return roles;
+  }
+
+  async assignRoleToUser(userId: number, roleName: string): Promise<UserRole> {
+    // This is a simple in-memory implementation for demonstration.
+    // In production, this should query the userRoles and roles tables.
+    const id = this.rolePermissionsIdCounter++;
+    const newRole: UserRole = {
+      id,
+      userId,
+      roleName,
+      enabled: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.rolePermissionsMap.set(`${userId}-${roleName}`, newRole);
+    return newRole;
+  }
+
+  async removeRoleFromUser(userId: number, roleName: string): Promise<boolean> {
+    // This is a simple in-memory implementation for demonstration.
+    // In production, this should query the userRoles and roles tables.
+    const key = `${userId}-${roleName}`;
+    const role = this.rolePermissionsMap.get(key);
+    if (!role) return false;
+    role.enabled = false;
+    role.updatedAt = new Date();
+    this.rolePermissionsMap.set(key, role);
+    return true;
   }
 }
 

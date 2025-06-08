@@ -135,18 +135,25 @@ export function isAuthenticated(req: Request, res: Response, next: NextFunction)
   res.status(401).json({ message: 'Unauthorized' });
 }
 
-export function hasRole(roles: string[]) {
-  return (req: Request, res: Response, next: NextFunction) => {
+export function hasPermission(permission: string) {
+  return async (req: Request, res: Response, next: NextFunction) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
     
-    const user = req.user as User;
-    if (roles.includes(user.role)) {
-      return next();
+    try {
+      const user = req.user as User;
+      const userPermissions = await storage.getPermissionsForRole(user.role);
+      
+      if (userPermissions.includes(permission)) {
+        return next();
+      }
+      
+      res.status(403).json({ message: 'Forbidden - Insufficient permissions' });
+    } catch (error) {
+      console.error(`[auth] Error checking permissions: ${error}`);
+      res.status(500).json({ message: 'Internal server error while checking permissions' });
     }
-    
-    res.status(403).json({ message: 'Forbidden - Insufficient permissions' });
   };
 }
 

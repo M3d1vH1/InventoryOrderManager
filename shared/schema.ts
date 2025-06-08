@@ -3,7 +3,43 @@ import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// User Role Enum
+// Roles Schema
+export const roles = pgTable("roles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertRoleSchema = createInsertSchema(roles)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    name: z.string().min(2, { message: "Role name must be at least 2 characters" }),
+    description: z.string().optional(),
+  });
+
+export type InsertRole = z.infer<typeof insertRoleSchema>;
+export type Role = typeof roles.$inferSelect;
+
+// Permissions Schema
+export const permissions = pgTable("permissions", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertPermissionSchema = createInsertSchema(permissions)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    name: z.string().min(2, { message: "Permission name must be at least 2 characters" }),
+    description: z.string().optional(),
+  });
+
+export type InsertPermission = z.infer<typeof insertPermissionSchema>;
+export type Permission = typeof permissions.$inferSelect;
+
+// User Role Enum (keeping for backward compatibility)
 export const userRoleEnum = pgEnum('user_role', [
   'admin',
   'front_office',
@@ -446,22 +482,6 @@ export const permissionEnum = pgEnum('permission_type', [
   'view_email_templates',
   'edit_email_templates',
 ]);
-
-// Role permissions
-export const rolePermissions = pgTable("role_permissions", {
-  id: serial("id").primaryKey(),
-  role: userRoleEnum("role").notNull(),
-  permission: permissionEnum("permission").notNull(),
-  enabled: boolean("enabled").default(false).notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull(),
-});
-
-export const insertRolePermissionSchema = createInsertSchema(rolePermissions)
-  .omit({ id: true, createdAt: true, updatedAt: true });
-
-export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
-export type RolePermission = typeof rolePermissions.$inferSelect;
 
 // Order Quality Types Enum
 export const orderQualityTypeEnum = pgEnum('order_error_type', [
@@ -1159,7 +1179,11 @@ export const productionQualityChecks = pgTable("production_quality_checks", {
 });
 
 export const insertMaterialInventoryChangeSchema = createInsertSchema(materialInventoryChanges)
-  .omit({ id: true, createdAt: true })
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
   .extend({
     materialId: z.number(),
     changeType: z.enum([
@@ -1420,3 +1444,111 @@ export const insertSupplierPaymentSchema = createInsertSchema(supplierPayments)
 
 export type InsertSupplierPayment = z.infer<typeof insertSupplierPaymentSchema>;
 export type SupplierPayment = typeof supplierPayments.$inferSelect;
+
+// Label Templates Schema
+export const labelTemplates = pgTable("label_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  template: text("template").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertLabelTemplateSchema = createInsertSchema(labelTemplates)
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    name: z.string().min(2, { message: "Template name must be at least 2 characters" }),
+    template: z.string().min(1, { message: "Template content is required" }),
+    description: z.string().optional(),
+  });
+
+export type InsertLabelTemplate = z.infer<typeof insertLabelTemplateSchema>;
+export type LabelTemplate = typeof labelTemplates.$inferSelect;
+
+// Slack Integration Schema
+export const slackIntegration = pgTable("slack_integration", {
+  id: serial("id").primaryKey(),
+  webhookUrl: text("webhook_url").notNull(),
+  enabled: boolean("enabled").notNull().default(false),
+  notifyNewOrders: boolean("notify_new_orders").notNull().default(true),
+  notifyCallLogs: boolean("notify_call_logs").notNull().default(true),
+  notifyLowStock: boolean("notify_low_stock").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertSlackIntegrationSchema = createInsertSchema(slackIntegration)
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    webhookUrl: z.string().url({ message: "A valid Slack webhook URL is required" }),
+    enabled: z.boolean().default(false),
+    notifyNewOrders: z.boolean().default(true),
+    notifyCallLogs: z.boolean().default(true),
+    notifyLowStock: z.boolean().default(false),
+  });
+
+export type InsertSlackIntegration = z.infer<typeof insertSlackIntegrationSchema>;
+export type SlackIntegration = typeof slackIntegration.$inferSelect;
+
+// Inventory Adjustment Schema
+export const inventoryAdjustments = pgTable("inventory_adjustments", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").notNull(),
+  userId: integer("user_id").notNull(),
+  adjustmentType: text("adjustment_type").notNull(),
+  quantityBefore: integer("quantity_before").notNull(),
+  quantityAfter: integer("quantity_after").notNull(),
+  reason: text("reason"),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+});
+
+export const insertInventoryAdjustmentSchema = createInsertSchema(inventoryAdjustments)
+  .omit({ id: true, timestamp: true })
+  .extend({
+    productId: z.number(),
+    userId: z.number(),
+    adjustmentType: z.string().min(1, { message: "Adjustment type is required" }),
+    quantityBefore: z.number(),
+    quantityAfter: z.number(),
+    reason: z.string().optional(),
+  });
+
+export type InsertInventoryAdjustment = z.infer<typeof insertInventoryAdjustmentSchema>;
+export type InventoryAdjustment = typeof inventoryAdjustments.$inferSelect;
+
+// User Roles Schema
+export const userRoles = pgTable("user_roles", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  roleId: integer("role_id").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertUserRoleSchema = createInsertSchema(userRoles)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    userId: z.number(),
+    roleId: z.number(),
+  });
+
+export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
+export type UserRole = typeof userRoles.$inferSelect;
+
+// Role Permissions Schema
+export const rolePermissions = pgTable("role_permissions", {
+  id: serial("id").primaryKey(),
+  roleId: integer("role_id").notNull().references(() => roles.id),
+  permissionId: integer("permission_id").notNull().references(() => permissions.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertRolePermissionSchema = createInsertSchema(rolePermissions)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    roleId: z.number(),
+    permissionId: z.number(),
+  });
+
+export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
+export type RolePermission = typeof rolePermissions.$inferSelect;

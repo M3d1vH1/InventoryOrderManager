@@ -3,27 +3,17 @@ import { useSidebar } from "@/context/SidebarContext";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { BarcodeScanner } from "@/components/barcode";
-
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { SearchIcon, Tag } from "lucide-react";
+import BarcodeScanner from '@/components/barcode/BarcodeScanner';
+import { useTranslation } from 'react-i18next';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui';
+import { Input } from '@/components/ui';
+import { Button } from '@/components/ui';
+import { Badge } from '@/components/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
+import { useAuth } from '@/context/AuthContext';
+import { useLocation } from 'wouter';
+import { formatDistanceToNow } from 'date-fns';
+import { Package, Search, Plus, RefreshCw } from 'lucide-react';
 
 interface Product {
   id: number;
@@ -266,7 +256,7 @@ const Inventory = () => {
           <h2 className="font-semibold text-lg">Inventory Management</h2>
           <div className="flex items-center gap-2">
             <div className="relative">
-              <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
               <Input
                 type="text"
                 placeholder="Search products or SKU..."
@@ -288,7 +278,7 @@ const Inventory = () => {
                 <Select value={tagFilter} onValueChange={setTagFilter}>
                   <SelectTrigger className="w-[150px]">
                     <div className="flex items-center">
-                      <Tag className="w-4 h-4 mr-2" />
+                      <Search className="w-4 h-4 mr-2" />
                       <SelectValue placeholder="Filter by tag" />
                     </div>
                   </SelectTrigger>

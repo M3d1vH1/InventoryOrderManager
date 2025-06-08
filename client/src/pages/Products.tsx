@@ -29,8 +29,8 @@ import {
   Loader2, PackageCheck, PlusCircle, QrCode, Search, SlidersHorizontal, Trash2, X,
   Info as InfoIcon, Tag, AlertTriangle, LayoutGrid, Table, List
 } from "lucide-react";
-import { BarcodeScanner } from "@components/barcode/BarcodeScanner";
-import { BarcodeGenerator } from "@components/barcode/BarcodeGenerator";
+import BarcodeScanner from "@components/barcode/BarcodeScanner";
+import BarcodeGenerator from "@components/barcode/BarcodeGenerator";
 import { InventoryChangeHistory } from "../components/inventory/InventoryChangeHistory";
 import { ProductImage } from "../components/products/ProductImage";
 

@@ -1,7 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import JsBarcode from 'jsbarcode';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from '@/components/ui';
+import { Card, CardContent } from '@/components/ui';
+import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
+import { Printer } from 'lucide-react';
 
 interface BarcodeGeneratorProps {
   value: string;

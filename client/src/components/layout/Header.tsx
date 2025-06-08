@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { useSidebar } from "@/context/SidebarContext";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/context/NotificationContext";
 import { apiRequest } from "@/lib/queryClient";
-import { Menu, Bell, PlusCircle, PhoneCall, MoreVertical } from "lucide-react";
+import { Menu, Bell, PlusCircle, PhoneCall, MoreVertical, User } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +20,7 @@ import OrderForm from "@/components/orders/OrderForm";
 import CallLogForm from "@/components/call-logs/CallLogForm";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
+import { Menu as HeadlessUIMenu, Transition } from '@headlessui/react';
 
 const Header = () => {
   const { toggleSidebar, currentPage } = useSidebar();
@@ -141,33 +142,43 @@ const Header = () => {
           </DropdownMenu>
           
           {/* User profile dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <div className="flex items-center gap-2 cursor-pointer p-1 rounded-md hover:bg-slate-100">
-                <div className="w-8 h-8 bg-slate-300 rounded-full flex items-center justify-center text-slate-600">
-                  <i className="fas fa-user"></i>
-                </div>
-                <span className="hidden md:inline text-sm">{user?.fullName || "User"}</span>
-              </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>
-                {user?.fullName}
-                <div className="text-xs text-muted-foreground">
-                  {user?.role === 'admin' && 'Administrator'}
-                  {user?.role === 'front_office' && 'Front Office'}
-                  {user?.role === 'warehouse' && 'Warehouse Staff'}
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer" onClick={() => window.location.href = "/settings"}>
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer text-red-500" onClick={handleLogout}>
-                Logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <HeadlessUIMenu as="div" className="ml-3 relative">
+            <HeadlessUIMenu.Button className="max-w-xs bg-white flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              <span className="sr-only">Open user menu</span>
+              <User className="h-8 w-8 text-gray-400" aria-hidden="true" />
+            </HeadlessUIMenu.Button>
+            <Transition
+              as={Fragment}
+              enter="transition ease-out duration-100"
+              enterFrom="transform opacity-0 scale-95"
+              enterTo="transform opacity-100 scale-100"
+              leave="transition ease-in duration-75"
+              leaveFrom="transform opacity-100 scale-100"
+              leaveTo="transform opacity-0 scale-95"
+            >
+              <HeadlessUIMenu.Items className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                <HeadlessUIMenu.Item>
+                  {({ active }) => (
+                    <div className="px-4 py-2 text-sm text-gray-700">
+                      {user?.fullName}
+                    </div>
+                  )}
+                </HeadlessUIMenu.Item>
+                <HeadlessUIMenu.Item>
+                  {({ active }) => (
+                    <button
+                      onClick={handleLogout}
+                      className={`${
+                        active ? 'bg-gray-100' : ''
+                      } block w-full text-left px-4 py-2 text-sm text-gray-700`}
+                    >
+                      {t('Sign out')}
+                    </button>
+                  )}
+                </HeadlessUIMenu.Item>
+              </HeadlessUIMenu.Items>
+            </Transition>
+          </HeadlessUIMenu>
           
           {/* Mobile actions dropdown (only for small screens) */}
           <DropdownMenu>

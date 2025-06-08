@@ -9,7 +9,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useSidebar } from '@/context/SidebarContext';
 import { useUser } from '@/context/UserContext';
-import { PageHeader } from '@/components/common/PageHeader';
+import { PageHeader } from '@/components/common';
 import { useLocation } from 'wouter';
 import {
   Card,
@@ -593,8 +593,6 @@ const CalendarPage: React.FC = () => {
     console.log(`Created ${events.length} invoice events for calendar`);
     return events;
   };
-
-
 
   // Process inventory events
   const createInventoryEvents = (inventoryEvents: any[] | undefined): CalendarEvent[] => {
@@ -1292,7 +1290,7 @@ const CalendarPage: React.FC = () => {
                               {event.invoiceStatus === 'overdue' && <FileText className="h-4 w-4 text-[#EF4444]" />}
                               {event.invoiceStatus === 'paid' && <FileText className="h-4 w-4 text-[#10B981]" />}
                               {event.invoiceStatus === 'partially_paid' && <FileText className="h-4 w-4 text-[#F59E0B]" />}
-                              {(!event.invoiceStatus || event.invoiceStatus === 'pending') && <FileText className="h-4 w-4 text-[#0EA5E9]" />}
+                              {(event.invoiceStatus === 'pending' || !event.invoiceStatus) && <FileText className="h-4 w-4 text-[#0EA5E9]" />}
                             </>
                           )}
                           {event.type === 'payment' && !(event.invoiceNumber && event.supplierName) && <DollarSign className="h-4 w-4 text-[#14B8A6]" />}

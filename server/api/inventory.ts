@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { storage } from '../storage';
-import { isAuthenticated, hasRole } from '../auth';
+import { isAuthenticated, hasPermission } from '../auth';
 
 /**
  * Get all slow-moving products
