@@ -57,7 +57,9 @@ const paymentFormSchema = z.object({
       message: 'Amount must be a positive number',
     })
     .transform(val => parseFloat(val).toFixed(2)),
-  paymentMethod: z.string().min(1, { message: 'Payment method is required' }),
+  paymentMethod: z.enum(['bank_transfer', 'check', 'credit_card', 'cash', 'other'], {
+    required_error: 'Payment method is required'
+  }),
   bankAccount: z.string().optional(),
   referenceNumber: z.string().optional(),
   company: z.string().optional(),
@@ -82,14 +84,13 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
   const [step, setStep] = useState<'supplier' | 'invoice'>(payment ? 'invoice' : 'supplier');
   const [filteredInvoices, setFilteredInvoices] = useState<any[]>([]);
   
-  // Payment methods
+  // Payment methods - matching enum values
   const paymentMethods = [
-    'Bank Transfer',
-    'Credit Card',
-    'Cash',
-    'Check',
-    'Online Payment',
-    'Other'
+    { value: 'bank_transfer', label: 'Bank Transfer' },
+    { value: 'credit_card', label: 'Credit Card' },
+    { value: 'cash', label: 'Cash' },
+    { value: 'check', label: 'Check' },
+    { value: 'other', label: 'Other' }
   ];
   
   // Initialize form with payment data or defaults
@@ -100,7 +101,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
       invoiceId: '',
       paymentDate: new Date(),
       amount: '',
-      paymentMethod: '',
+      paymentMethod: 'bank_transfer' as const,
       bankAccount: '',
       referenceNumber: '',
       company: '',
@@ -247,7 +248,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
         invoiceId: payment.invoiceId?.toString() || '',
         paymentDate: payment.paymentDate ? new Date(payment.paymentDate) : new Date(),
         amount: payment.amount?.toString() || '',
-        paymentMethod: payment.paymentMethod || '',
+        paymentMethod: payment.paymentMethod || 'bank_transfer',
         bankAccount: payment.bankAccount || '',
         referenceNumber: payment.referenceNumber || payment.reference || '',
         company: payment.company || '',
@@ -264,7 +265,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
         invoiceId: '',
         paymentDate: new Date(),
         amount: '',
-        paymentMethod: '',
+        paymentMethod: 'bank_transfer' as const,
         bankAccount: '',
         referenceNumber: '',
         company: '',
@@ -694,8 +695,8 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
                           </FormControl>
                           <SelectContent>
                             {paymentMethods.map((method) => (
-                              <SelectItem key={method} value={method}>
-                                {t(`supplierPayments.payment.methods.${method.toLowerCase().replace(' ', '_')}`) || method}
+                              <SelectItem key={method.value} value={method.value}>
+                                {t(`supplierPayments.payment.methods.${method.value}`) || method.label}
                               </SelectItem>
                             ))}
                           </SelectContent>
