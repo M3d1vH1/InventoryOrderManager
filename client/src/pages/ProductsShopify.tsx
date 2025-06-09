@@ -1205,8 +1205,8 @@ const Products = () => {
                                     };
                                     reader.onerror = () => {
                                       toast({
-                                        title: "Invalid image",
-                                        description: "The selected file could not be loaded as an image",
+                                        title: t('products.invalidImage'),
+                                        description: t('products.imageLoadError'),
                                         variant: "destructive",
                                       });
                                       setImageFile(null);
@@ -1217,8 +1217,8 @@ const Products = () => {
                                   } catch (error) {
                                     console.error("Error processing image:", error);
                                     toast({
-                                      title: "Invalid image",
-                                      description: "The selected file could not be processed",
+                                      title: t('products.invalidImage'),
+                                      description: t('products.imageProcessError'),
                                       variant: "destructive",
                                     });
                                     setImageFile(null);
@@ -1235,14 +1235,14 @@ const Products = () => {
                           {/* Image requirements notice */}
                           <div className="mt-3 p-3 bg-slate-50 rounded-md border border-slate-200">
                             <h4 className="text-xs font-medium text-slate-700 mb-1">
-                              <Info className="inline-block h-3 w-3 mr-1" /> Image Requirements
+                              <Info className="inline-block h-3 w-3 mr-1" /> {t('products.imageRequirements')}
                             </h4>
                             <ul className="text-xs text-slate-600 space-y-1 pl-4 list-disc">
-                              <li><span className="font-semibold">Size:</span> Max: 2MB</li>
+                              <li><span className="font-semibold">{t('products.imageSize')}:</span> {t('products.imageSizeMax')}</li>
                               <li>
-                                <span className="font-semibold">Dimensions:</span> Min: 200x200px, Max: 1200x1200px
+                                <span className="font-semibold">{t('products.imageDimensions')}:</span> {t('products.imageDimensionsInfo')}
                               </li>
-                              <li><span className="font-semibold">Format:</span> JPG, PNG, GIF</li>
+                              <li><span className="font-semibold">{t('products.imageFormat')}:</span> {t('products.imageFormatInfo')}</li>
                             </ul>
                           </div>
                         </div>
@@ -1293,7 +1293,7 @@ const Products = () => {
                           {!!editingProduct && user?.role === "admin" && (
                             <FormDescription className="text-amber-500">
                               <AlertTriangle className="h-3 w-3 inline mr-1" />
-                              Warning: Changing SKU may affect other systems that reference this product
+                              {t('products.skuWarning')}
                             </FormDescription>
                           )}
                         </FormItem>
@@ -1323,7 +1323,7 @@ const Products = () => {
                       name="barcode"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('products.columns.barcode')}</FormLabel>
+                          <FormLabel>{t('products.barcode')}</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -1337,7 +1337,7 @@ const Products = () => {
                       name="location"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('products.columns.location')}</FormLabel>
+                          <FormLabel>{t('products.location')}</FormLabel>
                           <FormControl>
                             <Input {...field} placeholder={t('products.locationPlaceholder')} />
                           </FormControl>
@@ -1353,7 +1353,7 @@ const Products = () => {
                       name="minStockLevel"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('products.columns.minStock')}</FormLabel>
+                          <FormLabel>{t('products.minStockLevel')}</FormLabel>
                           <FormControl>
                             <Input type="number" min="0" {...field} />
                           </FormControl>
@@ -1367,7 +1367,7 @@ const Products = () => {
                       name="currentStock"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('products.columns.currentStock')}</FormLabel>
+                          <FormLabel>{t('products.currentStock')}</FormLabel>
                           <FormControl>
                             <Input type="number" min="0" {...field} />
                           </FormControl>
@@ -1383,7 +1383,7 @@ const Products = () => {
                       name="unitsPerBox"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('products.columns.unitsPerBox')}</FormLabel>
+                          <FormLabel>{t('products.unitsPerBox')}</FormLabel>
                           <FormControl>
                             <Input type="number" min="0" {...field} />
                           </FormControl>
@@ -1399,7 +1399,7 @@ const Products = () => {
                       name="tags"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('products.columns.tags')}</FormLabel>
+                          <FormLabel>{t('products.tags')}</FormLabel>
                           <FormDescription>
                             {t('products.enterTags')}
                           </FormDescription>
