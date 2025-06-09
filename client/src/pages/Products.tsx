@@ -104,6 +104,19 @@ export default function Products() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState("details");
 
+  // Query: Get all products
+  const { data: products = [], isLoading } = useQuery({
+    queryKey: ['/api/products'],
+    select: (data: any) => {
+      // Handle API response structure: { success: true, data: [...] }
+      if (data && typeof data === 'object' && 'data' in data) {
+        return Array.isArray(data.data) ? data.data : [];
+      }
+      // Fallback for direct array response
+      return Array.isArray(data) ? data : [];
+    }
+  });
+
   // Check URL parameters on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -118,7 +131,7 @@ export default function Products() {
     const viewParam = params.get("view");
     if (viewParam && products.length > 0) {
       const productId = parseInt(viewParam, 10);
-      const productToView = products.find(p => p.id === productId);
+      const productToView = products.find((p: any) => p.id === productId);
       if (productToView) {
         handleViewProduct(productToView);
       }
@@ -137,19 +150,6 @@ export default function Products() {
       }
     }
   }, [isDetailsDialogOpen]);
-
-  // Query: Get all products
-  const { data: products = [], isLoading } = useQuery({
-    queryKey: ['/api/products'],
-    select: (data: any) => {
-      // Handle API response structure: { success: true, data: [...] }
-      if (data && typeof data === 'object' && 'data' in data) {
-        return Array.isArray(data.data) ? data.data : [];
-      }
-      // Fallback for direct array response
-      return Array.isArray(data) ? data : [];
-    }
-  });
 
   // Filter products based on search, stock filter, and tags
   const filteredProducts = products.filter((product) => {
@@ -516,18 +516,22 @@ export default function Products() {
   };
 
   // Get unique tags for tag filter
-  const uniqueTags = products
-    .reduce((tags: string[], product) => {
-      if (product.tags && Array.isArray(product.tags)) {
-        product.tags.forEach(tag => {
-          if (!tags.includes(tag)) {
-            tags.push(tag);
-          }
-        });
-      }
-      return tags;
-    }, [])
-    .sort();
+  const uniqueTags = React.useMemo(() => {
+    if (!products || !Array.isArray(products)) return [];
+    
+    return products
+      .reduce((tags: string[], product: any) => {
+        if (product.tags && Array.isArray(product.tags)) {
+          product.tags.forEach((tag: string) => {
+            if (!tags.includes(tag)) {
+              tags.push(tag);
+            }
+          });
+        }
+        return tags;
+      }, [])
+      .sort();
+  }, [products]);
   
   // Toggle sort direction handler
   const toggleSortDirection = () => {
