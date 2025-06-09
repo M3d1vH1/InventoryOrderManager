@@ -45,7 +45,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
-// Define validation schema for payment form
+// Define validation schema for payment form - matching backend preprocessing
 const paymentFormSchema = z.object({
   supplierId: z.string().min(1, { message: 'Supplier is required' }),
   invoiceId: z.string().min(1, { message: 'Invoice is required' }),
@@ -60,10 +60,22 @@ const paymentFormSchema = z.object({
   paymentMethod: z.enum(['bank_transfer', 'check', 'credit_card', 'cash', 'other'], {
     required_error: 'Payment method is required'
   }),
-  bankAccount: z.string().optional(),
-  referenceNumber: z.string().optional(),
-  company: z.string().optional(),
-  notes: z.string().optional(),
+  bankAccount: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.string().optional()
+  ),
+  referenceNumber: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.string().optional()
+  ),
+  company: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.string().optional()
+  ),
+  notes: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.string().optional()
+  ),
 });
 
 type PaymentFormValues = z.infer<typeof paymentFormSchema>;

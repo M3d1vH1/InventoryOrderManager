@@ -49,7 +49,7 @@ import { cn } from "@/lib/utils";
 // to handle translation of error messages. The errorMap will translate any message
 // that includes 'supplierPayments.' prefix.
 
-// Define validation schema for invoice form - using translation keys for error messages
+// Define validation schema for invoice form - matching backend preprocessing
 const invoiceFormSchema = z.object({
   invoiceNumber: z.string().min(1, { message: 'supplierPayments.invoice.errors.invoiceNumberRequired' }),
   supplierId: z.string().min(1, { message: 'supplierPayments.invoice.errors.supplierRequired' }),
@@ -63,20 +63,38 @@ const invoiceFormSchema = z.object({
     .refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
       message: 'supplierPayments.invoice.errors.invalidAmount',
     }),
-  paidAmount: z.string()
-    .optional()
-    .transform(val => val === '' || val === undefined ? '0' : val)
-    .refine(val => !isNaN(parseFloat(val)) && parseFloat(val) >= 0, {
+  paidAmount: z.preprocess(
+    (val) => val === '' || val === null || val === undefined ? '0' : val,
+    z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) >= 0, {
       message: 'supplierPayments.invoice.errors.invalidPaidAmount',
-    }),
-  company: z.string().optional(), // Company name as free text field
-  reference: z.string().optional(), // General reference field
-  rfNumber: z.string().optional(), // Specific RF number field for payments
+    })
+  ),
+  company: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.string().optional()
+  ),
+  reference: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.string().optional()
+  ),
+  rfNumber: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.string().optional()
+  ),
   status: z.enum(['pending', 'paid', 'partially_paid', 'overdue', 'cancelled']),
   isRecurring: z.boolean().default(false),
-  recurringCycle: z.string().optional(),
-  notes: z.string().optional(),
-  attachmentPath: z.string().optional(),
+  recurringCycle: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.string().optional()
+  ),
+  notes: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.string().optional()
+  ),
+  attachmentPath: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.string().optional()
+  ),
 });
 
 type InvoiceFormValues = z.infer<typeof invoiceFormSchema>;

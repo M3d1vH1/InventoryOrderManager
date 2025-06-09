@@ -30,18 +30,54 @@ import { Loader } from 'lucide-react';
 // Define validation schema for supplier form with translation keys for errors
 const supplierFormSchema = z.object({
   name: z.string().min(2, { message: 'supplierPayments.supplier.errors.nameRequired' }),
-  contactPerson: z.string().optional(),
-  vatNumber: z.string().optional(),
-  email: z.string().email({ message: 'supplierPayments.supplier.errors.invalidEmail' }).optional().nullable(),
-  phone: z.string().optional(),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  postalCode: z.string().optional(),
-  country: z.string().optional(),
-  notes: z.string().optional(),
-  paymentTerms: z.string().optional(),
-  bankAccount: z.string().optional(),
+  contactPerson: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.string().optional()
+  ),
+  vatNumber: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.string().optional()
+  ),
+  email: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.union([z.string().email({ message: 'supplierPayments.supplier.errors.invalidEmail' }), z.string().length(0)]).optional().nullable()
+  ),
+  phone: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.string().optional()
+  ),
+  address: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.string().optional()
+  ),
+  city: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.string().optional()
+  ),
+  state: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.string().optional()
+  ),
+  postalCode: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.string().optional()
+  ),
+  country: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.string().optional()
+  ),
+  notes: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.string().optional()
+  ),
+  paymentTerms: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.string().optional()
+  ),
+  bankAccount: z.preprocess(
+    (val) => val === null || val === undefined || val === '' ? undefined : val,
+    z.string().optional()
+  ),
   isActive: z.boolean().default(true),
 });
 
