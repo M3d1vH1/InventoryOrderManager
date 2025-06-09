@@ -1563,3 +1563,6 @@ export const insertSupplierPaymentSchema = createInsertSchema(supplierPayments)
 
 export type InsertSupplierPayment = z.infer<typeof insertSupplierPaymentSchema>;
 export type SupplierPayment = typeof supplierPayments.$inferSelect;
+
+// Update schema for supplier payments - allows partial updates
+export const updateSupplierPaymentSchema = insertSupplierPaymentSchema.partial();
