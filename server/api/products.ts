@@ -70,7 +70,7 @@ const productSchemas = {
       z.string()
         .min(3, 'SKU must be at least 3 characters')
         .max(50, 'SKU must not exceed 50 characters')
-        .regex(/^[A-Z0-9-_]+$/i, 'SKU can only contain letters, numbers, hyphens, and underscores')
+        .regex(/^[A-Z0-9\-_.]+$/i, 'SKU can only contain letters, numbers, hyphens, underscores, and periods')
         .trim()
         .transform(val => val ? val.toUpperCase() : undefined)
         .optional()

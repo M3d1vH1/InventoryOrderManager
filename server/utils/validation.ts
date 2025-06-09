@@ -20,14 +20,8 @@ export function validateRequest(schemas: ValidationSchemas) {
     try {
       // Validate request body
       if (schemas.body) {
-        // Debug logging for validation issues
-        console.log('Validation debug - Request body:', JSON.stringify(req.body, null, 2));
-        console.log('Validation debug - Request method:', req.method);
-        console.log('Validation debug - Request URL:', req.url);
-        
         const bodyResult = schemas.body.safeParse(req.body);
         if (!bodyResult.success) {
-          console.log('Validation debug - Validation failed:', bodyResult.error.errors);
           throw new ValidationError(
             'Invalid request body',
             formatZodErrors(bodyResult.error)
