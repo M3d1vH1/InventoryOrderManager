@@ -248,7 +248,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
         invoiceId: payment.invoiceId?.toString() || '',
         paymentDate: payment.paymentDate ? new Date(payment.paymentDate) : new Date(),
         amount: payment.amount?.toString() || '',
-        paymentMethod: payment.paymentMethod || 'bank_transfer',
+        paymentMethod: (payment.paymentMethod as 'bank_transfer' | 'check' | 'credit_card' | 'cash' | 'other') || 'bank_transfer',
         bankAccount: payment.bankAccount || '',
         referenceNumber: payment.referenceNumber || payment.reference || '',
         company: payment.company || '',
