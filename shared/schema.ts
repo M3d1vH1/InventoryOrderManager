@@ -1360,14 +1360,38 @@ export const insertSupplierInvoiceSchema = createInsertSchema(supplierInvoices)
       z.number().min(0).nullable().optional()
     ),
     status: z.enum(['pending', 'paid', 'partially_paid', 'overdue', 'cancelled']).default('pending'),
-    description: z.string().optional(),
-    notes: z.string().optional(),
-    reference: z.string().optional(), // General reference field
-    rfNumber: z.string().optional(),  // Specific RF number field for payments
-    attachmentPath: z.string().optional(),
-    attachment: z.string().optional(),
-    attachmentUrl: z.string().optional(),
-    company: z.string().optional() // For UI purposes only, not stored in DB
+    description: z.preprocess(
+      (val) => val === null || val === undefined ? undefined : val,
+      z.string().optional()
+    ),
+    notes: z.preprocess(
+      (val) => val === null || val === undefined ? undefined : val,
+      z.string().optional()
+    ),
+    reference: z.preprocess(
+      (val) => val === null || val === undefined ? undefined : val,
+      z.string().optional()
+    ),
+    rfNumber: z.preprocess(
+      (val) => val === null || val === undefined ? undefined : val,
+      z.string().optional()
+    ),
+    attachmentPath: z.preprocess(
+      (val) => val === null || val === undefined ? undefined : val,
+      z.string().optional()
+    ),
+    attachment: z.preprocess(
+      (val) => val === null || val === undefined ? undefined : val,
+      z.string().optional()
+    ),
+    attachmentUrl: z.preprocess(
+      (val) => val === null || val === undefined ? undefined : val,
+      z.string().optional()
+    ),
+    company: z.preprocess(
+      (val) => val === null || val === undefined ? undefined : val,
+      z.string().optional()
+    )
   });
 
 export type InsertSupplierInvoice = z.infer<typeof insertSupplierInvoiceSchema>;
@@ -1432,10 +1456,22 @@ export const insertSupplierPaymentSchema = createInsertSchema(supplierPayments)
       z.number().min(0.01, { message: "Amount must be greater than 0" })
     ),
     paymentMethod: z.enum(['bank_transfer', 'check', 'credit_card', 'cash', 'other']),
-    referenceNumber: z.string().optional(),
-    reference: z.string().optional(),
-    bankAccount: z.string().optional(),
-    notes: z.string().optional(),
+    referenceNumber: z.preprocess(
+      (val) => val === null || val === undefined ? undefined : val,
+      z.string().optional()
+    ),
+    reference: z.preprocess(
+      (val) => val === null || val === undefined ? undefined : val,
+      z.string().optional()
+    ),
+    bankAccount: z.preprocess(
+      (val) => val === null || val === undefined ? undefined : val,
+      z.string().optional()
+    ),
+    notes: z.preprocess(
+      (val) => val === null || val === undefined ? undefined : val,
+      z.string().optional()
+    ),
     receiptPath: z.string().optional(),
     callbackRequired: z.boolean().default(false),
     // Accept multiple date formats for callbackDate
