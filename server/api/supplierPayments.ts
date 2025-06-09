@@ -290,7 +290,7 @@ router.get('/invoices/:id', async (req, res) => {
 router.post('/invoices', async (req, res) => {
   try {
     // Log the original request with custom formatting to avoid Date object serialization issues
-    console.log("Invoice creation request data - Raw:", req.body);
+    console.log("Invoice creation request data - Raw:", JSON.stringify(req.body, null, 2));
     
     // Raw types before validation (for debugging)
     console.log("Date types:", {
@@ -299,11 +299,26 @@ router.post('/invoices', async (req, res) => {
       dueDate: req.body.dueDate ? typeof req.body.dueDate : 'undefined'
     });
     
+    // Pre-process the data to ensure proper format
+    const preprocessedData = {
+      ...req.body,
+      // Ensure dates are properly formatted
+      issueDate: req.body.issueDate ? new Date(req.body.issueDate) : undefined,
+      dueDate: req.body.dueDate ? new Date(req.body.dueDate) : undefined,
+      invoiceDate: req.body.invoiceDate ? new Date(req.body.invoiceDate) : undefined,
+      // Ensure numeric fields are properly converted
+      supplierId: parseInt(req.body.supplierId),
+      amount: parseFloat(req.body.amount),
+      paidAmount: req.body.paidAmount ? parseFloat(req.body.paidAmount) : null
+    };
+
+    console.log("Preprocessed data:", JSON.stringify(preprocessedData, null, 2));
+    
     // Try to parse the data with the schema directly
     let data;
     try {
       // Validate against the schema - it will now handle type coercion
-      data = insertInvoiceSchema.parse(req.body);
+      data = insertInvoiceSchema.parse(preprocessedData);
     } catch (validationError: any) {
       console.error("Invoice validation error:", validationError);
       if (validationError instanceof z.ZodError) {
@@ -315,7 +330,8 @@ router.post('/invoices', async (req, res) => {
         return res.status(400).json({ 
           error: 'Validation error', 
           details: validationError.errors,
-          message: validationError.message
+          message: validationError.message,
+          received: preprocessedData
         });
       }
       throw validationError;
