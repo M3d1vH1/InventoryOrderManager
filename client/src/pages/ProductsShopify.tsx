@@ -240,6 +240,8 @@ const Products = () => {
         location: values.location?.trim() || undefined,
         imagePath: values.imagePath?.trim() || undefined,
         unitsPerBox: values.unitsPerBox === 0 ? undefined : values.unitsPerBox,
+        minStockLevel: Number(values.minStockLevel) || 10,
+        currentStock: Number(values.currentStock) || 0,
         tags: Array.isArray(values.tags) ? values.tags : []
       };
       
@@ -341,6 +343,8 @@ const Products = () => {
         location: values.location?.trim() || undefined,
         imagePath: values.imagePath?.trim() || undefined,
         unitsPerBox: values.unitsPerBox === 0 ? undefined : values.unitsPerBox,
+        minStockLevel: Number(values.minStockLevel) || 10,
+        currentStock: Number(values.currentStock) || 0,
         tags: Array.isArray(values.tags) ? values.tags : []
       };
       
