@@ -2979,7 +2979,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 <body>
   <div class="label-container">
     <div class="logo">
-      <img src="/shipping-logo.svg" onerror="this.src='/simple-logo.svg'; this.onerror=function(){this.outerHTML='<div style=\\'font-weight:bold;font-size:12pt;\\'>WAREHOUSE SYSTEM</div>'}">
+      <img src="/shipping-logo.png" onerror="this.src='/simple-logo.svg'; this.onerror=function(){this.outerHTML='<div style=\\'font-weight:bold;font-size:12pt;\\'>WAREHOUSE SYSTEM</div>'}">
     </div>
     <div class="order-number">Order: ${order.orderNumber}</div>
     <div class="customer">Customer: ${order.customerName}</div>
@@ -3153,7 +3153,7 @@ A 1
 </head>
 <body>
   <div class="label-container">
-    <img src="/shipping-logo.svg" class="logo" alt="Company Logo" onerror="this.src='/simple-logo.svg'; this.onerror=null; this.style.display='none';" />
+    <img src="/shipping-logo.png" class="logo" alt="Company Logo" onerror="this.src='/simple-logo.svg'; this.onerror=null; this.style.display='none';" />
     
     <div class="label-content">
       <div class="customer-info">
@@ -3819,9 +3819,9 @@ A 1
   app.use('/api/image-fix', imageUploadFixRouter);
   
   // Serve shipping logo with proper content type
-  app.get('/shipping-logo.svg', (req, res) => {
-    res.setHeader('Content-Type', 'image/svg+xml');
-    res.sendFile(path.join(process.cwd(), 'public', 'shipping-logo.svg'));
+  app.get('/shipping-logo.png', (req, res) => {
+    res.setHeader('Content-Type', 'image/png');
+    res.sendFile(path.join(process.cwd(), 'public', 'shipping-logo.png'));
   });
   
   app.get('/simple-logo.svg', (req, res) => {

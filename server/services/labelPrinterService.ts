@@ -147,8 +147,8 @@ S l1;0,0,${labelWidthDots},${labelHeightDots},100
 ; Set label size
 H ${labelHeightDots},0,T,P
 
-; Print logo at the top (using SVG logo)
-GI 10,10,"public/shipping-logo.svg"
+; Print logo at the top (using company logo)
+GI 10,10,"public/shipping-logo.png"
 
 ; Customer name (bold)
 T 10,50,0,3,pt15,b:"${customerInfo}"
