@@ -719,14 +719,14 @@ A 1
                 </TableCell>
                 <TableCell className="font-mono">{item.product?.sku || "N/A"}</TableCell>
                 <TableCell>
-                  <div className="font-medium">{item.product?.name || "Unknown Product"}</div>
+                  <div className="font-medium">{item.product?.name || t('orderPickingPage.pickList.unknownProduct')}</div>
                   {item.product?.currentStock !== undefined && item.product.currentStock < item.quantity && (
                     <div className="flex items-center mt-1">
                       <div className="rounded-full bg-red-100 p-1 mr-1">
                         <Info className="h-3 w-3 text-red-500" />
                       </div>
                       <span className="text-xs text-red-500">
-                        Low stock: {item.product?.currentStock} of {item.quantity} needed
+                        {t('orderPickingPage.pickList.lowStock')}: {item.product?.currentStock} {t('orderPickingPage.pickList.of')} {item.quantity} {t('orderPickingPage.pickList.needed')}
                       </span>
                     </div>
                   )}
@@ -734,11 +734,11 @@ A 1
                 <TableCell>
                   {item.product?.location || (
                     <>
-                      {item.product?.category === "widgets" && "Aisle A"}
-                      {item.product?.category === "connectors" && "Aisle B"}
-                      {item.product?.category === "default" && "Aisle A"}
-                      {item.product?.location || "Warehouse"}
-                      {item.product?.category === "other" && "Aisle E"}
+                      {item.product?.category === "widgets" && t('orderPickingPage.pickList.aisleA')}
+                      {item.product?.category === "connectors" && t('orderPickingPage.pickList.aisleB')}
+                      {item.product?.category === "default" && t('orderPickingPage.pickList.aisleA')}
+                      {item.product?.location || t('orderPickingPage.pickList.warehouse')}
+                      {item.product?.category === "other" && t('orderPickingPage.pickList.aisleE')}
                     </>
                   )}
                 </TableCell>
@@ -767,11 +767,11 @@ A 1
                       }}
                       disabled={order.status !== 'pending' || !item.picked}
                       className="w-20 text-right p-2 border rounded"
-                      aria-label={`Actual quantity for ${item.product?.name}`}
+                      aria-label={`${t('orderPickingPage.pickList.actualQuantityFor')} ${item.product?.name}`}
                     />
                     {item.actualQuantity !== item.quantity && item.picked && (
                       <div className="text-xs text-amber-600 mt-1 text-right">
-                        Missing: {item.quantity - (item.actualQuantity || 0)}
+                        {t('orderPickingPage.pickList.missing')}: {item.quantity - (item.actualQuantity || 0)}
                       </div>
                     )}
                   </div>
@@ -785,7 +785,7 @@ A 1
           <div className="mt-4 p-3 bg-slate-50 rounded-md border border-slate-200">
             <div className="flex items-center mb-1">
               <FileText className="h-4 w-4 mr-1 text-slate-500" />
-              <p className="text-sm font-medium">Order Notes:</p>
+              <p className="text-sm font-medium">{t('orderPickingPage.pickList.orderNotes')}:</p>
             </div>
             <p className="text-sm text-slate-600">{order.notes}</p>
           </div>
@@ -803,7 +803,7 @@ A 1
             disabled={order.status !== 'pending'}
           >
             <RefreshCcw className="mr-1 h-4 w-4" />
-            Reset Picked Items
+            {t('orderPickingPage.pickList.resetPickedItems')}
           </Button>
           
           <Button 
@@ -820,7 +820,7 @@ A 1
             disabled={order.status !== 'pending'}
           >
             <Truck className="mr-1 h-4 w-4" />
-            Mark All Picked
+            {t('orderPickingPage.pickList.markAllPicked')}
           </Button>
         </div>
         
@@ -831,7 +831,7 @@ A 1
           size="lg"
         >
           {updateOrderStatusMutation.isPending ? (
-            "Updating..."
+            "            t('orderPickingPage.pickList.updating')"
           ) : (
             <>
               <CheckCircle2 className="mr-2 h-5 w-5" />
