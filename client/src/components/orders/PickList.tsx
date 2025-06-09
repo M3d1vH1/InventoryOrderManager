@@ -479,7 +479,7 @@ A 1
   }
 
   return (
-    <>
+    <TooltipProvider>
       {/* Shipping Label Preview Dialog */}
       {labelPreviewData && (
         <ShippingLabelPreview
@@ -700,7 +700,19 @@ A 1
               <TableHead>{t('orderPickingPage.pickList.product')}</TableHead>
               <TableHead>{t('orderPickingPage.pickList.location')}</TableHead>
               <TableHead className="text-right">{t('orderPickingPage.pickList.requested')}</TableHead>
-              <TableHead className="text-right">{t('orderPickingPage.pickList.actualShipped')}</TableHead>
+              <TableHead className="text-right">
+                <div className="flex items-center justify-end gap-1">
+                  {t('orderPickingPage.pickList.actualShipped')}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-slate-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs max-w-48">{t('orderPickingPage.pickList.zeroQuantityHelp')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -923,7 +935,7 @@ A 1
         </DialogContent>
       </Dialog>
     </Card>
-    </>
+    </TooltipProvider>
   );
 };
 
