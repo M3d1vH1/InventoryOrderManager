@@ -146,9 +146,22 @@ router.post('/suppliers', async (req, res) => {
   try {
     const data = insertSupplierSchema.parse(req.body);
     // Ensure isActive is properly set if missing
+    // Convert null values to undefined for storage compatibility
     const supplierData = {
       ...data,
-      isActive: data.isActive ?? true
+      isActive: data.isActive ?? true,
+      contactPerson: data.contactPerson || undefined,
+      email: data.email || undefined,
+      phone: data.phone || undefined,
+      address: data.address || undefined,
+      city: data.city || undefined,
+      state: data.state || undefined,
+      postalCode: data.postalCode || undefined,
+      country: data.country || undefined,
+      vatNumber: data.vatNumber || undefined,
+      paymentTerms: data.paymentTerms || undefined,
+      bankAccount: data.bankAccount || undefined,
+      notes: data.notes || undefined
     };
     const newSupplier = await storage.createSupplier(supplierData);
     res.status(201).json(newSupplier);
@@ -175,6 +188,23 @@ router.patch('/suppliers/:id', async (req, res) => {
     if (!supplier) {
       return res.status(404).json({ error: 'Supplier not found' });
     }
+
+    // Convert null values to undefined for storage compatibility
+    const supplierUpdateData = {
+      ...data,
+      contactPerson: data.contactPerson || undefined,
+      email: data.email || undefined,
+      phone: data.phone || undefined,
+      address: data.address || undefined,
+      city: data.city || undefined,
+      state: data.state || undefined,
+      postalCode: data.postalCode || undefined,
+      country: data.country || undefined,
+      vatNumber: data.vatNumber || undefined,
+      paymentTerms: data.paymentTerms || undefined,
+      bankAccount: data.bankAccount || undefined,
+      notes: data.notes || undefined
+    };
 
     // Ensure proper type handling for isActive field
     const cleanData = {
