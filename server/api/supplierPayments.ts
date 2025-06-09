@@ -1051,7 +1051,7 @@ async function updateInvoicePaidAmount(invoiceId: number) {
     
     // Determine the new status based on payment amount
     let newStatus = invoice.status;
-    if (totalPaid >= invoice.amount) {
+    if (totalPaid >= Number(invoice.amount)) {
       newStatus = 'paid';
     } else if (totalPaid > 0) {
       newStatus = 'partially_paid';
@@ -1072,7 +1072,7 @@ async function updateInvoicePaidAmount(invoiceId: number) {
 // Helper function to get total paid amount
 async function getTotalPaidAmount() {
   const allPayments = await storage.getAllSupplierPayments();
-  return allPayments.reduce((sum, payment) => sum + payment.amount, 0);
+  return allPayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
 }
 
 // Helper function to get paid this month
@@ -1087,7 +1087,7 @@ async function getPaidThisMonth() {
       const paymentDate = new Date(payment.paymentDate);
       return paymentDate >= startOfCurrentMonth && paymentDate <= endOfCurrentMonth;
     })
-    .reduce((sum, payment) => sum + payment.amount, 0);
+    .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
 }
 
 // Helper function to calculate payment completion percentage
@@ -1096,11 +1096,11 @@ async function calculatePaymentCompletion() {
   
   const totalAmount = allInvoices
     .filter(invoice => invoice.status !== 'cancelled')
-    .reduce((sum, invoice) => sum + invoice.amount, 0);
+    .reduce((sum, invoice) => sum + Number(invoice.amount || 0), 0);
   
   const totalPaidAmount = allInvoices
     .filter(invoice => invoice.status !== 'cancelled')
-    .reduce((sum, invoice) => sum + invoice.paidAmount, 0);
+    .reduce((sum, invoice) => sum + Number(invoice.paidAmount || 0), 0);
   
   return totalAmount > 0 ? (totalPaidAmount / totalAmount) * 100 : 0;
 }
