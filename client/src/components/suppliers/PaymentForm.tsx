@@ -93,7 +93,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
-  const [step, setStep] = useState<'supplier' | 'invoice'>(payment ? 'invoice' : 'supplier');
+  const [step, setStep] = useState<'supplier' | 'invoice' | 'payment'>(payment ? 'invoice' : 'supplier');
   const [filteredInvoices, setFilteredInvoices] = useState<any[]>([]);
   
   // Payment methods - matching enum values
@@ -162,7 +162,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
       const supplierIdNum = parseInt(watchedSupplierId);
       const filtered = invoices.filter(invoice => {
         // Handle both snake_case and camelCase field names
-        const invoiceSupplierID = invoice.supplier_id || invoice.supplierId || invoice.supplierId;
+        const invoiceSupplierID = invoice.supplier_id || invoice.supplierId;
         const invoiceStatus = invoice.status;
         
         // Debug log for field names
@@ -175,7 +175,14 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
           invoiceNumber: invoice.invoiceNumber,
           matchesSupplier: invoiceSupplierID === supplierIdNum
         });
-                
+        
+        // When editing a payment, include the specific invoice being edited
+        // regardless of its current status
+        if (payment && (payment.invoiceId || payment.invoice_id) === invoice.id) {
+          return invoiceSupplierID === supplierIdNum;
+        }
+        
+        // For new payments, only show unpaid/partially paid invoices        
         return invoiceSupplierID === supplierIdNum && 
           (invoiceStatus === 'pending' || 
            invoiceStatus === 'partially_paid' || 
@@ -287,8 +294,8 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
       
       if (invoice && supplierId) {
         setSelectedInvoice(invoice);
-        // For editing with valid supplier, skip directly to payment details
-        setStep('payment');
+        // For editing with valid supplier and invoice, go directly to invoice step
+        setStep('invoice');
       } else if (invoice) {
         setSelectedInvoice(invoice);
         // Has invoice but no supplier ID, go to invoice step
@@ -510,7 +517,7 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
               </div>
             )}
 
-            {/* Step: Fill payment details */}
+            {/* Step: Select Invoice */}
             {step === 'invoice' && (
               <div className="space-y-4">
                 {!payment && (
