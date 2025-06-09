@@ -126,7 +126,10 @@ export const insertProductSchema = createInsertSchema(products)
       (val) => val === null || val === undefined ? undefined : val,
       z.string().optional()
     ),
-    unitsPerBox: z.number().optional(),
+    unitsPerBox: z.preprocess(
+      (val) => val === null || val === undefined || val === 0 ? undefined : val,
+      z.number().min(1).optional()
+    ),
     tags: z.array(z.string()).optional().default([]),
     lastStockUpdate: z.date().optional(),
   });
