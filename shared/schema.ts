@@ -110,9 +110,22 @@ export const insertProductSchema = createInsertSchema(products)
     categoryId: z.number(),
     minStockLevel: z.number().min(0),
     currentStock: z.number().min(0),
-    imagePath: z.string().optional(),
-    barcode: z.string().optional(),
-    location: z.string().optional(),
+    imagePath: z.preprocess(
+      (val) => val === null || val === undefined ? undefined : val,
+      z.string().optional()
+    ),
+    barcode: z.preprocess(
+      (val) => val === null || val === undefined ? undefined : val,
+      z.string().optional()
+    ),
+    location: z.preprocess(
+      (val) => val === null || val === undefined ? undefined : val,
+      z.string().optional()
+    ),
+    description: z.preprocess(
+      (val) => val === null || val === undefined ? undefined : val,
+      z.string().optional()
+    ),
     unitsPerBox: z.number().optional(),
     tags: z.array(z.string()).optional().default([]),
     lastStockUpdate: z.date().optional(),
