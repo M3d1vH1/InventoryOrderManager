@@ -2979,7 +2979,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 <body>
   <div class="label-container">
     <div class="logo">
-      <img src="/shipping-logo.png" onerror="this.src='/simple-logo.svg'; this.onerror=function(){this.outerHTML='<div style=\\'font-weight:bold;font-size:12pt;\\'>OLIVE OIL COMPANY</div>'}">
+      <img src="/shipping-logo.svg" onerror="this.src='/simple-logo.svg'; this.onerror=function(){this.outerHTML='<div style=\\'font-weight:bold;font-size:12pt;\\'>WAREHOUSE SYSTEM</div>'}">
     </div>
     <div class="order-number">Order: ${order.orderNumber}</div>
     <div class="customer">Customer: ${order.customerName}</div>

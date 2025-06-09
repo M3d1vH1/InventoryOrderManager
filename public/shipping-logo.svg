@@ -1,0 +1,6 @@
+<svg width="150" height="45" viewBox="0 0 150 45" xmlns="http://www.w3.org/2000/svg">
+  <rect width="150" height="45" fill="#2563eb" rx="4"/>
+  <text x="75" y="15" font-family="Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="white">WAREHOUSE</text>
+  <text x="75" y="30" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="white">MANAGEMENT</text>
+  <text x="75" y="42" font-family="Arial, sans-serif" font-size="8" text-anchor="middle" fill="#93c5fd">SYSTEM</text>
+</svg>
