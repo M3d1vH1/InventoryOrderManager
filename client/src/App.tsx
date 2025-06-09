@@ -42,6 +42,7 @@ const PageLoadingFallback = () => (
 const NotFound = React.lazy(() => import("@/pages/not-found"));
 const Dashboard = React.lazy(() => import("@/pages/Dashboard"));
 const Orders = React.lazy(() => import("@/pages/Orders"));
+const Products = React.lazy(() => import("@/pages/Products"));
 const ProductsShopify = React.lazy(() => import("@/pages/ProductsShopify"));
 const Inventory = React.lazy(() => import("@/pages/Inventory"));
 const Reports = React.lazy(() => import("@/pages/Reports"));
