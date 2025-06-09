@@ -314,32 +314,44 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
 
   // Form submission handler
   const onSubmit = (data: PaymentFormValues) => {
-    // Convert string values to numbers and ensure payment method is in the correct format
+    // Validate and convert numeric fields
+    const invoiceId = parseInt(data.invoiceId);
+    const amount = parseFloat(data.amount);
+    
+    if (isNaN(invoiceId) || isNaN(amount) || amount <= 0) {
+      toast({
+        title: t('common.error'),
+        description: 'Invalid invoice ID or amount',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Convert payment method to proper enum format
+    const paymentMethodMap: { [key: string]: string } = {
+      'Bank Transfer': 'bank_transfer',
+      'Credit Card': 'credit_card',
+      'Cash': 'cash',
+      'Check': 'check',
+      'Online Payment': 'other',
+      'Other': 'other'
+    };
+    
+    const normalizedPaymentMethod = paymentMethodMap[data.paymentMethod] || 'other';
+
+    // Convert and clean data for backend
     const formattedData = {
-      ...data,
-      invoiceId: parseInt(data.invoiceId),
-      amount: parseFloat(data.amount),
-      // Make sure paymentMethod is in the correct enum format (snake_case)
-      paymentMethod: data.paymentMethod.toLowerCase().replace(' ', '_'),
-      // Ensure all fields including notes and referenceNumber are properly included
-      notes: data.notes || null,
-      referenceNumber: data.referenceNumber || null,
-      bankAccount: data.bankAccount || null,
-      company: data.company || null,
+      invoiceId: invoiceId,
+      amount: amount,
+      paymentDate: data.paymentDate,
+      paymentMethod: normalizedPaymentMethod,
+      notes: data.notes?.trim() || null,
+      referenceNumber: data.referenceNumber?.trim() || null,
+      bankAccount: data.bankAccount?.trim() || null,
+      company: data.company?.trim() || null,
     };
 
-    console.log('Submitting payment data with field details:', {
-      ...formattedData,
-      fieldCheck: {
-        hasNotes: !!data.notes,
-        notesValue: data.notes,
-        hasReference: !!data.referenceNumber,
-        referenceValue: data.referenceNumber,
-        hasCompany: !!data.company,
-        companyValue: data.company
-      }
-    });
-    
+    console.log('Submitting payment data:', formattedData);
     savePaymentMutation.mutate(formattedData);
   };
 
