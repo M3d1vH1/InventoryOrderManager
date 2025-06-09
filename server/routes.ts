@@ -895,7 +895,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get order items
       const items = await storage.getOrderItems(order.id);
       
-      res.json({ ...order, items });
+      // Fetch product details for each item
+      const itemsWithProducts = await Promise.all(
+        items.map(async (item) => {
+          try {
+            const product = await storage.getProduct(item.productId);
+            return { ...item, product };
+          } catch (error) {
+            console.error(`Failed to fetch product ${item.productId}:`, error);
+            return item; // Return item without product if fetch fails
+          }
+        })
+      );
+      
+      res.json({ ...order, items: itemsWithProducts });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
