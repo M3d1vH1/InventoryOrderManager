@@ -64,7 +64,8 @@ const invoiceFormSchema = z.object({
       message: 'supplierPayments.invoice.errors.invalidAmount',
     }),
   paidAmount: z.string()
-    .refine(val => !isNaN(parseFloat(val)) && parseFloat(val) >= 0, {
+    .optional()
+    .refine(val => val === '' || val === undefined || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), {
       message: 'supplierPayments.invoice.errors.invalidPaidAmount',
     }),
   company: z.string().optional(), // Company name as free text field
@@ -111,8 +112,8 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
       supplierId: '',
       invoiceDate: new Date(),
       dueDate: new Date(),
-      amount: '0',
-      paidAmount: '', // Start with empty paid amount to allow user to specify or leave blank
+      amount: '',
+      paidAmount: '0', // Default to 0 for new invoices
       company: '', // Company name as free text field
       reference: '', // General reference field
       rfNumber: '', // Specific RF number field for payments
@@ -149,8 +150,8 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
         supplierId: supplierId.toString(),
         invoiceDate: invoiceDate ? new Date(invoiceDate) : new Date(),
         dueDate: dueDate ? new Date(dueDate) : new Date(),
-        amount: amount?.toString() || '0',
-        paidAmount: paidAmount ? paidAmount.toString() : '',
+        amount: amount?.toString() || '',
+        paidAmount: paidAmount ? paidAmount.toString() : '0',
         company: company || '', // Company name as free text
         reference: reference, // General reference field
         rfNumber: rfNumber, // Specific RF number field
@@ -166,8 +167,8 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
         supplierId: '',
         invoiceDate: new Date(),
         dueDate: new Date(),
-        amount: '0',
-        paidAmount: '', // Empty string to allow clearing the paid amount
+        amount: '',
+        paidAmount: '0', // Default to 0 for new invoices
         company: '', // Company name as free text
         reference: '', // General reference field
         rfNumber: '', // Specific RF number field
@@ -281,34 +282,29 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
 
   // Form submission handler
   const onSubmit = (data: InvoiceFormValues) => {
-    // Send the Date objects directly - our updated schema can handle them
-    // We also keep the full Date objects for more accurate date handling
-    
-    // Handle paidAmount to set to undefined if it's blank or null, also handle string to number conversion
-    let paidAmount = undefined;
-    if (data.paidAmount !== null && data.paidAmount !== '' && data.paidAmount !== undefined) {
-      paidAmount = parseFloat(data.paidAmount.toString());
+    // Handle paidAmount properly - convert to number or null
+    let paidAmount = null;
+    if (data.paidAmount && data.paidAmount !== '' && data.paidAmount !== '0') {
+      const parsed = parseFloat(data.paidAmount);
+      if (!isNaN(parsed)) {
+        paidAmount = parsed;
+      }
     }
     
-    // Convert string values to numbers and map the fields to correct schema names
-    // Map invoiceDate to both invoiceDate and issueDate fields to avoid confusion
-    // between client and server naming
+    // Convert string values to proper types for backend
     const formattedData = {
-      invoiceNumber: data.invoiceNumber,
-      supplierId: data.supplierId, // Now schema handles string-to-number coercion
-      issueDate: data.invoiceDate,  // Send full Date object, schema will handle it
-      invoiceDate: data.invoiceDate, // Also send as invoiceDate
-      dueDate: data.dueDate,        // Send full Date object, schema will handle it
-      amount: data.amount,          // Schema will handle number coercion
-      paidAmount: paidAmount,       // Allow undefined to be passed through
-      company: data.company || null, // Company name as free text
-      reference: data.reference || null, // General reference field
-      rfNumber: data.rfNumber || null, // Specific RF number field for payments
+      invoiceNumber: data.invoiceNumber.trim(),
+      supplierId: parseInt(data.supplierId), // Convert to number
+      issueDate: data.invoiceDate,  // Date object
+      dueDate: data.dueDate,        // Date object
+      amount: parseFloat(data.amount), // Convert to number
+      paidAmount: paidAmount,       // Number or null
+      company: data.company?.trim() || null,
+      reference: data.reference?.trim() || null,
+      rfNumber: data.rfNumber?.trim() || null,
       status: data.status,
-      notes: data.notes || null,
-      attachmentPath: data.attachmentPath || null,
-      isRecurring: data.isRecurring,
-      recurringCycle: data.isRecurring && data.recurringCycle ? data.recurringCycle : undefined,
+      notes: data.notes?.trim() || null,
+      attachmentPath: data.attachmentPath?.trim() || null
     };
 
     console.log("Submitting invoice data:", formattedData);
