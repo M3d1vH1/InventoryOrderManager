@@ -1377,35 +1377,35 @@ export const insertSupplierInvoiceSchema = createInsertSchema(supplierInvoices)
     ),
     status: z.enum(['pending', 'paid', 'partially_paid', 'overdue', 'cancelled']).default('pending'),
     description: z.preprocess(
-      (val) => val === null || val === undefined ? undefined : val,
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
       z.string().optional()
     ),
     notes: z.preprocess(
-      (val) => val === null || val === undefined ? undefined : val,
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
       z.string().optional()
     ),
     reference: z.preprocess(
-      (val) => val === null || val === undefined ? undefined : val,
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
       z.string().optional()
     ),
     rfNumber: z.preprocess(
-      (val) => val === null || val === undefined ? undefined : val,
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
       z.string().optional()
     ),
     attachmentPath: z.preprocess(
-      (val) => val === null || val === undefined ? undefined : val,
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
       z.string().optional()
     ),
     attachment: z.preprocess(
-      (val) => val === null || val === undefined ? undefined : val,
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
       z.string().optional()
     ),
     attachmentUrl: z.preprocess(
-      (val) => val === null || val === undefined ? undefined : val,
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
       z.string().optional()
     ),
     company: z.preprocess(
-      (val) => val === null || val === undefined ? undefined : val,
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
       z.string().optional()
     )
   });
@@ -1488,18 +1488,41 @@ export const insertSupplierPaymentSchema = createInsertSchema(supplierPayments)
       (val) => val === null || val === undefined || val === '' ? undefined : val,
       z.string().optional()
     ),
-    receiptPath: z.string().optional(),
-    callbackRequired: z.boolean().default(false),
+    receiptPath: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string().optional()
+    ),
+    callbackRequired: z.preprocess(
+      (val) => {
+        if (val === null || val === undefined || val === '') return false;
+        if (typeof val === 'string') return val === 'true';
+        return Boolean(val);
+      },
+      z.boolean().default(false)
+    ),
     // Accept multiple date formats for callbackDate
     callbackDate: z.union([
       z.date(),
-      z.string().transform(val => val ? new Date(val) : undefined),
+      z.string().transform(val => val && val !== '' ? new Date(val) : undefined),
       z.number().transform(val => new Date(val)),
       z.undefined()
     ]).optional(),
-    callbackNotes: z.string().optional(),
-    callbackCompleted: z.boolean().default(false),
-    company: z.string().optional() // Company information for the payment
+    callbackNotes: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string().optional()
+    ),
+    callbackCompleted: z.preprocess(
+      (val) => {
+        if (val === null || val === undefined || val === '') return false;
+        if (typeof val === 'string') return val === 'true';
+        return Boolean(val);
+      },
+      z.boolean().default(false)
+    ),
+    company: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string().optional()
+    ) // Company information for the payment
   });
 
 export type InsertSupplierPayment = z.infer<typeof insertSupplierPaymentSchema>;
