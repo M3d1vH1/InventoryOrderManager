@@ -55,7 +55,8 @@ const paymentFormSchema = z.object({
   amount: z.string().min(1, { message: 'Amount is required' })
     .refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
       message: 'Amount must be a positive number',
-    }),
+    })
+    .transform(val => parseFloat(val).toFixed(2)),
   paymentMethod: z.string().min(1, { message: 'Payment method is required' }),
   bankAccount: z.string().optional(),
   referenceNumber: z.string().optional(),

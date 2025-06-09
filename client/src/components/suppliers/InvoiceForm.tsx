@@ -60,12 +60,13 @@ const invoiceFormSchema = z.object({
     required_error: "supplierPayments.invoice.errors.dueDateRequired",
   }),
   amount: z.string().min(1, { message: 'supplierPayments.invoice.errors.amountRequired' })
-    .refine(val => !isNaN(parseFloat(val)), {
+    .refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
       message: 'supplierPayments.invoice.errors.invalidAmount',
     }),
   paidAmount: z.string()
     .optional()
-    .refine(val => val === '' || val === undefined || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), {
+    .transform(val => val === '' || val === undefined ? '0' : val)
+    .refine(val => !isNaN(parseFloat(val)) && parseFloat(val) >= 0, {
       message: 'supplierPayments.invoice.errors.invalidPaidAmount',
     }),
   company: z.string().optional(), // Company name as free text field

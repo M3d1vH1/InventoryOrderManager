@@ -85,12 +85,8 @@ const router = Router();
 // Ensure most routes are protected except specific ones needed by the Calendar dashboard
 // Protected routes middleware will be applied individually to allow some public access
 
-// Supplier validation schemas
-const insertSupplierSchema = createInsertSchema(suppliers).omit({
-  id: true,
-  createdAt: true
-});
-
+// Use the enhanced schema from shared/schema.ts
+const insertSupplierSchema = sharedInsertSupplierSchema;
 const updateSupplierSchema = insertSupplierSchema.partial();
 
 // Use the enhanced schema from shared/schema.ts instead of local definition
@@ -1010,7 +1006,7 @@ router.get('/summary', async (req, res) => {
         overdueAmount: parseFloat(overdueResult.rows[0].total_overdue),
         dueWithin30Days: parseFloat(pendingResult.rows[0].total_pending),
         paymentCompletion: 0, // We'll calculate this below
-        upcomingPayments: [], // We'll add this below
+        upcomingPayments: [] as any[], // We'll add this below
         recentPayments: recentPaymentsResult.rows,
         invoices: invoicesResult.rows // Add all invoices for the calendar
       };
@@ -1050,7 +1046,7 @@ router.get('/summary', async (req, res) => {
           i.due_date ASC
       `);
       
-      dashboardSummary.upcomingPayments = upcomingPaymentsResult.rows;
+      dashboardSummary.upcomingPayments = upcomingPaymentsResult.rows as any[];
       
       res.json(dashboardSummary);
     } finally {
