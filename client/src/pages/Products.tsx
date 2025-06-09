@@ -792,9 +792,7 @@ export default function Products() {
               </CardContent>
             </Card>
           ) : (
-            <Tabs defaultValue="grid" className="w-full" onValueChange={(value) => {
-                console.log("Tab changed to:", value); // For debugging
-              }}>
+            <Tabs defaultValue="grid" className="w-full">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-4">
                   <TabsList>
@@ -835,18 +833,18 @@ export default function Products() {
                 </p>
               </div>
               
-              <TabsContent value="grid" className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <TabsContent value="grid" className="mt-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                   {sortedProducts.map((product) => (
-                    <Card key={product.id} className="overflow-hidden">
-                      <div className="aspect-square relative bg-muted/50">
+                    <Card key={product.id} className="group overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all duration-200 bg-white">
+                      <div className="aspect-square relative bg-gray-50 overflow-hidden">
                         <ProductImage 
                           imagePath={product.imagePath}
                           productName={product.name}
-                          className="w-full h-full"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                         />
                         
-                        <div className="absolute top-2 right-2 flex gap-1">
+                        <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                           <Button 
                             variant="outline" 
                             size="icon"
@@ -867,28 +865,28 @@ export default function Products() {
                           )}
                         </div>
                       </div>
-                      <CardContent className="p-4">
-                        <h3 className="font-semibold text-lg line-clamp-2 mb-1">{product.name}</h3>
-                        <p className="text-sm text-muted-foreground mb-2">SKU: {product.sku}</p>
+                      <CardContent className="p-4 space-y-3">
+                        <div>
+                          <h3 className="font-medium text-sm line-clamp-2 text-gray-900 mb-1">{product.name}</h3>
+                          <p className="text-xs text-gray-500">SKU: {product.sku}</p>
+                        </div>
                         
                         <div className="flex justify-between items-center">
-                          <div>
-                            <Badge 
-                              variant={product.currentStock === 0 
-                                ? "destructive" 
-                                : (product.currentStock <= product.minStockLevel ? "warning" : "success")}
-                              className="capitalize"
-                            >
-                              {product.currentStock === 0
-                                ? t('products.outOfStock')
-                                : (product.currentStock <= product.minStockLevel
-                                  ? t('products.lowStock')
-                                  : t('products.inStock')
-                                )
-                              }
-                            </Badge>
-                          </div>
-                          <span className="text-sm font-medium">
+                          <Badge 
+                            variant={product.currentStock === 0 
+                              ? "destructive" 
+                              : (product.currentStock <= product.minStockLevel ? "secondary" : "default")}
+                            className="text-xs"
+                          >
+                            {product.currentStock === 0
+                              ? t('products.outOfStock')
+                              : (product.currentStock <= product.minStockLevel
+                                ? t('products.lowStock')
+                                : t('products.inStock')
+                              )
+                            }
+                          </Badge>
+                          <span className="text-sm font-semibold text-gray-900">
                             {product.currentStock} {t('products.units')}
                           </span>
                         </div>
