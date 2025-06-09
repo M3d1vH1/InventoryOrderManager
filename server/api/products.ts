@@ -96,11 +96,14 @@ const productSchemas = {
       .max(100, 'Location must not exceed 100 characters')
       .trim()
       .optional(),
-    unitsPerBox: z.number()
-      .int('Units per box must be an integer')
-      .positive('Units per box must be positive')
-      .max(1000, 'Units per box cannot exceed 1,000')
-      .optional(),
+    unitsPerBox: z.preprocess(
+      (val) => val === null || val === undefined || val === 0 ? undefined : val,
+      z.number()
+        .int('Units per box must be an integer')
+        .positive('Units per box must be positive')
+        .max(1000, 'Units per box cannot exceed 1,000')
+        .optional()
+    ),
     tags: z.array(z.string().trim().min(1)).optional()
   }),
 
