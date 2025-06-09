@@ -4,7 +4,8 @@ import { storage } from '../storage';
 import { isAuthenticated } from '../auth';
 import { createInsertSchema } from 'drizzle-zod';
 import { suppliers, supplierInvoices as invoices, supplierPayments as payments, 
-         insertSupplierInvoiceSchema, insertSupplierPaymentSchema } from '@shared/schema';
+         insertSupplierInvoiceSchema, insertSupplierPaymentSchema, 
+         insertSupplierSchema as sharedInsertSupplierSchema } from '@shared/schema';
 import { subDays, startOfMonth, endOfMonth, format } from 'date-fns';
 import { pool } from '../db';
 
@@ -203,16 +204,11 @@ router.patch('/suppliers/:id', async (req, res) => {
       vatNumber: data.vatNumber || undefined,
       paymentTerms: data.paymentTerms || undefined,
       bankAccount: data.bankAccount || undefined,
-      notes: data.notes || undefined
+      notes: data.notes || undefined,
+      isActive: data.isActive === null ? undefined : data.isActive
     };
 
-    // Ensure proper type handling for isActive field
-    const cleanData = {
-      ...data,
-      isActive: data.isActive ?? undefined // Convert null to undefined
-    };
-
-    const updatedSupplier = await storage.updateSupplier(id, cleanData);
+    const updatedSupplier = await storage.updateSupplier(id, supplierUpdateData);
     res.json(updatedSupplier);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
@@ -478,10 +474,7 @@ router.patch('/invoices/:id', async (req, res) => {
       }
     }
 
-    // Update the user who modified the invoice
-    if (req.user && req.user.id) {
-      data.updatedById = req.user.id;
-    }
+    // Note: updatedById tracking handled at database level
 
     const updatedInvoice = await storage.updateSupplierInvoice(id, data);
     res.json(updatedInvoice);
