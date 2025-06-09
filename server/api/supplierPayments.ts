@@ -145,7 +145,12 @@ router.get('/suppliers/:id', async (req, res) => {
 router.post('/suppliers', async (req, res) => {
   try {
     const data = insertSupplierSchema.parse(req.body);
-    const newSupplier = await storage.createSupplier(data);
+    // Ensure isActive is properly set if missing
+    const supplierData = {
+      ...data,
+      isActive: data.isActive ?? true
+    };
+    const newSupplier = await storage.createSupplier(supplierData);
     res.status(201).json(newSupplier);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
@@ -171,7 +176,13 @@ router.patch('/suppliers/:id', async (req, res) => {
       return res.status(404).json({ error: 'Supplier not found' });
     }
 
-    const updatedSupplier = await storage.updateSupplier(id, data);
+    // Ensure proper type handling for isActive field
+    const cleanData = {
+      ...data,
+      isActive: data.isActive ?? undefined // Convert null to undefined
+    };
+
+    const updatedSupplier = await storage.updateSupplier(id, cleanData);
     res.json(updatedSupplier);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
@@ -588,10 +599,11 @@ router.post('/payments', async (req, res) => {
       });
     }
 
-    // Add createdBy if available
-    if (req.user && req.user.id) {
-      data.createdById = req.user.id;
-    }
+    // Add metadata fields if user is available
+    const paymentData = {
+      ...data,
+      ...(req.user?.id && { createdById: req.user.id })
+    };
 
     console.log("Validated payment data:", JSON.stringify(data, null, 2));
     
@@ -653,6 +665,9 @@ router.post('/payments', async (req, res) => {
         );
         
         const invoiceAmount = parseFloat(invoiceResult.rows[0].amount);
+        
+        // Calculate total paid amount including this new payment
+        const totalPaid = totalPaidSoFar + Number(data.amount);
         
         // Determine the new status based on payment amount
         let newStatus = invoice.status;
@@ -1032,7 +1047,7 @@ async function updateInvoicePaidAmount(invoiceId: number) {
     }
     
     const invoicePayments = await storage.getSupplierPaymentsByInvoice(invoiceId);
-    const totalPaid = invoicePayments.reduce((sum, payment) => sum + payment.amount, 0);
+    const totalPaid = invoicePayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
     
     // Determine the new status based on payment amount
     let newStatus = invoice.status;
