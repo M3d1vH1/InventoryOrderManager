@@ -463,7 +463,7 @@ A 1
     }
   }, [pickedItems, order.items]);
 
-  // Check if all items are picked
+  // Check if all items are picked (or processed with 0 quantity)
   const allItemsPicked = order.items && 
     order.items.length > 0 && 
     order.items.every(item => pickedItems[item.id]);
@@ -763,15 +763,23 @@ A 1
                             };
                             setOrderItemsWithProducts(updatedItems);
                           }
+                          
+                          // Automatically mark item as picked when quantity is changed
+                          if (!pickedItems[item.id]) {
+                            handleItemPick(item.id);
+                          }
                         }
                       }}
-                      disabled={order.status !== 'pending' || !item.picked}
+                      disabled={order.status !== 'pending'}
                       className="w-20 text-right p-2 border rounded"
                       aria-label={`${t('orderPickingPage.pickList.actualQuantityFor')} ${item.product?.name}`}
                     />
                     {item.actualQuantity !== item.quantity && item.picked && (
                       <div className="text-xs text-amber-600 mt-1 text-right">
-                        {t('orderPickingPage.pickList.missing')}: {item.quantity - (item.actualQuantity || 0)}
+                        {item.actualQuantity === 0 ? 
+                          t('orderPickingPage.pickList.outOfStock') : 
+                          `${t('orderPickingPage.pickList.missing')}: ${item.quantity - (item.actualQuantity || 0)}`
+                        }
                       </div>
                     )}
                   </div>

@@ -533,6 +533,7 @@
       "warehouse": "Αποθήκη",
       "actualQuantityFor": "Πραγματική ποσότητα για",
       "missing": "Λείπουν",
+      "outOfStock": "Εξαντλήθηκε",
       "orderNotes": "Σημειώσεις Παραγγελίας",
       "resetPickedItems": "Επαναφορά Συλλεχθέντων",
       "markAllPicked": "Επισήμανση Όλων ως Συλλεχθέντα",
