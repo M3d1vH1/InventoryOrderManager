@@ -1473,19 +1473,19 @@ export const insertSupplierPaymentSchema = createInsertSchema(supplierPayments)
     ),
     paymentMethod: z.enum(['bank_transfer', 'check', 'credit_card', 'cash', 'other']),
     referenceNumber: z.preprocess(
-      (val) => val === null || val === undefined ? undefined : val,
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
       z.string().optional()
     ),
     reference: z.preprocess(
-      (val) => val === null || val === undefined ? undefined : val,
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
       z.string().optional()
     ),
     bankAccount: z.preprocess(
-      (val) => val === null || val === undefined ? undefined : val,
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
       z.string().optional()
     ),
     notes: z.preprocess(
-      (val) => val === null || val === undefined ? undefined : val,
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
       z.string().optional()
     ),
     receiptPath: z.string().optional(),
