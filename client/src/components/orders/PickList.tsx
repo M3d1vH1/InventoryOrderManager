@@ -886,7 +886,7 @@ A 1
               variant="outline" 
               onClick={() => setShowBoxCountDialog(false)}
             >
-              Cancel
+              {t('orderPickingPage.pickList.cancel')}
             </Button>
             <div className="flex gap-2">
               <Button 
@@ -898,7 +898,7 @@ A 1
                 disabled={updateOrderStatusMutation.isPending}
                 className="text-sm"
               >
-                {updateOrderStatusMutation.isPending ? "Processing..." : "Skip Printing"}
+                {updateOrderStatusMutation.isPending ? t('orderPickingPage.pickList.processing') : t('orderPickingPage.pickList.skipPrinting')}
               </Button>
               <Button 
                 onClick={(e) => {
@@ -908,7 +908,7 @@ A 1
                 disabled={boxCount < 1 || updateOrderStatusMutation.isPending}
                 className="text-sm"
               >
-                {updateOrderStatusMutation.isPending ? "Processing..." : "Print Labels"}
+                {updateOrderStatusMutation.isPending ? t('orderPickingPage.pickList.processing') : t('orderPickingPage.pickList.printLabels')}
               </Button>
             </div>
           </DialogFooter>
