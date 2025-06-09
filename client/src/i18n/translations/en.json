@@ -554,7 +554,10 @@
     "imageFormatInfo": "JPG, PNG, GIF",
     "skuWarning": "Warning: Changing SKU may affect other systems that reference this product",
     "enterTags": "Enter tags separated by commas",
-    "updateProduct": "Update Product"
+    "updateProduct": "Update Product",
+    "loading": "Loading...",
+    "noLocation": "No location specified",
+    "showingProducts": "Showing {{showing}} of {{total}} products"
   },
   "customers": {
     "title": "Customers",

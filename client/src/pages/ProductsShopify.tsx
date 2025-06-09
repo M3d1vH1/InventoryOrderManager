@@ -699,11 +699,11 @@ const Products = () => {
                       
                       <div className="p-4">
                         <h3 className="font-medium text-lg text-slate-900 truncate mb-1">{product.name}</h3>
-                        <p className="text-sm text-slate-500 mb-3">{t('products.columns.sku')}: {product.sku}</p>
+                        <p className="text-sm text-slate-500 mb-3">{t('products.sku')}: {product.sku}</p>
                         
                         <div className="grid grid-cols-2 gap-3 mb-3">
                           <div className="bg-slate-50 rounded-md p-2 flex flex-col items-center">
-                            <span className="text-xs text-slate-500 mb-1">{t('products.columns.currentStock')}</span>
+                            <span className="text-xs text-slate-500 mb-1">{t('products.currentStock')}</span>
                             <span className={`font-semibold ${
                               product.currentStock === 0 
                                 ? 'text-red-600' 
@@ -716,7 +716,7 @@ const Products = () => {
                           </div>
                           
                           <div className="bg-slate-50 rounded-md p-2 flex flex-col items-center">
-                            <span className="text-xs text-slate-500 mb-1">{t('products.columns.unitsPerBox')}</span>
+                            <span className="text-xs text-slate-500 mb-1">{t('products.unitsPerBox')}</span>
                             <span className="font-semibold text-slate-700">{product.unitsPerBox || '-'}</span>
                           </div>
                         </div>
@@ -776,11 +776,11 @@ const Products = () => {
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
-                        <th className="text-left py-3 px-4 font-semibold">{t('products.columns.product')}</th>
-                        <th className="text-left py-3 px-4 font-semibold">{t('products.columns.sku')}</th>
-                        <th className="text-center py-3 px-4 font-semibold">{t('products.columns.stock')}</th>
-                        <th className="text-center py-3 px-4 font-semibold">{t('products.columns.unitsPerBox')}</th>
-                        <th className="text-left py-3 px-4 font-semibold">{t('products.columns.location')}</th>
+                        <th className="text-left py-3 px-4 font-semibold">{t('products.name')}</th>
+                        <th className="text-left py-3 px-4 font-semibold">{t('products.sku')}</th>
+                        <th className="text-center py-3 px-4 font-semibold">{t('products.stock')}</th>
+                        <th className="text-center py-3 px-4 font-semibold">{t('products.unitsPerBox')}</th>
+                        <th className="text-left py-3 px-4 font-semibold">{t('products.location')}</th>
                         <th className="text-right py-3 px-4 font-semibold">{t('common.actions')}</th>
                       </tr>
                     </thead>
@@ -1005,7 +1005,7 @@ const Products = () => {
                         {/* Right side stats */}
                         <div className="flex flex-row md:flex-col items-center gap-4 md:w-[120px] md:border-l md:border-slate-100 md:pl-4">
                           <div className="bg-slate-50 rounded-lg p-3 w-full text-center">
-                            <div className="text-xs text-slate-500 mb-1">{t('products.columns.currentStock')}</div>
+                            <div className="text-xs text-slate-500 mb-1">{t('products.currentStock')}</div>
                             <div className={`font-bold text-xl ${
                               product.currentStock === 0 
                                 ? 'text-red-600' 
@@ -1019,7 +1019,7 @@ const Products = () => {
                           </div>
                           
                           <div className="flex flex-col items-center text-center">
-                            <div className="text-xs text-slate-500 mb-1">{t('products.columns.unitsPerBox')}</div>
+                            <div className="text-xs text-slate-500 mb-1">{t('products.unitsPerBox')}</div>
                             <div className="font-medium text-slate-700">
                               {product.unitsPerBox || '-'}
                             </div>
