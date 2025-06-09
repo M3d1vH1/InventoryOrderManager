@@ -169,10 +169,10 @@ const PickList = ({ order }: { order: Order }) => {
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       queryClient.invalidateQueries({ queryKey: ['/api/unshipped-items'] });
       toast({
-        title: "Order status updated",
+        title: t('orderPickingPage.orderStatusUpdated'),
         description: hasPartialFulfillment 
-          ? "The partial order has been approved and marked as picked" 
-          : "The order has been marked as picked",
+          ? t('orderPickingPage.partialOrderApproved')
+          : t('orderPickingPage.orderMarkedAsPicked'),
         variant: "default"
       });
       
@@ -187,7 +187,7 @@ const PickList = ({ order }: { order: Order }) => {
       }
       
       toast({
-        title: "Error updating order",
+        title: t('common.error'),
         description: error.message,
         variant: "destructive",
       });
@@ -257,8 +257,8 @@ const PickList = ({ order }: { order: Order }) => {
     } else {
       // Show toast if skipping
       toast({
-        title: "Labels skipped",
-        description: "Order marked as picked without printing labels",
+        title: t('orderPickingPage.labelsSkipped'),
+        description: t('orderPickingPage.skipLabelsDescription'),
         variant: "default"
       });
     }
@@ -288,8 +288,8 @@ const PickList = ({ order }: { order: Order }) => {
     // Only proceed if we have a valid box count from user input
     if (boxCount < 1) {
       toast({
-        title: "Error",
-        description: "Box count must be at least 1",
+        title: t('common.error'),
+        description: t('orderPickingPage.boxCountError'),
         variant: "destructive"
       });
       return;
@@ -393,8 +393,8 @@ A 1
       
     } catch (error: any) {
       toast({
-        title: "Error generating labels",
-        description: error.message || "An error occurred while generating shipping labels",
+        title: t('orderPickingPage.errorGeneratingLabels'),
+        description: error.message || t('orderPickingPage.errorGeneratingLabels'),
         variant: "destructive"
       });
     }
@@ -413,8 +413,8 @@ A 1
       // Mark the item as picked
       handleItemPick(orderItem.id);
       toast({
-        title: "Item scanned",
-        description: `${orderItem.product?.name} has been marked as picked`,
+        title: t('orderPickingPage.itemScanned'),
+        description: `${orderItem.product?.name} ${t('orderPickingPage.itemMarkedAsPicked')}`,
       });
     } else if (!orderItem) {
       toast({
