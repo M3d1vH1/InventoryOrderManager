@@ -232,9 +232,14 @@ const Products = () => {
 
   const createProductMutation = useMutation({
     mutationFn: async (values: ProductFormValues) => {
-      // Ensure tags is always an array to prevent "value.map is not a function" error
+      // Sanitize form data - convert empty strings to undefined for optional fields
       const productData = {
         ...values,
+        barcode: values.barcode?.trim() || undefined,
+        description: values.description?.trim() || undefined,
+        location: values.location?.trim() || undefined,
+        imagePath: values.imagePath?.trim() || undefined,
+        unitsPerBox: values.unitsPerBox === 0 ? undefined : values.unitsPerBox,
         tags: Array.isArray(values.tags) ? values.tags : []
       };
       
@@ -328,9 +333,14 @@ const Products = () => {
 
   const updateProductMutation = useMutation({
     mutationFn: async ({ id, values }: { id: number; values: ProductFormValues }) => {
-      // Ensure tags is always an array to prevent "value.map is not a function" error
+      // Sanitize form data - convert empty strings to undefined for optional fields
       const productData = {
         ...values,
+        barcode: values.barcode?.trim() || undefined,
+        description: values.description?.trim() || undefined,
+        location: values.location?.trim() || undefined,
+        imagePath: values.imagePath?.trim() || undefined,
+        unitsPerBox: values.unitsPerBox === 0 ? undefined : values.unitsPerBox,
         tags: Array.isArray(values.tags) ? values.tags : []
       };
       

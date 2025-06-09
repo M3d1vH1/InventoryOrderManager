@@ -57,54 +57,85 @@ const productSchemas = {
 
   // Update product request body schema - all fields optional for partial updates
   updateProduct: insertProductSchema.partial().extend({
-    name: z.string()
-      .min(2, 'Product name must be at least 2 characters')
-      .max(100, 'Product name must not exceed 100 characters')
-      .trim()
-      .optional(),
-    sku: z.string()
-      .min(3, 'SKU must be at least 3 characters')
-      .max(50, 'SKU must not exceed 50 characters')
-      .regex(/^[A-Z0-9-_]+$/i, 'SKU can only contain letters, numbers, hyphens, and underscores')
-      .trim()
-      .transform(val => val ? val.toUpperCase() : undefined)
-      .optional(),
-    barcode: z.string()
-      .min(8, 'Barcode must be at least 8 characters')
-      .max(20, 'Barcode must not exceed 20 characters')
-      .regex(/^[0-9]+$/, 'Barcode can only contain numbers')
-      .optional(),
-    categoryId: z.number()
-      .int('Category ID must be an integer')
-      .positive('Category ID must be positive')
-      .optional(),
-    description: z.string()
-      .max(1000, 'Description must not exceed 1000 characters')
-      .trim()
-      .optional(),
-    minStockLevel: z.number()
-      .int('Minimum stock level must be an integer')
-      .min(0, 'Minimum stock level cannot be negative')
-      .max(10000, 'Minimum stock level cannot exceed 10,000')
-      .optional(),
-    currentStock: z.number()
-      .int('Current stock must be an integer')
-      .min(0, 'Current stock cannot be negative')
-      .max(100000, 'Current stock cannot exceed 100,000')
-      .optional(),
-    location: z.string()
-      .max(100, 'Location must not exceed 100 characters')
-      .trim()
-      .optional(),
+    name: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string()
+        .min(2, 'Product name must be at least 2 characters')
+        .max(100, 'Product name must not exceed 100 characters')
+        .trim()
+        .optional()
+    ),
+    sku: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string()
+        .min(3, 'SKU must be at least 3 characters')
+        .max(50, 'SKU must not exceed 50 characters')
+        .regex(/^[A-Z0-9-_]+$/i, 'SKU can only contain letters, numbers, hyphens, and underscores')
+        .trim()
+        .transform(val => val ? val.toUpperCase() : undefined)
+        .optional()
+    ),
+    barcode: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string()
+        .min(8, 'Barcode must be at least 8 characters')
+        .max(20, 'Barcode must not exceed 20 characters')
+        .regex(/^[0-9]+$/, 'Barcode can only contain numbers')
+        .optional()
+    ),
+    categoryId: z.preprocess(
+      (val) => val === null || val === undefined ? undefined : val,
+      z.number()
+        .int('Category ID must be an integer')
+        .positive('Category ID must be positive')
+        .optional()
+    ),
+    description: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string()
+        .max(1000, 'Description must not exceed 1000 characters')
+        .trim()
+        .optional()
+    ),
+    minStockLevel: z.preprocess(
+      (val) => val === null || val === undefined ? undefined : val,
+      z.number()
+        .int('Minimum stock level must be an integer')
+        .min(0, 'Minimum stock level cannot be negative')
+        .max(10000, 'Minimum stock level cannot exceed 10,000')
+        .optional()
+    ),
+    currentStock: z.preprocess(
+      (val) => val === null || val === undefined ? undefined : val,
+      z.number()
+        .int('Current stock must be an integer')
+        .min(0, 'Current stock cannot be negative')
+        .max(100000, 'Current stock cannot exceed 100,000')
+        .optional()
+    ),
+    location: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string()
+        .max(100, 'Location must not exceed 100 characters')
+        .trim()
+        .optional()
+    ),
     unitsPerBox: z.preprocess(
-      (val) => val === null || val === undefined || val === 0 ? undefined : val,
+      (val) => val === null || val === undefined || val === 0 || val === '' ? undefined : val,
       z.number()
         .int('Units per box must be an integer')
         .positive('Units per box must be positive')
         .max(1000, 'Units per box cannot exceed 1,000')
         .optional()
     ),
-    tags: z.array(z.string().trim().min(1)).optional()
+    imagePath: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string().optional()
+    ),
+    tags: z.preprocess(
+      (val) => val === null || val === undefined ? [] : val,
+      z.array(z.string().trim().min(1)).optional()
+    )
   }),
 
   // Product search query parameters
