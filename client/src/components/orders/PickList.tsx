@@ -418,8 +418,8 @@ A 1
       });
     } else if (!orderItem) {
       toast({
-        title: "Barcode not found",
-        description: "No matching product found in this order",
+        title: t('orderPickingPage.barcodeNotFound'),
+        description: t('orderPickingPage.noMatchingProduct'),
         variant: "destructive",
       });
     }
@@ -497,9 +497,9 @@ A 1
       <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Partial Order Fulfillment Requires Approval</DialogTitle>
+            <DialogTitle>{t('orderPickingPage.pickList.approvalRequired')}</DialogTitle>
             <DialogDescription>
-              This order cannot be fully fulfilled due to insufficient stock. Manager or admin approval is required to proceed with partial fulfillment.
+              {t('orderPickingPage.pickList.approvalDescription')}
             </DialogDescription>
           </DialogHeader>
           
@@ -509,23 +509,23 @@ A 1
                 <span className="bg-red-100 p-1 rounded-full mr-2">
                   <Info className="h-4 w-4 text-red-600" />
                 </span>
-                Insufficient Stock
+                {t('orderPickingPage.pickList.insufficientStock')}
               </AlertTitle>
               <AlertDescription>
-                Some items in this order cannot be fulfilled with the current inventory. These items will be marked as "unshipped" and will require future fulfillment.
+                {t('orderPickingPage.pickList.insufficientStockDescription')}
               </AlertDescription>
             </Alert>
             
             <div className="space-y-4">
               <div>
                 <Label htmlFor="approval-notes" className="text-sm font-medium">
-                  Notes for Approval (Optional)
+                  {t('orderPickingPage.pickList.notesForApproval')}
                 </Label>
                 <textarea 
                   id="approval-notes"
                   className="w-full mt-1 p-2 border rounded-md"
                   rows={3}
-                  placeholder="Add any notes regarding this partial fulfillment"
+                  placeholder={t('orderPickingPage.pickList.notesPlaceholder')}
                   value={approvalNotes}
                   onChange={(e) => setApprovalNotes(e.target.value)}
                 />
@@ -539,7 +539,7 @@ A 1
               variant="outline"
               onClick={() => setShowApprovalDialog(false)}
             >
-              Cancel
+              {t('orderPickingPage.pickList.cancel')}
             </Button>
             
             {/* Only show this button if current user is admin or manager */}
@@ -549,11 +549,11 @@ A 1
                 onClick={handleApprovePartialFulfillment}
                 disabled={updateOrderStatusMutation.isPending}
               >
-                {updateOrderStatusMutation.isPending ? "Approving..." : "Approve Partial Fulfillment"}
+                {updateOrderStatusMutation.isPending ? t('orderPickingPage.pickList.approving') : t('orderPickingPage.pickList.approvePartialFulfillment')}
               </Button>
             ) : (
               <div className="text-sm text-slate-500 italic">
-                Please contact a manager or administrator to approve this partial fulfillment.
+                {t('orderPickingPage.pickList.contactManager')}
               </div>
             )}
           </DialogFooter>
@@ -565,10 +565,10 @@ A 1
           <CardTitle className="flex justify-between items-center">
             <div className="flex items-center">
               <Truck className="h-5 w-5 mr-2 text-blue-500" />
-              <span>Pick List: {order.orderNumber}</span>
+              <span>{t('orderPickingPage.pickList.title')}: {order.orderNumber}</span>
             </div>
             <Badge variant={order.status === 'pending' ? "default" : "outline"} className={order.status !== 'pending' ? "border-green-500 text-green-700 bg-green-50" : ""}>
-              {order.status === 'pending' ? "Pending" : "Picked"}
+              {order.status === 'pending' ? t('orderPickingPage.pickList.pending') : t('orderPickingPage.pickList.picked')}
             </Badge>
           </CardTitle>
           <CardDescription>
