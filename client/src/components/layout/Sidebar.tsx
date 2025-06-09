@@ -349,7 +349,7 @@ const Sidebar = () => {
                 <li className="mb-1">
                   <div>
                     <button 
-                      className={`flex items-center w-full p-2 text-left rounded ${(isActive("/orders") || isActive("/order-picking")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                      className={`flex items-center w-full p-2 text-left rounded ${(isActive("/orders") || isActive("/unshipped-items") || isActive("/order-picking")) ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
                       title={t('orders.title')}
                       onClick={() => {
                         if (isSidebarOpen) {
@@ -375,7 +375,25 @@ const Sidebar = () => {
                   </button>
                   
                   {isSidebarOpen && (
-                    <div id="orders-staff-submenu" className={`pl-7 mt-1 ${!isActive("/order-picking") ? 'hidden' : ''}`}>
+                    <div id="orders-staff-submenu" className={`pl-7 mt-1 ${!isActive("/orders") && !isActive("/unshipped-items") && !isActive("/order-picking") ? 'hidden' : ''}`}>
+                      <Link href="/orders" onClick={() => setCurrentPage("Orders")}>
+                        <button 
+                          className={`flex items-center w-full p-2 text-left rounded ${isActive("/orders") && !isActive("/orders/") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
+                          title={t('orders.management')}
+                        >
+                          <FaList size={12} className="mr-2" />
+                          <span>{t('orders.management')}</span>
+                        </button>
+                      </Link>
+                      <Link href="/unshipped-items" onClick={() => setCurrentPage("Unshipped Items")}>
+                        <button 
+                          className={`flex items-center w-full p-2 text-left rounded ${isActive("/unshipped-items") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
+                          title={t('unshippedItems.title')}
+                        >
+                          <FaTruckLoading size={12} className="mr-2" />
+                          <span>{t('unshippedItems.title')}</span>
+                        </button>
+                      </Link>
                       <Link href="/order-picking" onClick={() => setCurrentPage("Order Picking")}>
                         <button 
                           className={`flex items-center w-full p-2 text-left rounded ${isActive("/order-picking") ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors text-sm`}
@@ -388,6 +406,21 @@ const Sidebar = () => {
                     </div>
                   )}
                 </div>
+                </li>
+                
+                {/* Products section for warehouse staff */}
+                <li className="mb-1">
+                  <Link href="/products" onClick={() => setCurrentPage("Products")}>
+                    <button 
+                      className={`flex items-center w-full p-2 text-left rounded ${isActive("/products") ? "bg-primary hover:bg-blue-700" : "hover:bg-slate-700"} transition-colors`}
+                      title={t('products.title')}
+                    >
+                      <span className="flex items-center w-5 h-5">
+                        <FaBox size={16} />
+                      </span>
+                      {isSidebarOpen && <span className="ml-2">{t('products.title')}</span>}
+                    </button>
+                  </Link>
                 </li>
                 
                 {/* Warehouse (Αποθήκη) section for warehouse staff */}
