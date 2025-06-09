@@ -241,35 +241,61 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
   // Reset form when payment changes
   useEffect(() => {
     if (payment) {
-      const invoice = invoices.find(inv => inv.id === payment.invoiceId);
-      // Handle both field name formats (snake_case and camelCase)
-      const supplierId = invoice?.supplier_id?.toString() || invoice?.supplierId?.toString() || '';
+      // Find the invoice using both possible field names
+      const invoiceId = payment.invoiceId || payment.invoice_id;
+      const invoice = invoices.find(inv => inv.id === invoiceId);
+      
+      // Extract supplier ID with multiple fallbacks
+      let supplierId = '';
+      if (invoice) {
+        supplierId = invoice.supplier_id?.toString() || 
+                    invoice.supplierId?.toString() || 
+                    invoice.supplierID?.toString() || '';
+      }
       
       console.log('Reset form with payment:', { 
         payment, 
         invoice, 
+        invoiceId,
         supplierId,
         invoice_supplier_id: invoice?.supplier_id,
         invoice_supplierId: invoice?.supplierId,
         paymentNotes: payment.notes,
-        paymentReference: payment.referenceNumber || payment.reference
+        paymentReference: payment.referenceNumber || payment.reference,
+        allInvoices: invoices.map(inv => ({ id: inv.id, supplier_id: inv.supplier_id, supplierId: inv.supplierId }))
       });
+      
+      // Convert payment date to proper Date object
+      let paymentDate = new Date();
+      if (payment.paymentDate) {
+        paymentDate = new Date(payment.paymentDate);
+      } else if (payment.payment_date) {
+        paymentDate = new Date(payment.payment_date);
+      }
       
       form.reset({
         supplierId: supplierId,
-        invoiceId: payment.invoiceId?.toString() || '',
-        paymentDate: payment.paymentDate ? new Date(payment.paymentDate) : new Date(),
+        invoiceId: invoiceId?.toString() || '',
+        paymentDate: paymentDate,
         amount: payment.amount?.toString() || '',
-        paymentMethod: (payment.paymentMethod as 'bank_transfer' | 'check' | 'credit_card' | 'cash' | 'other') || 'bank_transfer',
-        bankAccount: payment.bankAccount || '',
-        referenceNumber: payment.referenceNumber || payment.reference || '',
+        paymentMethod: (payment.paymentMethod || payment.payment_method as 'bank_transfer' | 'check' | 'credit_card' | 'cash' | 'other') || 'bank_transfer',
+        bankAccount: payment.bankAccount || payment.bank_account || '',
+        referenceNumber: payment.referenceNumber || payment.reference_number || payment.reference || '',
         company: payment.company || '',
         notes: payment.notes || '',
       });
       
-      if (invoice) {
+      if (invoice && supplierId) {
         setSelectedInvoice(invoice);
+        // For editing with valid supplier, skip directly to payment details
+        setStep('payment');
+      } else if (invoice) {
+        setSelectedInvoice(invoice);
+        // Has invoice but no supplier ID, go to invoice step
         setStep('invoice');
+      } else {
+        // No invoice found, start from supplier step
+        setStep('supplier');
       }
     } else {
       form.reset({
