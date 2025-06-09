@@ -572,7 +572,7 @@ A 1
             </Badge>
           </CardTitle>
           <CardDescription>
-            Customer: {order.customerName} | Order Date: {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'N/A'}
+            {t('orderPickingPage.pickList.customer')}: {order.customerName} | {t('orderPickingPage.pickList.orderDate')}: {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'N/A'}
           </CardDescription>
         </CardHeader>
       <CardContent>
@@ -580,7 +580,7 @@ A 1
           <div className="flex justify-between mb-1">
             <div className="flex items-center">
               <CheckCircle2 className="h-4 w-4 mr-1 text-slate-500" />
-              <span className="text-sm font-medium">Picking Progress</span>
+              <span className="text-sm font-medium">{t('orderPickingPage.pickList.pickingProgress')}</span>
             </div>
             <span className="text-sm font-medium text-blue-600">{progress}%</span>
           </div>
@@ -593,7 +593,7 @@ A 1
           {progress === 100 && (
             <p className="text-xs text-green-600 mt-1 flex items-center">
               <CheckCircle2 className="h-3 w-3 mr-1" />
-              All items have been picked
+              {t('orderPickingPage.pickList.allItemsPicked')}
             </p>
           )}
         </div>
@@ -603,7 +603,7 @@ A 1
           <div className="flex-1">
             <div className="relative">
               <Input
-                placeholder="Search by SKU or product name"
+                placeholder={t('orderPickingPage.pickList.searchPlaceholder')}
                 value={searchSku}
                 onChange={(e) => setSearchSku(e.target.value)}
                 className="pl-8"
@@ -620,7 +620,7 @@ A 1
               className={sortByLocation ? "bg-slate-100" : ""}
             >
               <MapPin className="mr-1 h-4 w-4" />
-              Sort by Location
+              {t('orderPickingPage.pickList.sortByLocation')}
             </Button>
             
             <EnhancedBarcodeScanner 
@@ -684,10 +684,10 @@ A 1
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
             <div className="flex items-center mb-1">
               <ScanBarcode className="h-4 w-4 mr-2 text-blue-500" />
-              <p className="text-sm font-medium text-blue-700">Barcode Scanned</p>
+              <p className="text-sm font-medium text-blue-700">{t('orderPickingPage.pickList.barcodeScanned')}</p>
             </div>
             <p className="text-sm text-blue-600">
-              Last scanned: <span className="font-mono font-medium">{lastScannedBarcode}</span>
+              {t('orderPickingPage.pickList.lastScanned')}: <span className="font-mono font-medium">{lastScannedBarcode}</span>
             </p>
           </div>
         )}
@@ -695,12 +695,12 @@ A 1
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-12">Picked</TableHead>
-              <TableHead>SKU</TableHead>
-              <TableHead>Product</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead className="text-right">Requested</TableHead>
-              <TableHead className="text-right">Actual Shipped</TableHead>
+              <TableHead className="w-12">{t('orderPickingPage.pickList.picked')}</TableHead>
+              <TableHead>{t('orderPickingPage.pickList.sku')}</TableHead>
+              <TableHead>{t('orderPickingPage.pickList.product')}</TableHead>
+              <TableHead>{t('orderPickingPage.pickList.location')}</TableHead>
+              <TableHead className="text-right">{t('orderPickingPage.pickList.requested')}</TableHead>
+              <TableHead className="text-right">{t('orderPickingPage.pickList.actualShipped')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
