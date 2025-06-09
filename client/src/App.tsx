@@ -98,7 +98,7 @@ function AuthenticatedRouter() {
           <Route path="/product-barcode/:id" component={ProductBarcode} />
           <Route path="/unshipped-items" component={UnshippedItems} />
           <Route path="/orders/unshipped-items" component={UnshippedItems} />
-          <Route path="/products" component={Products} />
+          <Route path="/products" component={ProductsShopify} />
           <Route path="/inventory" component={Inventory} />
           <Route path="/inventory-predictions" component={InventoryPredictions} />
           <Route path="/production" component={Production} />
