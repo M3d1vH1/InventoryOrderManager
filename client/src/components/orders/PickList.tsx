@@ -94,9 +94,9 @@ const PickList = ({ order }: { order: Order }) => {
     queryKey: ['/api/products'],
   });
 
-  // Initialize actual quantities and prepare order items when products or order changes
+  // Initialize actual quantities and prepare order items when order changes
   useEffect(() => {
-    if (order.items && order.items.length > 0 && products.length > 0) {
+    if (order.items && order.items.length > 0) {
       // Initialize actual quantities
       const newQuantities: Record<number, number> = {};
       order.items.forEach(item => {
@@ -108,19 +108,17 @@ const PickList = ({ order }: { order: Order }) => {
       });
       setActualQuantities(prev => ({...prev, ...newQuantities}));
       
-      // Create order items with products
+      // Create order items with products (product data is already included in order.items from server)
       const itemsWithProducts = order.items.map(item => {
-        const product = products.find(p => p.id === item.productId);
         return {
           ...item,
-          product,
           picked: !!pickedItems[item.id],
           actualQuantity: newQuantities[item.id] || item.quantity
         };
       });
       setOrderItemsWithProducts(itemsWithProducts);
     }
-  }, [order.items, products, pickedItems]);
+  }, [order.items, pickedItems]);
 
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [hasPartialFulfillment, setHasPartialFulfillment] = useState(false);
