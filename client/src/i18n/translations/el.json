@@ -557,7 +557,8 @@
     "statusValues": {
       "pending": "Σε Εκκρεμότητα",
       "picking": "Σε Συλλογή",
-      "picked": "Συλλέχθηκε", 
+      "picked": "Συλλέχθηκε",
+      "partially_shipped": "Μερικώς Απεσταλμένη", 
       "shipped": "Απεστάλη",
       "cancelled": "Ακυρώθηκε"
     },
@@ -570,13 +571,6 @@
     "items": "Είδη",
     "total": "Σύνολο",
     "date": "Ημερομηνία",
-    "statusValues": {
-      "pending": "Σε Εκκρεμότητα",
-      "picked": "Συλλέχθηκε",
-      "partially_shipped": "Μερικώς Απεσταλμένη",
-      "shipped": "Απεστάλη",
-      "cancelled": "Ακυρώθηκε"
-    },
     "priorityValues": {
       "urgent": "Επείγουσα",
       "high": "Υψηλή",
