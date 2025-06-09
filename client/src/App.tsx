@@ -83,29 +83,27 @@ function AuthenticatedRouter() {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
 
-  // Show warehouse staff access to order picking, inventory, and production
+  // Show warehouse staff access to dashboard, orders, products, inventory, and production
   if (user?.role === 'warehouse') {
     return (
       <Suspense fallback={<PageLoadingFallback />}>
         <Switch>
+          <Route path="/" component={Dashboard} />
+          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/orders" component={Orders} />
+          <Route path="/orders/:id" component={Orders} />
           <Route path="/order-picking" component={OrderPicking} />
           <Route path="/order-picking/:id" component={OrderPicking} />
           <Route path="/product-barcode/:id" component={ProductBarcode} />
           <Route path="/unshipped-items" component={UnshippedItems} />
           <Route path="/orders/unshipped-items" component={UnshippedItems} />
+          <Route path="/products" component={Products} />
           <Route path="/inventory" component={Inventory} />
           <Route path="/inventory-predictions" component={InventoryPredictions} />
           <Route path="/production" component={Production} />
           <Route>
-            {/* Redirect to order picking for warehouse staff if on any other route */}
-            {location !== '/order-picking' && 
-             location !== '/unshipped-items' &&
-             location !== '/orders/unshipped-items' &&
-             location !== '/inventory' &&
-             location !== '/inventory-predictions' &&
-             location !== '/production' && 
-             (window.location.href = '/order-picking')}
-            <OrderPicking />
+            {/* Default to dashboard for warehouse staff */}
+            <Dashboard />
           </Route>
         </Switch>
       </Suspense>
