@@ -1087,9 +1087,9 @@ const Products = () => {
             {/* Left sidebar with image upload */}
             <div className="w-1/3 bg-slate-50 p-6 border-r border-slate-200">
               <div className="sticky top-0">
-                <h3 className="font-medium text-lg mb-4">Product Image</h3>
+                <h3 className="font-medium text-lg mb-4">{t('products.image')}</h3>
                 <p className="text-sm text-slate-500 mb-4">
-                  Upload a high-quality image that clearly shows your product. Images help customers make purchase decisions.
+                  {t('products.imageDescription')}
                 </p>
                 
                 <Form {...form}>
@@ -1116,7 +1116,7 @@ const Products = () => {
                                     field.onChange("");
                                   }}
                                   className="absolute top-1 right-1 bg-white p-1 rounded-full shadow-md"
-                                  title="Remove Image"
+                                  title={t('products.removeImage')}
                                 >
                                   <X size={14} />
                                 </button>
@@ -1148,7 +1148,7 @@ const Products = () => {
                                     field.onChange("");
                                   }}
                                   className="absolute top-1 right-1 bg-white p-1 rounded-full shadow-md"
-                                  title="Remove Image"
+                                  title={t('products.removeImage')}
                                 >
                                   <X size={14} />
                                 </button>
@@ -1157,7 +1157,7 @@ const Products = () => {
                             {!imageFile && !imagePreview && !editingProduct?.imagePath && (
                               <div className="w-full h-40 border-2 border-dashed rounded-md flex flex-col items-center justify-center text-gray-400">
                                 <Image size={40} />
-                                <span className="mt-2 text-sm">No image</span>
+                                <span className="mt-2 text-sm">{t('products.noImage')}</span>
                               </div>
                             )}
                           </div>
@@ -1166,7 +1166,7 @@ const Products = () => {
                           <label htmlFor="product-image" className="cursor-pointer w-full">
                             <div className="flex items-center justify-center gap-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-md w-full">
                               <Upload size={16} />
-                              <span>{(imageFile || editingProduct?.imagePath) ? "Change Image" : "Upload Image"}</span>
+                              <span>{(imageFile || editingProduct?.imagePath) ? t('products.changeImage') : t('products.uploadImage')}</span>
                             </div>
                             <input 
                               id="product-image"
@@ -1180,8 +1180,8 @@ const Products = () => {
                                   const maxSizeInBytes = 2 * 1024 * 1024; // 2MB
                                   if (file.size > maxSizeInBytes) {
                                     toast({
-                                      title: "Image too large",
-                                      description: "Maximum file size is 2MB",
+                                      title: t('products.imageTooLarge'),
+                                      description: t('products.imageSizeError'),
                                       variant: "destructive",
                                     });
                                     return;
