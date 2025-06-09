@@ -831,13 +831,13 @@ A 1
           size="lg"
         >
           {updateOrderStatusMutation.isPending ? (
-            "            t('orderPickingPage.pickList.updating')"
+            t('orderPickingPage.pickList.updating')
           ) : (
             <>
               <CheckCircle2 className="mr-2 h-5 w-5" />
-              Complete Pick List
+              {t('orderPickingPage.pickList.completePickList')}
               {allItemsPicked && order.status === 'pending' && (
-                <span className="ml-1">({order.items?.length} items)</span>
+                <span className="ml-1">({order.items?.length} {t('orderPickingPage.pickList.items')})</span>
               )}
             </>
           )}
@@ -850,16 +850,16 @@ A 1
           <DialogHeader>
             <DialogTitle className="flex items-center text-base">
               <PackageCheck className="mr-2 h-5 w-5 text-blue-500 flex-shrink-0" />
-              <span className="truncate">Box Count for Labels</span>
+              <span className="truncate">{t('orderPickingPage.pickList.boxCountForLabels')}</span>
             </DialogTitle>
             <DialogDescription className="text-sm">
-              How many boxes are used for this order? A shipping label will be created for each box.
+              {t('orderPickingPage.pickList.boxCountDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="boxCount" className="text-sm">Number of Boxes</Label>
+                <Label htmlFor="boxCount" className="text-sm">{t('orderPickingPage.pickList.numberOfBoxes')}</Label>
                 <Input
                   id="boxCount"
                   type="number"
@@ -873,10 +873,10 @@ A 1
               <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
                 <div className="flex items-center mb-1">
                   <Printer className="h-4 w-4 mr-2 text-blue-500 flex-shrink-0" />
-                  <p className="text-sm font-medium text-blue-700 truncate">Label Preview</p>
+                  <p className="text-sm font-medium text-blue-700 truncate">{t('orderPickingPage.pickList.labelPreview')}</p>
                 </div>
                 <p className="text-sm text-blue-600">
-                  Preview will show order details and box numbers.
+                  {t('orderPickingPage.pickList.labelPreviewDescription')}
                 </p>
               </div>
             </div>
