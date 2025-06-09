@@ -1270,18 +1270,54 @@ export const insertSupplierSchema = createInsertSchema(suppliers)
   .omit({ id: true, createdAt: true })
   .extend({
     name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-    contactPerson: z.string().optional(),
-    email: z.union([z.string().email({ message: "Invalid email address" }), z.string().length(0)]).optional().nullable(),
-    phone: z.string().optional(),
-    address: z.string().optional(),
-    city: z.string().optional(),
-    state: z.string().optional(),
-    postalCode: z.string().optional(),
-    country: z.string().optional(),
-    vatNumber: z.string().optional(),
-    paymentTerms: z.string().optional(),
-    bankAccount: z.string().optional(),
-    notes: z.string().optional(),
+    contactPerson: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string().optional()
+    ),
+    email: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.union([z.string().email({ message: "Invalid email address" }), z.string().length(0)]).optional().nullable()
+    ),
+    phone: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string().optional()
+    ),
+    address: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string().optional()
+    ),
+    city: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string().optional()
+    ),
+    state: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string().optional()
+    ),
+    postalCode: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string().optional()
+    ),
+    country: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string().optional()
+    ),
+    vatNumber: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string().optional()
+    ),
+    paymentTerms: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string().optional()
+    ),
+    bankAccount: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string().optional()
+    ),
+    notes: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string().optional()
+    ),
     isActive: z.boolean().default(true),
   });
 
