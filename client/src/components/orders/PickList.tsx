@@ -89,9 +89,42 @@ const PickList = ({ order }: { order: Order }) => {
   const [orderItemsWithProducts, setOrderItemsWithProducts] = useState<(OrderItem & {product?: Product, picked?: boolean, actualQuantity?: number})[]>([]);
   const [showBoxCountDialog, setShowBoxCountDialog] = useState(false);
   const [boxCount, setBoxCount] = useState(1);
+  const [showShippingCompanyDialog, setShowShippingCompanyDialog] = useState(false);
+  const [selectedShippingCompany, setSelectedShippingCompany] = useState('');
+  const [pendingLabelGeneration, setPendingLabelGeneration] = useState<{boxCount: number} | null>(null);
 
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ['/api/products'],
+  });
+
+  const { data: shippingCompanies = [] } = useQuery<string[]>({
+    queryKey: ['/api/shipping-companies'],
+  });
+
+  // Mutation to update customer shipping company
+  const updateCustomerShippingMutation = useMutation({
+    mutationFn: async ({ customerId, shippingCompany }: { customerId: number; shippingCompany: string }) => {
+      return apiRequest({
+        url: `/api/customers/${customerId}/shipping-company`,
+        method: 'PUT',
+        body: JSON.stringify({ shippingCompany }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
+      toast({
+        title: 'Shipping Company Updated',
+        description: 'Customer shipping preference has been updated for future orders.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Update Failed',
+        description: error.message || 'Failed to update shipping company',
+        variant: 'destructive',
+      });
+    },
   });
 
   // Initialize actual quantities and prepare order items when order changes
@@ -252,8 +285,9 @@ const PickList = ({ order }: { order: Order }) => {
     
     // Print labels if not skipped
     if (!skipPrinting) {
-      // Automatically generate shipping labels after order status is updated
-      generateShippingLabels(order, boxCount);
+      // Store box count and show shipping company selection dialog
+      setPendingLabelGeneration({ boxCount });
+      setShowShippingCompanyDialog(true);
     } else {
       // Show toast if skipping
       toast({
@@ -273,6 +307,43 @@ const PickList = ({ order }: { order: Order }) => {
       status: 'picked',
       approvePartialFulfillment: true 
     });
+  };
+
+  // Handle shipping company selection and proceed with label generation
+  const handleShippingCompanySelected = async () => {
+    if (!selectedShippingCompany || !pendingLabelGeneration) {
+      toast({
+        title: 'Error',
+        description: 'Please select a shipping company',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Get customer ID from order
+    try {
+      const response = await fetch(`/api/shipping/customer/${encodeURIComponent(order.customerName)}`);
+      if (response.ok) {
+        const customer = await response.json();
+        if (customer) {
+          // Update customer's shipping company preference
+          await updateCustomerShippingMutation.mutateAsync({
+            customerId: customer.id,
+            shippingCompany: selectedShippingCompany,
+          });
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to update customer shipping preference:', error);
+    }
+
+    // Generate labels with the selected shipping company
+    generateShippingLabels(order, pendingLabelGeneration.boxCount);
+    
+    // Clean up state
+    setShowShippingCompanyDialog(false);
+    setPendingLabelGeneration(null);
+    setSelectedShippingCompany('');
   };
   
   // State to manage label preview
