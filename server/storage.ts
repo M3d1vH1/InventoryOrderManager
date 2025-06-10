@@ -222,6 +222,7 @@ export interface IStorage {
   updateCustomer(id: number, customer: Partial<InsertCustomer>): Promise<Customer | undefined>;
   deleteCustomer(id: number): Promise<boolean>;
   searchCustomers(query: string): Promise<Customer[]>;
+  getShippingCompanies(): Promise<string[]>;
   
   // Stats methods
   getDashboardStats(): Promise<{
@@ -1378,6 +1379,21 @@ export class MemStorage implements IStorage {
       (customer.email && customer.email.toLowerCase().includes(lowercaseQuery)) ||
       (customer.contactPerson && customer.contactPerson.toLowerCase().includes(lowercaseQuery))
     );
+  }
+
+  async getShippingCompanies(): Promise<string[]> {
+    const companies = new Set<string>();
+    
+    Array.from(this.customers.values()).forEach(customer => {
+      if (customer.shippingCompany && customer.shippingCompany.trim() !== '') {
+        companies.add(customer.shippingCompany);
+      }
+      if (customer.billingCompany && customer.billingCompany.trim() !== '') {
+        companies.add(customer.billingCompany);
+      }
+    });
+    
+    return Array.from(companies).sort();
   }
   
   // Stats methods

@@ -2542,6 +2542,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message });
     }
   });
+
+  // Shipping companies routes
+  app.get('/api/shipping-companies', isAuthenticated, async (req, res) => {
+    try {
+      const companies = await storage.getShippingCompanies();
+      res.json(companies);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put('/api/customers/:id/shipping-company', isAuthenticated, async (req, res) => {
+    try {
+      const customerId = parseInt(req.params.id, 10);
+      const { shippingCompany } = req.body;
+      
+      if (!shippingCompany) {
+        return res.status(400).json({ message: 'Shipping company is required' });
+      }
+      
+      // Update customer's shipping company preference
+      const updatedCustomer = await storage.updateCustomer(customerId, {
+        preferredShippingCompany: 'other',
+        billingCompany: shippingCompany
+      });
+      
+      if (!updatedCustomer) {
+        return res.status(404).json({ message: 'Customer not found' });
+      }
+      
+      res.json({ 
+        message: 'Shipping company updated successfully',
+        customer: updatedCustomer 
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
   
   const httpServer = createServer(app);
   
