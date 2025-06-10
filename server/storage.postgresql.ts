@@ -4810,6 +4810,79 @@ export class DatabaseStorage implements IStorage {
       payments
     };
   }
+
+  // Shipping company methods
+  async getShippingCompanies(): Promise<string[]> {
+    try {
+      // Get unique shipping companies from customers table
+      const customerShippingCompanies = await this.db
+        .selectDistinct({ company: customersTable.shippingCompany })
+        .from(customersTable)
+        .where(
+          and(
+            isNotNull(customersTable.shippingCompany),
+            ne(customersTable.shippingCompany, ''),
+            ne(customersTable.shippingCompany, 'N/A')
+          )
+        );
+
+      // Get unique billing companies used as shipping companies
+      const billingCompanies = await this.db
+        .selectDistinct({ company: customersTable.billingCompany })
+        .from(customersTable)
+        .where(
+          and(
+            eq(customersTable.preferredShippingCompany, 'other'),
+            isNotNull(customersTable.billingCompany),
+            ne(customersTable.billingCompany, ''),
+            ne(customersTable.billingCompany, 'N/A')
+          )
+        );
+
+      // Combine and deduplicate
+      const allCompanies = new Set<string>();
+      
+      customerShippingCompanies.forEach(row => {
+        if (row.company && row.company.trim()) {
+          allCompanies.add(row.company.trim());
+        }
+      });
+
+      billingCompanies.forEach(row => {
+        if (row.company && row.company.trim()) {
+          allCompanies.add(row.company.trim());
+        }
+      });
+
+      // Add default Greek shipping companies
+      const defaultCompanies = [
+        'ΠΑΠΑΧΡΗΣΤΟΥ',
+        'ΕΡΜΗΣ',
+        'ΠΡΟΟΔΕΥΤΙΚΗ',
+        'SPEEDEX',
+        'ACS',
+        'ΓΕΝΙΚΗ ΤΑΧΥΔΡΟΜΙΚΗ',
+        'COURIER CENTER'
+      ];
+
+      defaultCompanies.forEach(company => allCompanies.add(company));
+
+      // Return sorted array
+      return Array.from(allCompanies).sort();
+    } catch (error) {
+      console.error('Error getting shipping companies:', error);
+      // Return default companies in case of error
+      return [
+        'ΠΑΠΑΧΡΗΣΤΟΥ',
+        'ΕΡΜΗΣ', 
+        'ΠΡΟΟΔΕΥΤΙΚΗ',
+        'SPEEDEX',
+        'ACS',
+        'ΓΕΝΙΚΗ ΤΑΧΥΔΡΟΜΙΚΗ',
+        'COURIER CENTER'
+      ];
+    }
+  }
 }
 
 // This will be initialized when the server starts

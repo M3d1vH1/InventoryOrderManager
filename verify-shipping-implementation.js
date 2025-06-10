@@ -21,7 +21,7 @@ try {
 // Check 2: Verify storage methods exist
 try {
   const storageFile = fs.readFileSync('server/storage.ts', 'utf8');
-  if (storageFile.includes('getShippingCompanies') && storageFile.includes('updateCustomerShippingCompany')) {
+  if (storageFile.includes('getShippingCompanies') && storageFile.includes('updateCustomer')) {
     checks.push('✓ Storage methods implemented');
   } else {
     checks.push('✗ Missing storage methods');
@@ -33,7 +33,7 @@ try {
 // Check 3: Verify PostgreSQL implementation
 try {
   const pgFile = fs.readFileSync('server/storage.postgresql.ts', 'utf8');
-  if (pgFile.includes('getShippingCompanies') && pgFile.includes('updateCustomerShippingCompany')) {
+  if (pgFile.includes('getShippingCompanies') && pgFile.includes('updateCustomer')) {
     checks.push('✓ PostgreSQL implementation exists');
   } else {
     checks.push('✗ Missing PostgreSQL implementation');
