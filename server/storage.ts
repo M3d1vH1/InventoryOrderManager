@@ -462,6 +462,9 @@ export interface IStorage {
       paymentMethod: string;
     }[];
   }>;
+
+  // Shipping company methods
+  getShippingCompanies(): Promise<string[]>;
 }
 
 // We're keeping the MemStorage class definition for fallback

@@ -2553,6 +2553,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Additional shipping routes for frontend compatibility
+  app.get('/api/shipping/companies', isAuthenticated, async (req, res) => {
+    try {
+      const companies = await storage.getShippingCompanies();
+      res.json(companies);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.patch('/api/shipping/customer/:customerId', isAuthenticated, async (req, res) => {
+    try {
+      const customerId = parseInt(req.params.customerId, 10);
+      const { shippingCompany } = req.body;
+      
+      if (!shippingCompany) {
+        return res.status(400).json({ message: 'Shipping company is required' });
+      }
+      
+      // Update customer's shipping company preference
+      const updatedCustomer = await storage.updateCustomer(customerId, {
+        preferredShippingCompany: 'other',
+        shippingCompany: shippingCompany
+      });
+      
+      if (!updatedCustomer) {
+        return res.status(404).json({ message: 'Customer not found' });
+      }
+      
+      res.json({ 
+        message: 'Shipping company updated successfully',
+        customer: updatedCustomer 
+      });
+    } catch (error: any) {
+      console.error('Error updating customer shipping company:', error);
+      res.status(500).json({ message: 'Failed to update shipping company' });
+    }
+  });
+
   app.put('/api/customers/:id/shipping-company', isAuthenticated, async (req, res) => {
     try {
       const customerId = parseInt(req.params.id, 10);
