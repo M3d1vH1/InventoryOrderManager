@@ -1502,6 +1502,17 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async deleteUnshippedItem(id: number): Promise<boolean> {
+    try {
+      const result = await this.db.delete(unshippedItems)
+        .where(eq(unshippedItems.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting unshipped item:", error);
+      return false;
+    }
+  }
+
   async getUnshippedItemsForAuthorization(): Promise<UnshippedItem[]> {
     try {
       return await this.db.select()

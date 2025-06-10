@@ -1142,6 +1142,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const orderData = insertOrderSchema.partial().parse(orderDataRaw);
       const userId = (req.user as any)?.id || 1; // Default to admin user if somehow not authenticated
       
+      // Get the current order to check its status
+      const currentOrder = await storage.getOrder(id);
+      if (!currentOrder) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      
       // 1. Pass the validated orderData and userId separately to update the order itself
       const updatedOrder = await storage.updateOrder(id, orderData, userId);
       
@@ -1151,10 +1157,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // 2. Handle updating order items if they were provided
       if (items && Array.isArray(items)) {
-        console.log(`Updating ${items.length} items for order #${id}`);
+        console.log(`Updating ${items.length} items for order #${id} (status: ${currentOrder.status})`);
         
         // First retrieve current order items
         const existingItems = await storage.getOrderItems(id);
+        
+        // If the order was picked, we need to handle inventory adjustments
+        if (currentOrder.status === 'picked') {
+          console.log(`Order ${id} was picked, handling inventory adjustments for item changes`);
+          
+          // Create maps for easier comparison
+          const existingItemsMap = new Map();
+          const newItemsMap = new Map();
+          
+          existingItems.forEach(item => {
+            existingItemsMap.set(item.productId, item.quantity);
+          });
+          
+          items.forEach(item => {
+            newItemsMap.set(item.productId, item.quantity);
+          });
+          
+          // Process inventory adjustments for each product
+          const allProductIds = new Set([...Array.from(existingItemsMap.keys()), ...Array.from(newItemsMap.keys())]);
+          
+          for (const productId of Array.from(allProductIds)) {
+            const existingQuantity = existingItemsMap.get(productId) || 0;
+            const newQuantity = newItemsMap.get(productId) || 0;
+            const quantityDifference = newQuantity - existingQuantity;
+            
+            if (quantityDifference !== 0) {
+              const product = await storage.getProduct(productId);
+              if (!product) {
+                console.error(`Product ID ${productId} not found when processing inventory adjustment`);
+                continue;
+              }
+              
+              let newStockLevel;
+              let changeType;
+              let changeDescription;
+              
+              if (quantityDifference > 0) {
+                // Quantity increased - reduce inventory further
+                newStockLevel = Math.max(0, product.currentStock - quantityDifference);
+                changeType = 'manual_adjustment';
+                changeDescription = `Order ${currentOrder.orderNumber} edited: increased quantity by ${quantityDifference}`;
+                console.log(`Order edit: reducing inventory for product ${productId} by ${quantityDifference} (${product.currentStock} → ${newStockLevel})`);
+              } else {
+                // Quantity decreased or item removed - restore inventory
+                const quantityToRestore = Math.abs(quantityDifference);
+                newStockLevel = product.currentStock + quantityToRestore;
+                changeType = 'manual_adjustment';
+                changeDescription = `Order ${currentOrder.orderNumber} edited: decreased quantity by ${quantityToRestore}`;
+                console.log(`Order edit: restoring inventory for product ${productId} by ${quantityToRestore} (${product.currentStock} → ${newStockLevel})`);
+              }
+              
+              // Update the product stock
+              await storage.updateProduct(productId, {
+                currentStock: newStockLevel,
+                lastStockUpdate: new Date()
+              }, userId);
+              
+              // Record inventory change
+              await storage.addInventoryChange({
+                productId: productId,
+                userId: userId,
+                changeType: changeType,
+                previousQuantity: product.currentStock,
+                newQuantity: newStockLevel,
+                quantityChanged: Math.abs(quantityDifference),
+                reference: `Order ${currentOrder.orderNumber} edited`,
+                notes: changeDescription
+              });
+            }
+          }
+          
+          // Reset order status to pending since items have changed
+          console.log(`Resetting order ${id} status from picked to pending due to item changes`);
+          await storage.updateOrderStatus(id, 'pending', undefined, userId);
+          
+          // Add changelog entry for status reset
+          await storage.addOrderChangelog({
+            orderId: id,
+            userId: userId,
+            action: 'update',
+            changes: { status: 'pending' },
+            previousValues: { status: 'picked' },
+            notes: "Order status reset to pending due to item changes after picking"
+          });
+          
+          // Remove any unshipped items for this order since items have changed
+          const unshippedItems = await storage.getUnshippedItemsByOrder(id);
+          if (unshippedItems.length > 0) {
+            console.log(`Removing ${unshippedItems.length} unshipped items for order ${id} due to item changes`);
+            for (const unshippedItem of unshippedItems) {
+              await storage.deleteUnshippedItem(unshippedItem.id);
+            }
+          }
+        }
         
         // Delete existing order items - we'll recreate them
         await storage.deleteOrderItemsByOrderId(id);
