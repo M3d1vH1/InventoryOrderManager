@@ -1222,7 +1222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               await storage.addInventoryChange({
                 productId: productId,
                 userId: userId,
-                changeType: changeType,
+                changeType: 'inventory_correction',
                 previousQuantity: product.currentStock,
                 newQuantity: newStockLevel,
                 quantityChanged: Math.abs(quantityDifference),

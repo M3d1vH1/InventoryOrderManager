@@ -287,6 +287,7 @@ export interface IStorage {
   addUnshippedItem(item: InsertUnshippedItem): Promise<UnshippedItem>;
   authorizeUnshippedItems(ids: number[], userId: number): Promise<void>;
   markUnshippedItemsAsShipped(ids: number[], newOrderId: number): Promise<void>;
+  deleteUnshippedItem(id: number): Promise<boolean>;
   getUnshippedItemsForAuthorization(): Promise<UnshippedItem[]>;
   
   // Inventory Change Tracking methods
@@ -1807,6 +1808,10 @@ export class MemStorage implements IStorage {
     }
   }
   
+  async deleteUnshippedItem(id: number): Promise<boolean> {
+    return this.unshippedItems.delete(id);
+  }
+
   async getUnshippedItemsForAuthorization(): Promise<UnshippedItem[]> {
     return Array.from(this.unshippedItems.values())
       .filter(item => !item.authorized && !item.shipped);
