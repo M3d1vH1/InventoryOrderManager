@@ -153,6 +153,34 @@ const PickList = ({ order }: { order: Order }) => {
     }
   }, [order.items, pickedItems]);
 
+  // Initialize shipping company selection with customer's current preference
+  useEffect(() => {
+    if (showShippingCompanyDialog && order.customerName) {
+      const fetchCustomerShippingInfo = async () => {
+        try {
+          const response = await fetch(`/api/shipping/customer/${encodeURIComponent(order.customerName)}`);
+          if (response.ok) {
+            const customer = await response.json();
+            if (customer) {
+              // Set current shipping company preference
+              if (customer.preferredShippingCompany === 'other' && customer.billingCompany) {
+                setSelectedShippingCompany(customer.billingCompany);
+              } else if (customer.shippingCompany) {
+                setSelectedShippingCompany(customer.shippingCompany);
+              } else if (customer.preferredShippingCompany && customer.preferredShippingCompany !== 'other') {
+                setSelectedShippingCompany(customer.preferredShippingCompany);
+              }
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to fetch customer shipping info:', error);
+        }
+      };
+      
+      fetchCustomerShippingInfo();
+    }
+  }, [showShippingCompanyDialog, order.customerName]);
+
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [hasPartialFulfillment, setHasPartialFulfillment] = useState(false);
   const [approvalNotes, setApprovalNotes] = useState('');
@@ -338,7 +366,7 @@ const PickList = ({ order }: { order: Order }) => {
     }
 
     // Generate labels with the selected shipping company
-    generateShippingLabels(order, pendingLabelGeneration.boxCount);
+    generateShippingLabelsWithCompany(order, pendingLabelGeneration.boxCount, selectedShippingCompany);
     
     // Clean up state
     setShowShippingCompanyDialog(false);
@@ -354,8 +382,8 @@ const PickList = ({ order }: { order: Order }) => {
     totalBoxes: number;
   } | null>(null);
   
-  // Function to generate shipping labels with preview first
-  const generateShippingLabels = (order: Order, boxCount: number) => {
+  // Function to generate shipping labels with custom shipping company
+  const generateShippingLabelsWithCompany = (order: Order, boxCount: number, customShippingCompany?: string) => {
     // Only proceed if we have a valid box count from user input
     if (boxCount < 1) {
       toast({
@@ -367,7 +395,7 @@ const PickList = ({ order }: { order: Order }) => {
     }
     
     // Log the exact user-specified box count to ensure it's being used
-    console.log(`Using user-specified box count: ${boxCount}`);
+    console.log(`Using user-specified box count: ${boxCount} with custom shipping company: ${customShippingCompany}`);
     
     // Create the JScript commands for the CAB EOS1 printer with all requested customer information
     const createLabelJScript = async (boxNumber: number, totalBoxes: number) => {
@@ -377,7 +405,7 @@ const PickList = ({ order }: { order: Order }) => {
       // Get the real customer information for this order using the dedicated endpoint
       let customerAddress = "";
       let customerPhone = "";
-      let shippingCompany = "N/A"; // Default value
+      let shippingCompany = customShippingCompany || "N/A"; // Use provided shipping company first
       
       try {
         // Using our new dedicated endpoint to get customer information for shipping labels
@@ -398,14 +426,17 @@ const PickList = ({ order }: { order: Order }) => {
             customerAddress = addressParts.join(", ");
             customerPhone = customer.phone || "";
             
-            // Use the appropriate shipping company information from customer database
-            if (customer.preferredShippingCompany === 'other' && customer.billingCompany) {
-              shippingCompany = customer.billingCompany;
-            } else if (customer.shippingCompany) {
-              shippingCompany = customer.shippingCompany;
+            // Use custom shipping company if provided, otherwise use customer's default
+            if (!customShippingCompany) {
+              if (customer.preferredShippingCompany === 'other' && customer.billingCompany) {
+                shippingCompany = customer.billingCompany;
+              } else if (customer.shippingCompany) {
+                shippingCompany = customer.shippingCompany;
+              }
             }
             
             console.log("Debug shipping company:", {
+              customShippingCompany,
               preferredShippingCompany: customer.preferredShippingCompany,
               customShippingCompany: customer.billingCompany,
               shippingCompany: customer.shippingCompany,
@@ -469,6 +500,11 @@ A 1
         variant: "destructive"
       });
     }
+  };
+
+  // Original function to generate shipping labels (kept for backward compatibility)
+  const generateShippingLabels = (order: Order, boxCount: number) => {
+    generateShippingLabelsWithCompany(order, boxCount);
   };
   
   // Handle barcode scan
@@ -627,6 +663,69 @@ A 1
                 {t('orderPickingPage.pickList.contactManager')}
               </div>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Shipping Company Selection Dialog */}
+      <Dialog open={showShippingCompanyDialog} onOpenChange={setShowShippingCompanyDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select Shipping Company</DialogTitle>
+            <DialogDescription>
+              Choose the shipping company for this order. This will update the customer's preference for future orders.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="shipping-company" className="text-sm font-medium">
+                  Shipping Company
+                </Label>
+                <select
+                  id="shipping-company"
+                  className="w-full mt-1 p-2 border rounded-md"
+                  value={selectedShippingCompany}
+                  onChange={(e) => setSelectedShippingCompany(e.target.value)}
+                >
+                  <option value="">Select a shipping company...</option>
+                  {shippingCompanies.map((company) => (
+                    <option key={company} value={company}>
+                      {company}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {selectedShippingCompany && (
+                <div className="text-sm text-slate-600 bg-blue-50 p-3 rounded-md">
+                  <strong>Note:</strong> This shipping company will be saved as the customer's preference for future orders.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowShippingCompanyDialog(false);
+                setPendingLabelGeneration(null);
+                setSelectedShippingCompany('');
+              }}
+            >
+              Cancel
+            </Button>
+            
+            <Button 
+              type="submit"
+              onClick={handleShippingCompanySelected}
+              disabled={!selectedShippingCompany || updateCustomerShippingMutation.isPending}
+            >
+              {updateCustomerShippingMutation.isPending ? 'Updating...' : 'Generate Labels'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
