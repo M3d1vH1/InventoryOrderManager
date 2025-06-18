@@ -1566,3 +1566,57 @@ export type SupplierPayment = typeof supplierPayments.$inferSelect;
 
 // Update schema for supplier payments - allows partial updates
 export const updateSupplierPaymentSchema = insertSupplierPaymentSchema.partial();
+
+// Supplier Invoice History/Changelog Schema
+export const supplierInvoiceChangelogs = pgTable("supplier_invoice_changelogs", {
+  id: serial("id").primaryKey(),
+  invoiceId: integer("invoice_id").notNull().references(() => supplierInvoices.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  action: text("action").notNull(), // 'create', 'update', 'payment_added', 'status_change', 'note_added'
+  changes: jsonb("changes"), // JSON object with the new values
+  previousValues: jsonb("previous_values"), // JSON object with previous values
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertSupplierInvoiceChangelogSchema = createInsertSchema(supplierInvoiceChangelogs)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    invoiceId: z.number().int().positive(),
+    userId: z.number().int().positive(),
+    action: z.enum(['create', 'update', 'payment_added', 'status_change', 'note_added', 'delete']),
+    changes: z.record(z.any()).optional(),
+    previousValues: z.record(z.any()).optional(),
+    notes: z.string().optional()
+  });
+
+export type InsertSupplierInvoiceChangelog = z.infer<typeof insertSupplierInvoiceChangelogSchema>;
+export type SupplierInvoiceChangelog = typeof supplierInvoiceChangelogs.$inferSelect;
+
+// Supplier Payment History/Changelog Schema
+export const supplierPaymentChangelogs = pgTable("supplier_payment_changelogs", {
+  id: serial("id").primaryKey(),
+  paymentId: integer("payment_id").notNull().references(() => supplierPayments.id),
+  invoiceId: integer("invoice_id").notNull().references(() => supplierInvoices.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  action: text("action").notNull(), // 'create', 'update', 'verify', 'approve', 'reject', 'note_added'
+  changes: jsonb("changes"), // JSON object with the new values
+  previousValues: jsonb("previous_values"), // JSON object with previous values
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertSupplierPaymentChangelogSchema = createInsertSchema(supplierPaymentChangelogs)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    paymentId: z.number().int().positive(),
+    invoiceId: z.number().int().positive(),
+    userId: z.number().int().positive(),
+    action: z.enum(['create', 'update', 'verify', 'approve', 'reject', 'note_added', 'delete']),
+    changes: z.record(z.any()).optional(),
+    previousValues: z.record(z.any()).optional(),
+    notes: z.string().optional()
+  });
+
+export type InsertSupplierPaymentChangelog = z.infer<typeof insertSupplierPaymentChangelogSchema>;
+export type SupplierPaymentChangelog = typeof supplierPaymentChangelogs.$inferSelect;
