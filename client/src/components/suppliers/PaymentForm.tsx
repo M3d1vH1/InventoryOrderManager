@@ -245,66 +245,50 @@ export const PaymentForm = ({ isOpen, onClose, payment, invoices, suppliers }: P
     }
   }, [watchedInvoiceId, invoices, form, payment, watchedSupplierId]);
 
-  // Reset form when payment changes
+  // Reset form when payment changes - simplified to prevent data loss
   useEffect(() => {
     if (payment) {
-      // Find the invoice using both possible field names
       const invoiceId = payment.invoiceId || payment.invoice_id;
       const invoice = invoices.find(inv => inv.id === invoiceId);
       
-      // Extract supplier ID with multiple fallbacks
-      let supplierId = '';
-      if (invoice) {
-        supplierId = invoice.supplier_id?.toString() || 
-                    invoice.supplierId?.toString() || 
-                    invoice.supplierID?.toString() || '';
-      }
+      // Standardize supplier ID extraction
+      const supplierId = invoice ? 
+        (invoice.supplierId || invoice.supplier_id || '').toString() : '';
       
-      console.log('Reset form with payment:', { 
-        payment, 
-        invoice, 
+      console.log('Setting payment form data:', { 
+        paymentId: payment.id,
         invoiceId,
         supplierId,
-        invoice_supplier_id: invoice?.supplier_id,
-        invoice_supplierId: invoice?.supplierId,
-        paymentNotes: payment.notes,
-        paymentReference: payment.referenceNumber || payment.reference,
-        allInvoices: invoices.map(inv => ({ id: inv.id, supplier_id: inv.supplier_id, supplierId: inv.supplierId }))
+        notes: payment.notes,
+        reference: payment.referenceNumber || payment.reference
       });
       
-      // Convert payment date to proper Date object
-      let paymentDate = new Date();
-      if (payment.paymentDate) {
-        paymentDate = new Date(payment.paymentDate);
-      } else if (payment.payment_date) {
-        paymentDate = new Date(payment.payment_date);
-      }
+      // Standardize payment date handling
+      const paymentDate = payment.paymentDate || payment.payment_date ? 
+        new Date(payment.paymentDate || payment.payment_date) : new Date();
       
-      form.reset({
-        supplierId: supplierId,
-        invoiceId: invoiceId?.toString() || '',
-        paymentDate: paymentDate,
-        amount: payment.amount?.toString() || '',
-        paymentMethod: (payment.paymentMethod || payment.payment_method as 'bank_transfer' | 'check' | 'credit_card' | 'cash' | 'other') || 'bank_transfer',
+      const formData = {
+        supplierId,
+        invoiceId: (invoiceId || '').toString(),
+        paymentDate,
+        amount: (payment.amount || '').toString(),
+        paymentMethod: (payment.paymentMethod || payment.payment_method || 'bank_transfer') as 'bank_transfer' | 'check' | 'credit_card' | 'cash' | 'other',
         bankAccount: payment.bankAccount || payment.bank_account || '',
         referenceNumber: payment.referenceNumber || payment.reference_number || payment.reference || '',
         company: payment.company || '',
         notes: payment.notes || '',
-      });
+      };
       
-      if (invoice && supplierId) {
+      form.reset(formData);
+      
+      if (invoice) {
         setSelectedInvoice(invoice);
-        // For editing with valid supplier and invoice, go directly to invoice step
-        setStep('invoice');
-      } else if (invoice) {
-        setSelectedInvoice(invoice);
-        // Has invoice but no supplier ID, go to invoice step
         setStep('invoice');
       } else {
-        // No invoice found, start from supplier step
         setStep('supplier');
       }
     } else {
+      // Only reset if no payment is provided
       form.reset({
         supplierId: '',
         invoiceId: '',

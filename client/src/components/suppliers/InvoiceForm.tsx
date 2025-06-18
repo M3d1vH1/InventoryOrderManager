@@ -144,53 +144,43 @@ export const InvoiceForm = ({ isOpen, onClose, invoice, suppliers }: InvoiceForm
     },
   });
 
-  // Reset form when invoice changes
+  // Reset form when invoice changes - simplified to prevent data loss
   useEffect(() => {
     if (invoice) {
       console.log("Invoice data received for edit:", invoice);
       
-      // Log property access attempts for debugging
-      const invoiceNumber = invoice.invoice_number || invoice.invoiceNumber || '';
-      const supplierId = invoice.supplier_id || invoice.supplierId || '';
-      const invoiceDate = invoice.invoice_date || invoice.invoiceDate || new Date();
-      const dueDate = invoice.due_date || invoice.dueDate || new Date();
-      const amount = invoice.amount || '0';
-      const paidAmount = invoice.paid_amount || invoice.paidAmount || '';
-      const reference = invoice.reference || '';
-      const rfNumber = invoice.rf_number || invoice.rfNumber || '';
-      const company = invoice.company || '';
-      
-      console.log("Extracted invoice properties:", {
-        invoiceNumber, supplierId, invoiceDate, dueDate, amount, paidAmount, reference, rfNumber, company
-      });
-      
-      form.reset({
-        invoiceNumber: invoiceNumber,
-        supplierId: supplierId.toString(),
-        invoiceDate: invoiceDate ? new Date(invoiceDate) : new Date(),
-        dueDate: dueDate ? new Date(dueDate) : new Date(),
-        amount: amount?.toString() || '',
-        paidAmount: paidAmount ? paidAmount.toString() : '0',
-        company: company || '', // Company name as free text
-        reference: reference, // General reference field
-        rfNumber: rfNumber, // Specific RF number field
+      // Standardize field extraction with consistent fallbacks
+      const formData = {
+        invoiceNumber: invoice.invoiceNumber || invoice.invoice_number || '',
+        supplierId: (invoice.supplierId || invoice.supplier_id || '').toString(),
+        invoiceDate: invoice.invoiceDate || invoice.invoice_date ? new Date(invoice.invoiceDate || invoice.invoice_date) : new Date(),
+        dueDate: invoice.dueDate || invoice.due_date ? new Date(invoice.dueDate || invoice.due_date) : new Date(),
+        amount: (invoice.amount || '').toString(),
+        paidAmount: (invoice.paidAmount || invoice.paid_amount || '0').toString(),
+        company: invoice.company || '',
+        reference: invoice.reference || '',
+        rfNumber: invoice.rfNumber || invoice.rf_number || '',
         status: invoice.status || 'pending',
         isRecurring: invoice.isRecurring || false,
-        recurringCycle: invoice.recurringCycle?.toString() || '',
+        recurringCycle: (invoice.recurringCycle || '').toString(),
         notes: invoice.notes || '',
         attachmentPath: invoice.attachmentPath || '',
-      });
+      };
+      
+      console.log("Setting form data:", formData);
+      form.reset(formData);
     } else {
+      // Only reset if no invoice is provided
       form.reset({
         invoiceNumber: '',
         supplierId: '',
         invoiceDate: new Date(),
         dueDate: new Date(),
         amount: '',
-        paidAmount: '0', // Default to 0 for new invoices
-        company: '', // Company name as free text
-        reference: '', // General reference field
-        rfNumber: '', // Specific RF number field
+        paidAmount: '0',
+        company: '',
+        reference: '',
+        rfNumber: '',
         status: 'pending',
         isRecurring: false,
         recurringCycle: '',
