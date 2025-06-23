@@ -4812,55 +4812,46 @@ export class DatabaseStorage implements IStorage {
     try {
       const allCompanies = new Set<string>();
 
-      // Get all shipping companies from all three customer fields
+      // Get all shipping companies from customer fields using correct field names
       const allCustomerCompanies = await this.db
         .select({
           shipping_company: customersTable.shippingCompany,
-          preferred_shipping_company: customersTable.preferredShippingCompany,
-          custom_shipping_company: customersTable.billingCompany
+          custom_shipping_company: customersTable.billingCompany,
+          preferred_shipping_company: customersTable.preferredShippingCompany
         })
         .from(customersTable);
+
+      console.log(`Retrieved ${allCustomerCompanies.length} customer records for shipping companies`);
 
       // Process each customer record to extract shipping companies
       allCustomerCompanies.forEach(row => {
         // Priority: custom_shipping_company > shipping_company > preferred enum
         if (row.custom_shipping_company && row.custom_shipping_company.trim() && row.custom_shipping_company !== 'N/A') {
-          allCompanies.add(row.custom_shipping_company.trim());
+          const company = row.custom_shipping_company.trim();
+          // Filter out courier services
+          if (!this.isCourierService(company)) {
+            allCompanies.add(company);
+          }
         }
         
         if (row.shipping_company && row.shipping_company.trim() && row.shipping_company !== 'N/A') {
-          allCompanies.add(row.shipping_company.trim());
-        }
-        
-        // Handle enum values (convert to readable names)
-        if (row.preferred_shipping_company && row.preferred_shipping_company !== 'other') {
-          const enumToName = {
-            'dhl': 'DHL',
-            'fedex': 'FedEx',
-            'ups': 'UPS',
-            'usps': 'USPS',
-            'royal_mail': 'Royal Mail'
-          };
-          const companyName = enumToName[row.preferred_shipping_company as keyof typeof enumToName];
-          if (companyName) {
-            allCompanies.add(companyName);
+          const company = row.shipping_company.trim();
+          // Filter out courier services
+          if (!this.isCourierService(company)) {
+            allCompanies.add(company);
           }
         }
+        
+        // Skip preferred_shipping_company enum as it only contains 'other'
       });
 
-      // Add comprehensive Greek shipping companies
+      // Add Greek transport companies (excluding courier services)
       const defaultCompanies = [
         'ΠΑΠΑΧΡΗΣΤΟΥ',
         'ΕΡΜΗΣ',
         'ΠΡΟΟΔΕΥΤΙΚΗ', 
         'SPEEDEX',
-        'ACS',
         'ΓΕΝΙΚΗ ΤΑΧΥΔΡΟΜΙΚΗ',
-        'COURIER CENTER',
-        'GENIKI TAXYDROMIKI',
-        'ΚΟΥΡΙΕΡ ΣΕΝΤΕΡ',
-        'ΑΧΣ',
-        'ΣΠΙΝΤΕΞ',
         'SPEEDLINE',
         'EXPRESS',
         'ΔΑΣ',
@@ -4868,34 +4859,44 @@ export class DatabaseStorage implements IStorage {
         'ΈΝΩΣΗ ΜΑΚΕΔΟΝΊΑΣ',
         'ΦΊΛΙΠΠΑΣ',
         'ΑΡΒΑΝΊΤΗΣ',
-        'ΒΑΣΙΛΕΙΟΥ',
-        'DHL',
-        'FedEx',
-        'UPS',
-        'USPS'
+        'ΒΑΣΙΛΕΙΟΥ'
       ];
 
       defaultCompanies.forEach(company => allCompanies.add(company));
 
-      // Return sorted array with Greek companies first, then international
+      // Return sorted array with Greek companies first
       const companiesArray = Array.from(allCompanies);
       const greekCompanies = companiesArray.filter(company => /[\u0370-\u03FF]/.test(company)).sort();
       const englishCompanies = companiesArray.filter(company => !/[\u0370-\u03FF]/.test(company)).sort();
       
+      console.log(`Found ${companiesArray.length} total shipping companies (${greekCompanies.length} Greek, ${englishCompanies.length} English)`);
+      
       return [...greekCompanies, ...englishCompanies];
     } catch (error) {
       console.error('Error getting shipping companies:', error);
-      // Return default companies in case of error
+      // Return basic transport companies in case of error (no courier services)
       return [
         'ΠΑΠΑΧΡΗΣΤΟΥ',
         'ΕΡΜΗΣ', 
         'ΠΡΟΟΔΕΥΤΙΚΗ',
         'SPEEDEX',
-        'ACS',
         'ΓΕΝΙΚΗ ΤΑΧΥΔΡΟΜΙΚΗ',
-        'COURIER CENTER'
+        'SPEEDLINE',
+        'ΔΑΣ'
       ];
     }
+  }
+
+  // Helper method to filter out courier services
+  private isCourierService(company: string): boolean {
+    const courierKeywords = [
+      'ACS', 'COURIER', 'DHL', 'FEDEX', 'UPS', 'USPS', 'TNT',
+      'courier', 'Courier', 'ΚΟΥΡΙΕΡ', 'κουριερ'
+    ];
+    
+    return courierKeywords.some(keyword => 
+      company.toUpperCase().includes(keyword.toUpperCase())
+    );
   }
 }
 

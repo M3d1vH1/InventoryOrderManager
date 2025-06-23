@@ -226,6 +226,10 @@ export const orderItems = pgTable("order_items", {
   shipped_quantity: integer("shipped_quantity").default(0),
   shipping_status: text("shipping_status").default('pending'),
   hasQualityIssues: boolean("has_quality_issues").default(false),
+  picked: boolean("picked").default(false),
+  actualQuantity: integer("actual_quantity"),
+  pickedAt: timestamp("picked_at"),
+  pickedById: integer("picked_by_id"),
 });
 
 export const insertOrderItemSchema = createInsertSchema(orderItems)
