@@ -991,7 +991,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/orders', async (req, res) => {
+  app.post('/api/orders', isAuthenticated, async (req, res) => {
     // Log environment variables for debugging Slack notifications
     console.log('Environment variables for Slack notification:', {
       APP_URL: process.env.APP_URL || 'Not set',
@@ -1003,6 +1003,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       const { items, ...orderData } = req.body;
+      
+      // Automatically set createdById from authenticated user
+      const userId = (req.user as any)?.id;
+      console.log('User ID from session:', userId);
+      console.log('Full req.user object:', req.user);
+      if (userId) {
+        orderData.createdById = userId;
+      } else {
+        // Fallback to admin user ID (1) if session isn't working properly
+        console.log('No user ID found in session, using admin user (ID: 1) as fallback');
+        orderData.createdById = 1;
+      }
+      
       console.log('Validating order data:', {
         customerName: orderData.customerName,
         estimatedShippingDate: orderData.estimatedShippingDate,
