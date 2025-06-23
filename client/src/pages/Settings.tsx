@@ -1647,7 +1647,6 @@ const Settings = () => {
                                     <Switch
                                       checked={field.value}
                                       onCheckedChange={field.onChange}
-                                      size="sm"
                                     />
                                   </FormControl>
                                   <FormLabel className="text-sm font-normal">New Orders</FormLabel>
@@ -1667,7 +1666,6 @@ const Settings = () => {
                                     <Switch
                                       checked={field.value}
                                       onCheckedChange={field.onChange}
-                                      size="sm"
                                     />
                                   </FormControl>
                                   <FormLabel className="text-sm font-normal">Call Logs</FormLabel>
@@ -1687,7 +1685,6 @@ const Settings = () => {
                                     <Switch
                                       checked={field.value}
                                       onCheckedChange={field.onChange}
-                                      size="sm"
                                     />
                                   </FormControl>
                                   <FormLabel className="text-sm font-normal">Low Stock</FormLabel>
@@ -1707,7 +1704,6 @@ const Settings = () => {
                                     <Switch
                                       checked={field.value}
                                       onCheckedChange={field.onChange}
-                                      size="sm"
                                     />
                                   </FormControl>
                                   <FormLabel className="text-sm font-normal">Invoices</FormLabel>
@@ -1727,7 +1723,6 @@ const Settings = () => {
                                     <Switch
                                       checked={field.value}
                                       onCheckedChange={field.onChange}
-                                      size="sm"
                                     />
                                   </FormControl>
                                   <FormLabel className="text-sm font-normal">Payments</FormLabel>
@@ -1739,8 +1734,8 @@ const Settings = () => {
                             />
                           </div>
                         </div>
-                        
-                        </div>
+                      </div>
+                    )}
                         
                         <div className="mt-6 space-y-4 border-t pt-4">
                           <h4 className="text-md font-semibold">Customize Notification Templates</h4>
@@ -1982,7 +1977,7 @@ const Settings = () => {
                             </div>
                           </div>
                         </div>
-                      </>
+                      </div>
                     )}
                   </div>
                   

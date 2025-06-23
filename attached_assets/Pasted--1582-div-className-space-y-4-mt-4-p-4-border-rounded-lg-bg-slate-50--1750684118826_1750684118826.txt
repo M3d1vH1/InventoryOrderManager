@@ -1,0 +1,88 @@
+
+1582                       <div className="space-y-4 mt-4 p-4 border rounded-lg bg-slate-50">
+                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1583                         <h4 className="text-sm font-medium text-slate-700">Webhook Configuration</h4>
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ ...
+1983                           </div>
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1984                         </div>
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+client/src/pages/Settings.tsx:1985:23 - error TS1005: ')' expected.
+
+1985                       </>
+                           ~~
+
+client/src/pages/Settings.tsx:1985:25 - error TS1003: Identifier expected.
+
+1985                       </>
+                             ~
+
+client/src/pages/Settings.tsx:1986:22 - error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+1986                     )}
+                          ~
+
+client/src/pages/Settings.tsx:1995:19 - error TS17002: Expected corresponding JSX closing tag for 'Form'.
+
+1995                 </div>
+                       ~~~
+
+client/src/pages/Settings.tsx:1996:17 - error TS17015: Expected corresponding closing tag for JSX fragment.
+
+1996               </Form>
+                     ~~~~
+
+client/src/pages/Settings.tsx:1996:21 - error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+
+1996               </Form>
+                         ~
+
+client/src/pages/Settings.tsx:2061:19 - error TS1003: Identifier expected.
+
+2061                 </>
+                       ~
+
+client/src/pages/Settings.tsx:2062:16 - error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+2062               )}
+                    ~
+
+client/src/pages/Settings.tsx:2063:15 - error TS17002: Expected corresponding JSX closing tag for 'Card'.
+
+2063             </CardContent>
+                   ~~~~~~~~~~~
+
+client/src/pages/Settings.tsx:2064:13 - error TS17002: Expected corresponding JSX closing tag for 'TabsContent'.
+
+2064           </Card>
+                 ~~~~
+
+client/src/pages/Settings.tsx:2065:11 - error TS17002: Expected corresponding JSX closing tag for 'Tabs'.
+
+2065         </TabsContent>
+               ~~~~~~~~~~~
+
+client/src/pages/Settings.tsx:3085:9 - error TS17002: Expected corresponding JSX closing tag for 'div'.
+
+3085       </Tabs>
+             ~~~~
+
+client/src/pages/Settings.tsx:3086:5 - error TS1005: ')' expected.
+
+3086     </div>
+         ~~
+
+client/src/pages/Settings.tsx:3087:3 - error TS1109: Expression expected.
+
+3087   );
+       ~
+
+client/src/pages/Settings.tsx:3088:1 - error TS1128: Declaration or statement expected.
+
+3088 };
+     ~
+
+
+Found 16 errors in the same file, starting at: client/src/pages/Settings.tsx:1582
