@@ -1019,7 +1019,7 @@ const Settings = () => {
         overdueInvoiceAlerts: notificationSettingsData.overdueInvoiceAlerts || false,
         
         // Slack notification settings
-        slackEnabled: notificationSettingsData.slackEnabled || false,
+        slackEnabled: notificationSettingsData.slackEnabled ?? false,
         slackWebhookUrl: notificationSettingsData.slackWebhookUrl || '',
         slackFinanceWebhookUrl: notificationSettingsData.slackFinanceWebhookUrl || '',
         slackNotifyNewOrders: notificationSettingsData.slackNotifyNewOrders || false,
@@ -1580,10 +1580,13 @@ const Settings = () => {
                       )}
                     />
                     
+                    <div className="text-red-500 font-bold p-2 bg-red-100 rounded">
+                      DEBUG: Slack enabled = {String(notificationForm.watch('slackEnabled'))} | Data: {JSON.stringify(notificationSettingsData?.slackEnabled)} | Raw: {JSON.stringify(notificationSettingsData)}
+                    </div>
                     {notificationForm.watch('slackEnabled') && (
                       <>
-                        <div className="text-red-500 font-bold p-2 bg-red-100 rounded">
-                          DEBUG: Slack enabled = {String(notificationForm.watch('slackEnabled'))}
+                        <div className="text-green-500 font-bold p-2 bg-green-100 rounded">
+                          SLACK IS ENABLED - FIELDS SHOULD BE VISIBLE BELOW
                         </div>
                         <FormField
                           control={notificationForm.control}
