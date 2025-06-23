@@ -20,9 +20,8 @@ import logger from './utils/logger';
 // Load environment variables from .env file
 dotenv.config();
 
-// Force development mode for testing
-process.env.NODE_ENV = 'development';
-const NODE_ENV = 'development';
+// Use environment variable or default to production
+const NODE_ENV = process.env.NODE_ENV || 'production';
 
 // Setup process-level error handlers
 setupProcessErrorHandlers();
