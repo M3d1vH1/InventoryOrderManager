@@ -1,0 +1,109 @@
+<TabsContent value="notifications" className="mt-4">
+  <Card>
+    <CardHeader>
+      <CardTitle>Notification Preferences</CardTitle>
+      <CardDescription>
+        Configure how and when you receive notifications
+      </CardDescription>
+    </CardHeader>
+    <CardContent>
+      {isNotificationLoading ? (
+        <div className="text-center py-4">
+          <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+          <p className="mt-2 text-sm text-slate-500">Loading notification settings...</p>
+        </div>
+      ) : (
+        <Form {...notificationForm}>
+          <div className="space-y-6">
+            {/* System Alerts */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">System Alerts</h3>
+              <FormField
+                control={notificationForm.control}
+                name="lowStockAlerts"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Low Stock Alerts</FormLabel>
+                      <FormDescription>
+                        Receive notifications when products are running low
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={notificationForm.control}
+                name="orderConfirmation"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Order Confirmations</FormLabel>
+                      <FormDescription>
+                        Receive notifications when new orders are placed
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={notificationForm.control}
+                name="shippingUpdates"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Shipping Updates</FormLabel>
+                      <FormDescription>
+                        Receive notifications when order status changes
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={notificationForm.control}
+                name="dailyReports"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Daily Reports</FormLabel>
+                      <FormDescription>
+                        Receive daily summary reports
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={notificationForm.control}
+                name="weeklyReports"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Weekly Reports</FormLabel>
+                      <FormDescription>
+                        Receive weekly summary reports
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Sound Notifications */}
+            <div className="sp...
