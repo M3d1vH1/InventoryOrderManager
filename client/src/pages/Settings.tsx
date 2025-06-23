@@ -23,8 +23,8 @@ import HealthCheck from "@/components/HealthCheck";
 import BundleAnalyzer from "@/components/BundleAnalyzer";
 import PerformanceAnalyzer from "@/components/performance/PerformanceAnalyzer";
 import DatabasePerformanceAnalyzer from "@/components/database/DatabasePerformanceAnalyzer";
-import UserManagement from "@/components/settings/UserManagement";
-import TemplateEditor from "@/components/settings/TemplateEditor";
+import { UserManagement } from "@/components/settings/UserManagement";
+import { TemplateEditor } from "@/components/settings/TemplateEditor";
 import { Save, Volume2 } from "lucide-react";
 
 // --- SCHEMAS ---

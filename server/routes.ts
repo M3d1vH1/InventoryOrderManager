@@ -3646,13 +3646,49 @@ A 1
   
   // Company settings routes
   app.get('/api/company-settings', isAuthenticated, getCompanySettings);
-  
   app.put('/api/company-settings', isAuthenticated, hasRole(['admin']), updateCompanySettings);
   
-  // Notification settings routes
+  // Notification settings routes (multiple endpoints for compatibility)
   app.get('/api/notification-settings', isAuthenticated, getNotificationSettings);
-  
   app.put('/api/notification-settings', isAuthenticated, hasRole(['admin']), updateNotificationSettings);
+  app.get('/api/settings/notifications', isAuthenticated, getNotificationSettings);
+  app.post('/api/settings/notifications', isAuthenticated, hasRole(['admin']), updateNotificationSettings);
+  app.post('/api/settings/test-webhook', isAuthenticated, testSlackWebhook);
+  
+  // User management routes
+  app.get('/api/users', isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ message: 'Failed to fetch users' });
+    }
+  });
+
+  app.post('/api/users', isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
+    try {
+      const { username, password, role } = req.body;
+      const hashedPassword = await hashPassword(password);
+      const user = await storage.createUser({ username, password: hashedPassword, role });
+      const { password: _, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error('Error creating user:', error);
+      res.status(500).json({ message: 'Failed to create user' });
+    }
+  });
+
+  app.delete('/api/users/:id', isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      await storage.deleteUser(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ message: 'Failed to delete user' });
+    }
+  });
   
   // Slack webhook test route
   app.post('/api/settings/test-slack', isAuthenticated, hasRole(['admin']), testSlackWebhook);
