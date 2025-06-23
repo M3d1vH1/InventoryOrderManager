@@ -115,13 +115,27 @@ const Settings: React.FC = () => {
 
   // Save notification settings
   const saveNotificationSettings = useMutation({
-    mutationFn: async (values: z.infer<typeof notificationSettingsSchema>) => apiRequest("/api/settings/notifications", {
-      method: "POST",
-      body: JSON.stringify(values),
-      headers: { "Content-Type": "application/json" },
-    }),
-    onSuccess: () => {
-      toast({ title: "Settings saved", description: "Notification settings updated." });
+    mutationFn: async (values: z.infer<typeof notificationSettingsSchema>) => {
+      console.log("Saving notification settings:", values);
+      
+      const response = await fetch("/api/settings/notifications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      console.log("Settings saved successfully:", data);
+      toast({ title: "Settings saved", description: "Notification settings updated successfully." });
       queryClient.invalidateQueries({ queryKey: ["/api/settings/notifications"] });
     },
     onError: (error: any) => {
