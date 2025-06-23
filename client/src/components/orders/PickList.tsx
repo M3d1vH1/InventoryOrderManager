@@ -104,6 +104,9 @@ const PickList = ({ order }: { order: Order }) => {
   const { data: shippingCompanies = [] } = useQuery<string[]>({
     queryKey: ['/api/shipping-companies'],
   });
+  
+  // Debug shipping companies data
+  console.log('Shipping companies loaded:', shippingCompanies.length, shippingCompanies);
 
   // Mutation to update customer shipping company
   const updateCustomerShippingMutation = useMutation({
@@ -763,6 +766,9 @@ A 1
                       {company}
                     </option>
                   ))}
+                  {shippingCompanies.length === 0 && (
+                    <option disabled>Loading shipping companies...</option>
+                  )}
                 </select>
               </div>
               
