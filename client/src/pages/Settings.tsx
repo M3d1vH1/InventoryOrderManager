@@ -47,17 +47,26 @@ const notificationSettingsSchema = z.object({
   weeklyReports: z.boolean(),
   soundEnabled: z.boolean().optional(),
   
+  // Invoice and Payment alerts
+  invoiceAlerts: z.boolean().optional(),
+  paymentAlerts: z.boolean().optional(),
+  overdueInvoiceAlerts: z.boolean().optional(),
+  
   // Slack notification settings
   slackEnabled: z.boolean().optional(),
   slackWebhookUrl: z.string().optional().nullable(),
   slackNotifyNewOrders: z.boolean().optional(),
   slackNotifyCallLogs: z.boolean().optional(),
   slackNotifyLowStock: z.boolean().optional(),
+  slackNotifyInvoices: z.boolean().optional(),
+  slackNotifyPayments: z.boolean().optional(),
   
   // Slack notification templates
   slackOrderTemplate: z.string().optional().nullable(),
   slackCallLogTemplate: z.string().optional().nullable(),
   slackLowStockTemplate: z.string().optional().nullable(),
+  slackInvoiceTemplate: z.string().optional().nullable(),
+  slackPaymentTemplate: z.string().optional().nullable(),
 });
 
 // Email settings schema
@@ -874,16 +883,24 @@ const Settings = () => {
     dailyReports: boolean;
     weeklyReports: boolean;
     soundEnabled: boolean;
+    // Invoice and Payment alerts
+    invoiceAlerts?: boolean;
+    paymentAlerts?: boolean;
+    overdueInvoiceAlerts?: boolean;
     // Slack notification fields
     slackEnabled?: boolean;
     slackWebhookUrl?: string | null;
     slackNotifyNewOrders?: boolean;
     slackNotifyCallLogs?: boolean;
     slackNotifyLowStock?: boolean;
+    slackNotifyInvoices?: boolean;
+    slackNotifyPayments?: boolean;
     // Slack notification templates
     slackOrderTemplate?: string | null;
     slackCallLogTemplate?: string | null;
     slackLowStockTemplate?: string | null;
+    slackInvoiceTemplate?: string | null;
+    slackPaymentTemplate?: string | null;
     createdAt: string;
     updatedAt: string;
   }
@@ -994,16 +1011,25 @@ const Settings = () => {
         weeklyReports: notificationSettingsData.weeklyReports || false,
         soundEnabled: notificationSettingsData.soundEnabled || false,
         
+        // Invoice and Payment alerts
+        invoiceAlerts: notificationSettingsData.invoiceAlerts || false,
+        paymentAlerts: notificationSettingsData.paymentAlerts || false,
+        overdueInvoiceAlerts: notificationSettingsData.overdueInvoiceAlerts || false,
+        
         // Slack notification settings
         slackEnabled: notificationSettingsData.slackEnabled || false,
         slackWebhookUrl: notificationSettingsData.slackWebhookUrl || '',
         slackNotifyNewOrders: notificationSettingsData.slackNotifyNewOrders || false,
         slackNotifyCallLogs: notificationSettingsData.slackNotifyCallLogs || false,
         slackNotifyLowStock: notificationSettingsData.slackNotifyLowStock || false,
+        slackNotifyInvoices: notificationSettingsData.slackNotifyInvoices || false,
+        slackNotifyPayments: notificationSettingsData.slackNotifyPayments || false,
         // Slack notification templates
         slackOrderTemplate: notificationSettingsData.slackOrderTemplate || '',
         slackCallLogTemplate: notificationSettingsData.slackCallLogTemplate || '',
         slackLowStockTemplate: notificationSettingsData.slackLowStockTemplate || '',
+        slackInvoiceTemplate: notificationSettingsData.slackInvoiceTemplate || '',
+        slackPaymentTemplate: notificationSettingsData.slackPaymentTemplate || '',
       });
     }
   }, [notificationSettingsData, notificationForm]);
@@ -1335,28 +1361,93 @@ const Settings = () => {
                           )}
                         />
                         
+                        <h3 className="text-lg font-medium pt-4">Invoice & Payment Alerts</h3>
+                        
+                        <FormField
+                          control={notificationForm.control}
+                          name="invoiceAlerts"
+                          render={({ field }) => (
+                            <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">Invoice Creation Alerts</FormLabel>
+                                <FormDescription>
+                                  Receive notifications when new invoices are created
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={notificationForm.control}
+                          name="paymentAlerts"
+                          render={({ field }) => (
+                            <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">Payment Recording Alerts</FormLabel>
+                                <FormDescription>
+                                  Receive notifications when payments are recorded
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={notificationForm.control}
+                          name="overdueInvoiceAlerts"
+                          render={({ field }) => (
+                            <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">Overdue Invoice Alerts</FormLabel>
+                                <FormDescription>
+                                  Receive notifications when invoices become overdue
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        
                         <h3 className="text-lg font-medium pt-4">Order Notifications</h3>
                         
                         <FormField
                           control={notificationForm.control}
                           name="orderConfirmation"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Order Confirmations</FormLabel>
-                            <FormDescription>
-                              Receive notifications when new orders are placed
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
+                          render={({ field }) => (
+                            <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">Order Confirmations</FormLabel>
+                                <FormDescription>
+                                  Receive notifications when new orders are placed
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
                     
                     <FormField
                       control={notificationForm.control}
@@ -1552,6 +1643,38 @@ const Settings = () => {
                                   />
                                 </FormControl>
                                 <FormLabel className="text-sm font-normal">Low Stock Alerts</FormLabel>
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={notificationForm.control}
+                            name="slackNotifyInvoices"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2 rounded p-2">
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <FormLabel className="text-sm font-normal">Invoice Alerts</FormLabel>
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={notificationForm.control}
+                            name="slackNotifyPayments"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2 rounded p-2">
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <FormLabel className="text-sm font-normal">Payment Alerts</FormLabel>
                               </FormItem>
                             )}
                           />
