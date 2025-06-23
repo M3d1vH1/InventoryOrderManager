@@ -45,6 +45,12 @@ export class SlackNotificationService {
     }
   }
   
+  // Send notification method for invoice/payment service compatibility
+  async sendNotification(webhookUrl: string, message: string): Promise<boolean> {
+    const slackMessage: SlackMessage = { text: message };
+    return this.sendSlackMessage(slackMessage, webhookUrl);
+  }
+
   // Send a message to Slack
   private async sendSlackMessage(message: SlackMessage, webhookUrl: string): Promise<boolean> {
     try {
@@ -77,66 +83,23 @@ export class SlackNotificationService {
     }
   }
   
-  // Apply template with data
+  // Apply template with data - simplified version
   private applyTemplate(template: string, data: Record<string, any>): SlackMessage {
     try {
-      // Log the incoming template and data
-      console.log('Applying template:', template ? template.substring(0, 100) + '...' : 'undefined');
-      console.log('With data:', JSON.stringify(data));
-      console.log('totalItems value in applyTemplate:', data.totalItems);
-
-      // Determine if template is a JSON string or a plain text template
-      let isJsonTemplate = false;
+      let messageText = template;
       
-      try {
-        const test = JSON.parse(template);
-        isJsonTemplate = test && typeof test === 'object';
-        console.log('Detected JSON template');
-      } catch (e) {
-        console.log('Detected plain text template');
-        isJsonTemplate = false;
-      }
+      // Replace all template variables with actual data
+      Object.entries(data).forEach(([key, value]) => {
+        const regex = new RegExp(`\\{${key}\\}`, 'g');
+        const strValue = value !== undefined && value !== null ? String(value) : '';
+        messageText = messageText.replace(regex, strValue);
+      });
       
-      if (isJsonTemplate) {
-        // It's a JSON template - replace variables in the string first, then parse
-        let templateStr = template;
-        
-        // Replace all template variables with actual data
-        Object.entries(data).forEach(([key, value]) => {
-          const regex = new RegExp(`\\{${key}\\}`, 'g');
-          const strValue = value !== undefined && value !== null ? String(value) : '';
-          templateStr = templateStr.replace(regex, strValue);
-        });
-        
-        console.log('JSON template after variable replacement:', templateStr.substring(0, 100) + '...');
-        
-        // Parse the template as JSON after variable replacement
-        try {
-          return JSON.parse(templateStr);
-        } catch (error) {
-          console.error('Error parsing JSON template after replacement:', error);
-          // If JSON parsing fails after replacement, fall back to plain text
-          return {
-            text: templateStr
-          };
-        }
-      } else {
-        // It's a plain text template - create a simple message with replaced variables
-        let messageText = template;
-        
-        // Replace all template variables with actual data
-        Object.entries(data).forEach(([key, value]) => {
-          const regex = new RegExp(`\\{${key}\\}`, 'g');
-          const strValue = value !== undefined && value !== null ? String(value) : '';
-          messageText = messageText.replace(regex, strValue);
-        });
-        
-        console.log('Plain text template after variable replacement:', messageText);
-        
-        return {
-          text: messageText
-        };
-      }
+      console.log('Template applied successfully');
+      
+      return {
+        text: messageText
+      };
     } catch (error) {
       console.error('Error applying template:', error);
       // Fallback to a simple text message if template parsing fails
@@ -148,100 +111,35 @@ export class SlackNotificationService {
   
   // Format order for Slack notification using template
   private formatOrderNotification(order: Order, template?: string): SlackMessage {
-    // Default template if none is provided
-    const defaultTemplate = JSON.stringify({
-      text: `New Order #{orderNumber} received from {customerName}`,
-      blocks: [
-        {
-          type: "header",
-          text: {
-            type: "plain_text",
-            text: "🛒 New Order Received",
-            emoji: true
-          }
-        },
-        {
-          type: "section",
-          fields: [
-            {
-              type: "mrkdwn",
-              text: "*Order Number:*\n#{orderNumber}"
-            },
-            {
-              type: "mrkdwn",
-              text: "*Customer:*\n{customerName}"
-            }
-          ]
-        },
-        {
-          type: "section",
-          fields: [
-            {
-              type: "mrkdwn",
-              text: "*Date:*\n{orderDate}"
-            },
-            {
-              type: "mrkdwn",
-              text: "*Status:*\n{status}"
-            }
-          ]
-        },
-        {
-          type: "divider"
-        },
-        {
-          type: "actions",
-          elements: [
-            {
-              type: "button",
-              text: {
-                type: "plain_text",
-                text: "View Order",
-                emoji: true
-              },
-              url: "{appUrl}/orders/{id}",
-              value: "view_order_{id}"
-            }
-          ]
-        }
-      ]
-    });
+    // Default simple template if none is provided
+    const defaultTemplate = `🛒 *New Order Received*
+• Order: #{orderNumber}
+• Customer: {customerName}
+• Date: {orderDate}
+• Status: {status}
+• Items: {totalItems}
+• View: {appUrl}/orders/{id}`;
     
-    // Log incoming order object to see what properties are available
-    console.log('Raw order object in formatOrderNotification:', JSON.stringify(order));
-    console.log('totalItems from order object:', (order as any).totalItems);
-    
-    // Get the order items to calculate the total items (if not available directly)
-    let totalItems = (order as any).totalItems || 0;
-    let totalPrice = (order as any).totalPrice || 0;
-    let shippingAddress = (order as any).shippingAddress || '';
-    
-    // Force totalItems to use the value from the incoming order object 
-    // and set a default of 1 if it's missing or zero (orders must have at least one item)
-    totalItems = typeof (order as any).totalItems === 'number' ? (order as any).totalItems : 
-                (totalItems > 0 ? totalItems : 1);
+    // Calculate derived properties without modifying the order object
+    const totalItems = (order as any).totalItems || 1;
+    const totalPrice = (order as any).totalPrice || 0;
     
     // Prepare data for template variables
     const data = {
       id: order.id,
       orderNumber: order.orderNumber,
-      customer: order.customerName, // Both customer and customerName for flexibility
+      customer: order.customerName,
       customerName: order.customerName,
-      orderDate: new Date(order.orderDate).toLocaleString(),
+      orderDate: order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'Unknown',
       status: order.status,
-      priority: order.priority || 'medium', // Add priority field with default
-      items: (order as any).items || 'Unknown items',
-      totalItems: totalItems, // Use the forced value we determined above
-      total: typeof totalPrice === 'number' ? `$${totalPrice.toFixed(2)}` : '$0.00',
-      totalPrice: typeof totalPrice === 'number' ? `$${totalPrice.toFixed(2)}` : '$0.00',
-      totalValue: typeof totalPrice === 'number' ? `$${totalPrice.toFixed(2)}` : '$0.00',
-      shippingAddress: shippingAddress,
+      priority: order.priority || 'medium',
+      totalItems: totalItems,
+      total: typeof totalPrice === 'number' ? `€${totalPrice.toFixed(2)}` : '€0.00',
       notes: order.notes || 'No notes',
       appUrl: process.env.APP_URL || '',
     };
     
-    console.log('Order notification data:', data);
-    console.log('Order template:', template);
+    console.log('Order notification data prepared for:', order.orderNumber);
     
     return this.applyTemplate(template || defaultTemplate, data);
   }
@@ -443,70 +341,58 @@ export class SlackNotificationService {
   
   // Notify about a new order
   async notifyNewOrder(order: Order): Promise<boolean> {
-    console.log('Starting Slack notification process for order:', order.orderNumber);
-    
-    const settings = await this.getNotificationSettings();
-    
-    if (!settings || !settings.slackEnabled || !settings.slackNotifyNewOrders || !settings.slackWebhookUrl) {
-      console.log('Slack notification skipped: either not enabled or missing webhook URL', {
-        enabled: settings?.slackEnabled,
-        notifyNewOrders: settings?.slackNotifyNewOrders,
-        hasWebhookUrl: !!settings?.slackWebhookUrl
-      });
+    try {
+      console.log('Starting Slack notification for order:', order.orderNumber);
+      
+      const settings = await this.getNotificationSettings();
+      
+      if (!settings || !settings.slackEnabled || !settings.slackNotifyNewOrders) {
+        console.log('Slack notification skipped: not enabled in settings');
+        return false;
+      }
+      
+      if (!settings.slackWebhookUrl) {
+        console.error('Slack notification failed: webhook URL not configured');
+        return false;
+      }
+      
+      // Validate webhook URL format
+      if (!settings.slackWebhookUrl.startsWith('https://hooks.slack.com/')) {
+        console.error('Invalid Slack webhook URL format');
+        return false;
+      }
+      
+      // Get order items to calculate total
+      let totalItems = 1; // Default fallback
+      try {
+        const orderItems = await this.storage.getOrderItems(order.id);
+        totalItems = orderItems.length;
+        console.log(`Found ${totalItems} items for order ${order.orderNumber}`);
+      } catch (error) {
+        console.warn('Could not fetch order items, using default count:', error);
+      }
+      
+      // Add totalItems to order data (non-destructive)
+      const orderWithItems = { ...order, totalItems };
+      
+      // Format and send message
+      const template = settings.slackOrderTemplate || undefined;
+      const message = this.formatOrderNotification(orderWithItems as Order, template);
+      
+      const success = await this.sendSlackMessage(message, settings.slackWebhookUrl);
+      
+      if (success) {
+        console.log('Slack notification sent successfully for order:', order.orderNumber);
+      } else {
+        console.error('Failed to send Slack notification for order:', order.orderNumber);
+      }
+      
+      return success;
+      
+    } catch (error) {
+      console.error('Error in notifyNewOrder:', error);
       return false;
     }
-    
-    console.log('Notification settings for order notification:', {
-      slackEnabled: settings.slackEnabled,
-      slackNotifyNewOrders: settings.slackNotifyNewOrders,
-      hasWebhookUrl: !!settings.slackWebhookUrl,
-      hasOrderTemplate: !!settings.slackOrderTemplate
-    });
-    
-    console.log('About to send slack notification for order');
-    
-    // Always fetch the order items to get the most accurate count
-    try {
-      const orderItems = await this.storage.getOrderItems(order.id);
-      console.log(`Found ${orderItems.length} items for order ${order.orderNumber}`);
-      
-      // Calculate total items and total price
-      const totalItems = orderItems.length;
-      
-      // Add these properties to the order object
-      (order as any).totalItems = totalItems;
-      (order as any).items = totalItems > 0 
-        ? `${totalItems} item${totalItems !== 1 ? 's' : ''}` 
-        : 'No items';
-      
-      console.log(`Order now has totalItems=${totalItems}`);
-      
-    } catch (error) {
-      console.error(`Error getting order items for notification: ${error}`);
-      // Set default values if we can't get the items
-      (order as any).totalItems = 0;
-      (order as any).items = 'No items';
-    }
-    
-    // Log the notification settings and order data
-    console.log('Order template:', settings.slackOrderTemplate);
-    
-    // Explicitly fetch the template from the database again to ensure we have the latest
-    try {
-      const freshSettings = await this.storage.getNotificationSettings();
-      if (freshSettings && freshSettings.slackOrderTemplate) {
-        console.log('Using freshly fetched template:', freshSettings.slackOrderTemplate);
-        const message = this.formatOrderNotification(order, freshSettings.slackOrderTemplate);
-        return this.sendSlackMessage(message, settings.slackWebhookUrl);
-      }
-    } catch (error) {
-      console.error('Error fetching fresh notification settings:', error);
-    }
-    
-    // Fall back to the original template if needed
-    const template = settings.slackOrderTemplate ? settings.slackOrderTemplate : undefined;
-    const message = this.formatOrderNotification(order, template);
-    return this.sendSlackMessage(message, settings.slackWebhookUrl);
   }
   
   // Notify about a new call log

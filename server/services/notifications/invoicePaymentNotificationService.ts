@@ -24,7 +24,7 @@ export interface InvoiceOverdueEvent {
 export type NotificationEvent = InvoiceCreatedEvent | PaymentCreatedEvent | InvoiceOverdueEvent;
 
 class InvoicePaymentNotificationService {
-  private slackService = createSlackService();
+  private slackService = createSlackService(storage);
 
   async handleEvent(event: NotificationEvent): Promise<void> {
     try {

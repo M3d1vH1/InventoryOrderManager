@@ -455,8 +455,6 @@ export const insertNotificationSettingsSchema = createInsertSchema(notificationS
     overdueInvoiceAlerts: z.boolean().default(true),
     slackNotifyInvoices: z.boolean().default(true),
     slackNotifyPayments: z.boolean().default(true),
-    slackInvoiceTemplate: z.string().optional(),
-    slackPaymentTemplate: z.string().optional(),
   });
 
 export type InsertNotificationSettings = z.infer<typeof insertNotificationSettingsSchema>;
