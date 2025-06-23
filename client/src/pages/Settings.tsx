@@ -1578,26 +1578,18 @@ const Settings = () => {
                     />
                     
                     {notificationForm.watch('slackEnabled') && (
-                      <div className="space-y-4 mt-4 p-4 border rounded-lg bg-slate-50">
-                        <h4 className="text-sm font-medium text-slate-700">Webhook Configuration</h4>
-                        <p className="text-xs text-slate-600">Configure different Slack channels for different types of notifications</p>
-                        
+                      <>
                         <FormField
                           control={notificationForm.control}
                           name="slackWebhookUrl"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-sm font-medium">Main Webhook URL</FormLabel>
-                              <FormDescription className="text-xs">
-                                Default channel for orders, call logs, and general notifications
+                            <FormItem className="mt-2">
+                              <FormLabel>Main Slack Webhook URL</FormLabel>
+                              <FormDescription>
+                                Primary webhook URL for orders, call logs, and general notifications
                               </FormDescription>
                               <FormControl>
-                                <Input 
-                                  placeholder="https://hooks.slack.com/services/..." 
-                                  {...field} 
-                                  value={field.value || ''} 
-                                  className="font-mono text-xs"
-                                />
+                                <Input placeholder="https://hooks.slack.com/services/..." {...field} value={field.value || ''} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -1608,35 +1600,21 @@ const Settings = () => {
                           control={notificationForm.control}
                           name="slackFinanceWebhookUrl"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-sm font-medium">Finance Webhook URL (Optional)</FormLabel>
-                              <FormDescription className="text-xs">
-                                Separate channel for invoice and payment notifications. Leave empty to use main webhook.
+                            <FormItem className="mt-2">
+                              <FormLabel>Finance Webhook URL (Optional)</FormLabel>
+                              <FormDescription>
+                                Separate webhook URL for invoice and payment notifications. Leave empty to use main webhook.
                               </FormDescription>
                               <FormControl>
-                                <Input 
-                                  placeholder="https://hooks.slack.com/services/..." 
-                                  {...field} 
-                                  value={field.value || ''} 
-                                  className="font-mono text-xs"
-                                />
+                                <Input placeholder="https://hooks.slack.com/services/..." {...field} value={field.value || ''} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
                         
-                        <div className="pt-2">
-                          <p className="text-xs text-slate-500">
-                            💡 Tip: Use different webhooks to send notifications to specific channels like #orders and #finance
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                        
                         <div className="mt-4 space-y-2">
-                          <h4 className="text-sm font-medium text-slate-700">Notification Types</h4>
-                          <p className="text-xs text-slate-600 mb-3">Choose which events trigger Slack notifications</p>
+                          <h4 className="text-sm font-medium">Notification Types</h4>
                           
                           <FormField
                             control={notificationForm.control}
@@ -1650,6 +1628,156 @@ const Settings = () => {
                                   />
                                 </FormControl>
                                 <FormLabel className="text-sm font-normal">New Orders</FormLabel>
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={notificationForm.control}
+                            name="slackNotifyCallLogs"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2 rounded p-2">
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <FormLabel className="text-sm font-normal">Call Logs</FormLabel>
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={notificationForm.control}
+                            name="slackNotifyLowStock"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2 rounded p-2">
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <FormLabel className="text-sm font-normal">Low Stock</FormLabel>
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={notificationForm.control}
+                            name="slackNotifyInvoices"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2 rounded p-2">
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <FormLabel className="text-sm font-normal">Invoices (Finance Channel)</FormLabel>
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={notificationForm.control}
+                            name="slackNotifyPayments"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2 rounded p-2">
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <FormLabel className="text-sm font-normal">Payments (Finance Channel)</FormLabel>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </>
+                    )}
+                        
+                        <div className="mt-4 space-y-2">
+                          <h4 className="text-sm font-medium">Notification Types</h4>
+                          
+                          <FormField
+                            control={notificationForm.control}
+                            name="slackNotifyNewOrders"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2 rounded p-2">
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <FormLabel className="text-sm font-normal">New Orders</FormLabel>
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={notificationForm.control}
+                            name="slackNotifyCallLogs"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2 rounded p-2">
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <FormLabel className="text-sm font-normal">Call Logs</FormLabel>
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={notificationForm.control}
+                            name="slackNotifyLowStock"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2 rounded p-2">
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <FormLabel className="text-sm font-normal">Low Stock</FormLabel>
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={notificationForm.control}
+                            name="slackNotifyInvoices"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2 rounded p-2">
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <FormLabel className="text-sm font-normal">Invoices (Finance Channel)</FormLabel>
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={notificationForm.control}
+                            name="slackNotifyPayments"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2 rounded p-2">
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <FormLabel className="text-sm font-normal">Payments (Finance Channel)</FormLabel>
                               </FormItem>
                             )}
                           />
@@ -1718,28 +1846,8 @@ const Settings = () => {
                             )}
                           />
                         </div>
-                        
-                        <div className="mt-6 space-y-4 border-t pt-4">
-                          <h4 className="text-md font-semibold">Customize Notification Templates</h4>
-                          <p className="text-sm text-gray-500">
-                            You can customize the templates for different types of Slack notifications. 
-                            Use placeholders like {"{orderNumber}"}, {"{customer}"}, {"{productName}"}, etc.
-                          </p>
-                          
-                          <Accordion type="single" collapsible>
-                            <AccordionItem value="order-template">
-                              <AccordionTrigger>Order Notification Template</AccordionTrigger>
-                              <AccordionContent>
-                                <FormField
-                                  control={notificationForm.control}
-                                  name="slackOrderTemplate"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormControl>
-                                        <Textarea
-                                          placeholder="New order #{orderNumber} from {customer} for ${total}"
-                                          className="min-h-[120px]"
-                                          value={field.value || ''}
+                      </>
+                    )}
                                           onChange={field.onChange}
                                           onBlur={field.onBlur}
                                           name={field.name}
