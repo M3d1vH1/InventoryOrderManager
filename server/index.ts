@@ -20,7 +20,8 @@ import logger from './utils/logger';
 // Load environment variables from .env file
 dotenv.config();
 
-// Reset to normal environment detection
+// Force development mode for testing
+process.env.NODE_ENV = 'development';
 
 // Setup process-level error handlers
 setupProcessErrorHandlers();
