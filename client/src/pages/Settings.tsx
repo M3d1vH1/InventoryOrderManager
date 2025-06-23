@@ -3270,7 +3270,7 @@ const LabelTemplateEditor = () => {
     const after = text.substring(end, text.length);
     
     // Insert the variable at cursor position
-    const newText = `${before}{${variable}}${after}`;
+    const newText = before + '{' + variable + '}' + after;
     shippingLabelForm.setValue('content', newText);
     
     // Set focus back to textarea and place cursor after inserted variable
@@ -3354,7 +3354,7 @@ const LabelTemplateEditor = () => {
                       CAB EOS1 JScript Format
                     </AlertTitle>
                     <AlertDescription className="text-yellow-800 text-xs">
-                      This template uses JScript for the CAB EOS1 printer. Variables are enclosed in curly braces like {`{variable}`}. 
+                      This template uses JScript for the CAB EOS1 printer. Variables are enclosed in curly braces like {"{variable}"}. 
                       Refer to the <a href="#" className="underline">CAB programming manual</a> for JScript syntax.
                     </AlertDescription>
                   </Alert>
@@ -3378,7 +3378,7 @@ const LabelTemplateEditor = () => {
                         />
                       </FormControl>
                       <FormDescription>
-                        JScript code for label printing. Variable format: {`{variable_name}`}
+                        JScript code for label printing. Variable format: {"{variable_name}"}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -3590,7 +3590,7 @@ const EmailTemplateEditor = () => {
     const after = text.substring(end, text.length);
     
     // Insert the variable at cursor position
-    const newText = `${before}{{${variable}}}${after}`;
+    const newText = before + '{{' + variable + '}}' + after;
     emailTemplateForm.setValue('content', newText);
     
     // Set focus back to textarea and place cursor after inserted variable
@@ -3768,7 +3768,7 @@ const EmailTemplateEditor = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {availableVariables.map((variable) => (
                         <div key={variable.name} className="text-xs">
-                          <code className="bg-slate-200 px-1 rounded">{`{{${variable.name}}}`}</code>
+                          <code className="bg-slate-200 px-1 rounded">{"{{" + variable.name + "}}"}</code>
                           <span className="text-slate-500 ml-2">{variable.description}</span>
                         </div>
                       ))}
