@@ -1609,9 +1609,24 @@ const Settings = () => {
                         <FormField
                           control={notificationForm.control}
                           name="shippingUpdates"
-                            render={({ field }) => (
-                              <FormItem className="flex items-center space-x-2 rounded p-2">
-                                <FormControl>
+                          render={({ field }) => (
+                            <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">Shipping Updates</FormLabel>
+                                <FormDescription>
+                                  Send notifications when orders are shipped
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+
                                   <Switch
                                     checked={field.value}
                                     onCheckedChange={field.onChange}
