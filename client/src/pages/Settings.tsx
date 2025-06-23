@@ -1961,15 +1961,16 @@ const Settings = () => {
                         </div>
                       </>
                     )}
-                    
-                    <div className="flex justify-end mt-6">
-                      <Button type="submit" onClick={notificationForm.handleSubmit(onNotificationSubmit)}>
-                        <Save className="h-4 w-4 mr-2" />
-                        Save Preferences
-                      </Button>
-                    </div>
                   </div>
-                </Form>
+                  
+                  <div className="flex justify-end mt-6">
+                    <Button type="submit" onClick={notificationForm.handleSubmit(onNotificationSubmit)}>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Preferences
+                    </Button>
+                  </div>
+                </div>
+              </Form>
               
               <Separator className="my-6" />
               
