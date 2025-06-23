@@ -2691,7 +2691,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/shipping/customer/:customerId', isAuthenticated, async (req, res) => {
+  app.put('/api/customers/:customerId/shipping-company', isAuthenticated, async (req, res) => {
     try {
       const customerId = parseInt(req.params.customerId, 10);
       const { shippingCompany } = req.body;
@@ -2700,10 +2700,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Shipping company is required' });
       }
       
-      // Update customer's shipping company preference
+      // Update customer's shipping company preference using custom field (billingCompany) with 'other' preference
       const updatedCustomer = await storage.updateCustomer(customerId, {
         preferredShippingCompany: 'other',
-        shippingCompany: shippingCompany
+        billingCompany: shippingCompany // This is the custom_shipping_company field
       });
       
       if (!updatedCustomer) {

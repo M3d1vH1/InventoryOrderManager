@@ -95,6 +95,7 @@ const PickList = ({ order }: { order: Order }) => {
   const [showOutOfStockDialog, setShowOutOfStockDialog] = useState(false);
   const [outOfStockItem, setOutOfStockItem] = useState<{itemId: number, productName: string} | null>(null);
   const [newShippingCompany, setNewShippingCompany] = useState('');
+  const [customerCurrentShippingCompany, setCustomerCurrentShippingCompany] = useState('');
 
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ['/api/products'],
@@ -444,7 +445,7 @@ const PickList = ({ order }: { order: Order }) => {
     console.log(`Using user-specified box count: ${boxCount} with custom shipping company: ${customShippingCompany}`);
     
     // Create the JScript commands for the CAB EOS1 printer with all requested customer information
-    const createLabelJScript = async (boxNumber: number, totalBoxes: number) => {
+    const createLabelJScript = async (boxNumber: number, totalBoxes: number): Promise<string> => {
       // Get essential information
       const formattedDate = new Date(order.orderDate).toLocaleDateString();
       
@@ -472,20 +473,14 @@ const PickList = ({ order }: { order: Order }) => {
             customerAddress = addressParts.join(", ");
             customerPhone = customer.phone || "";
             
-            // Use custom shipping company if provided, otherwise use customer's default
+            // Use custom shipping company if provided, otherwise use customer's current computed company
             if (!customShippingCompany) {
-              if (customer.preferredShippingCompany === 'other' && customer.billingCompany) {
-                shippingCompany = customer.billingCompany;
-              } else if (customer.shippingCompany) {
-                shippingCompany = customer.shippingCompany;
-              }
+              shippingCompany = customer.currentShippingCompany || "N/A";
             }
             
             console.log("Debug shipping company:", {
               customShippingCompany,
-              preferredShippingCompany: customer.preferredShippingCompany,
-              customShippingCompany: customer.billingCompany,
-              shippingCompany: customer.shippingCompany,
+              currentShippingCompany: customer.currentShippingCompany,
               finalValue: shippingCompany
             });
             
@@ -715,7 +710,7 @@ A 1
 
       {/* Shipping Company Selection Dialog */}
       <Dialog open={showShippingCompanyDialog} onOpenChange={setShowShippingCompanyDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Επιλογή Εταιρείας Αποστολής</DialogTitle>
             <DialogDescription>
@@ -725,9 +720,19 @@ A 1
           
           <div className="py-4">
             <div className="space-y-4">
+              {/* Show current customer shipping company */}
+              <div className="bg-blue-50 p-3 rounded-md">
+                <div className="text-sm font-medium text-blue-800">
+                  Τρέχουσα εταιρεία πελάτη: <span className="font-bold">{customerCurrentShippingCompany || 'Δεν έχει οριστεί'}</span>
+                </div>
+                <div className="text-xs text-blue-600 mt-1">
+                  Πελάτης: {order.customerName}
+                </div>
+              </div>
+              
               <div>
                 <Label htmlFor="shipping-company" className="text-sm font-medium">
-                  Εταιρεία Αποστολής
+                  Επιλογή Εταιρείας Αποστολής
                 </Label>
                 <select
                   id="shipping-company"
@@ -736,7 +741,14 @@ A 1
                   onChange={(e) => setSelectedShippingCompany(e.target.value)}
                 >
                   <option value="">Επιλέξτε εταιρεία αποστολής...</option>
-                  {shippingCompanies.map((company) => (
+                  {customerCurrentShippingCompany && (
+                    <option value={customerCurrentShippingCompany} className="font-bold bg-blue-100">
+                      {customerCurrentShippingCompany} (Τρέχουσα προτίμηση)
+                    </option>
+                  )}
+                  {shippingCompanies
+                    .filter(company => company !== customerCurrentShippingCompany)
+                    .map((company) => (
                     <option key={company} value={company}>
                       {company}
                     </option>
@@ -774,6 +786,7 @@ A 1
                 setPendingLabelGeneration(null);
                 setSelectedShippingCompany('');
                 setNewShippingCompany('');
+                setCustomerCurrentShippingCompany('');
               }}
             >
               Ακύρωση
