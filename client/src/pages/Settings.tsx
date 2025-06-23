@@ -1019,7 +1019,7 @@ const Settings = () => {
         overdueInvoiceAlerts: notificationSettingsData.overdueInvoiceAlerts || false,
         
         // Slack notification settings
-        slackEnabled: notificationSettingsData.slackEnabled ?? false,
+        slackEnabled: Boolean(notificationSettingsData.slackEnabled),
         slackWebhookUrl: notificationSettingsData.slackWebhookUrl || '',
         slackFinanceWebhookUrl: notificationSettingsData.slackFinanceWebhookUrl || '',
         slackNotifyNewOrders: notificationSettingsData.slackNotifyNewOrders || false,
@@ -1580,14 +1580,8 @@ const Settings = () => {
                       )}
                     />
                     
-                    <div className="text-red-500 font-bold p-2 bg-red-100 rounded">
-                      DEBUG: Slack enabled = {String(notificationForm.watch('slackEnabled'))} | Data: {JSON.stringify(notificationSettingsData?.slackEnabled)} | Raw: {JSON.stringify(notificationSettingsData)}
-                    </div>
                     {notificationForm.watch('slackEnabled') && (
                       <>
-                        <div className="text-green-500 font-bold p-2 bg-green-100 rounded">
-                          SLACK IS ENABLED - FIELDS SHOULD BE VISIBLE BELOW
-                        </div>
                         <FormField
                           control={notificationForm.control}
                           name="slackWebhookUrl"
@@ -1605,29 +1599,27 @@ const Settings = () => {
                           )}
                         />
                         
-                        <div className="mt-2 p-3 border border-blue-200 rounded-lg bg-blue-50">
-                          <label className="text-blue-800 font-medium text-sm">Finance Slack Webhook URL (Optional)</label>
-                          <p className="text-blue-600 text-xs mb-2">
-                            Separate webhook URL for invoice and payment notifications. Leave empty to use main webhook.
-                          </p>
-                          <FormField
-                            control={notificationForm.control}
-                            name="slackFinanceWebhookUrl"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <Input 
-                                    placeholder="https://hooks.slack.com/services/..." 
-                                    {...field} 
-                                    value={field.value || ''} 
-                                    className="border-blue-300"
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
+                        <FormField
+                          control={notificationForm.control}
+                          name="slackFinanceWebhookUrl"
+                          render={({ field }) => (
+                            <FormItem className="mt-3 p-4 border-2 border-blue-200 rounded-lg bg-blue-50">
+                              <FormLabel className="text-blue-800 font-semibold">Finance Slack Webhook URL (Optional)</FormLabel>
+                              <FormDescription className="text-blue-700">
+                                Separate webhook URL for invoice and payment notifications. Leave empty to use main webhook.
+                              </FormDescription>
+                              <FormControl>
+                                <Input 
+                                  placeholder="https://hooks.slack.com/services/..." 
+                                  {...field} 
+                                  value={field.value || ''} 
+                                  className="border-blue-300 bg-white"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                         
                         <div className="mt-4 space-y-2">
                           <h4 className="text-sm font-medium">Notification Types</h4>
