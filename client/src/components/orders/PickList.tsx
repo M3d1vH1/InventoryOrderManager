@@ -94,6 +94,7 @@ const PickList = ({ order }: { order: Order }) => {
   const [pendingLabelGeneration, setPendingLabelGeneration] = useState<{boxCount: number} | null>(null);
   const [showOutOfStockDialog, setShowOutOfStockDialog] = useState(false);
   const [outOfStockItem, setOutOfStockItem] = useState<{itemId: number, productName: string} | null>(null);
+  const [newShippingCompany, setNewShippingCompany] = useState('');
 
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ['/api/products'],
@@ -381,10 +382,12 @@ const PickList = ({ order }: { order: Order }) => {
 
   // Handle shipping company selection and proceed with label generation
   const handleShippingCompanySelected = async () => {
-    if (!selectedShippingCompany || !pendingLabelGeneration) {
+    const companyToUse = newShippingCompany.trim() || selectedShippingCompany;
+    
+    if (!companyToUse || !pendingLabelGeneration) {
       toast({
-        title: 'Error',
-        description: 'Please select a shipping company',
+        title: 'Σφάλμα',
+        description: 'Παρακαλώ επιλέξτε ή εισάγετε εταιρεία αποστολής',
         variant: 'destructive',
       });
       return;
@@ -713,9 +716,9 @@ A 1
       <Dialog open={showShippingCompanyDialog} onOpenChange={setShowShippingCompanyDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Select Shipping Company</DialogTitle>
+            <DialogTitle>Επιλογή Εταιρείας Αποστολής</DialogTitle>
             <DialogDescription>
-              Choose the shipping company for this order. This will update the customer's preference for future orders.
+              Επιλέξτε την εταιρεία αποστολής για αυτή την παραγγελία. Θα ενημερωθεί η προτίμηση του πελάτη για μελλοντικές παραγγελίες.
             </DialogDescription>
           </DialogHeader>
           
@@ -723,7 +726,7 @@ A 1
             <div className="space-y-4">
               <div>
                 <Label htmlFor="shipping-company" className="text-sm font-medium">
-                  Shipping Company
+                  Εταιρεία Αποστολής
                 </Label>
                 <select
                   id="shipping-company"
@@ -731,7 +734,7 @@ A 1
                   value={selectedShippingCompany}
                   onChange={(e) => setSelectedShippingCompany(e.target.value)}
                 >
-                  <option value="">Select a shipping company...</option>
+                  <option value="">Επιλέξτε εταιρεία αποστολής...</option>
                   {shippingCompanies.map((company) => (
                     <option key={company} value={company}>
                       {company}
@@ -740,7 +743,20 @@ A 1
                 </select>
               </div>
               
-              {selectedShippingCompany && (
+              <div className="mb-4">
+                <Label htmlFor="new-shipping-company" className="text-sm font-medium">
+                  Ή προσθέστε νέα εταιρεία:
+                </Label>
+                <Input
+                  id="new-shipping-company"
+                  placeholder="Όνομα νέας εταιρείας αποστολής"
+                  value={newShippingCompany}
+                  onChange={(e) => setNewShippingCompany(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              
+              {(selectedShippingCompany || newShippingCompany.trim()) && (
                 <div className="text-sm text-slate-600 bg-blue-50 p-3 rounded-md">
                   <strong>Note:</strong> This shipping company will be saved as the customer's preference for future orders.
                 </div>
@@ -756,17 +772,18 @@ A 1
                 setShowShippingCompanyDialog(false);
                 setPendingLabelGeneration(null);
                 setSelectedShippingCompany('');
+                setNewShippingCompany('');
               }}
             >
-              Cancel
+              Ακύρωση
             </Button>
             
             <Button 
               type="submit"
               onClick={handleShippingCompanySelected}
-              disabled={!selectedShippingCompany || updateCustomerShippingMutation.isPending}
+              disabled={(!selectedShippingCompany && !newShippingCompany.trim()) || updateCustomerShippingMutation.isPending}
             >
-              {updateCustomerShippingMutation.isPending ? 'Updating...' : 'Generate Labels'}
+              {updateCustomerShippingMutation.isPending ? 'Ενημέρωση...' : 'Δημιουργία Ετικετών'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1141,10 +1158,10 @@ A 1
           <DialogHeader>
             <DialogTitle className="flex items-center">
               <AlertTriangle className="mr-2 h-5 w-5 text-orange-600" />
-              {t('orderPickingPage.pickList.outOfStockConfirmation')}
+              Επιβεβαίωση Έλλειψης Αποθέματος
             </DialogTitle>
             <DialogDescription>
-              {t('orderPickingPage.pickList.outOfStockConfirmationDescription')}
+              Είστε βέβαιοι ότι θέλετε να σημειώσετε αυτό το προϊόν ως μη διαθέσιμο (0 ποσότητα);
             </DialogDescription>
           </DialogHeader>
           
@@ -1152,10 +1169,10 @@ A 1
             <Alert variant="default" className="mb-4 border-orange-200 bg-orange-50">
               <AlertTriangle className="h-4 w-4 text-orange-600" />
               <AlertTitle className="text-orange-800">
-                {t('orderPickingPage.pickList.markingAsOutOfStock')}
+                Σήμανση ως Έλλειψη Αποθέματος
               </AlertTitle>
               <AlertDescription className="text-orange-700">
-                <strong>{outOfStockItem?.productName}</strong> {t('orderPickingPage.pickList.willBeAddedToBackorder')}
+                <strong>{outOfStockItem?.productName}</strong> θα προστεθεί στις εκκρεμείς παραγγελίες
               </AlertDescription>
             </Alert>
           </div>
@@ -1169,7 +1186,7 @@ A 1
                 setOutOfStockItem(null);
               }}
             >
-              {t('orderPickingPage.pickList.cancel')}
+              Ακύρωση
             </Button>
             
             <Button 
@@ -1177,7 +1194,7 @@ A 1
               onClick={handleOutOfStockConfirm}
               className="bg-orange-600 hover:bg-orange-700"
             >
-              {t('orderPickingPage.pickList.confirmOutOfStock')}
+              Επιβεβαίωση Έλλειψης
             </Button>
           </DialogFooter>
         </DialogContent>

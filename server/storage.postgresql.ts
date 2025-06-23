@@ -4854,6 +4854,24 @@ export class DatabaseStorage implements IStorage {
         }
       });
 
+      // Get all unique shipping companies from customers table including custom ones
+      const allCustomerCompanies = await this.db
+        .selectDistinct({ company: customersTable.shippingCompany })
+        .from(customersTable)
+        .where(
+          and(
+            isNotNull(customersTable.shippingCompany),
+            ne(customersTable.shippingCompany, ''),
+            ne(customersTable.shippingCompany, 'N/A')
+          )
+        );
+
+      allCustomerCompanies.forEach(row => {
+        if (row.company && row.company.trim()) {
+          allCompanies.add(row.company.trim());
+        }
+      });
+
       // Add default Greek shipping companies
       const defaultCompanies = [
         'ΠΑΠΑΧΡΗΣΤΟΥ',
@@ -4862,7 +4880,11 @@ export class DatabaseStorage implements IStorage {
         'SPEEDEX',
         'ACS',
         'ΓΕΝΙΚΗ ΤΑΧΥΔΡΟΜΙΚΗ',
-        'COURIER CENTER'
+        'COURIER CENTER',
+        'GENIKI TAXYDROMIKI',
+        'ΚΟΥΡΙΕΡ ΣΕΝΤΕΡ',
+        'ΑΧΣ',
+        'ΣΠΙΝΤΕΞ'
       ];
 
       defaultCompanies.forEach(company => allCompanies.add(company));
