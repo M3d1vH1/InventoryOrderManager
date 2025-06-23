@@ -3739,7 +3739,7 @@ const EmailTemplateEditor = () => {
                               />
                             </FormControl>
                             <FormDescription>
-                              HTML + Handlebars syntax for dynamic content. Variable format: {`{{variable_name}}`}
+                              HTML + Handlebars syntax for dynamic content. Variable format: {"{{variable_name}}"}
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
