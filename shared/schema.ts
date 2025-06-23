@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, json, primaryKey, numeric, date, varchar, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, json, jsonb, primaryKey, numeric, date, varchar, decimal } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -418,24 +418,42 @@ export const notificationSettings = pgTable("notification_settings", {
   weeklyReports: boolean("weekly_reports").notNull().default(true),
   soundEnabled: boolean("sound_enabled").notNull().default(true),
   
+  // Invoice and Payment alerts
+  invoiceAlerts: boolean("invoice_alerts").notNull().default(true),
+  paymentAlerts: boolean("payment_alerts").notNull().default(true),
+  overdueInvoiceAlerts: boolean("overdue_invoice_alerts").notNull().default(true),
+  
   // Slack notification settings
   slackEnabled: boolean("slack_enabled").notNull().default(false),
   slackWebhookUrl: text("slack_webhook_url"),
   slackNotifyNewOrders: boolean("slack_notify_new_orders").notNull().default(true),
   slackNotifyCallLogs: boolean("slack_notify_call_logs").notNull().default(true),
   slackNotifyLowStock: boolean("slack_notify_low_stock").notNull().default(false),
+  slackNotifyInvoices: boolean("slack_notify_invoices").notNull().default(true),
+  slackNotifyPayments: boolean("slack_notify_payments").notNull().default(true),
   
   // Slack notification templates
   slackOrderTemplate: text("slack_order_template"),
   slackCallLogTemplate: text("slack_call_log_template"),
   slackLowStockTemplate: text("slack_low_stock_template"),
+  slackInvoiceTemplate: text("slack_invoice_template"),
+  slackPaymentTemplate: text("slack_payment_template"),
   
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull(),
 });
 
 export const insertNotificationSettingsSchema = createInsertSchema(notificationSettings)
-  .omit({ id: true, createdAt: true, updatedAt: true });
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    invoiceAlerts: z.boolean().default(true),
+    paymentAlerts: z.boolean().default(true),
+    overdueInvoiceAlerts: z.boolean().default(true),
+    slackNotifyInvoices: z.boolean().default(true),
+    slackNotifyPayments: z.boolean().default(true),
+    slackInvoiceTemplate: z.string().optional(),
+    slackPaymentTemplate: z.string().optional(),
+  });
 
 export type InsertNotificationSettings = z.infer<typeof insertNotificationSettingsSchema>;
 export type NotificationSettings = typeof notificationSettings.$inferSelect;

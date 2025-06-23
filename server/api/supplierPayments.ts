@@ -8,6 +8,7 @@ import { suppliers, supplierInvoices as invoices, supplierPayments as payments,
          insertSupplierSchema as sharedInsertSupplierSchema } from '@shared/schema';
 import { subDays, startOfMonth, endOfMonth, format } from 'date-fns';
 import { pool } from '../db';
+import { invoicePaymentNotificationService } from '../services/notifications/invoicePaymentNotificationService';
 
 // Helper function to update invoice payment status
 async function updateInvoicePaymentStatus(invoiceId: number) {
@@ -421,8 +422,20 @@ router.post('/invoices', async (req, res) => {
           ]
         );
         
-        console.log("Created invoice:", JSON.stringify(result.rows[0], null, 2));
-        res.status(201).json(result.rows[0]);
+        const createdInvoice = result.rows[0];
+        console.log("Created invoice:", JSON.stringify(createdInvoice, null, 2));
+        
+        // Get supplier name for notification
+        const supplier = await storage.getSupplier(data.supplierId);
+        
+        // Send notification
+        await invoicePaymentNotificationService.handleEvent({
+          type: 'invoice_created',
+          invoice: createdInvoice,
+          supplierName: supplier?.name
+        });
+        
+        res.status(201).json(createdInvoice);
       } finally {
         client.release();
       }
@@ -672,10 +685,25 @@ router.post('/payments', async (req, res) => {
           ]
         );
         
-        console.log("Created payment:", JSON.stringify(result.rows[0], null, 2));
+        const createdPayment = result.rows[0];
+        console.log("Created payment:", JSON.stringify(createdPayment, null, 2));
         
         // Use our new helper function to update invoice status
         await updateInvoicePaymentStatus(data.invoiceId);
+        
+        // Get updated invoice and supplier for notification
+        const updatedInvoice = await storage.getSupplierInvoice(data.invoiceId);
+        const supplier = updatedInvoice ? await storage.getSupplier(updatedInvoice.supplierId) : null;
+        
+        // Send notification
+        if (updatedInvoice) {
+          await invoicePaymentNotificationService.handleEvent({
+            type: 'payment_created',
+            payment: createdPayment,
+            invoice: updatedInvoice,
+            supplierName: supplier?.name
+          });
+        }
         
         // Get invoice amount for comparison
         const invoiceResult = await client.query(
@@ -704,7 +732,7 @@ router.post('/payments', async (req, res) => {
           [newStatus, totalPaid, data.invoiceId]
         );
         
-        res.status(201).json(result.rows[0]);
+        res.status(201).json(createdPayment);
       } finally {
         client.release();
       }
