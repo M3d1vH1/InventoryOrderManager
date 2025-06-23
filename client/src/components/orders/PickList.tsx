@@ -412,7 +412,7 @@ const PickList = ({ order }: { order: Order }) => {
     }
 
     // Generate labels with the selected shipping company
-    generateShippingLabelsWithCompany(order, pendingLabelGeneration.boxCount, companyToUse);
+    await generateShippingLabelsWithCompany(order, pendingLabelGeneration.boxCount, companyToUse);
     
     // Clean up state
     setShowShippingCompanyDialog(false);
@@ -431,7 +431,7 @@ const PickList = ({ order }: { order: Order }) => {
   } | null>(null);
   
   // Function to generate shipping labels with custom shipping company
-  const generateShippingLabelsWithCompany = (order: Order, boxCount: number, customShippingCompany?: string) => {
+  const generateShippingLabelsWithCompany = async (order: Order, boxCount: number, customShippingCompany?: string) => {
     // Only proceed if we have a valid box count from user input
     if (boxCount < 1) {
       toast({
@@ -546,8 +546,8 @@ A 1
   };
 
   // Original function to generate shipping labels (kept for backward compatibility)
-  const generateShippingLabels = (order: Order, boxCount: number) => {
-    generateShippingLabelsWithCompany(order, boxCount);
+  const generateShippingLabels = async (order: Order, boxCount: number) => {
+    await generateShippingLabelsWithCompany(order, boxCount);
   };
   
   // Handle barcode scan
