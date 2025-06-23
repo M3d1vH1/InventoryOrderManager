@@ -3167,7 +3167,7 @@ const LabelTemplateEditor = () => {
     const after = text.substring(end, text.length);
     
     // Insert the variable at cursor position
-    const newText = `${before}{${variable}}${after}`;
+    const newText = `${before}{{${variable}}}${after}`;
     shippingLabelForm.setValue('content', newText);
     
     // Set focus back to textarea and place cursor after inserted variable
