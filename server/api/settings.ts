@@ -94,20 +94,20 @@ export async function updateNotificationSettings(req: Request, res: Response) {
       
       // Slack notification settings
       slackEnabled: z.boolean().optional(),
-      slackWebhookUrl: z.string().optional().nullable(),
-      slackFinanceWebhookUrl: z.string().optional().nullable(),
+      slackWebhookUrl: z.string().nullable().optional(),
+      slackFinanceWebhookUrl: z.string().nullable().optional(),
       slackNotifyNewOrders: z.boolean().optional(),
       slackNotifyCallLogs: z.boolean().optional(),
       slackNotifyLowStock: z.boolean().optional(),
       slackNotifyInvoices: z.boolean().optional(),
       slackNotifyPayments: z.boolean().optional(),
       
-      // Slack notification templates
-      slackOrderTemplate: z.string().optional(),
-      slackCallLogTemplate: z.string().optional(),
-      slackLowStockTemplate: z.string().optional(),
-      slackInvoiceTemplate: z.string().optional(),
-      slackPaymentTemplate: z.string().optional()
+      // Slack notification templates - allow null values
+      slackOrderTemplate: z.string().nullable().optional(),
+      slackCallLogTemplate: z.string().nullable().optional(),
+      slackLowStockTemplate: z.string().nullable().optional(),
+      slackInvoiceTemplate: z.string().nullable().optional(),
+      slackPaymentTemplate: z.string().nullable().optional()
     });
 
     const validatedData = schema.parse(req.body);

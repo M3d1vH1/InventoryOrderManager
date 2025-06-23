@@ -95,11 +95,11 @@ const Settings: React.FC = () => {
       slackNotifyLowStock: false,
       slackNotifyInvoices: false,
       slackNotifyPayments: false,
-      slackOrderTemplate: null,
-      slackCallLogTemplate: null,
-      slackLowStockTemplate: null,
-      slackInvoiceTemplate: null,
-      slackPaymentTemplate: null,
+      slackOrderTemplate: "",
+      slackCallLogTemplate: "",
+      slackLowStockTemplate: "",
+      slackInvoiceTemplate: "",
+      slackPaymentTemplate: "",
     },
   });
 
