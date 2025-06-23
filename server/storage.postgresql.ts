@@ -4812,14 +4812,14 @@ export class DatabaseStorage implements IStorage {
     try {
       const allCompanies = new Set<string>();
 
-      // Get all shipping companies from customer fields using correct field names
+      // Get all shipping companies from customer fields using correct table reference
       const allCustomerCompanies = await this.db
         .select({
-          shipping_company: customersTable.shippingCompany,
-          custom_shipping_company: customersTable.billingCompany,
-          preferred_shipping_company: customersTable.preferredShippingCompany
+          shipping_company: customers.shippingCompany,
+          custom_shipping_company: customers.billingCompany,
+          preferred_shipping_company: customers.preferredShippingCompany
         })
-        .from(customersTable);
+        .from(customers);
 
       console.log(`Retrieved ${allCustomerCompanies.length} customer records for shipping companies`);
 
@@ -4831,6 +4831,7 @@ export class DatabaseStorage implements IStorage {
           // Filter out courier services
           if (!this.isCourierService(company)) {
             allCompanies.add(company);
+            console.log(`Added custom shipping company: ${company}`);
           }
         }
         
@@ -4839,6 +4840,7 @@ export class DatabaseStorage implements IStorage {
           // Filter out courier services
           if (!this.isCourierService(company)) {
             allCompanies.add(company);
+            console.log(`Added shipping company: ${company}`);
           }
         }
         
@@ -4870,12 +4872,15 @@ export class DatabaseStorage implements IStorage {
       const englishCompanies = companiesArray.filter(company => !/[\u0370-\u03FF]/.test(company)).sort();
       
       console.log(`Found ${companiesArray.length} total shipping companies (${greekCompanies.length} Greek, ${englishCompanies.length} English)`);
+      console.log('Final companies list:', [...greekCompanies, ...englishCompanies]);
       
       return [...greekCompanies, ...englishCompanies];
     } catch (error) {
-      console.error('Error getting shipping companies:', error);
+      console.error('Error getting shipping companies - DETAILED:', error);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      
       // Return basic transport companies in case of error (no courier services)
-      return [
+      const fallbackCompanies = [
         'ΠΑΠΑΧΡΗΣΤΟΥ',
         'ΕΡΜΗΣ', 
         'ΠΡΟΟΔΕΥΤΙΚΗ',
@@ -4884,6 +4889,9 @@ export class DatabaseStorage implements IStorage {
         'SPEEDLINE',
         'ΔΑΣ'
       ];
+      
+      console.log('Returning fallback companies due to error:', fallbackCompanies);
+      return fallbackCompanies;
     }
   }
 
