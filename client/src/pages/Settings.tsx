@@ -118,20 +118,26 @@ const Settings: React.FC = () => {
     mutationFn: async (values: z.infer<typeof notificationSettingsSchema>) => {
       console.log("Saving notification settings:", values);
       
-      const response = await fetch("/api/settings/notifications", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(values),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      try {
+        const response = await fetch("/api/settings/notifications", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(values),
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return data;
+      } catch (error) {
+        console.error("Network or parsing error:", error);
+        throw error;
       }
-      
-      return response.json();
     },
     onSuccess: (data) => {
       console.log("Settings saved successfully:", data);
@@ -143,6 +149,37 @@ const Settings: React.FC = () => {
       toast({ 
         title: "Error", 
         description: error?.message || "Failed to save notification settings.", 
+        variant: "destructive" 
+      });
+    },
+  });
+
+  // Test webhook functionality
+  const testWebhook = useMutation({
+    mutationFn: async ({ webhookUrl, isFinance }: { webhookUrl: string; isFinance?: boolean }) => {
+      const response = await fetch("/api/settings/test-webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          webhookUrl, 
+          testMessage: isFinance ? "Finance webhook test" : "General webhook test" 
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Webhook test successful!" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Webhook Test Failed", 
+        description: error?.message || "Failed to send test message.", 
         variant: "destructive" 
       });
     },

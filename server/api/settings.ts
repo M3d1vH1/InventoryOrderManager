@@ -87,17 +87,27 @@ export async function updateNotificationSettings(req: Request, res: Response) {
       weeklyReports: z.boolean().optional(),
       soundEnabled: z.boolean().optional(),
       
+      // Invoice and payment alerts
+      invoiceAlerts: z.boolean().optional(),
+      paymentAlerts: z.boolean().optional(),
+      overdueInvoiceAlerts: z.boolean().optional(),
+      
       // Slack notification settings
       slackEnabled: z.boolean().optional(),
       slackWebhookUrl: z.string().optional().nullable(),
+      slackFinanceWebhookUrl: z.string().optional().nullable(),
       slackNotifyNewOrders: z.boolean().optional(),
       slackNotifyCallLogs: z.boolean().optional(),
       slackNotifyLowStock: z.boolean().optional(),
+      slackNotifyInvoices: z.boolean().optional(),
+      slackNotifyPayments: z.boolean().optional(),
       
       // Slack notification templates
       slackOrderTemplate: z.string().optional(),
       slackCallLogTemplate: z.string().optional(),
-      slackLowStockTemplate: z.string().optional()
+      slackLowStockTemplate: z.string().optional(),
+      slackInvoiceTemplate: z.string().optional(),
+      slackPaymentTemplate: z.string().optional()
     });
 
     const validatedData = schema.parse(req.body);
@@ -126,7 +136,8 @@ export async function updateNotificationSettings(req: Request, res: Response) {
 export async function testSlackWebhook(req: Request, res: Response) {
   try {
     const schema = z.object({
-      webhookUrl: z.string()
+      webhookUrl: z.string(),
+      testMessage: z.string().optional()
     });
 
     const validatedData = schema.parse(req.body);
