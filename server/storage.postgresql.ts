@@ -2218,17 +2218,27 @@ export class DatabaseStorage implements IStorage {
             weeklyReports: settings.weeklyReports ?? true,
             soundEnabled: settings.soundEnabled ?? true,
             
+            // Invoice and payment alerts
+            invoiceAlerts: settings.invoiceAlerts ?? true,
+            paymentAlerts: settings.paymentAlerts ?? true,
+            overdueInvoiceAlerts: settings.overdueInvoiceAlerts ?? true,
+            
             // Slack notification settings
             slackEnabled: settings.slackEnabled ?? false,
             slackWebhookUrl: settings.slackWebhookUrl,
+            slackFinanceWebhookUrl: settings.slackFinanceWebhookUrl,
             slackNotifyNewOrders: settings.slackNotifyNewOrders ?? true,
             slackNotifyCallLogs: settings.slackNotifyCallLogs ?? true,
             slackNotifyLowStock: settings.slackNotifyLowStock ?? false,
+            slackNotifyInvoices: settings.slackNotifyInvoices ?? true,
+            slackNotifyPayments: settings.slackNotifyPayments ?? true,
             
             // Slack notification templates
             slackOrderTemplate: settings.slackOrderTemplate,
             slackCallLogTemplate: settings.slackCallLogTemplate,
             slackLowStockTemplate: settings.slackLowStockTemplate,
+            slackInvoiceTemplate: settings.slackInvoiceTemplate,
+            slackPaymentTemplate: settings.slackPaymentTemplate,
             
             updatedAt: new Date(),
           })
@@ -2252,14 +2262,24 @@ export class DatabaseStorage implements IStorage {
         // Slack notification settings
         if (settings.slackEnabled !== undefined) updateObject.slackEnabled = settings.slackEnabled;
         if (settings.slackWebhookUrl !== undefined) updateObject.slackWebhookUrl = settings.slackWebhookUrl;
+        if (settings.slackFinanceWebhookUrl !== undefined) updateObject.slackFinanceWebhookUrl = settings.slackFinanceWebhookUrl;
         if (settings.slackNotifyNewOrders !== undefined) updateObject.slackNotifyNewOrders = settings.slackNotifyNewOrders;
         if (settings.slackNotifyCallLogs !== undefined) updateObject.slackNotifyCallLogs = settings.slackNotifyCallLogs;
         if (settings.slackNotifyLowStock !== undefined) updateObject.slackNotifyLowStock = settings.slackNotifyLowStock;
+        if (settings.slackNotifyInvoices !== undefined) updateObject.slackNotifyInvoices = settings.slackNotifyInvoices;
+        if (settings.slackNotifyPayments !== undefined) updateObject.slackNotifyPayments = settings.slackNotifyPayments;
+        
+        // Invoice and payment alerts
+        if (settings.invoiceAlerts !== undefined) updateObject.invoiceAlerts = settings.invoiceAlerts;
+        if (settings.paymentAlerts !== undefined) updateObject.paymentAlerts = settings.paymentAlerts;
+        if (settings.overdueInvoiceAlerts !== undefined) updateObject.overdueInvoiceAlerts = settings.overdueInvoiceAlerts;
         
         // Slack notification templates
         if (settings.slackOrderTemplate !== undefined) updateObject.slackOrderTemplate = settings.slackOrderTemplate;
         if (settings.slackCallLogTemplate !== undefined) updateObject.slackCallLogTemplate = settings.slackCallLogTemplate;
         if (settings.slackLowStockTemplate !== undefined) updateObject.slackLowStockTemplate = settings.slackLowStockTemplate;
+        if (settings.slackInvoiceTemplate !== undefined) updateObject.slackInvoiceTemplate = settings.slackInvoiceTemplate;
+        if (settings.slackPaymentTemplate !== undefined) updateObject.slackPaymentTemplate = settings.slackPaymentTemplate;
         
         // Log the update for debugging
         console.log("Updating notification settings with:", JSON.stringify(updateObject));
