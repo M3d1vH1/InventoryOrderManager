@@ -4,6 +4,12 @@
 A comprehensive warehouse management system with order management, inventory tracking, supplier invoice/payment management, and shipping functionality. Built with React frontend and Express backend using PostgreSQL database.
 
 ## Recent Changes
+- **June 23, 2025**: Fixed critical UI and functionality issues
+  - **Translation Headers Fix**: Replaced translation keys with actual Greek text in out-of-stock confirmation dialogs
+  - **Shipping Company Selection Enhancement**: Added ability to add new shipping companies during label generation
+  - **Expanded Shipping Company Database**: Enhanced shipping companies list to include all customer companies from database
+  - **Greek UI Localization**: Standardized dialog buttons and messages to Greek language
+  - **Label Generation Error Fix**: Resolved async issues in label preview generation
 - **June 23, 2025**: Implemented three major features
   - **Out-of-Stock Handling**: Added comprehensive out-of-stock workflow in picking phase
     - Confirmation dialog for 0 quantity items with orange warning icons

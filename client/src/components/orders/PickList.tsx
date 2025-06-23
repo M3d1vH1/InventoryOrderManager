@@ -402,7 +402,7 @@ const PickList = ({ order }: { order: Order }) => {
           // Update customer's shipping company preference
           await updateCustomerShippingMutation.mutateAsync({
             customerId: customer.id,
-            shippingCompany: selectedShippingCompany,
+            shippingCompany: companyToUse,
           });
         }
       }
@@ -411,12 +411,13 @@ const PickList = ({ order }: { order: Order }) => {
     }
 
     // Generate labels with the selected shipping company
-    generateShippingLabelsWithCompany(order, pendingLabelGeneration.boxCount, selectedShippingCompany);
+    generateShippingLabelsWithCompany(order, pendingLabelGeneration.boxCount, companyToUse);
     
     // Clean up state
     setShowShippingCompanyDialog(false);
     setPendingLabelGeneration(null);
     setSelectedShippingCompany('');
+    setNewShippingCompany('');
   };
   
   // State to manage label preview
@@ -758,7 +759,7 @@ A 1
               
               {(selectedShippingCompany || newShippingCompany.trim()) && (
                 <div className="text-sm text-slate-600 bg-blue-50 p-3 rounded-md">
-                  <strong>Note:</strong> This shipping company will be saved as the customer's preference for future orders.
+                  Η εταιρεία <strong>{newShippingCompany.trim() || selectedShippingCompany}</strong> θα αποθηκευτεί ως προτιμώμενη εταιρεία αποστολής για μελλοντικές παραγγελίες.
                 </div>
               )}
             </div>
