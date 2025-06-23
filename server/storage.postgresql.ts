@@ -4814,69 +4814,49 @@ export class DatabaseStorage implements IStorage {
   // Shipping company methods
   async getShippingCompanies(): Promise<string[]> {
     try {
-      // Get unique shipping companies from customers table
-      const customerShippingCompanies = await this.db
-        .selectDistinct({ company: customersTable.shippingCompany })
-        .from(customersTable)
-        .where(
-          and(
-            isNotNull(customersTable.shippingCompany),
-            ne(customersTable.shippingCompany, ''),
-            ne(customersTable.shippingCompany, 'N/A')
-          )
-        );
-
-      // Get unique billing companies used as shipping companies
-      const billingCompanies = await this.db
-        .selectDistinct({ company: customersTable.billingCompany })
-        .from(customersTable)
-        .where(
-          and(
-            eq(customersTable.preferredShippingCompany, 'other'),
-            isNotNull(customersTable.billingCompany),
-            ne(customersTable.billingCompany, ''),
-            ne(customersTable.billingCompany, 'N/A')
-          )
-        );
-
-      // Combine and deduplicate
       const allCompanies = new Set<string>();
-      
-      customerShippingCompanies.forEach(row => {
-        if (row.company && row.company.trim()) {
-          allCompanies.add(row.company.trim());
-        }
-      });
 
-      billingCompanies.forEach(row => {
-        if (row.company && row.company.trim()) {
-          allCompanies.add(row.company.trim());
-        }
-      });
-
-      // Get all unique shipping companies from customers table including custom ones
+      // Get all shipping companies from all three customer fields
       const allCustomerCompanies = await this.db
-        .selectDistinct({ company: customersTable.shippingCompany })
-        .from(customersTable)
-        .where(
-          and(
-            isNotNull(customersTable.shippingCompany),
-            ne(customersTable.shippingCompany, ''),
-            ne(customersTable.shippingCompany, 'N/A')
-          )
-        );
+        .select({
+          shipping_company: customersTable.shippingCompany,
+          preferred_shipping_company: customersTable.preferredShippingCompany,
+          custom_shipping_company: customersTable.billingCompany
+        })
+        .from(customersTable);
 
+      // Process each customer record to extract shipping companies
       allCustomerCompanies.forEach(row => {
-        if (row.company && row.company.trim()) {
-          allCompanies.add(row.company.trim());
+        // Priority: custom_shipping_company > shipping_company > preferred enum
+        if (row.custom_shipping_company && row.custom_shipping_company.trim() && row.custom_shipping_company !== 'N/A') {
+          allCompanies.add(row.custom_shipping_company.trim());
+        }
+        
+        if (row.shipping_company && row.shipping_company.trim() && row.shipping_company !== 'N/A') {
+          allCompanies.add(row.shipping_company.trim());
+        }
+        
+        // Handle enum values (convert to readable names)
+        if (row.preferred_shipping_company && row.preferred_shipping_company !== 'other') {
+          const enumToName = {
+            'dhl': 'DHL',
+            'fedex': 'FedEx',
+            'ups': 'UPS',
+            'usps': 'USPS',
+            'royal_mail': 'Royal Mail'
+          };
+          const companyName = enumToName[row.preferred_shipping_company as keyof typeof enumToName];
+          if (companyName) {
+            allCompanies.add(companyName);
+          }
         }
       });
 
-      // Add default Greek shipping companies
+      // Add comprehensive Greek shipping companies
       const defaultCompanies = [
         'ΠΑΠΑΧΡΗΣΤΟΥ',
         'ΕΡΜΗΣ',
-        'ΠΡΟΟΔΕΥΤΙΚΗ',
+        'ΠΡΟΟΔΕΥΤΙΚΗ', 
         'SPEEDEX',
         'ACS',
         'ΓΕΝΙΚΗ ΤΑΧΥΔΡΟΜΙΚΗ',
@@ -4884,13 +4864,29 @@ export class DatabaseStorage implements IStorage {
         'GENIKI TAXYDROMIKI',
         'ΚΟΥΡΙΕΡ ΣΕΝΤΕΡ',
         'ΑΧΣ',
-        'ΣΠΙΝΤΕΞ'
+        'ΣΠΙΝΤΕΞ',
+        'SPEEDLINE',
+        'EXPRESS',
+        'ΔΑΣ',
+        'ΆΞΟΝΑΣ',
+        'ΈΝΩΣΗ ΜΑΚΕΔΟΝΊΑΣ',
+        'ΦΊΛΙΠΠΑΣ',
+        'ΑΡΒΑΝΊΤΗΣ',
+        'ΒΑΣΙΛΕΙΟΥ',
+        'DHL',
+        'FedEx',
+        'UPS',
+        'USPS'
       ];
 
       defaultCompanies.forEach(company => allCompanies.add(company));
 
-      // Return sorted array
-      return Array.from(allCompanies).sort();
+      // Return sorted array with Greek companies first, then international
+      const companiesArray = Array.from(allCompanies);
+      const greekCompanies = companiesArray.filter(company => /[\u0370-\u03FF]/.test(company)).sort();
+      const englishCompanies = companiesArray.filter(company => !/[\u0370-\u03FF]/.test(company)).sort();
+      
+      return [...greekCompanies, ...englishCompanies];
     } catch (error) {
       console.error('Error getting shipping companies:', error);
       // Return default companies in case of error

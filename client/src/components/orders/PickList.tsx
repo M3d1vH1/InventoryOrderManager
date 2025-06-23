@@ -394,13 +394,13 @@ const PickList = ({ order }: { order: Order }) => {
       return;
     }
 
-    // Get customer ID from order
+    // Get customer ID from order and update shipping preference
     try {
       const response = await fetch(`/api/shipping/customer/${encodeURIComponent(order.customerName)}`);
       if (response.ok) {
         const customer = await response.json();
         if (customer) {
-          // Update customer's shipping company preference
+          // Update customer's shipping company preference using custom field priority
           await updateCustomerShippingMutation.mutateAsync({
             customerId: customer.id,
             shippingCompany: companyToUse,
@@ -419,6 +419,7 @@ const PickList = ({ order }: { order: Order }) => {
     setPendingLabelGeneration(null);
     setSelectedShippingCompany('');
     setNewShippingCompany('');
+    setCustomerCurrentShippingCompany('');
   };
   
   // State to manage label preview
@@ -523,21 +524,22 @@ A 1
     };
     
     try {
-      // Show preview of the first label - now handles async
-      createLabelJScript(1, boxCount).then(firstLabelContent => {
-        // Set preview data and show preview dialog
-        setLabelPreviewData({
-          content: firstLabelContent,
-          boxNumber: 1,
-          totalBoxes: boxCount
-        });
-        setShowLabelPreview(true);
+      // Show preview of the first label - properly handle async
+      const firstLabelContent = await createLabelJScript(1, boxCount);
+      
+      // Set preview data and show preview dialog
+      setLabelPreviewData({
+        content: firstLabelContent,
+        boxNumber: 1,
+        totalBoxes: boxCount
       });
+      setShowLabelPreview(true);
       
     } catch (error: any) {
+      console.error('Label generation error:', error);
       toast({
-        title: t('orderPickingPage.errorGeneratingLabels'),
-        description: error.message || t('orderPickingPage.errorGeneratingLabels'),
+        title: 'Σφάλμα Δημιουργίας Ετικετών',
+        description: error.message || 'Αποτυχία δημιουργίας ετικετών αποστολής',
         variant: "destructive"
       });
     }
