@@ -1580,53 +1580,35 @@ const Settings = () => {
                       )}
                     />
                     
-                    {notificationForm.watch('slackEnabled') && (
-                      <>
-                        <FormField
-                          control={notificationForm.control}
-                          name="slackWebhookUrl"
-                          render={({ field }) => (
-                            <FormItem className="mt-2">
-                              <FormLabel>Main Slack Webhook URL</FormLabel>
-                              <FormDescription>
-                                Primary webhook URL for orders, call logs, and general notifications
-                              </FormDescription>
-                              <FormControl>
-                                <Input placeholder="https://hooks.slack.com/services/..." {...field} value={field.value || ''} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                    {/* Slack settings are handled in the main notification form below */}
+                          
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-medium">Order Management</h3>
                         
                         <FormField
                           control={notificationForm.control}
-                          name="slackFinanceWebhookUrl"
+                          name="orderConfirmation"
                           render={({ field }) => (
-                            <FormItem className="mt-3 p-4 border-2 border-blue-200 rounded-lg bg-blue-50">
-                              <FormLabel className="text-blue-800 font-semibold">Finance Slack Webhook URL (Optional)</FormLabel>
-                              <FormDescription className="text-blue-700">
-                                Separate webhook URL for invoice and payment notifications. Leave empty to use main webhook.
-                              </FormDescription>
+                            <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">Order Confirmation</FormLabel>
+                                <FormDescription>
+                                  Send confirmation when orders are created
+                                </FormDescription>
+                              </div>
                               <FormControl>
-                                <Input 
-                                  placeholder="https://hooks.slack.com/services/..." 
-                                  {...field} 
-                                  value={field.value || ''} 
-                                  className="border-blue-300 bg-white"
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
                                 />
                               </FormControl>
-                              <FormMessage />
                             </FormItem>
                           )}
                         />
                         
-                        <div className="mt-4 space-y-2">
-                          <h4 className="text-sm font-medium">Notification Types</h4>
-                          
-                          <FormField
-                            control={notificationForm.control}
-                            name="slackNotifyNewOrders"
+                        <FormField
+                          control={notificationForm.control}
+                          name="shippingUpdates"
                             render={({ field }) => (
                               <FormItem className="flex items-center space-x-2 rounded p-2">
                                 <FormControl>
@@ -2342,9 +2324,9 @@ const Settings = () => {
                             name="slackWebhookUrl"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Webhook URL</FormLabel>
+                                <FormLabel>Main Webhook URL</FormLabel>
                                 <FormDescription>
-                                  Enter your Slack incoming webhook URL
+                                  Primary webhook URL for orders, call logs, and general notifications
                                 </FormDescription>
                                 <div className="flex space-x-2">
                                   <FormControl className="flex-1">
@@ -2358,6 +2340,28 @@ const Settings = () => {
                                     Test Connection
                                   </Button>
                                 </div>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={notificationForm.control}
+                            name="slackFinanceWebhookUrl"
+                            render={({ field }) => (
+                              <FormItem className="mt-4 p-4 border-2 border-blue-200 rounded-lg bg-blue-50">
+                                <FormLabel className="text-blue-800 font-semibold">Finance Webhook URL (Optional)</FormLabel>
+                                <FormDescription className="text-blue-700">
+                                  Separate webhook URL for invoice and payment notifications. Leave empty to use main webhook.
+                                </FormDescription>
+                                <FormControl>
+                                  <Input 
+                                    placeholder="https://hooks.slack.com/services/..." 
+                                    {...field} 
+                                    value={field.value || ''} 
+                                    className="border-blue-300 bg-white"
+                                  />
+                                </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}
