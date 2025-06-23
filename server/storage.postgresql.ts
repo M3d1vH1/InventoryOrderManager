@@ -1013,26 +1013,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getShippingCompanies(): Promise<string[]> {
-    try {
-      // Get unique shipping companies from both shipping_company and custom_shipping_company fields
-      const result = await this.db.execute(sql`
-        SELECT DISTINCT company_name FROM (
-          SELECT shipping_company as company_name FROM customers 
-          WHERE shipping_company IS NOT NULL AND shipping_company != ''
-          UNION
-          SELECT custom_shipping_company as company_name FROM customers 
-          WHERE custom_shipping_company IS NOT NULL AND custom_shipping_company != ''
-        ) companies
-        ORDER BY company_name
-      `);
-      
-      return result.rows.map((row: any) => row.company_name);
-    } catch (error) {
-      console.error("Error getting shipping companies:", error);
-      return [];
-    }
-  }
+
   
   // Stats methods
   async getDashboardStats(): Promise<{
