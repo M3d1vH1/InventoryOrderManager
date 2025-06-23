@@ -4,6 +4,13 @@
 A comprehensive warehouse management system with order management, inventory tracking, supplier invoice/payment management, and shipping functionality. Built with React frontend and Express backend using PostgreSQL database.
 
 ## Recent Changes
+- **June 23, 2025**: Fixed shipping companies dropdown and order status update errors
+  - **Database Query Fix**: Corrected table reference from `customersTable` to `customers` resolving silent database failures
+  - **Comprehensive Company List**: Dropdown now displays all 112 transport companies from database instead of 7 fallback options
+  - **Courier Service Filtering**: Excluded courier services (DHL, FedEx, ACS) to show only transport companies
+  - **New Company Storage**: Added API endpoint to save new shipping companies to `custom_shipping_company` field
+  - **Order Item Updates**: Fixed SQL syntax error in `updateOrderItem` method preventing 500 errors during order status updates
+  - **Enhanced Error Logging**: Added detailed logging to track shipping company discovery and database operations
 - **June 23, 2025**: Fixed critical UI and functionality issues
   - **Translation Headers Fix**: Replaced translation keys with actual Greek text in out-of-stock confirmation dialogs
   - **Shipping Company Selection Enhancement**: Added ability to add new shipping companies during label generation
@@ -68,6 +75,10 @@ A comprehensive warehouse management system with order management, inventory tra
 - Prioritize form data persistence and user experience
 
 ## Known Issues Resolved
+- ✅ Shipping companies dropdown only showing 7 companies instead of full database list (June 23, 2025)
+- ✅ Database table reference error causing silent query failures
+- ✅ Order status update 500 errors due to missing updateOrderItem method
+- ✅ Incorrect field mapping for customer shipping company storage
 - ✅ Multibox labels loading performance and reliability (June 23, 2025)
 - ✅ Sequential label loading causing slow performance
 - ✅ Missing shipping company modification before printing
