@@ -1422,8 +1422,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req.user as any)?.id;
       const userRole = (req.user as any)?.role;
       
+      console.log('Order status update request:', { id, status, itemQuantities, approvePartialFulfillment });
+      
       if (!['pending', 'picked', 'shipped', 'cancelled'].includes(status)) {
         return res.status(400).json({ message: 'Invalid status value' });
+      }
+      
+      // Process item quantities if provided (for picking phase)
+      let hasOutOfStockItems = false;
+      let outOfStockItemsCount = 0;
+      if (itemQuantities && Array.isArray(itemQuantities) && status === 'picked') {
+        console.log('Processing item quantities:', itemQuantities);
+        
+        for (const item of itemQuantities) {
+          // Update the order item with actual quantity
+          await storage.updateOrderItem(item.orderItemId, {
+            actualQuantity: item.actualQuantity,
+            picked: true,
+            pickedAt: new Date(),
+            pickedById: userId
+          });
+          
+          // Check if item is out of stock (0 quantity)
+          if (item.actualQuantity === 0) {
+            hasOutOfStockItems = true;
+            outOfStockItemsCount++;
+            
+            // Create unshipped item for backorder
+            const orderItem = await storage.getOrderItem(item.orderItemId);
+            if (orderItem) {
+              const order = await storage.getOrder(id);
+              const product = await storage.getProduct(item.productId);
+              
+              if (order && product) {
+                await storage.createUnshippedItem({
+                  orderId: id,
+                  orderNumber: order.orderNumber,
+                  customerId: order.customerName, // Using customer name as ID for compatibility
+                  customerName: order.customerName,
+                  productId: item.productId,
+                  productName: product.name,
+                  sku: product.sku,
+                  quantity: item.requestedQuantity,
+                  reason: 'out_of_stock',
+                  notes: `Item marked as out of stock during picking process`
+                });
+                
+                console.log(`Created unshipped item for ${product.name} (${product.sku}) - quantity: ${item.requestedQuantity}`);
+              }
+            }
+          }
+          
+          // Update product stock if partial quantity was shipped
+          if (item.actualQuantity > 0 && item.actualQuantity < item.requestedQuantity) {
+            // Reduce stock by the actual quantity shipped
+            const product = await storage.getProduct(item.productId);
+            if (product && product.currentStock >= item.actualQuantity) {
+              await storage.updateProduct(item.productId, {
+                currentStock: product.currentStock - item.actualQuantity
+              }, userId);
+              
+              // Create unshipped item for the remaining quantity
+              const remainingQuantity = item.requestedQuantity - item.actualQuantity;
+              const order = await storage.getOrder(id);
+              
+              if (order) {
+                await storage.createUnshippedItem({
+                  orderId: id,
+                  orderNumber: order.orderNumber,
+                  customerId: order.customerName,
+                  customerName: order.customerName,
+                  productId: item.productId,
+                  productName: product.name,
+                  sku: product.sku,
+                  quantity: remainingQuantity,
+                  reason: 'partial_stock',
+                  notes: `Partial fulfillment: ${item.actualQuantity} of ${item.requestedQuantity} shipped`
+                });
+              }
+            }
+          } else if (item.actualQuantity === item.requestedQuantity) {
+            // Full quantity shipped, reduce stock normally
+            const product = await storage.getProduct(item.productId);
+            if (product && product.currentStock >= item.actualQuantity) {
+              await storage.updateProduct(item.productId, {
+                currentStock: product.currentStock - item.actualQuantity
+              }, userId);
+            }
+          }
+        }
       }
       
       // Get original order to know the previous status
@@ -1615,6 +1702,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update the order status
       const updatedOrder = await storage.updateOrderStatus(id, status, undefined, userId);
+      
+      // Send Slack notification if order has out-of-stock items
+      if (hasOutOfStockItems && status === 'picked') {
+        try {
+          const order = await storage.getOrder(id);
+          if (order) {
+            const message = `🚨 *Order Out-of-Stock Alert*\n\n` +
+              `Order: *${order.orderNumber}*\n` +
+              `Customer: ${order.customerName}\n` +
+              `Out-of-stock items: ${outOfStockItemsCount}\n` +
+              `Status: Order picked with items added to backorder\n\n` +
+              `Items have been automatically added to the unshipped items list for future fulfillment.`;
+            
+            // Get notification settings
+            const notificationSettings = await storage.getNotificationSettings();
+            if (notificationSettings && notificationSettings.slackEnabled && notificationSettings.slackWebhookUrl) {
+              // Send notification using existing webhook system
+              const response = await fetch(notificationSettings.slackWebhookUrl, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  text: message,
+                  username: 'Warehouse Bot',
+                  icon_emoji: ':package:'
+                }),
+              });
+              
+              if (response.ok) {
+                console.log(`Slack notification sent for order ${order.orderNumber} with ${outOfStockItemsCount} out-of-stock items`);
+              } else {
+                console.error('Failed to send Slack notification:', response.statusText);
+              }
+            }
+          }
+        } catch (slackError) {
+          console.error('Error sending Slack notification:', slackError);
+          // Don't fail the order update if Slack notification fails
+        }
+      }
       
       // If this was an approved partial fulfillment, log it
       if (req.body.approvePartialFulfillment === true && userId) {

@@ -219,7 +219,7 @@ const PickList = ({ order }: { order: Order }) => {
         method: 'PATCH',
         body: JSON.stringify({ 
           status,
-          itemQuantities,
+          itemQuantities: itemsWithActualQuantities,
           approvePartialFulfillment
         }),
         headers: {
