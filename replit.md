@@ -4,6 +4,11 @@
 A comprehensive warehouse management system with order management, inventory tracking, supplier invoice/payment management, and shipping functionality. Built with React frontend and Express backend using PostgreSQL database.
 
 ## Recent Changes
+- **June 23, 2025**: Finalized Settings page with RBAC integration and removed unused Users tab
+  - **Production Ready**: Removed placeholder Users tab to clean up Settings interface
+  - **RBAC Integration**: Complete role-based access control display now available under dedicated RBAC tab
+  - **Streamlined Navigation**: Settings page now focuses on implemented features (Notifications, RBAC, System, Performance, Labels, Images)
+  - **Deployment Preparation**: Application optimized and ready for production deployment
 - **June 23, 2025**: Added comprehensive RBAC display to Settings page
   - **RBAC Dashboard**: Complete role-based access control visualization showing all system roles and permissions
   - **Role Overview**: Visual cards displaying admin, front_office, and warehouse roles with user counts and permission statistics

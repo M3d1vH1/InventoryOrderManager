@@ -219,7 +219,6 @@ const Settings: React.FC = () => {
         <TabsTrigger value="notifications">Notifications</TabsTrigger>
         <TabsTrigger value="company">Company</TabsTrigger>
         <TabsTrigger value="email">Email</TabsTrigger>
-        <TabsTrigger value="users">Users</TabsTrigger>
         <TabsTrigger value="rbac">RBAC</TabsTrigger>
         <TabsTrigger value="system">System</TabsTrigger>
         <TabsTrigger value="performance">Performance</TabsTrigger>
@@ -584,21 +583,6 @@ const Settings: React.FC = () => {
           <CardContent>
             <div className="text-center py-8 text-slate-500">
               Email settings will be implemented in a future update.
-            </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
-
-      {/* --- USERS TAB --- */}
-      <TabsContent value="users" className="mt-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>User Management</CardTitle>
-            <CardDescription>Manage system users and their permissions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-8 text-slate-500">
-              User management will be implemented in a future update.
             </div>
           </CardContent>
         </Card>
