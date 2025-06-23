@@ -4,14 +4,21 @@
 A comprehensive warehouse management system with order management, inventory tracking, supplier invoice/payment management, and shipping functionality. Built with React frontend and Express backend using PostgreSQL database.
 
 ## Recent Changes
-- **June 23, 2025**: Complete overhaul of multibox labels loading system
-  - Replaced sequential label loading with parallel processing for faster performance
-  - Implemented robust retry logic with exponential backoff for failed labels
-  - Added asset preloading to prevent repeated logo/image requests
-  - Created shipping company modification feature allowing pre-print editing
-  - Extended auto-print delay from 1s to 3s for better rendering reliability
-  - Added comprehensive progress tracking with visual indicators
-  - Implemented partial success handling - show available labels even if some fail
+- **June 23, 2025**: Implemented three major features
+  - **Out-of-Stock Handling**: Added comprehensive out-of-stock workflow in picking phase
+    - Confirmation dialog for 0 quantity items with orange warning icons
+    - Automatic unshipped item creation for backorder management
+    - Slack notifications for orders with out-of-stock items
+    - Warehouse staff can complete orders immediately with mixed fulfillment
+  - **Label Generation Performance**: Complete overhaul of multibox labels system
+    - Replaced sequential loading with parallel processing for faster performance
+    - Implemented robust retry logic with exponential backoff for failed labels
+    - Added asset preloading and shipping company modification features
+    - Extended auto-print delay and comprehensive progress tracking
+  - **Slack Notifications**: Enhanced notification system for invoices and payments
+    - Automatic Slack alerts for new supplier invoices and payments
+    - Integration with existing webhook configuration system
+    - Out-of-stock order notifications with detailed information
 - **December 18, 2025**: Fixed critical data loss issue in invoice and payment forms
   - Simplified complex form reset logic that was causing data loss on re-renders
   - Standardized field name handling for snake_case vs camelCase inconsistencies
