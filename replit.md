@@ -4,6 +4,13 @@
 A comprehensive warehouse management system with order management, inventory tracking, supplier invoice/payment management, and shipping functionality. Built with React frontend and Express backend using PostgreSQL database.
 
 ## Recent Changes
+- **June 23, 2025**: Added comprehensive RBAC display to Settings page
+  - **RBAC Dashboard**: Complete role-based access control visualization showing all system roles and permissions
+  - **Role Overview**: Visual cards displaying admin, front_office, and warehouse roles with user counts and permission statistics
+  - **Permission Matrix**: Detailed breakdown of permissions by category (Dashboard, Products, Orders, etc.)
+  - **Current Users Summary**: Table showing active users per role and their permission levels
+  - **Interactive Design**: Accordion-style detailed view with icons and color-coded badges for easy navigation
+  - **Security Integration**: Uses existing role permission API endpoints with proper authentication
 - **June 23, 2025**: Fixed Settings page validation and webhook testing issues
   - **Settings Save Fix**: Notification settings now save properly with null template value handling
   - **Webhook URL Validation**: Added proper Slack webhook URL format validation with clear error messages

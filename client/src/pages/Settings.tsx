@@ -25,6 +25,7 @@ import PerformanceAnalyzer from "@/components/performance/PerformanceAnalyzer";
 import DatabasePerformanceAnalyzer from "@/components/database/DatabasePerformanceAnalyzer";
 import { UserManagement } from "@/components/settings/UserManagement";
 import { TemplateEditor } from "@/components/settings/TemplateEditor";
+import { RBACDisplay } from "@/components/settings/RBACDisplay";
 import { Save, Volume2 } from "lucide-react";
 
 // --- SCHEMAS ---
@@ -219,6 +220,7 @@ const Settings: React.FC = () => {
         <TabsTrigger value="company">Company</TabsTrigger>
         <TabsTrigger value="email">Email</TabsTrigger>
         <TabsTrigger value="users">Users</TabsTrigger>
+        <TabsTrigger value="rbac">RBAC</TabsTrigger>
         <TabsTrigger value="system">System</TabsTrigger>
         <TabsTrigger value="performance">Performance</TabsTrigger>
         <TabsTrigger value="labels">Labels</TabsTrigger>
@@ -623,6 +625,11 @@ const Settings: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+      </TabsContent>
+
+      {/* --- RBAC TAB --- */}
+      <TabsContent value="rbac" className="mt-4">
+        <RBACDisplay />
       </TabsContent>
 
       {/* --- PERFORMANCE TAB --- */}
