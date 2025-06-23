@@ -34,7 +34,7 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { MapPin, QrCode, ScanBarcode, Truck, RefreshCcw, CheckCircle2, FileText, Info, Printer, PackageCheck } from "lucide-react";
+import { MapPin, QrCode, ScanBarcode, Truck, RefreshCcw, CheckCircle2, FileText, Info, Printer, PackageCheck, AlertTriangle } from "lucide-react";
 import { BarcodeScanner, EnhancedBarcodeScanner } from "@/components/barcode";
 import ShippingLabelPreview from "@/components/shipping/ShippingLabelPreview";
 
@@ -92,6 +92,8 @@ const PickList = ({ order }: { order: Order }) => {
   const [showShippingCompanyDialog, setShowShippingCompanyDialog] = useState(false);
   const [selectedShippingCompany, setSelectedShippingCompany] = useState('');
   const [pendingLabelGeneration, setPendingLabelGeneration] = useState<{boxCount: number} | null>(null);
+  const [showOutOfStockDialog, setShowOutOfStockDialog] = useState(false);
+  const [outOfStockItem, setOutOfStockItem] = useState<{itemId: number, productName: string} | null>(null);
 
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ['/api/products'],
@@ -272,12 +274,52 @@ const PickList = ({ order }: { order: Order }) => {
   const handleActualQuantityChange = (itemId: number, value: string) => {
     const numValue = parseInt(value, 10);
     if (!isNaN(numValue) && numValue >= 0) {
+      // If setting to 0, show confirmation dialog
+      if (numValue === 0) {
+        const item = orderItemsWithProducts.find(item => item.id === itemId);
+        if (item && item.product) {
+          setOutOfStockItem({
+            itemId: itemId,
+            productName: item.product.name
+          });
+          setShowOutOfStockDialog(true);
+          return; // Don't set the value yet, wait for confirmation
+        }
+      }
+      
       // Update the actual quantities state
       setActualQuantities(prev => ({
         ...prev,
         [itemId]: numValue
       }));
+      
+      // Auto-check the item if quantity is set
+      if (numValue >= 0) {
+        setPickedItems(prev => ({
+          ...prev,
+          [itemId]: true
+        }));
+      }
     }
+  };
+
+  // Handle out of stock confirmation
+  const handleOutOfStockConfirm = () => {
+    if (outOfStockItem) {
+      setActualQuantities(prev => ({
+        ...prev,
+        [outOfStockItem.itemId]: 0
+      }));
+      
+      // Auto-check the item
+      setPickedItems(prev => ({
+        ...prev,
+        [outOfStockItem.itemId]: true
+      }));
+    }
+    
+    setShowOutOfStockDialog(false);
+    setOutOfStockItem(null);
   };
 
   const completePickList = () => {
@@ -901,7 +943,14 @@ A 1
                 </TableCell>
                 <TableCell className="font-mono">{item.product?.sku || "N/A"}</TableCell>
                 <TableCell>
-                  <div className="font-medium">{item.product?.name || t('orderPickingPage.pickList.unknownProduct')}</div>
+                  <div className="font-medium flex items-center gap-2">
+                    {item.product?.name || t('orderPickingPage.pickList.unknownProduct')}
+                    {actualQuantities[item.id] === 0 && (
+                      <div className="rounded-full bg-orange-100 p-1">
+                        <AlertTriangle className="h-3 w-3 text-orange-600" />
+                      </div>
+                    )}
+                  </div>
                   {item.product?.currentStock !== undefined && item.product.currentStock < item.quantity && (
                     <div className="flex items-center mt-1">
                       <div className="rounded-full bg-red-100 p-1 mr-1">
@@ -931,36 +980,17 @@ A 1
                       type="number"
                       min={0}
                       max={item.quantity}
-                      value={item.actualQuantity || item.quantity}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value, 10);
-                        if (!isNaN(val) && val >= 0 && val <= item.quantity) {
-                          // Update directly in the array
-                          const updatedItems = [...orderItemsWithProducts];
-                          const index = updatedItems.findIndex(i => i.id === item.id);
-                          if (index !== -1) {
-                            updatedItems[index] = {
-                              ...updatedItems[index],
-                              actualQuantity: val
-                            };
-                            setOrderItemsWithProducts(updatedItems);
-                          }
-                          
-                          // Automatically mark item as picked when quantity is changed
-                          if (!pickedItems[item.id]) {
-                            handleItemPick(item.id);
-                          }
-                        }
-                      }}
+                      value={actualQuantities[item.id] !== undefined ? actualQuantities[item.id] : item.quantity}
+                      onChange={(e) => handleActualQuantityChange(item.id, e.target.value)}
                       disabled={order.status !== 'pending'}
                       className="w-20 text-right p-2 border rounded"
                       aria-label={`${t('orderPickingPage.pickList.actualQuantityFor')} ${item.product?.name}`}
                     />
-                    {item.actualQuantity !== item.quantity && item.picked && (
+                    {actualQuantities[item.id] !== undefined && actualQuantities[item.id] !== item.quantity && pickedItems[item.id] && (
                       <div className="text-xs text-amber-600 mt-1 text-right">
-                        {item.actualQuantity === 0 ? 
+                        {actualQuantities[item.id] === 0 ? 
                           t('orderPickingPage.pickList.outOfStock') : 
-                          `${t('orderPickingPage.pickList.missing')}: ${item.quantity - (item.actualQuantity || 0)}`
+                          `${t('orderPickingPage.pickList.missing')}: ${item.quantity - actualQuantities[item.id]}`
                         }
                       </div>
                     )}
@@ -1101,6 +1131,54 @@ A 1
                 {updateOrderStatusMutation.isPending ? t('orderPickingPage.pickList.processing') : t('orderPickingPage.pickList.printLabels')}
               </Button>
             </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Out of Stock Confirmation Dialog */}
+      <Dialog open={showOutOfStockDialog} onOpenChange={setShowOutOfStockDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <AlertTriangle className="mr-2 h-5 w-5 text-orange-600" />
+              {t('orderPickingPage.pickList.outOfStockConfirmation')}
+            </DialogTitle>
+            <DialogDescription>
+              {t('orderPickingPage.pickList.outOfStockConfirmationDescription')}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Alert variant="default" className="mb-4 border-orange-200 bg-orange-50">
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+              <AlertTitle className="text-orange-800">
+                {t('orderPickingPage.pickList.markingAsOutOfStock')}
+              </AlertTitle>
+              <AlertDescription className="text-orange-700">
+                <strong>{outOfStockItem?.productName}</strong> {t('orderPickingPage.pickList.willBeAddedToBackorder')}
+              </AlertDescription>
+            </Alert>
+          </div>
+
+          <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowOutOfStockDialog(false);
+                setOutOfStockItem(null);
+              }}
+            >
+              {t('orderPickingPage.pickList.cancel')}
+            </Button>
+            
+            <Button 
+              type="submit"
+              onClick={handleOutOfStockConfirm}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              {t('orderPickingPage.pickList.confirmOutOfStock')}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
