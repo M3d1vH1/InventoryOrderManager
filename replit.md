@@ -4,6 +4,11 @@
 A comprehensive warehouse management system with order management, inventory tracking, supplier invoice/payment management, and shipping functionality. Built with React frontend and Express backend using PostgreSQL database.
 
 ## Recent Changes
+- **June 23, 2025**: Secured repository against exposed secrets
+  - **Enhanced .gitignore**: Added comprehensive security patterns for environment files, keys, logs, and database exports
+  - **Removed Sensitive Files**: Cleaned up backup files, database exports, and temporary files containing sensitive data
+  - **Security Template**: Created .env.example file with safe configuration template
+  - **Production Ready**: Environment configured for secure production deployment
 - **June 23, 2025**: Fixed shipping companies dropdown and order status update errors
   - **Database Query Fix**: Corrected table reference from `customersTable` to `customers` resolving silent database failures
   - **Comprehensive Company List**: Dropdown now displays all 112 transport companies from database instead of 7 fallback options
