@@ -1584,9 +1584,26 @@ const Settings = () => {
                           name="slackWebhookUrl"
                           render={({ field }) => (
                             <FormItem className="mt-2">
-                              <FormLabel>Slack Webhook URL</FormLabel>
+                              <FormLabel>Main Slack Webhook URL</FormLabel>
                               <FormDescription>
-                                Enter the webhook URL for your Slack channel
+                                Primary webhook URL for orders, call logs, and general notifications
+                              </FormDescription>
+                              <FormControl>
+                                <Input placeholder="https://hooks.slack.com/services/..." {...field} value={field.value || ''} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={notificationForm.control}
+                          name="slackFinanceWebhookUrl"
+                          render={({ field }) => (
+                            <FormItem className="mt-2">
+                              <FormLabel>Finance Slack Webhook URL (Optional)</FormLabel>
+                              <FormDescription>
+                                Separate webhook URL for invoice and payment notifications. If not set, will use main webhook.
                               </FormDescription>
                               <FormControl>
                                 <Input placeholder="https://hooks.slack.com/services/..." {...field} value={field.value || ''} />

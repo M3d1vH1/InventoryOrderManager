@@ -63,17 +63,25 @@ class InvoicePaymentNotificationService {
       }
 
       // Send Slack notification if enabled
-      if (settings.slackEnabled && settings.slackNotifyInvoices && settings.slackWebhookUrl) {
+      if (settings.slackEnabled && settings.slackNotifyInvoices) {
         console.log('Sending Slack notification for invoice:', event.invoice.invoiceNumber);
         
+        // Use finance webhook if available, otherwise fall back to main webhook
+        const webhookUrl = settings.slackFinanceWebhookUrl || settings.slackWebhookUrl;
+        
+        if (!webhookUrl) {
+          console.log('No Slack webhook URL configured for invoice notifications');
+          return;
+        }
+        
         // Validate webhook URL
-        if (!settings.slackWebhookUrl.startsWith('https://hooks.slack.com/')) {
+        if (!webhookUrl.startsWith('https://hooks.slack.com/')) {
           console.error('Invalid Slack webhook URL for invoice notification');
           return;
         }
         
         const message = this.formatInvoiceSlackMessage(event.invoice, event.supplierName);
-        const success = await this.slackService.sendNotification(settings.slackWebhookUrl, message);
+        const success = await this.slackService.sendNotification(webhookUrl, message);
         
         if (success) {
           console.log('Invoice Slack notification sent successfully');
@@ -102,17 +110,25 @@ class InvoicePaymentNotificationService {
       }
 
       // Send Slack notification if enabled
-      if (settings.slackEnabled && settings.slackNotifyPayments && settings.slackWebhookUrl) {
+      if (settings.slackEnabled && settings.slackNotifyPayments) {
         console.log('Sending Slack notification for payment:', event.payment.id);
         
+        // Use finance webhook if available, otherwise fall back to main webhook
+        const webhookUrl = settings.slackFinanceWebhookUrl || settings.slackWebhookUrl;
+        
+        if (!webhookUrl) {
+          console.log('No Slack webhook URL configured for payment notifications');
+          return;
+        }
+        
         // Validate webhook URL
-        if (!settings.slackWebhookUrl.startsWith('https://hooks.slack.com/')) {
+        if (!webhookUrl.startsWith('https://hooks.slack.com/')) {
           console.error('Invalid Slack webhook URL for payment notification');
           return;
         }
         
         const message = this.formatPaymentSlackMessage(event.payment, event.invoice, event.supplierName);
-        const success = await this.slackService.sendNotification(settings.slackWebhookUrl, message);
+        const success = await this.slackService.sendNotification(webhookUrl, message);
         
         if (success) {
           console.log('Payment Slack notification sent successfully');
@@ -139,9 +155,14 @@ class InvoicePaymentNotificationService {
     }
 
     // Send Slack notification if enabled
-    if (settings.slackEnabled && settings.slackNotifyInvoices && settings.slackWebhookUrl) {
-      const message = this.formatOverdueInvoiceSlackMessage(event.invoice, event.supplierName);
-      await this.slackService.sendNotification(settings.slackWebhookUrl, message);
+    if (settings.slackEnabled && settings.slackNotifyInvoices) {
+      // Use finance webhook if available, otherwise fall back to main webhook
+      const webhookUrl = settings.slackFinanceWebhookUrl || settings.slackWebhookUrl;
+      
+      if (webhookUrl && webhookUrl.startsWith('https://hooks.slack.com/')) {
+        const message = this.formatOverdueInvoiceSlackMessage(event.invoice, event.supplierName);
+        await this.slackService.sendNotification(webhookUrl, message);
+      }
     }
 
     // Store notification for UI display

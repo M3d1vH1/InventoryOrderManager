@@ -13,6 +13,7 @@ A comprehensive warehouse management system with order management, inventory tra
   - **Standardized Messages**: Created consistent text-based format for all notification types (orders, invoices, payments)
   - **HTTP Client Optimization**: Reduced timeouts from 15s to 8s and simplified retry logic for better performance
   - **Robust Validation**: Added webhook URL format validation and graceful error handling
+  - **Separate Finance Webhook**: Added optional separate Slack webhook URL for invoice/payment notifications to different channel
 - **June 23, 2025**: Secured repository against exposed secrets
   - **Enhanced .gitignore**: Added comprehensive security patterns for environment files, keys, logs, and database exports
   - **Removed Sensitive Files**: Cleaned up backup files, database exports, and temporary files containing sensitive data
