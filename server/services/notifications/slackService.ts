@@ -13,7 +13,7 @@ export class SlackNotificationService {
   
   constructor(storage: IStorage) {
     this.storage = storage;
-    // Configure robust HTTP client with Slack-specific settings
+    // Simple HTTP client configuration for Slack webhooks
     this.httpClient = new RobustHttpClient(
       {
         headers: {
@@ -22,13 +22,13 @@ export class SlackNotificationService {
         }
       },
       {
-        timeout: 15000, // 15 seconds for Slack webhooks
-        maxRetries: 3,
-        retryDelay: 2000, // 2 seconds initial delay
-        maxRetryDelay: 30000, // 30 seconds max delay
+        timeout: 8000, // 8 seconds for Slack webhooks
+        maxRetries: 2,
+        retryDelay: 1000, // 1 second initial delay
+        maxRetryDelay: 5000, // 5 seconds max delay
         retryStatusCodes: [408, 429, 500, 502, 503, 504],
         onRetry: (attempt, error) => {
-          console.log(`Slack notification retry attempt ${attempt}: ${error.message}`);
+          console.log(`Slack retry ${attempt}: ${error.message}`);
         }
       }
     );
@@ -59,23 +59,23 @@ export class SlackNotificationService {
         return false;
       }
       
-      console.log('Sending Slack message to webhook URL:', webhookUrl);
-      console.log('Message payload:', JSON.stringify(message, null, 2));
+      console.log('Sending Slack notification for:', message.text?.substring(0, 50) + '...');
       
       const response = await this.httpClient.post(webhookUrl, message);
       
-      console.log('Slack API response status:', response.status, response.statusText);
-      console.log('Slack API response data:', response.data || 'No response data');
-      
-      return true;
+      if (response.status === 200) {
+        console.log('Slack notification sent successfully');
+        return true;
+      } else {
+        console.error('Slack API returned non-200 status:', response.status);
+        return false;
+      }
     } catch (error) {
-      console.error('Error sending Slack notification:', error);
+      console.error('Failed to send Slack notification:', error);
       if (error instanceof HttpRequestError) {
-        console.error('Robust HTTP client error details:', {
-          statusCode: error.statusCode,
+        console.error('HTTP error details:', {
+          status: error.statusCode,
           attempts: error.attempts,
-          isTimeout: error.isTimeout,
-          isNetworkError: error.isNetworkError,
           message: error.message
         });
       }

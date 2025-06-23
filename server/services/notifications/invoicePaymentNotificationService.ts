@@ -28,6 +28,8 @@ class InvoicePaymentNotificationService {
 
   async handleEvent(event: NotificationEvent): Promise<void> {
     try {
+      console.log('Processing notification event:', event.type);
+      
       const settings = await storage.getNotificationSettings();
       if (!settings) {
         console.log('No notification settings found, skipping notifications');
@@ -44,50 +46,91 @@ class InvoicePaymentNotificationService {
         case 'invoice_overdue':
           await this.handleInvoiceOverdue(event, settings);
           break;
+        default:
+          console.warn('Unknown notification event type:', (event as any).type);
       }
     } catch (error) {
       console.error('Error handling notification event:', error);
+      // Continue execution - don't throw errors that could break the main flow
     }
   }
 
   private async handleInvoiceCreated(event: InvoiceCreatedEvent, settings: NotificationSettings): Promise<void> {
-    if (!settings.invoiceAlerts) {
-      return;
-    }
+    try {
+      if (!settings.invoiceAlerts) {
+        console.log('Invoice alerts disabled, skipping notification');
+        return;
+      }
 
-    // Send Slack notification if enabled
-    if (settings.slackEnabled && settings.slackNotifyInvoices && settings.slackWebhookUrl) {
-      const message = this.formatInvoiceSlackMessage(event.invoice, event.supplierName, settings.slackInvoiceTemplate);
-      await this.slackService.sendNotification(settings.slackWebhookUrl, message);
-    }
+      // Send Slack notification if enabled
+      if (settings.slackEnabled && settings.slackNotifyInvoices && settings.slackWebhookUrl) {
+        console.log('Sending Slack notification for invoice:', event.invoice.invoiceNumber);
+        
+        // Validate webhook URL
+        if (!settings.slackWebhookUrl.startsWith('https://hooks.slack.com/')) {
+          console.error('Invalid Slack webhook URL for invoice notification');
+          return;
+        }
+        
+        const message = this.formatInvoiceSlackMessage(event.invoice, event.supplierName);
+        const success = await this.slackService.sendNotification(settings.slackWebhookUrl, message);
+        
+        if (success) {
+          console.log('Invoice Slack notification sent successfully');
+        } else {
+          console.error('Failed to send invoice Slack notification');
+        }
+      }
 
-    // Store notification for UI display
-    await this.storeNotification({
-      type: 'invoice_created',
-      title: 'New Invoice Created',
-      message: `Invoice ${event.invoice.invoiceNumber} created for ${event.supplierName || 'Unknown Supplier'}`,
-      data: { invoiceId: event.invoice.id, amount: event.invoice.amount }
-    });
+      // Store notification for UI display
+      await this.storeNotification({
+        type: 'invoice_created',
+        title: 'New Invoice Created',
+        message: `Invoice ${event.invoice.invoiceNumber} created for ${event.supplierName || 'Unknown Supplier'}`,
+        data: { invoiceId: event.invoice.id, amount: event.invoice.amount }
+      });
+    } catch (error) {
+      console.error('Error handling invoice created notification:', error);
+    }
   }
 
   private async handlePaymentCreated(event: PaymentCreatedEvent, settings: NotificationSettings): Promise<void> {
-    if (!settings.paymentAlerts) {
-      return;
-    }
+    try {
+      if (!settings.paymentAlerts) {
+        console.log('Payment alerts disabled, skipping notification');
+        return;
+      }
 
-    // Send Slack notification if enabled
-    if (settings.slackEnabled && settings.slackNotifyPayments && settings.slackWebhookUrl) {
-      const message = this.formatPaymentSlackMessage(event.payment, event.invoice, event.supplierName, settings.slackPaymentTemplate);
-      await this.slackService.sendNotification(settings.slackWebhookUrl, message);
-    }
+      // Send Slack notification if enabled
+      if (settings.slackEnabled && settings.slackNotifyPayments && settings.slackWebhookUrl) {
+        console.log('Sending Slack notification for payment:', event.payment.id);
+        
+        // Validate webhook URL
+        if (!settings.slackWebhookUrl.startsWith('https://hooks.slack.com/')) {
+          console.error('Invalid Slack webhook URL for payment notification');
+          return;
+        }
+        
+        const message = this.formatPaymentSlackMessage(event.payment, event.invoice, event.supplierName);
+        const success = await this.slackService.sendNotification(settings.slackWebhookUrl, message);
+        
+        if (success) {
+          console.log('Payment Slack notification sent successfully');
+        } else {
+          console.error('Failed to send payment Slack notification');
+        }
+      }
 
-    // Store notification for UI display
-    await this.storeNotification({
-      type: 'payment_created',
-      title: 'Payment Recorded',
-      message: `Payment of €${event.payment.amount} recorded for invoice ${event.invoice.invoiceNumber}`,
-      data: { paymentId: event.payment.id, invoiceId: event.invoice.id, amount: event.payment.amount }
-    });
+      // Store notification for UI display
+      await this.storeNotification({
+        type: 'payment_created',
+        title: 'Payment Recorded',
+        message: `Payment of €${event.payment.amount} recorded for invoice ${event.invoice.invoiceNumber}`,
+        data: { paymentId: event.payment.id, invoiceId: event.invoice.id, amount: event.payment.amount }
+      });
+    } catch (error) {
+      console.error('Error handling payment created notification:', error);
+    }
   }
 
   private async handleInvoiceOverdue(event: InvoiceOverdueEvent, settings: NotificationSettings): Promise<void> {
@@ -110,15 +153,7 @@ class InvoicePaymentNotificationService {
     });
   }
 
-  private formatInvoiceSlackMessage(invoice: SupplierInvoice, supplierName?: string, template?: string | null): string {
-    if (template) {
-      return template
-        .replace('{invoiceNumber}', invoice.invoiceNumber)
-        .replace('{supplierName}', supplierName || 'Unknown Supplier')
-        .replace('{amount}', `€${invoice.amount}`)
-        .replace('{dueDate}', invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : 'Not set');
-    }
-
+  private formatInvoiceSlackMessage(invoice: SupplierInvoice, supplierName?: string): string {
     return `📄 *New Invoice Created*
 • Invoice: ${invoice.invoiceNumber}
 • Supplier: ${supplierName || 'Unknown Supplier'}
@@ -127,16 +162,7 @@ class InvoicePaymentNotificationService {
 • Status: ${invoice.status}`;
   }
 
-  private formatPaymentSlackMessage(payment: SupplierPayment, invoice: SupplierInvoice, supplierName?: string, template?: string | null): string {
-    if (template) {
-      return template
-        .replace('{paymentAmount}', `€${payment.amount}`)
-        .replace('{invoiceNumber}', invoice.invoiceNumber)
-        .replace('{supplierName}', supplierName || 'Unknown Supplier')
-        .replace('{paymentMethod}', payment.paymentMethod)
-        .replace('{paymentDate}', new Date(payment.paymentDate).toLocaleDateString());
-    }
-
+  private formatPaymentSlackMessage(payment: SupplierPayment, invoice: SupplierInvoice, supplierName?: string): string {
     return `💰 *Payment Recorded*
 • Amount: €${payment.amount}
 • Invoice: ${invoice.invoiceNumber}
