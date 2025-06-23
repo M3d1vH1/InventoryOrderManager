@@ -166,14 +166,22 @@ const PickList = ({ order }: { order: Order }) => {
           if (response.ok) {
             const customer = await response.json();
             if (customer) {
-              // Set current shipping company preference
+              // Determine current shipping company preference
+              let currentShippingCompany = '';
               if (customer.preferredShippingCompany === 'other' && customer.billingCompany) {
+                currentShippingCompany = customer.billingCompany;
                 setSelectedShippingCompany(customer.billingCompany);
               } else if (customer.shippingCompany) {
+                currentShippingCompany = customer.shippingCompany;
                 setSelectedShippingCompany(customer.shippingCompany);
               } else if (customer.preferredShippingCompany && customer.preferredShippingCompany !== 'other') {
+                currentShippingCompany = customer.preferredShippingCompany;
                 setSelectedShippingCompany(customer.preferredShippingCompany);
               }
+              
+              // Set the current shipping company for display
+              setCustomerCurrentShippingCompany(currentShippingCompany);
+              console.log('Set customer current shipping company:', currentShippingCompany);
             }
           }
         } catch (error) {
@@ -221,7 +229,7 @@ const PickList = ({ order }: { order: Order }) => {
         method: 'PATCH',
         body: JSON.stringify({ 
           status,
-          itemQuantities: itemsWithActualQuantities,
+          itemQuantities: itemQuantities,
           approvePartialFulfillment
         }),
         headers: {
