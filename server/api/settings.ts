@@ -111,13 +111,23 @@ export async function updateNotificationSettings(req: Request, res: Response) {
     });
 
     const validatedData = schema.parse(req.body);
+    console.log('Updating notification settings with:', validatedData);
+    
     const updatedSettings = await storage.updateNotificationSettings(validatedData);
+    console.log('Updated settings result:', updatedSettings);
     
     if (updatedSettings) {
-      return res.json(updatedSettings);
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Settings updated successfully',
+        data: updatedSettings 
+      });
     }
     
-    return res.status(500).json({ message: 'Failed to update notification settings' });
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to update notification settings' 
+    });
   } catch (error) {
     console.error('Error updating notification settings:', error);
     if (error instanceof z.ZodError) {
