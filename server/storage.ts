@@ -201,6 +201,7 @@ export interface IStorage {
   // Order Item methods
   getOrderItems(orderId: number): Promise<OrderItem[]>;
   addOrderItem(orderItem: InsertOrderItem): Promise<OrderItem>;
+  updateOrderItem(id: number, orderItem: Partial<InsertOrderItem>): Promise<OrderItem | undefined>;
   deleteOrderItemsByOrderId(orderId: number): Promise<boolean>;
   
   // Shipping Document methods

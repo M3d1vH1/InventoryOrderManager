@@ -929,6 +929,21 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
+  async updateOrderItem(id: number, orderItem: Partial<InsertOrderItem>): Promise<OrderItem | undefined> {
+    try {
+      const [updatedOrderItem] = await this.db
+        .update(orderItems)
+        .set(orderItem)
+        .where(eq(orderItems.id, id))
+        .returning();
+      
+      return updatedOrderItem;
+    } catch (error) {
+      console.error(`Error updating order item ${id}:`, error);
+      return undefined;
+    }
+  }
+  
   // Customer methods
   async getCustomer(id: number): Promise<Customer | undefined> {
     const result = await this.db.select().from(customers).where(eq(customers.id, id));

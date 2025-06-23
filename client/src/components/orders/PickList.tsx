@@ -107,6 +107,7 @@ const PickList = ({ order }: { order: Order }) => {
   
   // Debug shipping companies data
   console.log('Shipping companies loaded:', shippingCompanies.length, shippingCompanies);
+  console.log('Customer current shipping company:', customerCurrentShippingCompany);
 
   // Mutation to update customer shipping company
   const updateCustomerShippingMutation = useMutation({
