@@ -141,15 +141,40 @@ export async function testSlackWebhook(req: Request, res: Response) {
     });
 
     const validatedData = schema.parse(req.body);
-    const slackService = createSlackService(storage);
+
+    // Test the webhook by sending a test message
+    const message = validatedData.testMessage || 'This is a test message from your warehouse management system.';
     
-    const success = await slackService.testConnection(validatedData.webhookUrl);
-    
-    if (success) {
-      return res.json({ success: true, message: 'Slack webhook test was successful!' });
+    try {
+      const response = await fetch(validatedData.webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: message,
+          username: 'Warehouse System',
+          icon_emoji: ':gear:'
+        }),
+      });
+
+      if (!response.ok) {
+        const responseText = await response.text();
+        throw new Error(`Webhook test failed: ${response.status} ${response.statusText}. Response: ${responseText}`);
+      }
+
+      res.json({ 
+        success: true, 
+        message: 'Webhook test successful! Check your Slack channel.',
+        status: response.status
+      });
+    } catch (error) {
+      console.error('Webhook test error:', error);
+      res.status(400).json({ 
+        success: false, 
+        message: error instanceof Error ? error.message : 'Webhook test failed'
+      });
     }
-    
-    return res.status(400).json({ success: false, message: 'Failed to send test message to Slack. Please check your webhook URL.' });
   } catch (error) {
     console.error('Error testing Slack webhook:', error);
     if (error instanceof z.ZodError) {
