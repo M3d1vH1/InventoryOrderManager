@@ -4,3 +4,31 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.development
+
+# Security files
+cookies.txt
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Logs that might contain sensitive data
+logs/
+*.log
+temp/
+temp_*
+
+# Database exports
+database_exports/
+*.sql
+el_backup.json
+
+# Temporary files
+.replit.nix.bak
+package.json.backup
