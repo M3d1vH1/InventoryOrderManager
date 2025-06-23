@@ -34,28 +34,28 @@ const companySettingsSchema = z.object({
 });
 
 const notificationSettingsSchema = z.object({
-  lowStockAlerts: z.boolean(),
-  orderConfirmation: z.boolean(),
-  shippingUpdates: z.boolean(),
-  dailyReports: z.boolean(),
-  weeklyReports: z.boolean(),
-  soundEnabled: z.boolean().optional(),
-  invoiceAlerts: z.boolean().optional(),
-  paymentAlerts: z.boolean().optional(),
-  overdueInvoiceAlerts: z.boolean().optional(),
-  slackEnabled: z.boolean().optional(),
-  slackWebhookUrl: z.string().optional().nullable(),
-  slackFinanceWebhookUrl: z.string().optional().nullable(),
-  slackNotifyNewOrders: z.boolean().optional(),
-  slackNotifyCallLogs: z.boolean().optional(),
-  slackNotifyLowStock: z.boolean().optional(),
-  slackNotifyInvoices: z.boolean().optional(),
-  slackNotifyPayments: z.boolean().optional(),
-  slackOrderTemplate: z.string().optional().nullable(),
-  slackCallLogTemplate: z.string().optional().nullable(),
-  slackLowStockTemplate: z.string().optional().nullable(),
-  slackInvoiceTemplate: z.string().optional().nullable(),
-  slackPaymentTemplate: z.string().optional().nullable(),
+  lowStockAlerts: z.boolean().default(false),
+  orderConfirmation: z.boolean().default(false),
+  shippingUpdates: z.boolean().default(false),
+  dailyReports: z.boolean().default(false),
+  weeklyReports: z.boolean().default(false),
+  soundEnabled: z.boolean().default(false),
+  invoiceAlerts: z.boolean().default(false),
+  paymentAlerts: z.boolean().default(false),
+  overdueInvoiceAlerts: z.boolean().default(false),
+  slackEnabled: z.boolean().default(false),
+  slackWebhookUrl: z.string().nullable().default(null),
+  slackFinanceWebhookUrl: z.string().nullable().default(null),
+  slackNotifyNewOrders: z.boolean().default(false),
+  slackNotifyCallLogs: z.boolean().default(false),
+  slackNotifyLowStock: z.boolean().default(false),
+  slackNotifyInvoices: z.boolean().default(false),
+  slackNotifyPayments: z.boolean().default(false),
+  slackOrderTemplate: z.string().nullable().default(null),
+  slackCallLogTemplate: z.string().nullable().default(null),
+  slackLowStockTemplate: z.string().nullable().default(null),
+  slackInvoiceTemplate: z.string().nullable().default(null),
+  slackPaymentTemplate: z.string().nullable().default(null),
 });
 
 const emailSettingsSchema = z.object({
@@ -115,17 +115,22 @@ const Settings: React.FC = () => {
 
   // Save notification settings
   const saveNotificationSettings = useMutation({
-    mutationFn: async (values) => apiRequest("/api/settings/notifications", {
+    mutationFn: async (values: z.infer<typeof notificationSettingsSchema>) => apiRequest("/api/settings/notifications", {
       method: "POST",
       body: JSON.stringify(values),
       headers: { "Content-Type": "application/json" },
     }),
     onSuccess: () => {
       toast({ title: "Settings saved", description: "Notification settings updated." });
-      queryClient.invalidateQueries(["/api/settings/notifications"]);
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/notifications"] });
     },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to save notification settings.", variant: "destructive" });
+    onError: (error: any) => {
+      console.error("Settings save error:", error);
+      toast({ 
+        title: "Error", 
+        description: error?.message || "Failed to save notification settings.", 
+        variant: "destructive" 
+      });
     },
   });
 
