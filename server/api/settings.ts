@@ -60,6 +60,7 @@ export async function getNotificationSettings(req: Request, res: Response) {
     console.log('Retrieved notification settings:', {
       slackEnabled: settings?.slackEnabled,
       slackWebhookUrl: settings?.slackWebhookUrl ? `***${settings.slackWebhookUrl.substring(0, 10)}...` : 'Not set',
+      slackFinanceWebhookUrl: settings?.slackFinanceWebhookUrl ? `***${settings.slackFinanceWebhookUrl.substring(0, 10)}...` : 'Not set',
       slackNotifyNewOrders: settings?.slackNotifyNewOrders,
       slackNotifyCallLogs: settings?.slackNotifyCallLogs,
       slackNotifyLowStock: settings?.slackNotifyLowStock,
