@@ -95,11 +95,11 @@ const Settings: React.FC = () => {
       slackNotifyLowStock: false,
       slackNotifyInvoices: false,
       slackNotifyPayments: false,
-      slackOrderTemplate: "",
-      slackCallLogTemplate: "",
-      slackLowStockTemplate: "",
-      slackInvoiceTemplate: "",
-      slackPaymentTemplate: "",
+      slackOrderTemplate: null,
+      slackCallLogTemplate: null,
+      slackLowStockTemplate: null,
+      slackInvoiceTemplate: null,
+      slackPaymentTemplate: null,
     },
   });
 
@@ -111,7 +111,16 @@ const Settings: React.FC = () => {
   // Update form when data is loaded
   useEffect(() => {
     if (notificationSettingsData) {
-      notificationForm.reset(notificationSettingsData);
+      // Convert null values to empty strings for the form
+      const formData = {
+        ...notificationSettingsData,
+        slackOrderTemplate: notificationSettingsData.slackOrderTemplate || "",
+        slackCallLogTemplate: notificationSettingsData.slackCallLogTemplate || "",
+        slackLowStockTemplate: notificationSettingsData.slackLowStockTemplate || "",
+        slackInvoiceTemplate: notificationSettingsData.slackInvoiceTemplate || "",
+        slackPaymentTemplate: notificationSettingsData.slackPaymentTemplate || "",
+      };
+      notificationForm.reset(formData);
     }
   }, [notificationSettingsData, notificationForm]);
 
@@ -120,13 +129,23 @@ const Settings: React.FC = () => {
     mutationFn: async (values: z.infer<typeof notificationSettingsSchema>) => {
       console.log("Saving notification settings:", values);
       
+      // Convert empty strings back to null for storage
+      const processedValues = {
+        ...values,
+        slackOrderTemplate: values.slackOrderTemplate || null,
+        slackCallLogTemplate: values.slackCallLogTemplate || null,
+        slackLowStockTemplate: values.slackLowStockTemplate || null,
+        slackInvoiceTemplate: values.slackInvoiceTemplate || null,
+        slackPaymentTemplate: values.slackPaymentTemplate || null,
+      };
+      
       try {
         const response = await fetch("/api/settings/notifications", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(values),
+          body: JSON.stringify(processedValues),
         });
         
         const data = await response.json();
