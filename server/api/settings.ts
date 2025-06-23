@@ -60,7 +60,6 @@ export async function getNotificationSettings(req: Request, res: Response) {
     console.log('Retrieved notification settings:', {
       slackEnabled: settings?.slackEnabled,
       slackWebhookUrl: settings?.slackWebhookUrl ? `***${settings.slackWebhookUrl.substring(0, 10)}...` : 'Not set',
-      slackFinanceWebhookUrl: settings?.slackFinanceWebhookUrl ? `***${settings.slackFinanceWebhookUrl.substring(0, 10)}...` : 'Not set',
       slackNotifyNewOrders: settings?.slackNotifyNewOrders,
       slackNotifyCallLogs: settings?.slackNotifyCallLogs,
       slackNotifyLowStock: settings?.slackNotifyLowStock,
@@ -91,12 +90,9 @@ export async function updateNotificationSettings(req: Request, res: Response) {
       // Slack notification settings
       slackEnabled: z.boolean().optional(),
       slackWebhookUrl: z.string().optional().nullable(),
-      slackFinanceWebhookUrl: z.string().optional().nullable(),
       slackNotifyNewOrders: z.boolean().optional(),
       slackNotifyCallLogs: z.boolean().optional(),
       slackNotifyLowStock: z.boolean().optional(),
-      slackNotifyInvoices: z.boolean().optional(),
-      slackNotifyPayments: z.boolean().optional(),
       
       // Slack notification templates
       slackOrderTemplate: z.string().optional(),

@@ -2221,12 +2221,9 @@ export class DatabaseStorage implements IStorage {
             // Slack notification settings
             slackEnabled: settings.slackEnabled ?? false,
             slackWebhookUrl: settings.slackWebhookUrl,
-            slackFinanceWebhookUrl: settings.slackFinanceWebhookUrl,
             slackNotifyNewOrders: settings.slackNotifyNewOrders ?? true,
             slackNotifyCallLogs: settings.slackNotifyCallLogs ?? true,
             slackNotifyLowStock: settings.slackNotifyLowStock ?? false,
-            slackNotifyInvoices: settings.slackNotifyInvoices ?? true,
-            slackNotifyPayments: settings.slackNotifyPayments ?? true,
             
             // Slack notification templates
             slackOrderTemplate: settings.slackOrderTemplate,
@@ -2255,12 +2252,9 @@ export class DatabaseStorage implements IStorage {
         // Slack notification settings
         if (settings.slackEnabled !== undefined) updateObject.slackEnabled = settings.slackEnabled;
         if (settings.slackWebhookUrl !== undefined) updateObject.slackWebhookUrl = settings.slackWebhookUrl;
-        if (settings.slackFinanceWebhookUrl !== undefined) updateObject.slackFinanceWebhookUrl = settings.slackFinanceWebhookUrl;
         if (settings.slackNotifyNewOrders !== undefined) updateObject.slackNotifyNewOrders = settings.slackNotifyNewOrders;
         if (settings.slackNotifyCallLogs !== undefined) updateObject.slackNotifyCallLogs = settings.slackNotifyCallLogs;
         if (settings.slackNotifyLowStock !== undefined) updateObject.slackNotifyLowStock = settings.slackNotifyLowStock;
-        if (settings.slackNotifyInvoices !== undefined) updateObject.slackNotifyInvoices = settings.slackNotifyInvoices;
-        if (settings.slackNotifyPayments !== undefined) updateObject.slackNotifyPayments = settings.slackNotifyPayments;
         
         // Slack notification templates
         if (settings.slackOrderTemplate !== undefined) updateObject.slackOrderTemplate = settings.slackOrderTemplate;

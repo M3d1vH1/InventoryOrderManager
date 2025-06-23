@@ -4,12 +4,6 @@
 A comprehensive warehouse management system with order management, inventory tracking, supplier invoice/payment management, and shipping functionality. Built with React frontend and Express backend using PostgreSQL database.
 
 ## Recent Changes
-- **June 23, 2025**: Implemented separate finance webhook for Slack notifications
-  - **UI Enhancement**: Added finance webhook URL field in Settings page under Slack Integration section
-  - **Schema Update**: Added slackFinanceWebhookUrl to notification settings schema for proper form validation
-  - **Routing Logic**: Finance notifications (invoices/payments) use dedicated webhook if configured, otherwise fallback to main webhook
-  - **User Interface**: Clear separation between operational notifications (orders, calls) and financial notifications (invoices, payments)
-  - **Optional Configuration**: Finance webhook is optional - system works with just main webhook if needed
 - **June 23, 2025**: Fixed comprehensive notification system issues
   - **Critical Service Fix**: Corrected SlackService instantiation in invoice/payment service with missing storage parameter
   - **Added Missing Method**: Implemented sendNotification method for invoice/payment service compatibility
