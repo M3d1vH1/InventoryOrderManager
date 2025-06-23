@@ -23,6 +23,8 @@ import HealthCheck from "@/components/HealthCheck";
 import BundleAnalyzer from "@/components/BundleAnalyzer";
 import PerformanceAnalyzer from "@/components/performance/PerformanceAnalyzer";
 import DatabasePerformanceAnalyzer from "@/components/database/DatabasePerformanceAnalyzer";
+import UserManagement from "@/components/settings/UserManagement";
+import TemplateEditor from "@/components/settings/TemplateEditor";
 import { Save, Volume2 } from "lucide-react";
 
 // --- SCHEMAS ---
@@ -444,15 +446,90 @@ const Settings: React.FC = () => {
                     )}
                   </div>
                   {/* Template Customization */}
-                  <div className="space-y-4">
-                    <h4 className="text-md font-semibold">Customize Notification Templates</h4>
-                    {/* Accordion for templates */}
-                  </div>
-                  <div className="flex justify-end mt-6">
-                    <Button type="submit" onClick={notificationForm.handleSubmit((data) => saveNotificationSettings.mutate(data))}>
+                  {notificationForm.watch("slackEnabled") && (
+                    <div className="space-y-4">
+                      <h4 className="text-md font-semibold">Customize Notification Templates</h4>
+                      <Accordion type="single" collapsible className="w-full">
+                        <AccordionItem value="order-template">
+                          <AccordionTrigger>Order Notifications</AccordionTrigger>
+                          <AccordionContent>
+                            <TemplateEditor
+                              title="Order Notification Template"
+                              description="Customize the message sent when new orders are created"
+                              value={notificationForm.watch("slackOrderTemplate") || ""}
+                              onChange={(value) => notificationForm.setValue("slackOrderTemplate", value)}
+                              variables={["orderNumber", "customerName", "totalAmount", "status", "priority", "notes"]}
+                              placeholder="New order #{orderNumber} from {customerName} - Total: {totalAmount}"
+                            />
+                          </AccordionContent>
+                        </AccordionItem>
+                        
+                        <AccordionItem value="invoice-template">
+                          <AccordionTrigger>Invoice Notifications</AccordionTrigger>
+                          <AccordionContent>
+                            <TemplateEditor
+                              title="Invoice Notification Template"
+                              description="Customize the message sent when new supplier invoices are received"
+                              value={notificationForm.watch("slackInvoiceTemplate") || ""}
+                              onChange={(value) => notificationForm.setValue("slackInvoiceTemplate", value)}
+                              variables={["invoiceNumber", "supplierName", "amount", "dueDate", "description", "status"]}
+                              placeholder="New invoice #{invoiceNumber} from {supplierName} - Amount: {amount} - Due: {dueDate}"
+                            />
+                          </AccordionContent>
+                        </AccordionItem>
+                        
+                        <AccordionItem value="payment-template">
+                          <AccordionTrigger>Payment Notifications</AccordionTrigger>
+                          <AccordionContent>
+                            <TemplateEditor
+                              title="Payment Notification Template"
+                              description="Customize the message sent when payments are made to suppliers"
+                              value={notificationForm.watch("slackPaymentTemplate") || ""}
+                              onChange={(value) => notificationForm.setValue("slackPaymentTemplate", value)}
+                              variables={["amount", "supplierName", "paymentMethod", "reference", "invoiceNumber", "date"]}
+                              placeholder="Payment of {amount} made to {supplierName} - Method: {paymentMethod} - Ref: {reference}"
+                            />
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
+                    </div>
+                  )}
+                  <div className="flex gap-2 justify-end mt-6">
+                    <Button 
+                      type="submit" 
+                      disabled={saveNotificationSettings.isPending}
+                      onClick={notificationForm.handleSubmit((data) => saveNotificationSettings.mutate(data))}
+                    >
                       <Save className="h-4 w-4 mr-2" />
-                      Save Changes
+                      {saveNotificationSettings.isPending ? "Saving..." : "Save Changes"}
                     </Button>
+                    
+                    {notificationForm.watch("slackWebhookUrl") && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={testWebhook.isPending}
+                        onClick={() => testWebhook.mutate({ 
+                          webhookUrl: notificationForm.getValues("slackWebhookUrl") 
+                        })}
+                      >
+                        {testWebhook.isPending ? "Testing..." : "Test Main"}
+                      </Button>
+                    )}
+                    
+                    {notificationForm.watch("slackFinanceWebhookUrl") && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={testWebhook.isPending}
+                        onClick={() => testWebhook.mutate({ 
+                          webhookUrl: notificationForm.getValues("slackFinanceWebhookUrl"),
+                          isFinance: true
+                        })}
+                      >
+                        {testWebhook.isPending ? "Testing..." : "Test Finance"}
+                      </Button>
+                    )}
                   </div>
                 </div>
               </Form>
