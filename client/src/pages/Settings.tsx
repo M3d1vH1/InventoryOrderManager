@@ -891,6 +891,7 @@ const Settings = () => {
     // Slack notification fields
     slackEnabled?: boolean;
     slackWebhookUrl?: string | null;
+    slackFinanceWebhookUrl?: string | null;
     slackNotifyNewOrders?: boolean;
     slackNotifyCallLogs?: boolean;
     slackNotifyLowStock?: boolean;
@@ -1020,6 +1021,7 @@ const Settings = () => {
         // Slack notification settings
         slackEnabled: notificationSettingsData.slackEnabled || false,
         slackWebhookUrl: notificationSettingsData.slackWebhookUrl || '',
+        slackFinanceWebhookUrl: notificationSettingsData.slackFinanceWebhookUrl || '',
         slackNotifyNewOrders: notificationSettingsData.slackNotifyNewOrders || false,
         slackNotifyCallLogs: notificationSettingsData.slackNotifyCallLogs || false,
         slackNotifyLowStock: notificationSettingsData.slackNotifyLowStock || false,
