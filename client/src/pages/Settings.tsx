@@ -1564,7 +1564,7 @@ const Settings = () => {
                           <div className="space-y-0.5">
                             <FormLabel className="text-base">Enable Slack Notifications</FormLabel>
                             <FormDescription>
-                              Send notifications to a Slack channel
+                              Send notifications to Slack channels
                             </FormDescription>
                           </div>
                           <FormControl>
@@ -1578,18 +1578,26 @@ const Settings = () => {
                     />
                     
                     {notificationForm.watch('slackEnabled') && (
-                      <>
+                      <div className="space-y-4 mt-4 p-4 border rounded-lg bg-slate-50">
+                        <h4 className="text-sm font-medium text-slate-700">Webhook Configuration</h4>
+                        <p className="text-xs text-slate-600">Configure different Slack channels for different types of notifications</p>
+                        
                         <FormField
                           control={notificationForm.control}
                           name="slackWebhookUrl"
                           render={({ field }) => (
-                            <FormItem className="mt-2">
-                              <FormLabel>Main Slack Webhook URL</FormLabel>
-                              <FormDescription>
-                                Primary webhook URL for orders, call logs, and general notifications
+                            <FormItem>
+                              <FormLabel className="text-sm font-medium">Main Webhook URL</FormLabel>
+                              <FormDescription className="text-xs">
+                                Default channel for orders, call logs, and general notifications
                               </FormDescription>
                               <FormControl>
-                                <Input placeholder="https://hooks.slack.com/services/..." {...field} value={field.value || ''} />
+                                <Input 
+                                  placeholder="https://hooks.slack.com/services/..." 
+                                  {...field} 
+                                  value={field.value || ''} 
+                                  className="font-mono text-xs"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -1600,21 +1608,35 @@ const Settings = () => {
                           control={notificationForm.control}
                           name="slackFinanceWebhookUrl"
                           render={({ field }) => (
-                            <FormItem className="mt-2">
-                              <FormLabel>Finance Slack Webhook URL (Optional)</FormLabel>
-                              <FormDescription>
-                                Separate webhook URL for invoice and payment notifications. If not set, will use main webhook.
+                            <FormItem>
+                              <FormLabel className="text-sm font-medium">Finance Webhook URL (Optional)</FormLabel>
+                              <FormDescription className="text-xs">
+                                Separate channel for invoice and payment notifications. Leave empty to use main webhook.
                               </FormDescription>
                               <FormControl>
-                                <Input placeholder="https://hooks.slack.com/services/..." {...field} value={field.value || ''} />
+                                <Input 
+                                  placeholder="https://hooks.slack.com/services/..." 
+                                  {...field} 
+                                  value={field.value || ''} 
+                                  className="font-mono text-xs"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
                         
+                        <div className="pt-2">
+                          <p className="text-xs text-slate-500">
+                            💡 Tip: Use different webhooks to send notifications to specific channels like #orders and #finance
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                        
                         <div className="mt-4 space-y-2">
-                          <h4 className="text-sm font-medium">Notification Types</h4>
+                          <h4 className="text-sm font-medium text-slate-700">Notification Types</h4>
+                          <p className="text-xs text-slate-600 mb-3">Choose which events trigger Slack notifications</p>
                           
                           <FormField
                             control={notificationForm.control}
