@@ -1603,13 +1603,18 @@ const Settings = () => {
                           control={notificationForm.control}
                           name="slackFinanceWebhookUrl"
                           render={({ field }) => (
-                            <FormItem className="mt-2">
-                              <FormLabel>Finance Slack Webhook URL (Optional)</FormLabel>
-                              <FormDescription>
+                            <FormItem className="mt-2 p-3 border border-blue-200 rounded-lg bg-blue-50">
+                              <FormLabel className="text-blue-800">Finance Slack Webhook URL (Optional)</FormLabel>
+                              <FormDescription className="text-blue-600">
                                 Separate webhook URL for invoice and payment notifications. Leave empty to use main webhook.
                               </FormDescription>
                               <FormControl>
-                                <Input placeholder="https://hooks.slack.com/services/..." {...field} value={field.value || ''} />
+                                <Input 
+                                  placeholder="https://hooks.slack.com/services/..." 
+                                  {...field} 
+                                  value={field.value || ''} 
+                                  className="border-blue-300"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
