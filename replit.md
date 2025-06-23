@@ -4,6 +4,11 @@
 A comprehensive warehouse management system with order management, inventory tracking, supplier invoice/payment management, and shipping functionality. Built with React frontend and Express backend using PostgreSQL database.
 
 ## Recent Changes
+- **June 23, 2025**: Fixed Settings page validation and webhook testing issues
+  - **Settings Save Fix**: Notification settings now save properly with null template value handling
+  - **Webhook URL Validation**: Added proper Slack webhook URL format validation with clear error messages
+  - **Template Editor Fix**: Resolved null value handling in template editors with proper fallbacks
+  - **Finance Webhook**: Enhanced webhook testing with better error messages for invalid URL formats
 - **June 23, 2025**: Completed Settings page with full functionality
   - **Route Registration Fix**: Added proper API routes `/api/settings/notifications` to match frontend expectations
   - **User Management System**: Complete user creation, deletion, and role management with proper UI

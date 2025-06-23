@@ -146,11 +146,21 @@ export async function updateNotificationSettings(req: Request, res: Response) {
 export async function testSlackWebhook(req: Request, res: Response) {
   try {
     const schema = z.object({
-      webhookUrl: z.string(),
+      webhookUrl: z.string().url('Please provide a valid URL'),
       testMessage: z.string().optional()
     });
 
     const validatedData = schema.parse(req.body);
+
+    // Validate Slack webhook URL format
+    const slackWebhookPattern = /^https:\/\/hooks\.slack\.com\/services\/[A-Z0-9]+\/[A-Z0-9]+\/[A-Za-z0-9]+$/;
+    if (!slackWebhookPattern.test(validatedData.webhookUrl)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid Slack webhook URL format. Please use a valid Slack webhook URL from your Slack app settings.',
+        hint: 'Slack webhook URLs should look like: https://hooks.slack.com/services/T.../B.../...'
+      });
+    }
 
     // Test the webhook by sending a test message
     const message = validatedData.testMessage || 'This is a test message from your warehouse management system.';
@@ -166,11 +176,24 @@ export async function testSlackWebhook(req: Request, res: Response) {
           username: 'Warehouse System',
           icon_emoji: ':gear:'
         }),
+        signal: AbortSignal.timeout(10000) // 10 second timeout
       });
 
       if (!response.ok) {
         const responseText = await response.text();
-        throw new Error(`Webhook test failed: ${response.status} ${response.statusText}. Response: ${responseText}`);
+        let errorMessage = `Webhook test failed: ${response.status} ${response.statusText}`;
+        
+        if (responseText === 'no_service') {
+          errorMessage = 'Invalid Slack webhook URL. Please check that the webhook URL is correct and the Slack app is properly configured.';
+        } else if (responseText === 'channel_not_found') {
+          errorMessage = 'Slack channel not found. Please check that the webhook is configured for an existing channel.';
+        } else if (responseText === 'invalid_token') {
+          errorMessage = 'Invalid Slack webhook token. Please regenerate the webhook URL from your Slack app settings.';
+        } else if (responseText.includes('invalid')) {
+          errorMessage = 'Invalid webhook configuration. Please check your Slack app settings.';
+        }
+        
+        throw new Error(`${errorMessage} (Response: ${responseText})`);
       }
 
       res.json({ 
@@ -190,7 +213,7 @@ export async function testSlackWebhook(req: Request, res: Response) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ 
         success: false,
-        message: 'Invalid webhook URL', 
+        message: 'Invalid webhook URL format', 
         errors: error.errors 
       });
     }
