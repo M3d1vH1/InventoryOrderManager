@@ -128,8 +128,8 @@ export function AuditTrail() {
     }
   };
 
-  const handleSearch = () => {
-    if (searchEntityId) {
+  const handleEntitySearch = () => {
+    if (searchEntityId.trim() || searchTrackingId.trim()) {
       refetchEntity();
     }
   };
@@ -192,9 +192,16 @@ export function AuditTrail() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4" />
-                            {entry.entity_type} #{entry.entity_id}
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4" />
+                              {entry.entity_type} #{entry.entity_id}
+                            </div>
+                            {entry.tracking_id && (
+                              <Badge variant="outline" className="font-mono text-xs w-fit">
+                                {entry.tracking_id}
+                              </Badge>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -244,37 +251,40 @@ export function AuditTrail() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <div>
                   <Label htmlFor="entityType">Entity Type</Label>
                   <select
                     id="entityType"
+                    className="w-full p-2 border rounded"
                     value={searchEntityType}
                     onChange={(e) => setSearchEntityType(e.target.value as 'invoice' | 'payment')}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="invoice">Invoice</option>
                     <option value="payment">Payment</option>
                   </select>
                 </div>
                 <div>
-                  <Label htmlFor="entityId">
-                    {searchEntityType === 'invoice' ? 'Invoice Number' : 'Payment ID'}
-                  </Label>
+                  <Label htmlFor="entityId">{searchEntityType === 'invoice' ? 'Invoice Number' : 'Payment ID'}</Label>
                   <Input
                     id="entityId"
-                    placeholder={
-                      searchEntityType === 'invoice' 
-                        ? "Enter invoice number (e.g., INV-001)" 
-                        : "Enter payment ID (e.g., 123)"
-                    }
                     value={searchEntityId}
                     onChange={(e) => setSearchEntityId(e.target.value)}
+                    placeholder={searchEntityType === 'invoice' ? 'Enter invoice number...' : 'Enter payment ID...'}
                   />
                 </div>
-                <div className="flex items-end">
-                  <Button onClick={handleSearch} disabled={!searchEntityId || entityLoading}>
-                    {entityLoading ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : null}
+                <div>
+                  <Label htmlFor="trackingId">Tracking ID</Label>
+                  <Input
+                    id="trackingId"
+                    value={searchTrackingId}
+                    onChange={(e) => setSearchTrackingId(e.target.value)}
+                    placeholder="Enter tracking ID (INV-001, PAY-001)..."
+                  />
+                </div>
+                <div className="flex items-end gap-2">
+                  <Button onClick={handleEntitySearch} disabled={!searchEntityId.trim() && !searchTrackingId.trim()}>
+                    <FileText className="h-4 w-4 mr-2" />
                     Search
                   </Button>
                 </div>
