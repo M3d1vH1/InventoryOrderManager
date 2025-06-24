@@ -4,6 +4,12 @@
 A comprehensive warehouse management system with order management, inventory tracking, supplier invoice/payment management, and shipping functionality. Built with React frontend and Express backend using PostgreSQL database.
 
 ## Recent Changes
+- **June 24, 2025**: Fixed entity search functionality and completed overpayment highlighting
+  - **Entity Search Fix**: Replaced storage method calls with direct database queries to properly handle tracking ID conversion
+  - **Overpayment Detection**: Added comprehensive overpayment detection logic that compares total payments against invoice amounts
+  - **Visual Highlighting**: Implemented red background, red text, and "OVERPAYMENT" badges for payment rows that exceed invoice amounts
+  - **Database Query Fix**: Fixed 500 error in audit trail entity search by using direct SQL queries for tracking ID lookup
+  - **Real-time Detection**: Overpayment highlighting works immediately when viewing payment lists
 - **June 24, 2025**: Completed professional tracking ID system implementation
   - **Tracking ID Generation**: All existing invoices (28) and payments (12) now have professional tracking IDs in format INV-001, PAY-001
   - **Console Error Fix**: Resolved missing Search import in AuditTrail component causing browser console errors

@@ -1108,24 +1108,33 @@ router.get('/audit/:entityType/:entityId', isAuthenticated, async (req, res) => 
     
     let actualEntityId = entityId;
     
-    // Handle tracking IDs - convert to actual database IDs
+    // Handle tracking IDs - convert to actual database IDs using direct database queries
     if (entityId.startsWith('INV-') || entityId.startsWith('PAY-')) {
-      if (entityType === 'invoice' && entityId.startsWith('INV-')) {
-        const invoiceResult = await storage.getSupplierInvoices();
-        const invoice = invoiceResult.find((inv: any) => inv.tracking_id === entityId);
-        if (!invoice) {
-          return res.status(404).json({ error: 'Invoice not found' });
+      const client = await pool.connect();
+      try {
+        if (entityType === 'invoice' && entityId.startsWith('INV-')) {
+          const invoiceResult = await client.query(
+            'SELECT id FROM supplier_invoices WHERE tracking_id = $1',
+            [entityId]
+          );
+          if (invoiceResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Invoice not found' });
+          }
+          actualEntityId = invoiceResult.rows[0].id.toString();
+        } else if (entityType === 'payment' && entityId.startsWith('PAY-')) {
+          const paymentResult = await client.query(
+            'SELECT id FROM supplier_payments WHERE tracking_id = $1',
+            [entityId]
+          );
+          if (paymentResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Payment not found' });
+          }
+          actualEntityId = paymentResult.rows[0].id.toString();
+        } else {
+          return res.status(400).json({ error: 'Invalid tracking ID format for entity type' });
         }
-        actualEntityId = invoice.id.toString();
-      } else if (entityType === 'payment' && entityId.startsWith('PAY-')) {
-        const paymentResult = await storage.getSupplierPayments();
-        const payment = paymentResult.find((pay: any) => pay.tracking_id === entityId);
-        if (!payment) {
-          return res.status(404).json({ error: 'Payment not found' });
-        }
-        actualEntityId = payment.id.toString();
-      } else {
-        return res.status(400).json({ error: 'Invalid tracking ID format for entity type' });
+      } finally {
+        client.release();
       }
     }
     
