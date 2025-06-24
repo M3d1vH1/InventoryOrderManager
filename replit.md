@@ -4,6 +4,18 @@
 A comprehensive warehouse management system with order management, inventory tracking, supplier invoice/payment management, and shipping functionality. Built with React frontend and Express backend using PostgreSQL database.
 
 ## Recent Changes
+- **June 24, 2025**: Enhanced RBAC system with interactive permission management
+  - **Permission Toggle Controls**: Added real-time switches to enable/disable permissions for front_office and warehouse roles
+  - **Add New Permissions**: Admins can now add new permissions to non-admin roles through intuitive interface
+  - **Remove Permissions**: Easy permission removal with confirmation for role management
+  - **Interactive UI**: Live updates with proper state management and error handling
+  - **API Endpoints**: Complete REST API for permission management (PATCH, POST, DELETE operations)
+  - **Role Restrictions**: Only admins can modify permissions, admin role permissions are protected
+- **June 24, 2025**: Fixed critical Slack notification bug for order status changes
+  - **Database Schema**: Added slack_order_picked_template and slack_order_shipped_template columns
+  - **Status-Specific Templates**: Order picked notifications use ✅ icon, shipped notifications use 🚚 icon
+  - **SlackService Updates**: Enhanced service to use correct templates based on order status
+  - **Settings Integration**: Updated UI to support new template fields for better notification customization
 - **June 24, 2025**: Added Slack notifications for order status changes
   - **Order Picked Alerts**: Automatic Slack notifications when orders are marked as "picked"
   - **Order Shipped Alerts**: Automatic Slack notifications when orders are marked as "shipped"
@@ -134,6 +146,11 @@ A comprehensive warehouse management system with order management, inventory tra
 - Prioritize form data persistence and user experience
 
 ## Known Issues Resolved
+- ✅ RBAC permission management limitations (June 24, 2025)
+- ✅ Admins can now add/remove permissions for front_office and warehouse roles
+- ✅ Interactive permission toggles for real-time role management
+- ✅ Missing API endpoints for permission CRUD operations
+- ✅ Slack notification template handling for order status changes (June 24, 2025)
 - ✅ Shipping companies dropdown only showing 7 companies instead of full database list (June 23, 2025)
 - ✅ Database table reference error causing silent query failures
 - ✅ Order status update 500 errors due to missing updateOrderItem method

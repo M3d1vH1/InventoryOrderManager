@@ -13,9 +13,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Shield, Users, Settings, Eye, Edit, Trash2, Package, FileText, TruckIcon, UserCheck, Plus, UserPlus, Mail, Calendar, Activity, Key } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Shield, Users, Settings, Eye, Edit, Trash2, Package, FileText, TruckIcon, UserCheck, Plus, UserPlus, Mail, Calendar, Activity, Key, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 
 interface RolePermission {
   role: string;
@@ -150,6 +152,9 @@ export function RBACDisplay() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
+  const [isPermissionDialogOpen, setIsPermissionDialogOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<string>('');
+  const [newPermission, setNewPermission] = useState<string>('');
 
   const createUserForm = useForm<CreateUserForm>({
     resolver: zodResolver(createUserSchema),
@@ -655,12 +660,82 @@ export function RBACDisplay() {
                         </div>
                       );
                     })}
+                    
+                    {/* Add Permission Button for non-admin roles */}
+                    {user?.role === 'admin' && role.role !== 'admin' && (
+                      <div className="mt-4 pt-4 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedRole(role.role);
+                            setIsPermissionDialogOpen(true);
+                          }}
+                          className="w-full"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Permission
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </AccordionContent>
               </AccordionItem>
             );
           })}
         </Accordion>
+
+        {/* Add Permission Dialog */}
+        <Dialog open={isPermissionDialogOpen} onOpenChange={setIsPermissionDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add Permission to {selectedRole}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="permission">Permission Name</Label>
+                <Select value={newPermission} onValueChange={setNewPermission}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a permission to add" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(permissionDescriptions).map(([permission, description]) => {
+                      const hasPermission = permissionsByRole[selectedRole]?.some(p => p.permission === permission);
+                      if (hasPermission) return null;
+                      
+                      return (
+                        <SelectItem key={permission} value={permission}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{permission.replace(/_/g, ' ').toUpperCase()}</span>
+                            <span className="text-xs text-slate-600">{description}</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsPermissionDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  if (newPermission && selectedRole) {
+                    addPermissionMutation.mutate({
+                      role: selectedRole,
+                      permission: newPermission
+                    });
+                  }
+                }}
+                disabled={!newPermission || addPermissionMutation.isPending}
+              >
+                {addPermissionMutation.isPending ? 'Adding...' : 'Add Permission'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Current Users Management */}
         <div className="border-t pt-4">
