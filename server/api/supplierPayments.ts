@@ -337,13 +337,17 @@ router.post('/invoices', async (req, res) => {
           return date.toISOString().split('T')[0];
         };
         
+        // Generate unique tracking ID for the invoice
+        const trackingId = await generateInvoiceTrackingId();
+
         const result = await client.query(
           `INSERT INTO supplier_invoices 
-            (invoice_number, supplier_id, issue_date, due_date, amount, paid_amount, status, notes, attachment_path, invoice_date, reference, rf_number, company) 
+            (tracking_id, invoice_number, supplier_id, issue_date, due_date, amount, paid_amount, status, notes, attachment_path, invoice_date, reference, rf_number, company) 
            VALUES 
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
            RETURNING *`,
           [
+            trackingId,
             data.invoiceNumber,
             data.supplierId,
             formatSqlDate(data.issueDate),

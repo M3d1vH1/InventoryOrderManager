@@ -15,6 +15,7 @@ interface AuditEntry {
   id: number;
   entity_type: 'invoice' | 'payment';
   entity_id: number;
+  tracking_id: string | null;
   action: string;
   old_values: Record<string, any> | null;
   new_values: Record<string, any> | null;
@@ -41,6 +42,7 @@ interface PaymentDiscrepancy {
 export function AuditTrail() {
   const [searchEntityId, setSearchEntityId] = useState('');
   const [searchEntityType, setSearchEntityType] = useState<'invoice' | 'payment'>('invoice');
+  const [searchTrackingId, setSearchTrackingId] = useState('');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
