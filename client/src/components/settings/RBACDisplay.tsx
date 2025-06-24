@@ -931,7 +931,7 @@ export default function RBACDisplay() {
                 />
                 <FormField
                   control={editUserForm.control}
-                  name="isActive"
+                  name="active"
                   render={({ field }) => (
                     <FormItem className="flex items-center space-x-2">
                       <FormControl>
