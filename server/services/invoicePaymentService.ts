@@ -3,7 +3,7 @@
  * Centralized service for managing invoice payment status and calculations
  * Replaces multiple conflicting payment update functions with a single source of truth
  */
-import { db } from '../db';
+import { pool } from '../db';
 import { PaymentAuditService } from './paymentAuditService';
 
 export interface InvoiceStatusUpdate {
@@ -33,7 +33,7 @@ export class InvoicePaymentService {
   ): Promise<PaymentValidation> {
     try {
       // Get invoice details
-      const invoiceResult = await db.query(
+      const invoiceResult = await pool.query(
         'SELECT amount FROM supplier_invoices WHERE id = $1',
         [invoiceId]
       );
@@ -53,7 +53,7 @@ export class InvoicePaymentService {
         queryParams.push(excludePaymentId);
       }
 
-      const paymentsResult = await db.query(paymentsQuery, queryParams);
+      const paymentsResult = await pool.query(paymentsQuery, queryParams);
       const currentTotal = parseFloat(paymentsResult.rows[0].total_paid || 0);
       const remainingAmount = invoiceAmount - currentTotal;
 
@@ -89,16 +89,16 @@ export class InvoicePaymentService {
 
     try {
       // Start transaction
-      await db.query('BEGIN');
+      await pool.query('BEGIN');
 
       // Get current invoice details
-      const invoiceResult = await db.query(`
+      const invoiceResult = await pool.query(`
         SELECT id, invoice_number, amount, paid_amount, status, due_date
         FROM supplier_invoices WHERE id = $1
       `, [invoiceId]);
 
       if (invoiceResult.rows.length === 0) {
-        await db.query('ROLLBACK');
+        await pool.query('ROLLBACK');
         console.error(`Invoice ${invoiceId} not found for status update`);
         return false;
       }
@@ -109,7 +109,7 @@ export class InvoicePaymentService {
       const today = new Date();
 
       // Calculate total payments for this invoice using precise decimal arithmetic
-      const paymentsResult = await db.query(`
+      const paymentsResult = await pool.query(`
         SELECT COALESCE(SUM(amount), 0) as total_paid 
         FROM supplier_payments 
         WHERE invoice_id = $1
@@ -123,7 +123,7 @@ export class InvoicePaymentService {
 
       if (currentInvoice.status === 'cancelled') {
         // Don't update cancelled invoices
-        await db.query('COMMIT');
+        await pool.query('COMMIT');
         return true;
       }
 
@@ -139,7 +139,7 @@ export class InvoicePaymentService {
       }
 
       // Update invoice with new status and paid amount
-      const updateResult = await db.query(`
+      const updateResult = await pool.query(`
         UPDATE supplier_invoices 
         SET status = $1, paid_amount = $2, updated_by_id = $3, updated_at = NOW()
         WHERE id = $4
@@ -174,11 +174,11 @@ export class InvoicePaymentService {
         console.log(`[PAYMENT] Invoice ${invoiceId} status: ${currentInvoice.status} -> ${newStatus} | Amount: €${invoiceAmount} | Paid: €${totalPaid.toFixed(2)}`);
       }
 
-      await db.query('COMMIT');
+      await pool.query('COMMIT');
       return true;
 
     } catch (error) {
-      await db.query('ROLLBACK');
+      await pool.query('ROLLBACK');
       console.error('Error updating invoice status:', error);
       return false;
     }
@@ -189,7 +189,7 @@ export class InvoicePaymentService {
    */
   static async getPaymentDiscrepancies(): Promise<any[]> {
     try {
-      const result = await db.query(`
+      const result = await pool.query(`
         SELECT 
           si.id as invoice_id,
           si.invoice_number,

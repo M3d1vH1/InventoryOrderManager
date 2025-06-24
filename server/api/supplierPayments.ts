@@ -1075,4 +1075,59 @@ async function calculatePaymentCompletion() {
   return totalAmount > 0 ? (totalPaidAmount / totalAmount) * 100 : 0;
 }
 
+// Add audit trail endpoints
+router.get('/audit/:entityType/:entityId', isAuthenticated, async (req, res) => {
+  try {
+    const { entityType, entityId } = req.params;
+    
+    if (!['invoice', 'payment'].includes(entityType)) {
+      return res.status(400).json({ error: 'Invalid entity type' });
+    }
+    
+    const auditTrail = await PaymentAuditService.getAuditTrail(entityType as 'invoice' | 'payment', parseInt(entityId));
+    res.json(auditTrail);
+  } catch (error) {
+    console.error('Error fetching audit trail:', error);
+    res.status(500).json({ error: 'Failed to fetch audit trail' });
+  }
+});
+
+router.get('/audit/recent', isAuthenticated, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 50;
+    const recentActivity = await PaymentAuditService.getRecentActivity(limit);
+    res.json(recentActivity);
+  } catch (error) {
+    console.error('Error fetching recent activity:', error);
+    res.status(500).json({ error: 'Failed to fetch recent activity' });
+  }
+});
+
+// Payment discrepancy and repair endpoints
+router.get('/discrepancies', isAuthenticated, async (req, res) => {
+  try {
+    const discrepancies = await InvoicePaymentService.getPaymentDiscrepancies();
+    res.json(discrepancies);
+  } catch (error) {
+    console.error('Error fetching discrepancies:', error);
+    res.status(500).json({ error: 'Failed to fetch payment discrepancies' });
+  }
+});
+
+router.post('/repair-data', isAuthenticated, async (req, res) => {
+  try {
+    const userContext = getUserContext(req);
+    const result = await InvoicePaymentService.repairDataInconsistencies(userContext.userId, userContext.userName);
+    
+    res.json({
+      message: `Repaired ${result.repaired} invoice(s)`,
+      repaired: result.repaired,
+      errors: result.errors
+    });
+  } catch (error) {
+    console.error('Error repairing data:', error);
+    res.status(500).json({ error: 'Failed to repair data inconsistencies' });
+  }
+});
+
 export default router;

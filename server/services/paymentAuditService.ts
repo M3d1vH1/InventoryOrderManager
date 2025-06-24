@@ -2,7 +2,7 @@
  * Payment Audit Service
  * Provides comprehensive audit logging for all payment and invoice operations
  */
-import { db } from '../db';
+import { pool } from '../db';
 
 export interface AuditLogEntry {
   entityType: 'invoice' | 'payment';
@@ -20,7 +20,7 @@ export interface AuditLogEntry {
 export class PaymentAuditService {
   static async logAction(entry: AuditLogEntry): Promise<void> {
     try {
-      await db.query(`
+      await pool.query(`
         INSERT INTO payment_audit_log (
           entity_type, entity_id, action, old_values, new_values,
           user_id, user_name, ip_address, user_agent, reason
@@ -47,7 +47,7 @@ export class PaymentAuditService {
 
   static async getAuditTrail(entityType: 'invoice' | 'payment', entityId: number): Promise<any[]> {
     try {
-      const result = await db.query(`
+      const result = await pool.query(`
         SELECT pal.*, u.full_name as user_full_name
         FROM payment_audit_log pal
         LEFT JOIN users u ON pal.user_id = u.id
@@ -64,7 +64,7 @@ export class PaymentAuditService {
 
   static async getRecentActivity(limit: number = 50): Promise<any[]> {
     try {
-      const result = await db.query(`
+      const result = await pool.query(`
         SELECT pal.*, u.full_name as user_full_name
         FROM payment_audit_log pal
         LEFT JOIN users u ON pal.user_id = u.id
