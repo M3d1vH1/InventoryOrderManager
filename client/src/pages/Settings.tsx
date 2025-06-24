@@ -25,7 +25,7 @@ import PerformanceAnalyzer from "@/components/performance/PerformanceAnalyzer";
 import DatabasePerformanceAnalyzer from "@/components/database/DatabasePerformanceAnalyzer";
 import { UserManagement } from "@/components/settings/UserManagement";
 import { TemplateEditor } from "@/components/settings/TemplateEditor";
-import { RBACDisplay } from "@/components/settings/RBACDisplay";
+import RBACDisplay from "@/components/settings/RBACDisplay";
 import { Save, Volume2 } from "lucide-react";
 
 // --- SCHEMAS ---
