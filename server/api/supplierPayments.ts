@@ -479,7 +479,13 @@ router.get('/payments', async (req, res) => {
     // Use direct SQL query to bypass schema issues
     const client = await pool.connect();
     try {
-      const result = await client.query('SELECT * FROM supplier_payments');
+      const result = await client.query(`
+        SELECT 
+          sp.*,
+          sp.tracking_id AS "trackingId"
+        FROM supplier_payments sp
+        ORDER BY sp.payment_date DESC
+      `);
       res.json(result.rows);
     } finally {
       client.release();
