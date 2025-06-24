@@ -4,6 +4,13 @@
 A comprehensive warehouse management system with order management, inventory tracking, supplier invoice/payment management, and shipping functionality. Built with React frontend and Express backend using PostgreSQL database.
 
 ## Recent Changes
+- **June 24, 2025**: Implemented comprehensive payment audit system with user tracking
+  - **Payment Validation**: Added centralized validation service to prevent overpayments at API and database level
+  - **Audit Trail**: Complete audit logging for all payment and invoice operations with user attribution, timestamps, and change history
+  - **Database Triggers**: Added database-level protection against payment amount violations
+  - **Data Repair**: Automated system to detect and fix payment discrepancies with proper audit logging
+  - **API Endpoints**: New REST endpoints for accessing audit trails, checking discrepancies, and repairing data
+  - **Security Features**: All audit operations require authentication, immutable audit logs, IP address tracking
 - **June 24, 2025**: Fixed React Hooks console error and completed RBAC system
   - **React Hooks Fix**: Resolved hooks order violation that was causing component rendering errors
   - **Permission Toggle Controls**: Added real-time switches to enable/disable permissions for front_office and warehouse roles
