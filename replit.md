@@ -4,6 +4,13 @@
 A comprehensive warehouse management system with order management, inventory tracking, supplier invoice/payment management, and shipping functionality. Built with React frontend and Express backend using PostgreSQL database.
 
 ## Recent Changes
+- **June 24, 2025**: Added Slack notifications for order status changes
+  - **Order Picked Alerts**: Automatic Slack notifications when orders are marked as "picked"
+  - **Order Shipped Alerts**: Automatic Slack notifications when orders are marked as "shipped"
+  - **Database Schema**: Added slack_notify_order_picked and slack_notify_order_shipped columns to notification_settings table
+  - **Settings UI**: Added toggle controls for picked and shipped order notifications in Settings page
+  - **Template Support**: Both notifications use existing order template for consistent formatting
+  - **Error Handling**: Robust error handling ensures order updates don't fail if Slack notifications fail
 - **June 24, 2025**: Enhanced RBAC panel with complete user management system
   - **User Management**: Added comprehensive user creation, editing, and deletion capabilities to RBAC panel
   - **Password Reset**: Added password reset functionality for administrators to reset any user's password

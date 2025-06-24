@@ -482,8 +482,8 @@ export class SlackNotificationService {
       
       const settings = await this.getNotificationSettings();
       
-      if (!settings || !settings.slackEnabled || !settings.slackNotifyNewOrders) {
-        console.log('Slack notification skipped: not enabled in settings');
+      if (!settings || !settings.slackEnabled || !(settings as any).slackNotifyOrderPicked) {
+        console.log('Slack notification skipped: order picked notifications not enabled in settings');
         return false;
       }
       
@@ -519,8 +519,8 @@ export class SlackNotificationService {
       
       const settings = await this.getNotificationSettings();
       
-      if (!settings || !settings.slackEnabled || !settings.slackNotifyNewOrders) {
-        console.log('Slack notification skipped: not enabled in settings');
+      if (!settings || !settings.slackEnabled || !(settings as any).slackNotifyOrderShipped) {
+        console.log('Slack notification skipped: order shipped notifications not enabled in settings');
         return false;
       }
       
