@@ -1,11 +1,21 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Shield, Users, Settings, Eye, Edit, Trash2, Package, FileText, TruckIcon, UserCheck } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Shield, Users, Settings, Eye, Edit, Trash2, Package, FileText, TruckIcon, UserCheck, Plus, UserPlus, Mail, Calendar, Activity } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface RolePermission {
   role: string;
@@ -14,6 +24,39 @@ interface RolePermission {
   createdAt: string;
   updatedAt: string;
 }
+
+interface User {
+  id: number;
+  username: string;
+  fullName?: string;
+  email?: string;
+  role: string;
+  active: boolean;
+  createdAt: string;
+  lastLogin?: string;
+}
+
+const createUserSchema = z.object({
+  username: z.string().min(3, 'Username must be at least 3 characters'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+  email: z.string().email('Please enter a valid email address').optional().or(z.literal('')),
+  role: z.enum(['admin', 'front_office', 'warehouse'], {
+    required_error: 'Please select a role'
+  })
+});
+
+const editUserSchema = z.object({
+  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+  email: z.string().email('Please enter a valid email address').optional().or(z.literal('')),
+  role: z.enum(['admin', 'front_office', 'warehouse'], {
+    required_error: 'Please select a role'
+  }),
+  active: z.boolean()
+});
+
+type CreateUserForm = z.infer<typeof createUserSchema>;
+type EditUserForm = z.infer<typeof editUserSchema>;
 
 interface RoleInfo {
   role: string;
@@ -93,6 +136,31 @@ const getPermissionIcon = (permission: string) => {
 
 export function RBACDisplay() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+
+  const createUserForm = useForm<CreateUserForm>({
+    resolver: zodResolver(createUserSchema),
+    defaultValues: {
+      username: '',
+      password: '',
+      fullName: '',
+      email: '',
+      role: 'warehouse'
+    }
+  });
+
+  const editUserForm = useForm<EditUserForm>({
+    resolver: zodResolver(editUserSchema),
+    defaultValues: {
+      fullName: '',
+      email: '',
+      role: 'warehouse',
+      active: true
+    }
+  });
   
   const { data: rolePermissions = [], isLoading, error } = useQuery<RolePermission[]>({
     queryKey: ['/api/role-permissions'],
@@ -105,7 +173,7 @@ export function RBACDisplay() {
     }
   });
 
-  const { data: currentUsers = [] } = useQuery({
+  const { data: currentUsers = [] } = useQuery<User[]>({
     queryKey: ['/api/users'],
     queryFn: async () => {
       const response = await fetch('/api/users');
@@ -115,6 +183,132 @@ export function RBACDisplay() {
       return response.json();
     }
   });
+
+  // Create user mutation
+  const createUser = useMutation({
+    mutationFn: async (userData: CreateUserForm) => {
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create user');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'User created successfully',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      setIsCreateDialogOpen(false);
+      createUserForm.reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Edit user mutation
+  const editUser = useMutation({
+    mutationFn: async ({ userId, userData }: { userId: number; userData: EditUserForm }) => {
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update user');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'User updated successfully',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      setEditingUser(null);
+      editUserForm.reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Delete user mutation
+  const deleteUser = useMutation({
+    mutationFn: async (userId: number) => {
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete user');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'User deleted successfully',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleCreateUser = (data: CreateUserForm) => {
+    createUser.mutate(data);
+  };
+
+  const handleEditUser = (data: EditUserForm) => {
+    if (editingUser) {
+      editUser.mutate({ userId: editingUser.id, userData: data });
+    }
+  };
+
+  const handleDeleteUser = (userId: number) => {
+    deleteUser.mutate(userId);
+  };
+
+  const openEditDialog = (user: User) => {
+    setEditingUser(user);
+    editUserForm.reset({
+      fullName: user.fullName || '',
+      email: user.email || '',
+      role: user.role as any,
+      active: user.active
+    });
+  };
 
   if (isLoading) {
     return (
@@ -162,10 +356,13 @@ export function RBACDisplay() {
   }, {} as Record<string, RolePermission[]>);
 
   // Count users by role
-  const usersByRole = currentUsers.reduce((acc: Record<string, number>, user: any) => {
+  const usersByRole = currentUsers.reduce((acc: Record<string, number>, user: User) => {
     acc[user.role] = (acc[user.role] || 0) + 1;
     return acc;
   }, {});
+
+  const activeUsers = currentUsers.filter(u => u.active).length;
+  const totalUsers = currentUsers.length;
 
   return (
     <Card>
@@ -175,13 +372,130 @@ export function RBACDisplay() {
           Role-Based Access Control (RBAC)
         </CardTitle>
         <CardDescription>
-          System roles and permissions configuration. Your current role: {' '}
+          System roles, permissions, and user management. Your current role: {' '}
           <Badge variant={roleInfo.find(r => r.role === user?.role)?.color || 'outline'}>
             {roleInfo.find(r => r.role === user?.role)?.displayName || user?.role}
           </Badge>
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* User Management Actions */}
+        {user?.role === 'admin' && (
+          <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg border">
+            <div className="flex items-center gap-3">
+              <Users className="h-5 w-5 text-slate-600" />
+              <div>
+                <h3 className="font-medium text-slate-800">User Management</h3>
+                <p className="text-sm text-slate-600">{activeUsers} active users out of {totalUsers} total</p>
+              </div>
+            </div>
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Add User
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Create New User</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={createUserForm.handleSubmit(handleCreateUser)} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="username">Username *</Label>
+                      <Input
+                        id="username"
+                        {...createUserForm.register('username')}
+                        placeholder="Enter username"
+                      />
+                      {createUserForm.formState.errors.username && (
+                        <p className="text-sm text-red-500 mt-1">
+                          {createUserForm.formState.errors.username.message}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="password">Password *</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        {...createUserForm.register('password')}
+                        placeholder="Enter password"
+                      />
+                      {createUserForm.formState.errors.password && (
+                        <p className="text-sm text-red-500 mt-1">
+                          {createUserForm.formState.errors.password.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="fullName">Full Name *</Label>
+                    <Input
+                      id="fullName"
+                      {...createUserForm.register('fullName')}
+                      placeholder="Enter full name"
+                    />
+                    {createUserForm.formState.errors.fullName && (
+                      <p className="text-sm text-red-500 mt-1">
+                        {createUserForm.formState.errors.fullName.message}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      {...createUserForm.register('email')}
+                      placeholder="Enter email (optional)"
+                    />
+                    {createUserForm.formState.errors.email && (
+                      <p className="text-sm text-red-500 mt-1">
+                        {createUserForm.formState.errors.email.message}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="role">Role *</Label>
+                    <Select
+                      value={createUserForm.watch('role')}
+                      onValueChange={(value) => createUserForm.setValue('role', value as any)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="warehouse">Warehouse Staff</SelectItem>
+                        <SelectItem value="front_office">Front Office Staff</SelectItem>
+                        <SelectItem value="admin">Administrator</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {createUserForm.formState.errors.role && (
+                      <p className="text-sm text-red-500 mt-1">
+                        {createUserForm.formState.errors.role.message}
+                      </p>
+                    )}
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsCreateDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={createUser.isPending}>
+                      {createUser.isPending ? 'Creating...' : 'Create User'}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
+
         {/* Role Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {roleInfo.map((role) => {
@@ -284,51 +598,210 @@ export function RBACDisplay() {
           })}
         </Accordion>
 
-        {/* Current Users Summary */}
+        {/* Current Users Management */}
         <div className="border-t pt-4">
-          <h3 className="font-medium text-sm text-slate-700 mb-3">Current System Users</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Role</TableHead>
-                <TableHead>Users</TableHead>
-                <TableHead>Permissions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {roleInfo.map((role) => {
-                const permissions = permissionsByRole[role.role] || [];
-                const enabledCount = permissions.filter(p => p.enabled).length;
-                const userCount = usersByRole[role.role] || 0;
-                const Icon = role.icon;
+          <h3 className="font-medium text-sm text-slate-700 mb-3">System Users ({totalUsers} total, {activeUsers} active)</h3>
+          <div className="border rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Last Login</TableHead>
+                  {user?.role === 'admin' && <TableHead className="text-right">Actions</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {currentUsers.map((currentUser) => {
+                  const roleInfo_ = roleInfo.find(r => r.role === currentUser.role);
+                  const Icon = roleInfo_?.icon || Users;
 
-                return (
-                  <TableRow key={role.role}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Icon className="h-4 w-4" />
-                        <span className="font-medium">{role.displayName}</span>
-                        <Badge variant={role.color} className="text-xs">
-                          {role.role}
+                  return (
+                    <TableRow key={currentUser.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-shrink-0">
+                            <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center">
+                              <Icon className="h-4 w-4 text-slate-600" />
+                            </div>
+                          </div>
+                          <div>
+                            <div className="font-medium text-sm">{currentUser.fullName || currentUser.username}</div>
+                            <div className="text-xs text-slate-500">
+                              {currentUser.username}
+                              {currentUser.email && (
+                                <span className="flex items-center gap-1 mt-1">
+                                  <Mail className="h-3 w-3" />
+                                  {currentUser.email}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={roleInfo_?.color || 'outline'} className="text-xs">
+                          <Icon className="h-3 w-3 mr-1" />
+                          {roleInfo_?.displayName || currentUser.role}
                         </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {userCount} user{userCount !== 1 ? 's' : ''}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-slate-600">
-                        {enabledCount} enabled permissions
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={currentUser.active ? 'default' : 'secondary'} className="text-xs">
+                          <Activity className="h-3 w-3 mr-1" />
+                          {currentUser.active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-xs text-slate-500">
+                          <Calendar className="h-3 w-3" />
+                          {currentUser.lastLogin 
+                            ? new Date(currentUser.lastLogin).toLocaleDateString()
+                            : 'Never'
+                          }
+                        </div>
+                      </TableCell>
+                      {user?.role === 'admin' && (
+                        <TableCell className="text-right">
+                          <div className="flex gap-1 justify-end">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openEditDialog(currentUser)}
+                              disabled={editUser.isPending}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            {currentUser.id !== user?.id && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    disabled={deleteUser.isPending}
+                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-800"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to delete user "{currentUser.fullName || currentUser.username}"? 
+                                      This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDeleteUser(currentUser.id)}
+                                      className="bg-red-600 hover:bg-red-700"
+                                    >
+                                      Delete User
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+
+          {currentUsers.length === 0 && (
+            <div className="text-center py-8 text-slate-500">
+              <Users className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+              <p>No users found. Create your first user to get started.</p>
+            </div>
+          )}
         </div>
+
+        {/* Edit User Dialog */}
+        <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit User: {editingUser?.fullName || editingUser?.username}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={editUserForm.handleSubmit(handleEditUser)} className="space-y-4">
+              <div>
+                <Label htmlFor="edit-fullName">Full Name *</Label>
+                <Input
+                  id="edit-fullName"
+                  {...editUserForm.register('fullName')}
+                  placeholder="Enter full name"
+                />
+                {editUserForm.formState.errors.fullName && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {editUserForm.formState.errors.fullName.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="edit-email">Email</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  {...editUserForm.register('email')}
+                  placeholder="Enter email (optional)"
+                />
+                {editUserForm.formState.errors.email && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {editUserForm.formState.errors.email.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="edit-role">Role *</Label>
+                <Select
+                  value={editUserForm.watch('role')}
+                  onValueChange={(value) => editUserForm.setValue('role', value as any)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="warehouse">Warehouse Staff</SelectItem>
+                    <SelectItem value="front_office">Front Office Staff</SelectItem>
+                    <SelectItem value="admin">Administrator</SelectItem>
+                  </SelectContent>
+                </Select>
+                {editUserForm.formState.errors.role && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {editUserForm.formState.errors.role.message}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="edit-active"
+                  {...editUserForm.register('active')}
+                  className="rounded border-gray-300"
+                />
+                <Label htmlFor="edit-active">User is active</Label>
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingUser(null)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={editUser.isPending}>
+                  {editUser.isPending ? 'Updating...' : 'Update User'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
 
         {user?.role !== 'admin' && (
           <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
