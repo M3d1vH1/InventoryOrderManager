@@ -600,6 +600,12 @@ router.post('/payments', async (req, res) => {
         };
         console.log("Payment date info:", formattedDates);
         
+        // Final validation before insertion to prevent overpayments
+        const finalValidation = await InvoicePaymentService.validatePaymentAmount(data.invoiceId, Number(data.amount));
+        if (!finalValidation.isValid) {
+          throw new Error(`Payment validation failed: ${finalValidation.error}`);
+        }
+
         const result = await client.query(
           `INSERT INTO supplier_payments 
             (invoice_id, payment_date, amount, payment_method, reference_number, notes, receipt_path, company, reference,
