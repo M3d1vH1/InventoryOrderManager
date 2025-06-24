@@ -11,6 +11,7 @@ A comprehensive warehouse management system with order management, inventory tra
   - **Data Repair**: Automated system to detect and fix payment discrepancies with proper audit logging
   - **API Endpoints**: New REST endpoints for accessing audit trails, checking discrepancies, and repairing data
   - **Security Features**: All audit operations require authentication, immutable audit logs, IP address tracking
+  - **Audit UI**: Added comprehensive audit trail interface in Settings page with recent activity, entity search, discrepancy detection, and data management tools
 - **June 24, 2025**: Fixed React Hooks console error and completed RBAC system
   - **React Hooks Fix**: Resolved hooks order violation that was causing component rendering errors
   - **Permission Toggle Controls**: Added real-time switches to enable/disable permissions for front_office and warehouse roles

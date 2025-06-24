@@ -26,6 +26,7 @@ import DatabasePerformanceAnalyzer from "@/components/database/DatabasePerforman
 import { UserManagement } from "@/components/settings/UserManagement";
 import { TemplateEditor } from "@/components/settings/TemplateEditor";
 import RBACDisplay from "@/components/settings/RBACDisplay";
+import { AuditTrail } from "@/components/settings/AuditTrail";
 import { Save, Volume2 } from "lucide-react";
 
 // --- SCHEMAS ---
@@ -228,6 +229,7 @@ const Settings: React.FC = () => {
         <TabsTrigger value="company">Company</TabsTrigger>
         <TabsTrigger value="email">Email</TabsTrigger>
         <TabsTrigger value="rbac">RBAC</TabsTrigger>
+        <TabsTrigger value="audit">Audit Trail</TabsTrigger>
         <TabsTrigger value="system">System</TabsTrigger>
         <TabsTrigger value="performance">Performance</TabsTrigger>
         <TabsTrigger value="labels">Labels</TabsTrigger>
@@ -646,6 +648,11 @@ const Settings: React.FC = () => {
       {/* --- RBAC TAB --- */}
       <TabsContent value="rbac" className="mt-4">
         <RBACDisplay />
+      </TabsContent>
+
+      {/* --- AUDIT TRAIL TAB --- */}
+      <TabsContent value="audit" className="mt-4">
+        <AuditTrail />
       </TabsContent>
 
       {/* --- PERFORMANCE TAB --- */}
