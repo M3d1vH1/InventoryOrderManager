@@ -23,6 +23,12 @@ dotenv.config();
 // Use environment variable or default to production
 const NODE_ENV = process.env.NODE_ENV || 'production';
 
+// Initialize database storage
+import { useDatabase } from './storage';
+useDatabase().catch(error => {
+  console.error('Failed to initialize database storage on startup:', error);
+});
+
 // Setup process-level error handlers
 setupProcessErrorHandlers();
 

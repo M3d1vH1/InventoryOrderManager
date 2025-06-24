@@ -97,6 +97,8 @@ export async function updateNotificationSettings(req: Request, res: Response) {
       slackWebhookUrl: z.string().nullable().optional(),
       slackFinanceWebhookUrl: z.string().nullable().optional(),
       slackNotifyNewOrders: z.boolean().optional(),
+      slackNotifyOrderPicked: z.boolean().optional(),
+      slackNotifyOrderShipped: z.boolean().optional(),
       slackNotifyCallLogs: z.boolean().optional(),
       slackNotifyLowStock: z.boolean().optional(),
       slackNotifyInvoices: z.boolean().optional(),

@@ -2870,7 +2870,7 @@ export class MemStorage implements IStorage {
 // Initialize storage based on environment or configuration
 // For development or testing, use MemStorage
 // For production, use DatabaseStorage
-export let storage: IStorage = new MemStorage();
+export let storage: IStorage;
 
 // This function switches to database storage when called
 export async function useDatabase() {
