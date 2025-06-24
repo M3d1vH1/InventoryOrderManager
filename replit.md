@@ -6,6 +6,7 @@ A comprehensive warehouse management system with order management, inventory tra
 ## Recent Changes
 - **June 24, 2025**: Completed professional tracking ID system implementation
   - **Tracking ID Generation**: All existing invoices (28) and payments (12) now have professional tracking IDs in format INV-001, PAY-001
+  - **Console Error Fix**: Resolved missing Search import in AuditTrail component causing browser console errors
   - **Database Counters**: Implemented atomic counter system using tracking_id_counters table for reliable sequence generation
   - **API Integration**: Updated backend endpoints to include tracking IDs in invoice and payment list responses
   - **Frontend Display**: InvoiceList and PaymentList components now show tracking IDs in first column
