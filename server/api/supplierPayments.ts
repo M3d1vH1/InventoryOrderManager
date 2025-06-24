@@ -1138,7 +1138,13 @@ router.get('/audit/:entityType/:entityId', isAuthenticated, async (req, res) => 
       }
     }
     
-    const auditTrail = await PaymentAuditService.getAuditTrail(entityType as 'invoice' | 'payment', parseInt(actualEntityId));
+    // Validate that actualEntityId is a valid number
+    const numericEntityId = parseInt(actualEntityId);
+    if (isNaN(numericEntityId)) {
+      return res.status(400).json({ error: 'Invalid entity ID format' });
+    }
+    
+    const auditTrail = await PaymentAuditService.getAuditTrail(entityType as 'invoice' | 'payment', numericEntityId);
     res.json(auditTrail);
   } catch (error) {
     console.error('Error fetching audit trail:', error);
