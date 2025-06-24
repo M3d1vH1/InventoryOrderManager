@@ -233,13 +233,16 @@ export function AuditTrail() {
         <TabsContent value="search" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Search Entity Audit Trail</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Search className="h-5 w-5" />
+                Entity Search
+              </CardTitle>
               <CardDescription>
-                Get the complete audit history for a specific invoice or payment
+                Search audit history by invoice number (e.g., INV-001) or payment ID. Find the invoice number from the Finance section or payment details.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="entityType">Entity Type</Label>
                   <select
@@ -253,11 +256,16 @@ export function AuditTrail() {
                   </select>
                 </div>
                 <div>
-                  <Label htmlFor="entityId">Entity ID</Label>
+                  <Label htmlFor="entityId">
+                    {searchEntityType === 'invoice' ? 'Invoice Number' : 'Payment ID'}
+                  </Label>
                   <Input
                     id="entityId"
-                    type="number"
-                    placeholder="Enter ID"
+                    placeholder={
+                      searchEntityType === 'invoice' 
+                        ? "Enter invoice number (e.g., INV-001)" 
+                        : "Enter payment ID (e.g., 123)"
+                    }
                     value={searchEntityId}
                     onChange={(e) => setSearchEntityId(e.target.value)}
                   />
@@ -312,8 +320,15 @@ export function AuditTrail() {
               )}
 
               {entityAudit && entityAudit.length === 0 && searchEntityId && (
-                <div className="text-center py-8 text-muted-foreground">
-                  No audit entries found for {searchEntityType} #{searchEntityId}
+                <div className="text-center py-8">
+                  <div className="text-muted-foreground mb-2">
+                    No audit entries found for {searchEntityType} "{searchEntityId}"
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {searchEntityType === 'invoice' 
+                      ? 'Try using the exact invoice number format (e.g., INV-001)' 
+                      : 'Try using the payment ID number'}
+                  </div>
                 </div>
               )}
             </CardContent>
