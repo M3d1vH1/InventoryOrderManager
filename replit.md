@@ -4,6 +4,12 @@
 A comprehensive warehouse management system with order management, inventory tracking, supplier invoice/payment management, and shipping functionality. Built with React frontend and Express backend using PostgreSQL database.
 
 ## Recent Changes
+- **June 24, 2025**: Completed professional tracking ID system implementation
+  - **Tracking ID Generation**: All existing invoices (28) and payments (12) now have professional tracking IDs in format INV-001, PAY-001
+  - **Database Counters**: Implemented atomic counter system using tracking_id_counters table for reliable sequence generation
+  - **API Integration**: Updated backend endpoints to include tracking IDs in invoice and payment list responses
+  - **Frontend Display**: InvoiceList and PaymentList components now show tracking IDs in first column
+  - **Future-Proof**: New invoices and payments automatically receive sequential tracking IDs starting from INV-029 and PAY-013
 - **June 24, 2025**: Implemented comprehensive payment audit system with user tracking
   - **Payment Validation**: Added centralized validation service to prevent overpayments at API and database level
   - **Audit Trail**: Complete audit logging for all payment and invoice operations with user attribution, timestamps, and change history
