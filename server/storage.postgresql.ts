@@ -2474,6 +2474,24 @@ export class DatabaseStorage implements IStorage {
       return undefined;
     }
   }
+
+  async removeRolePermission(role: string, permission: string): Promise<boolean> {
+    try {
+      const result = await this.db
+        .delete(rolePermissions)
+        .where(and(
+          eq(rolePermissions.role, role as any),
+          eq(rolePermissions.permission, permission as any)
+        ))
+        .returning();
+        
+      console.log(`Removed permission: ${role}:${permission}`);
+      return result.length > 0;
+    } catch (error) {
+      console.error(`Error removing permission ${role}:${permission}:`, error);
+      return false;
+    }
+  }
   
   async checkPermission(role: string, permission: string): Promise<boolean> {
     try {

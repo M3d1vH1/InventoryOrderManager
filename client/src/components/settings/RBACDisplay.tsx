@@ -415,6 +415,77 @@ export function RBACDisplay() {
     );
   }
 
+  // Permission management mutations
+  const updatePermissionMutation = useMutation({
+    mutationFn: async ({ role, permission, enabled }: { role: string; permission: string; enabled: boolean }) => {
+      return apiRequest(`/api/role-permissions/${role}/${permission}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/role-permissions'] });
+      toast({
+        title: "Permission Updated",
+        description: "Role permission has been updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update Failed", 
+        description: error.message || "Failed to update permission",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const addPermissionMutation = useMutation({
+    mutationFn: async ({ role, permission }: { role: string; permission: string }) => {
+      return apiRequest(`/api/role-permissions/${role}/${permission}`, {
+        method: 'POST'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/role-permissions'] });
+      setIsPermissionDialogOpen(false);
+      setNewPermission('');
+      toast({
+        title: "Permission Added",
+        description: "New permission has been added successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Add Failed",
+        description: error.message || "Failed to add permission",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const removePermissionMutation = useMutation({
+    mutationFn: async ({ role, permission }: { role: string; permission: string }) => {
+      return apiRequest(`/api/role-permissions/${role}/${permission}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/role-permissions'] });
+      toast({
+        title: "Permission Removed",
+        description: "Permission has been removed successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Remove Failed",
+        description: error.message || "Failed to remove permission",
+        variant: "destructive"
+      });
+    }
+  });
+
   // Group permissions by role
   const permissionsByRole = rolePermissions.reduce((acc, rp) => {
     if (!acc[rp.role]) {

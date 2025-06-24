@@ -3854,6 +3854,89 @@ A 1
     }
   });
   
+  // Update role permission (add/remove/toggle)
+  app.patch('/api/role-permissions/:role/:permission', isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
+    try {
+      const { role, permission } = req.params;
+      const { enabled } = req.body;
+      
+      if (typeof enabled !== 'boolean') {
+        return res.status(400).json({ message: 'enabled field must be a boolean' });
+      }
+      
+      if (!['admin', 'front_office', 'warehouse'].includes(role)) {
+        return res.status(400).json({ message: 'Invalid role' });
+      }
+      
+      if (role === 'admin') {
+        return res.status(403).json({ message: 'Cannot modify admin permissions' });
+      }
+      
+      const updatedPermission = await storage.updateRolePermission(role, permission, enabled);
+      
+      if (!updatedPermission) {
+        return res.status(404).json({ message: 'Permission not found' });
+      }
+      
+      res.json(updatedPermission);
+    } catch (error: any) {
+      console.error('Error updating role permission:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Add new permission to role
+  app.post('/api/role-permissions/:role/:permission', isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
+    try {
+      const { role, permission } = req.params;
+      
+      if (!['admin', 'front_office', 'warehouse'].includes(role)) {
+        return res.status(400).json({ message: 'Invalid role' });
+      }
+      
+      if (role === 'admin') {
+        return res.status(403).json({ message: 'Cannot modify admin permissions' });
+      }
+      
+      const newPermission = await storage.updateRolePermission(role, permission, true);
+      
+      if (!newPermission) {
+        return res.status(500).json({ message: 'Failed to add permission' });
+      }
+      
+      res.status(201).json(newPermission);
+    } catch (error: any) {
+      console.error('Error adding role permission:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Remove permission from role
+  app.delete('/api/role-permissions/:role/:permission', isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
+    try {
+      const { role, permission } = req.params;
+      
+      if (!['admin', 'front_office', 'warehouse'].includes(role)) {
+        return res.status(400).json({ message: 'Invalid role' });
+      }
+      
+      if (role === 'admin') {
+        return res.status(403).json({ message: 'Cannot modify admin permissions' });
+      }
+      
+      const success = await storage.removeRolePermission(role, permission);
+      
+      if (!success) {
+        return res.status(404).json({ message: 'Permission not found' });
+      }
+      
+      res.json({ message: 'Permission removed successfully' });
+    } catch (error: any) {
+      console.error('Error removing role permission:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.post('/api/role-permissions', isAuthenticated, hasRole(['admin']), async (req, res) => {
     try {
       const { role, permission, enabled } = req.body;
