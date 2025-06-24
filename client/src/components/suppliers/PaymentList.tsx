@@ -337,6 +337,7 @@ export const PaymentList = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>ID</TableHead>
                     <TableHead>{t('supplierPayments.payment.date')}</TableHead>
                     <TableHead>{t('supplierPayments.payment.supplier')}</TableHead>
                     <TableHead>{t('supplierPayments.payment.invoice')}</TableHead>
@@ -350,13 +351,16 @@ export const PaymentList = () => {
                 <TableBody>
                   {filteredPayments.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-4">
+                      <TableCell colSpan={9} className="text-center py-4">
                         {t('supplierPayments.payment.noResults')}
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredPayments.map((payment: any) => (
                       <TableRow key={payment.id}>
+                        <TableCell className="font-mono text-sm font-medium text-green-600">
+                          {payment.tracking_id || payment.trackingId || '-'}
+                        </TableCell>
                         <TableCell>{formatDate(payment.paymentDate || payment.payment_date)}</TableCell>
                         <TableCell>{getSupplierForPayment(payment)}</TableCell>
                         <TableCell>{getInvoiceNumber(payment.invoiceId || payment.invoice_id)}</TableCell>

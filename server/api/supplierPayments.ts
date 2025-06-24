@@ -203,6 +203,7 @@ router.get('/invoices', async (req, res) => {
       const result = await client.query(`
         SELECT 
           si.id,
+          si.tracking_id AS "trackingId",
           si.invoice_number AS "invoiceNumber",
           si.supplier_id AS "supplierId",
           si.issue_date AS "issueDate",
