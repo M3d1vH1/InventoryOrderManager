@@ -203,6 +203,28 @@ export const PaymentList = () => {
     }).format(amount);
   };
 
+  // Check if payment is an overpayment
+  const isOverpayment = (payment: any): boolean => {
+    const invoice = invoices.find((inv: any) => 
+      inv.id === (payment.invoiceId || payment.invoice_id)
+    );
+    
+    if (!invoice) return false;
+    
+    // Get all payments for this invoice
+    const invoicePayments = payments.filter((p: any) => 
+      (p.invoiceId || p.invoice_id) === invoice.id
+    );
+    
+    // Calculate total paid amount for this invoice
+    const totalPaid = invoicePayments.reduce((sum: number, p: any) => 
+      sum + (p.amount || 0), 0
+    );
+    
+    // Check if total paid exceeds invoice amount
+    return totalPaid > (invoice.amount || 0);
+  };
+
   // Get badge and icon for payment method
   const getPaymentMethodBadge = (method: string) => {
     if (!method) return null;
@@ -356,38 +378,61 @@ export const PaymentList = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredPayments.map((payment: any) => (
-                      <TableRow key={payment.id}>
-                        <TableCell className="font-mono text-sm font-medium text-green-600">
-                          {payment.tracking_id || payment.trackingId || '-'}
-                        </TableCell>
-                        <TableCell>{formatDate(payment.paymentDate || payment.payment_date)}</TableCell>
-                        <TableCell>{getSupplierForPayment(payment)}</TableCell>
-                        <TableCell>{getInvoiceNumber(payment.invoiceId || payment.invoice_id)}</TableCell>
-                        <TableCell>{payment.company || '-'}</TableCell>
-                        <TableCell>{formatCurrency(payment.amount)}</TableCell>
-                        <TableCell>
-                          {getPaymentMethodBadge(payment.paymentMethod || payment.payment_method)}
-                        </TableCell>
-                        <TableCell>{payment.reference || payment.referenceNumber || payment.reference_number || '-'}</TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEditClick(payment)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteClick(payment)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    filteredPayments.map((payment: any) => {
+                      const isOverpaymentRow = isOverpayment(payment);
+                      return (
+                        <TableRow 
+                          key={payment.id}
+                          className={isOverpaymentRow ? "bg-red-50 border-red-200" : ""}
+                        >
+                          <TableCell className="font-mono text-sm font-medium text-green-600">
+                            {payment.tracking_id || payment.trackingId || '-'}
+                          </TableCell>
+                          <TableCell className={isOverpaymentRow ? "text-red-700" : ""}>
+                            {formatDate(payment.paymentDate || payment.payment_date)}
+                          </TableCell>
+                          <TableCell className={isOverpaymentRow ? "text-red-700" : ""}>
+                            {getSupplierForPayment(payment)}
+                          </TableCell>
+                          <TableCell className={isOverpaymentRow ? "text-red-700" : ""}>
+                            {getInvoiceNumber(payment.invoiceId || payment.invoice_id)}
+                          </TableCell>
+                          <TableCell className={isOverpaymentRow ? "text-red-700" : ""}>
+                            {payment.company || '-'}
+                          </TableCell>
+                          <TableCell className={isOverpaymentRow ? "text-red-700 font-semibold" : ""}>
+                            {formatCurrency(payment.amount)}
+                            {isOverpaymentRow && (
+                              <span className="ml-2 text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
+                                OVERPAYMENT
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell className={isOverpaymentRow ? "text-red-700" : ""}>
+                            {getPaymentMethodBadge(payment.paymentMethod || payment.payment_method)}
+                          </TableCell>
+                          <TableCell className={isOverpaymentRow ? "text-red-700" : ""}>
+                            {payment.reference || payment.referenceNumber || payment.reference_number || '-'}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEditClick(payment)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteClick(payment)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>

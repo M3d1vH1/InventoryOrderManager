@@ -1106,7 +1106,30 @@ router.get('/audit/:entityType/:entityId', isAuthenticated, async (req, res) => 
       return res.status(400).json({ error: 'Invalid entity type' });
     }
     
-    const auditTrail = await PaymentAuditService.getAuditTrail(entityType as 'invoice' | 'payment', parseInt(entityId));
+    let actualEntityId = entityId;
+    
+    // Handle tracking IDs - convert to actual database IDs
+    if (entityId.startsWith('INV-') || entityId.startsWith('PAY-')) {
+      if (entityType === 'invoice' && entityId.startsWith('INV-')) {
+        const invoiceResult = await storage.getSupplierInvoices();
+        const invoice = invoiceResult.find((inv: any) => inv.tracking_id === entityId);
+        if (!invoice) {
+          return res.status(404).json({ error: 'Invoice not found' });
+        }
+        actualEntityId = invoice.id.toString();
+      } else if (entityType === 'payment' && entityId.startsWith('PAY-')) {
+        const paymentResult = await storage.getSupplierPayments();
+        const payment = paymentResult.find((pay: any) => pay.tracking_id === entityId);
+        if (!payment) {
+          return res.status(404).json({ error: 'Payment not found' });
+        }
+        actualEntityId = payment.id.toString();
+      } else {
+        return res.status(400).json({ error: 'Invalid tracking ID format for entity type' });
+      }
+    }
+    
+    const auditTrail = await PaymentAuditService.getAuditTrail(entityType as 'invoice' | 'payment', parseInt(actualEntityId));
     res.json(auditTrail);
   } catch (error) {
     console.error('Error fetching audit trail:', error);
