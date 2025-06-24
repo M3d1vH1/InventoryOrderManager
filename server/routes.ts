@@ -2832,8 +2832,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Update user (admin only)
-  app.patch('/api/users/:id', isAuthenticated, hasRole(['admin']), async (req, res) => {
+  // Update user (admin only) - Support both PATCH and PUT
+  const updateUserHandler = async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       
@@ -2878,7 +2878,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.status(500).json({ message: error.message });
     }
-  });
+  };
+  
+  app.patch('/api/users/:id', isAuthenticated, hasRole(['admin']), updateUserHandler);
+  app.put('/api/users/:id', isAuthenticated, hasRole(['admin']), updateUserHandler);
   
   // Delete user (admin only)
   app.delete('/api/users/:id', isAuthenticated, hasRole(['admin']), async (req, res) => {
