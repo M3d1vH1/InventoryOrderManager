@@ -1,8 +1,5 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import React, { useState, useContext } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,12 +11,17 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
-import { Shield, Users, Settings, Eye, Edit, Trash2, Package, FileText, TruckIcon, UserCheck, Plus, UserPlus, Mail, Calendar, Activity, Key, ToggleLeft, ToggleRight } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Shield, Users, Settings, Eye, Edit, Trash2, Package, FileText, Truck, UserCheck, Plus, UserPlus, Mail, Calendar, Activity, Key, ToggleLeft, ToggleRight } from 'lucide-react';
+import { UserContext } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { queryClient, apiRequest } from '@/lib/queryClient';
 
 interface RolePermission {
+  id: number;
   role: string;
   permission: string;
   enabled: boolean;
@@ -30,31 +32,25 @@ interface RolePermission {
 interface User {
   id: number;
   username: string;
-  fullName?: string;
-  email?: string;
+  fullName: string;
   role: string;
-  active: boolean;
+  isActive: boolean;
   createdAt: string;
-  lastLogin?: string;
+  lastLogin: string | null;
 }
 
+// Form schemas
 const createUserSchema = z.object({
-  username: z.string().min(3, 'Username must be at least 3 characters'),
+  username: z.string().min(1, 'Username is required'),
+  fullName: z.string().min(1, 'Full name is required'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email address').optional().or(z.literal('')),
-  role: z.enum(['admin', 'front_office', 'warehouse'], {
-    required_error: 'Please select a role'
-  })
+  role: z.enum(['admin', 'front_office', 'warehouse'])
 });
 
 const editUserSchema = z.object({
-  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email address').optional().or(z.literal('')),
-  role: z.enum(['admin', 'front_office', 'warehouse'], {
-    required_error: 'Please select a role'
-  }),
-  active: z.boolean()
+  fullName: z.string().min(1, 'Full name is required'),
+  role: z.enum(['admin', 'front_office', 'warehouse']),
+  isActive: z.boolean()
 });
 
 const resetPasswordSchema = z.object({
@@ -62,93 +58,76 @@ const resetPasswordSchema = z.object({
   confirmPassword: z.string().min(6, 'Password must be at least 6 characters')
 }).refine((data) => data.newPassword === data.confirmPassword, {
   message: "Passwords don't match",
-  path: ["confirmPassword"],
+  path: ["confirmPassword"]
 });
 
 type CreateUserForm = z.infer<typeof createUserSchema>;
 type EditUserForm = z.infer<typeof editUserSchema>;
 type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
 
-interface RoleInfo {
-  role: string;
-  displayName: string;
-  description: string;
-  color: 'default' | 'secondary' | 'destructive' | 'outline';
-  icon: React.ComponentType<any>;
-}
-
-const roleInfo: RoleInfo[] = [
-  {
-    role: 'admin',
-    displayName: 'Administrator',
-    description: 'Full system access with all permissions',
-    color: 'destructive',
-    icon: Shield
-  },
-  {
-    role: 'front_office',
-    displayName: 'Front Office',
-    description: 'Customer service and order management',
-    color: 'default',
-    icon: Users
-  },
-  {
-    role: 'warehouse',
-    displayName: 'Warehouse',
-    description: 'Inventory and order fulfillment operations',
-    color: 'secondary',
-    icon: Package
-  }
-];
-
+// Permission categories and descriptions
 const permissionCategories = {
-  'Dashboard & Overview': ['view_dashboard'],
-  'Product Management': ['view_products', 'edit_products'],
-  'Customer Management': ['view_customers', 'edit_customers'],
-  'Order Management': ['view_orders', 'create_orders', 'edit_orders', 'delete_orders', 'order_picking'],
-  'Warehouse Operations': ['view_unshipped_items', 'authorize_unshipped_items'],
-  'Reporting': ['view_reports'],
-  'System Administration': ['view_settings', 'edit_settings', 'view_users', 'edit_users'],
-  'Email Templates': ['view_email_templates', 'edit_email_templates']
+  'Dashboard': ['dashboard_view', 'dashboard_stats', 'dashboard_analytics'],
+  'Products': ['products_view', 'products_create', 'products_edit', 'products_delete'],
+  'Orders': ['orders_view', 'orders_create', 'orders_edit', 'orders_delete', 'orders_pick', 'orders_ship'],
+  'Customers': ['customers_view', 'customers_create', 'customers_edit', 'customers_delete'],
+  'Inventory': ['inventory_view', 'inventory_edit', 'inventory_reports'],
+  'Reports': ['reports_view', 'reports_export', 'reports_analytics'],
+  'Settings': ['settings_view', 'settings_edit', 'settings_users', 'settings_roles'],
+  'System': ['system_logs', 'system_maintenance', 'system_backup']
 };
 
 const permissionDescriptions: Record<string, string> = {
-  'view_dashboard': 'View system dashboard and statistics',
-  'view_products': 'View product catalog and inventory',
-  'edit_products': 'Create, modify, and manage products',
-  'view_customers': 'View customer information and history',
-  'edit_customers': 'Create and modify customer records',
-  'view_orders': 'View order details and history',
-  'create_orders': 'Create new customer orders',
-  'edit_orders': 'Modify existing orders',
-  'delete_orders': 'Delete orders from the system',
-  'order_picking': 'Access order picking workflows',
-  'view_unshipped_items': 'View items awaiting shipment',
-  'authorize_unshipped_items': 'Authorize backorder items for shipment',
-  'view_reports': 'Access system reports and analytics',
-  'view_settings': 'View system settings and configuration',
-  'edit_settings': 'Modify system settings and preferences',
-  'view_users': 'View user accounts and information',
-  'edit_users': 'Create, modify, and manage user accounts',
-  'view_email_templates': 'View email template configurations',
-  'edit_email_templates': 'Modify email templates and settings'
+  'dashboard_view': 'View main dashboard',
+  'dashboard_stats': 'View dashboard statistics',
+  'dashboard_analytics': 'View analytics data',
+  'products_view': 'View product catalog',
+  'products_create': 'Create new products',
+  'products_edit': 'Edit existing products',
+  'products_delete': 'Delete products',
+  'orders_view': 'View order list',
+  'orders_create': 'Create new orders',
+  'orders_edit': 'Edit order details',
+  'orders_delete': 'Delete orders',
+  'orders_pick': 'Pick orders in warehouse',
+  'orders_ship': 'Ship completed orders',
+  'customers_view': 'View customer list',
+  'customers_create': 'Create new customers',
+  'customers_edit': 'Edit customer information',
+  'customers_delete': 'Delete customers',
+  'inventory_view': 'View inventory levels',
+  'inventory_edit': 'Adjust inventory quantities',
+  'inventory_reports': 'Generate inventory reports',
+  'reports_view': 'View system reports',
+  'reports_export': 'Export report data',
+  'reports_analytics': 'Access advanced analytics',
+  'settings_view': 'View system settings',
+  'settings_edit': 'Modify system settings',
+  'settings_users': 'Manage user accounts',
+  'settings_roles': 'Manage user roles',
+  'system_logs': 'Access system logs',
+  'system_maintenance': 'Perform system maintenance',
+  'system_backup': 'Create system backups'
 };
 
+// Get icon for permission
 const getPermissionIcon = (permission: string) => {
-  if (permission.includes('view')) return Eye;
-  if (permission.includes('edit') || permission.includes('create')) return Edit;
-  if (permission.includes('delete')) return Trash2;
+  if (permission.includes('dashboard')) return Activity;
+  if (permission.includes('product')) return Package;
   if (permission.includes('order')) return FileText;
-  if (permission.includes('unshipped') || permission.includes('picking')) return TruckIcon;
-  if (permission.includes('user')) return UserCheck;
+  if (permission.includes('customer')) return Users;
+  if (permission.includes('inventory')) return Package;
+  if (permission.includes('report')) return FileText;
   if (permission.includes('setting')) return Settings;
-  return Shield;
+  if (permission.includes('system')) return Settings;
+  return Key;
 };
 
-export function RBACDisplay() {
-  const { user } = useAuth();
+export default function RBACDisplay() {
+  const { user } = useContext(UserContext);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+
+  // State management
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
@@ -156,13 +135,13 @@ export function RBACDisplay() {
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [newPermission, setNewPermission] = useState<string>('');
 
+  // Form management
   const createUserForm = useForm<CreateUserForm>({
     resolver: zodResolver(createUserSchema),
     defaultValues: {
       username: '',
-      password: '',
       fullName: '',
-      email: '',
+      password: '',
       role: 'warehouse'
     }
   });
@@ -171,9 +150,8 @@ export function RBACDisplay() {
     resolver: zodResolver(editUserSchema),
     defaultValues: {
       fullName: '',
-      email: '',
       role: 'warehouse',
-      active: true
+      isActive: true
     }
   });
 
@@ -184,7 +162,8 @@ export function RBACDisplay() {
       confirmPassword: ''
     }
   });
-  
+
+  // Data queries
   const { data: rolePermissions = [], isLoading, error } = useQuery<RolePermission[]>({
     queryKey: ['/api/role-permissions'],
     queryFn: async () => {
@@ -206,214 +185,6 @@ export function RBACDisplay() {
       return response.json();
     }
   });
-
-  // Create user mutation
-  const createUser = useMutation({
-    mutationFn: async (userData: CreateUserForm) => {
-      const response = await fetch('/api/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to create user');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'User created successfully',
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
-      setIsCreateDialogOpen(false);
-      createUserForm.reset();
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Edit user mutation
-  const editUser = useMutation({
-    mutationFn: async ({ userId, userData }: { userId: number; userData: EditUserForm }) => {
-      const response = await fetch(`/api/users/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to update user');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'User updated successfully',
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
-      setEditingUser(null);
-      editUserForm.reset();
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Delete user mutation
-  const deleteUser = useMutation({
-    mutationFn: async (userId: number) => {
-      const response = await fetch(`/api/users/${userId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to delete user');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'User deleted successfully',
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Reset password mutation
-  const resetPassword = useMutation({
-    mutationFn: async ({ userId, newPassword }: { userId: number; newPassword: string }) => {
-      const response = await fetch(`/api/users/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ password: newPassword }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to reset password');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'Password reset successfully',
-      });
-      setResetPasswordUser(null);
-      resetPasswordForm.reset();
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const handleCreateUser = (data: CreateUserForm) => {
-    createUser.mutate(data);
-  };
-
-  const handleEditUser = (data: EditUserForm) => {
-    if (editingUser) {
-      editUser.mutate({ userId: editingUser.id, userData: data });
-    }
-  };
-
-  const handleDeleteUser = (userId: number) => {
-    deleteUser.mutate(userId);
-  };
-
-  const handleResetPassword = (data: ResetPasswordForm) => {
-    if (resetPasswordUser) {
-      resetPassword.mutate({ userId: resetPasswordUser.id, newPassword: data.newPassword });
-    }
-  };
-
-  const openEditDialog = (user: User) => {
-    setEditingUser(user);
-    editUserForm.reset({
-      fullName: user.fullName || '',
-      email: user.email || '',
-      role: user.role as any,
-      active: user.active
-    });
-  };
-
-  const openResetPasswordDialog = (user: User) => {
-    setResetPasswordUser(user);
-    resetPasswordForm.reset();
-  };
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Role-Based Access Control (RBAC)
-          </CardTitle>
-          <CardDescription>Loading access control information...</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-current border-r-transparent" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Role-Based Access Control (RBAC)
-          </CardTitle>
-          <CardDescription>Failed to load access control information</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-red-600">Error: {error.message}</p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   // Permission management mutations
   const updatePermissionMutation = useMutation({
@@ -486,6 +257,176 @@ export function RBACDisplay() {
     }
   });
 
+  // User management mutations
+  const createUser = useMutation({
+    mutationFn: async (userData: CreateUserForm) => {
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create user');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'User created successfully',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      setIsCreateDialogOpen(false);
+      createUserForm.reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const editUser = useMutation({
+    mutationFn: async ({ userId, userData }: { userId: number; userData: EditUserForm }) => {
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update user');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'User updated successfully',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      setEditingUser(null);
+      editUserForm.reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteUser = useMutation({
+    mutationFn: async (userId: number) => {
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete user');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'User deleted successfully',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const resetPassword = useMutation({
+    mutationFn: async ({ userId, newPassword }: { userId: number; newPassword: string }) => {
+      const response = await fetch(`/api/users/${userId}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ newPassword }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to reset password');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Password reset successfully',
+      });
+      setResetPasswordUser(null);
+      resetPasswordForm.reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Role-Based Access Control (RBAC)
+          </CardTitle>
+          <CardDescription>Loading access control information...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-current border-r-transparent" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Role-Based Access Control (RBAC)
+          </CardTitle>
+          <CardDescription>Failed to load access control information</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-red-600">Error: {error.message}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Group permissions by role
   const permissionsByRole = rolePermissions.reduce((acc, rp) => {
     if (!acc[rp.role]) {
@@ -501,317 +442,316 @@ export function RBACDisplay() {
     return acc;
   }, {});
 
-  const activeUsers = currentUsers.filter(u => u.active).length;
-  const totalUsers = currentUsers.length;
+  // Role information
+  const roleInfo = [
+    {
+      role: 'admin',
+      displayName: 'Administrator',
+      description: 'Full system access and user management',
+      icon: Shield,
+      color: 'default' as const
+    },
+    {
+      role: 'front_office',
+      displayName: 'Front Office',
+      description: 'Customer service and order management',
+      icon: Users,
+      color: 'secondary' as const
+    },
+    {
+      role: 'warehouse',
+      displayName: 'Warehouse Staff',
+      description: 'Inventory and fulfillment operations',
+      icon: Package,
+      color: 'outline' as const
+    }
+  ];
+
+  // Get available permissions for adding
+  const availablePermissions = Object.values(permissionCategories).flat().filter(permission => {
+    const rolePerms = permissionsByRole[selectedRole] || [];
+    return !rolePerms.some(rp => rp.permission === permission);
+  });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Shield className="h-5 w-5" />
-          Role-Based Access Control (RBAC)
-        </CardTitle>
-        <CardDescription>
-          System roles, permissions, and user management. Your current role: {' '}
-          <Badge variant={roleInfo.find(r => r.role === user?.role)?.color || 'outline'}>
-            {roleInfo.find(r => r.role === user?.role)?.displayName || user?.role}
-          </Badge>
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* User Management Actions */}
-        {user?.role === 'admin' && (
-          <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg border">
-            <div className="flex items-center gap-3">
-              <Users className="h-5 w-5 text-slate-600" />
-              <div>
-                <h3 className="font-medium text-slate-800">User Management</h3>
-                <p className="text-sm text-slate-600">{activeUsers} active users out of {totalUsers} total</p>
-              </div>
-            </div>
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Add User
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Create New User</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={createUserForm.handleSubmit(handleCreateUser)} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="username">Username *</Label>
-                      <Input
-                        id="username"
-                        {...createUserForm.register('username')}
-                        placeholder="Enter username"
-                      />
-                      {createUserForm.formState.errors.username && (
-                        <p className="text-sm text-red-500 mt-1">
-                          {createUserForm.formState.errors.username.message}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="password">Password *</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        {...createUserForm.register('password')}
-                        placeholder="Enter password"
-                      />
-                      {createUserForm.formState.errors.password && (
-                        <p className="text-sm text-red-500 mt-1">
-                          {createUserForm.formState.errors.password.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="fullName">Full Name *</Label>
-                    <Input
-                      id="fullName"
-                      {...createUserForm.register('fullName')}
-                      placeholder="Enter full name"
-                    />
-                    {createUserForm.formState.errors.fullName && (
-                      <p className="text-sm text-red-500 mt-1">
-                        {createUserForm.formState.errors.fullName.message}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      {...createUserForm.register('email')}
-                      placeholder="Enter email (optional)"
-                    />
-                    {createUserForm.formState.errors.email && (
-                      <p className="text-sm text-red-500 mt-1">
-                        {createUserForm.formState.errors.email.message}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="role">Role *</Label>
-                    <Select
-                      value={createUserForm.watch('role')}
-                      onValueChange={(value) => createUserForm.setValue('role', value as any)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="warehouse">Warehouse Staff</SelectItem>
-                        <SelectItem value="front_office">Front Office Staff</SelectItem>
-                        <SelectItem value="admin">Administrator</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {createUserForm.formState.errors.role && (
-                      <p className="text-sm text-red-500 mt-1">
-                        {createUserForm.formState.errors.role.message}
-                      </p>
-                    )}
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsCreateDialogOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={createUser.isPending}>
-                      {createUser.isPending ? 'Creating...' : 'Create User'}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
-        )}
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Role-Based Access Control (RBAC)
+          </CardTitle>
+          <CardDescription>
+            Manage user roles and permissions across the system
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* Role Overview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {roleInfo.map((role) => {
+              const Icon = role.icon;
+              const permissions = permissionsByRole[role.role] || [];
+              const enabledCount = permissions.filter(p => p.enabled).length;
+              const totalCount = permissions.length;
+              const userCount = usersByRole[role.role] || 0;
 
-        {/* Role Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {roleInfo.map((role) => {
-            const Icon = role.icon;
-            const permissions = permissionsByRole[role.role] || [];
-            const enabledCount = permissions.filter(p => p.enabled).length;
-            const totalCount = permissions.length;
-            const userCount = usersByRole[role.role] || 0;
-
-            return (
-              <Card key={role.role} className="border-2">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <Icon className="h-4 w-4" />
-                    {role.displayName}
-                    <Badge variant={role.color} className="ml-auto text-xs">
-                      {userCount} user{userCount !== 1 ? 's' : ''}
-                    </Badge>
-                  </CardTitle>
-                  <CardDescription className="text-xs">
-                    {role.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="text-sm text-slate-600">
-                    <div className="flex justify-between">
-                      <span>Permissions:</span>
-                      <span className="font-medium">{enabledCount}/{totalCount}</span>
-                    </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2 mt-1">
-                      <div 
-                        className="bg-blue-600 h-2 rounded-full"
-                        style={{ width: `${totalCount > 0 ? (enabledCount / totalCount) * 100 : 0}%` }}
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Detailed Permissions */}
-        <Accordion type="single" collapsible className="w-full">
-          {roleInfo.map((role) => {
-            const Icon = role.icon;
-            const permissions = permissionsByRole[role.role] || [];
-            
-            return (
-              <AccordionItem key={role.role} value={role.role}>
-                <AccordionTrigger className="hover:no-underline">
-                  <div className="flex items-center gap-2">
-                    <Icon className="h-4 w-4" />
-                    <span>{role.displayName} Permissions</span>
-                    <Badge variant={role.color} className="ml-2">
-                      {permissions.filter(p => p.enabled).length} enabled
-                    </Badge>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-4">
-                    {Object.entries(permissionCategories).map(([category, categoryPermissions]) => {
-                      const categoryPerms = permissions.filter(p => 
-                        categoryPermissions.includes(p.permission)
-                      );
-                      
-                      if (categoryPerms.length === 0) return null;
-
-                      return (
-                        <div key={category}>
-                          <h4 className="font-medium text-sm text-slate-700 mb-2">{category}</h4>
-                          <div className="space-y-2">
-                            {categoryPerms.map((perm) => {
-                              const PermIcon = getPermissionIcon(perm.permission);
-                              return (
-                                <div key={perm.permission} className="flex items-center gap-3 p-2 border rounded-lg">
-                                  <PermIcon className="h-4 w-4 text-slate-500" />
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-sm font-medium">{perm.permission}</span>
-                                      <Badge variant={perm.enabled ? 'default' : 'secondary'} className="text-xs">
-                                        {perm.enabled ? 'Enabled' : 'Disabled'}
-                                      </Badge>
-                                    </div>
-                                    <p className="text-xs text-slate-500 mt-1">
-                                      {permissionDescriptions[perm.permission] || 'No description available'}
-                                    </p>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                    
-                    {/* Add Permission Button for non-admin roles */}
-                    {user?.role === 'admin' && role.role !== 'admin' && (
-                      <div className="mt-4 pt-4 border-t">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedRole(role.role);
-                            setIsPermissionDialogOpen(true);
-                          }}
-                          className="w-full"
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Permission
-                        </Button>
+              return (
+                <Card key={role.role} className="border-2">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-sm">
+                      <Icon className="h-4 w-4" />
+                      {role.displayName}
+                      <Badge variant={role.color} className="ml-auto text-xs">
+                        {userCount} user{userCount !== 1 ? 's' : ''}
+                      </Badge>
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      {role.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="text-sm text-slate-600">
+                      <div className="flex justify-between">
+                        <span>Permissions:</span>
+                        <span className="font-medium">{enabledCount}/{totalCount}</span>
                       </div>
-                    )}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            );
-          })}
-        </Accordion>
+                      <div className="w-full bg-slate-200 rounded-full h-2 mt-1">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full"
+                          style={{ width: `${totalCount > 0 ? (enabledCount / totalCount) * 100 : 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
 
-        {/* Add Permission Dialog */}
-        <Dialog open={isPermissionDialogOpen} onOpenChange={setIsPermissionDialogOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Add Permission to {selectedRole}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="permission">Permission Name</Label>
-                <Select value={newPermission} onValueChange={setNewPermission}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a permission to add" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(permissionDescriptions).map(([permission, description]) => {
-                      const hasPermission = permissionsByRole[selectedRole]?.some(p => p.permission === permission);
-                      if (hasPermission) return null;
-                      
-                      return (
-                        <SelectItem key={permission} value={permission}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{permission.replace(/_/g, ' ').toUpperCase()}</span>
-                            <span className="text-xs text-slate-600">{description}</span>
+          {/* Detailed Permissions */}
+          <Accordion type="single" collapsible className="w-full">
+            {roleInfo.map((role) => {
+              const Icon = role.icon;
+              const permissions = permissionsByRole[role.role] || [];
+              
+              return (
+                <AccordionItem key={role.role} value={role.role}>
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-4 w-4" />
+                      <span>{role.displayName} Permissions</span>
+                      <Badge variant={role.color} className="ml-2">
+                        {permissions.filter(p => p.enabled).length} enabled
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-4">
+                      {Object.entries(permissionCategories).map(([category, categoryPermissions]) => {
+                        const categoryPerms = permissions.filter(p => 
+                          categoryPermissions.includes(p.permission)
+                        );
+                        
+                        if (categoryPerms.length === 0) return null;
+
+                        return (
+                          <div key={category}>
+                            <h4 className="font-medium text-sm text-slate-700 mb-2">{category}</h4>
+                            <div className="space-y-2">
+                              {categoryPerms.map((perm) => {
+                                const PermIcon = getPermissionIcon(perm.permission);
+                                return (
+                                  <div key={perm.permission} className="flex items-center gap-3 p-2 border rounded-lg">
+                                    <PermIcon className="h-4 w-4 text-slate-500" />
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium">{perm.permission}</span>
+                                        <Badge variant={perm.enabled ? 'default' : 'secondary'} className="text-xs">
+                                          {perm.enabled ? 'Enabled' : 'Disabled'}
+                                        </Badge>
+                                      </div>
+                                      <p className="text-xs text-slate-500 mt-1">
+                                        {permissionDescriptions[perm.permission] || 'No description available'}
+                                      </p>
+                                    </div>
+                                    {user?.role === 'admin' && role.role !== 'admin' && (
+                                      <div className="flex items-center gap-2">
+                                        <Switch
+                                          checked={perm.enabled}
+                                          onCheckedChange={(checked) => {
+                                            updatePermissionMutation.mutate({
+                                              role: role.role,
+                                              permission: perm.permission,
+                                              enabled: checked
+                                            });
+                                          }}
+                                          disabled={updatePermissionMutation.isPending}
+                                        />
+                                        {perm.enabled && (
+                                          <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                                <Trash2 className="h-3 w-3" />
+                                              </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                              <AlertDialogHeader>
+                                                <AlertDialogTitle>Remove Permission</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                  Are you sure you want to remove the "{perm.permission}" permission from the {role.role} role?
+                                                </AlertDialogDescription>
+                                              </AlertDialogHeader>
+                                              <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction
+                                                  onClick={() => {
+                                                    removePermissionMutation.mutate({
+                                                      role: role.role,
+                                                      permission: perm.permission
+                                                    });
+                                                  }}
+                                                  disabled={removePermissionMutation.isPending}
+                                                >
+                                                  {removePermissionMutation.isPending ? 'Removing...' : 'Remove'}
+                                                </AlertDialogAction>
+                                              </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                          </AlertDialog>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsPermissionDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={() => {
-                  if (newPermission && selectedRole) {
-                    addPermissionMutation.mutate({
-                      role: selectedRole,
-                      permission: newPermission
-                    });
-                  }
-                }}
-                disabled={!newPermission || addPermissionMutation.isPending}
-              >
-                {addPermissionMutation.isPending ? 'Adding...' : 'Add Permission'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+                        );
+                      })}
+                      
+                      {/* Add Permission Button for non-admin roles */}
+                      {user?.role === 'admin' && role.role !== 'admin' && (
+                        <div className="mt-4 pt-4 border-t">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedRole(role.role);
+                              setIsPermissionDialogOpen(true);
+                            }}
+                            className="w-full"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Permission
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })}
+          </Accordion>
+        </CardContent>
+      </Card>
 
-        {/* Current Users Management */}
-        <div className="border-t pt-4">
-          <h3 className="font-medium text-sm text-slate-700 mb-3">System Users ({totalUsers} total, {activeUsers} active)</h3>
-          <div className="border rounded-lg">
+      {/* User Management Section */}
+      {user?.role === 'admin' && (
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  User Management
+                </CardTitle>
+                <CardDescription>Manage system users and their roles</CardDescription>
+              </div>
+              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Add User
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Create New User</DialogTitle>
+                  </DialogHeader>
+                  <Form {...createUserForm}>
+                    <form onSubmit={createUserForm.handleSubmit((data) => createUser.mutate(data))} className="space-y-4">
+                      <FormField
+                        control={createUserForm.control}
+                        name="username"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Username</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter username" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createUserForm.control}
+                        name="fullName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Full Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter full name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createUserForm.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Password</FormLabel>
+                            <FormControl>
+                              <Input type="password" placeholder="Enter password" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createUserForm.control}
+                        name="role"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Role</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select role" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="admin">Administrator</SelectItem>
+                                <SelectItem value="front_office">Front Office</SelectItem>
+                                <SelectItem value="warehouse">Warehouse Staff</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <DialogFooter>
+                        <Button type="submit" disabled={createUser.isPending}>
+                          {createUser.isPending ? 'Creating...' : 'Create User'}
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardHeader>
+          <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -819,281 +759,245 @@ export function RBACDisplay() {
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Last Login</TableHead>
-                  {user?.role === 'admin' && <TableHead className="text-right">Actions</TableHead>}
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {currentUsers.map((currentUser) => {
-                  const roleInfo_ = roleInfo.find(r => r.role === currentUser.role);
-                  const Icon = roleInfo_?.icon || Users;
-
-                  return (
-                    <TableRow key={currentUser.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="flex-shrink-0">
-                            <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center">
-                              <Icon className="h-4 w-4 text-slate-600" />
-                            </div>
-                          </div>
-                          <div>
-                            <div className="font-medium text-sm">{currentUser.fullName || currentUser.username}</div>
-                            <div className="text-xs text-slate-500">
-                              {currentUser.username}
-                              {currentUser.email && (
-                                <span className="flex items-center gap-1 mt-1">
-                                  <Mail className="h-3 w-3" />
-                                  {currentUser.email}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={roleInfo_?.color || 'outline'} className="text-xs">
-                          <Icon className="h-3 w-3 mr-1" />
-                          {roleInfo_?.displayName || currentUser.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={currentUser.active ? 'default' : 'secondary'} className="text-xs">
-                          <Activity className="h-3 w-3 mr-1" />
-                          {currentUser.active ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-xs text-slate-500">
-                          <Calendar className="h-3 w-3" />
-                          {currentUser.lastLogin 
-                            ? new Date(currentUser.lastLogin).toLocaleDateString()
-                            : 'Never'
-                          }
-                        </div>
-                      </TableCell>
-                      {user?.role === 'admin' && (
-                        <TableCell className="text-right">
-                          <div className="flex gap-1 justify-end">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditDialog(currentUser)}
-                              disabled={editUser.isPending}
-                              className="h-8 w-8 p-0"
-                              title="Edit user"
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openResetPasswordDialog(currentUser)}
-                              disabled={resetPassword.isPending}
-                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800"
-                              title="Reset password"
-                            >
-                              <Key className="h-3 w-3" />
-                            </Button>
-                            {currentUser.id !== user?.id && (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    disabled={deleteUser.isPending}
-                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-800"
-                                    title="Delete user"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to delete user "{currentUser.fullName || currentUser.username}"? 
-                                      This action cannot be undone.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleDeleteUser(currentUser.id)}
-                                      className="bg-red-600 hover:bg-red-700"
-                                    >
-                                      Delete User
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            )}
-                          </div>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  );
-                })}
+                {currentUsers.map((userData) => (
+                  <TableRow key={userData.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{userData.fullName}</div>
+                        <div className="text-sm text-slate-500">{userData.username}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={userData.role === 'admin' ? 'default' : 'secondary'}>
+                        {userData.role === 'front_office' ? 'Front Office' : 
+                         userData.role === 'warehouse' ? 'Warehouse' : 'Admin'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={userData.isActive ? 'default' : 'destructive'}>
+                        {userData.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {userData.lastLogin ? new Date(userData.lastLogin).toLocaleDateString() : 'Never'}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditingUser(userData);
+                            editUserForm.reset({
+                              fullName: userData.fullName,
+                              role: userData.role as any,
+                              isActive: userData.isActive
+                            });
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setResetPasswordUser(userData)}
+                        >
+                          <Key className="h-4 w-4" />
+                        </Button>
+                        {userData.id !== user?.id && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete User</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete {userData.fullName}? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteUser.mutate(userData.id)}
+                                  disabled={deleteUser.isPending}
+                                >
+                                  {deleteUser.isPending ? 'Deleting...' : 'Delete'}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
-          </div>
+          </CardContent>
+        </Card>
+      )}
 
-          {currentUsers.length === 0 && (
-            <div className="text-center py-8 text-slate-500">
-              <Users className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-              <p>No users found. Create your first user to get started.</p>
+      {/* Add Permission Dialog */}
+      <Dialog open={isPermissionDialogOpen} onOpenChange={setIsPermissionDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Permission to {selectedRole}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="permission">Permission Name</Label>
+              <Select value={newPermission} onValueChange={setNewPermission}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a permission to add" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availablePermissions.map((permission) => (
+                    <SelectItem key={permission} value={permission}>
+                      {permission} - {permissionDescriptions[permission]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
-        </div>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                if (newPermission) {
+                  addPermissionMutation.mutate({
+                    role: selectedRole,
+                    permission: newPermission
+                  });
+                }
+              }}
+              disabled={!newPermission || addPermissionMutation.isPending}
+            >
+              {addPermissionMutation.isPending ? 'Adding...' : 'Add Permission'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-        {/* Edit User Dialog */}
+      {/* Edit User Dialog */}
+      {editingUser && (
         <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Edit User: {editingUser?.fullName || editingUser?.username}</DialogTitle>
+              <DialogTitle>Edit User: {editingUser.fullName}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={editUserForm.handleSubmit(handleEditUser)} className="space-y-4">
-              <div>
-                <Label htmlFor="edit-fullName">Full Name *</Label>
-                <Input
-                  id="edit-fullName"
-                  {...editUserForm.register('fullName')}
-                  placeholder="Enter full name"
+            <Form {...editUserForm}>
+              <form onSubmit={editUserForm.handleSubmit((data) => editUser.mutate({ userId: editingUser.id, userData: data }))} className="space-y-4">
+                <FormField
+                  control={editUserForm.control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter full name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {editUserForm.formState.errors.fullName && (
-                  <p className="text-sm text-red-500 mt-1">
-                    {editUserForm.formState.errors.fullName.message}
-                  </p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="edit-email">Email</Label>
-                <Input
-                  id="edit-email"
-                  type="email"
-                  {...editUserForm.register('email')}
-                  placeholder="Enter email (optional)"
+                <FormField
+                  control={editUserForm.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="admin">Administrator</SelectItem>
+                          <SelectItem value="front_office">Front Office</SelectItem>
+                          <SelectItem value="warehouse">Warehouse Staff</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {editUserForm.formState.errors.email && (
-                  <p className="text-sm text-red-500 mt-1">
-                    {editUserForm.formState.errors.email.message}
-                  </p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="edit-role">Role *</Label>
-                <Select
-                  value={editUserForm.watch('role')}
-                  onValueChange={(value) => editUserForm.setValue('role', value as any)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="warehouse">Warehouse Staff</SelectItem>
-                    <SelectItem value="front_office">Front Office Staff</SelectItem>
-                    <SelectItem value="admin">Administrator</SelectItem>
-                  </SelectContent>
-                </Select>
-                {editUserForm.formState.errors.role && (
-                  <p className="text-sm text-red-500 mt-1">
-                    {editUserForm.formState.errors.role.message}
-                  </p>
-                )}
-              </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="edit-active"
-                  {...editUserForm.register('active')}
-                  className="rounded border-gray-300"
+                <FormField
+                  control={editUserForm.control}
+                  name="isActive"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-2">
+                      <FormControl>
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <FormLabel>Active User</FormLabel>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                <Label htmlFor="edit-active">User is active</Label>
-              </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setEditingUser(null)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={editUser.isPending}>
-                  {editUser.isPending ? 'Updating...' : 'Update User'}
-                </Button>
-              </DialogFooter>
-            </form>
+                <DialogFooter>
+                  <Button type="submit" disabled={editUser.isPending}>
+                    {editUser.isPending ? 'Updating...' : 'Update User'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
           </DialogContent>
         </Dialog>
+      )}
 
-        {/* Reset Password Dialog */}
+      {/* Reset Password Dialog */}
+      {resetPasswordUser && (
         <Dialog open={!!resetPasswordUser} onOpenChange={() => setResetPasswordUser(null)}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Key className="h-5 w-5" />
-                Reset Password: {resetPasswordUser?.fullName || resetPasswordUser?.username}
-              </DialogTitle>
+              <DialogTitle>Reset Password: {resetPasswordUser.fullName}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={resetPasswordForm.handleSubmit(handleResetPassword)} className="space-y-4">
-              <div>
-                <Label htmlFor="newPassword">New Password *</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  {...resetPasswordForm.register('newPassword')}
-                  placeholder="Enter new password"
+            <Form {...resetPasswordForm}>
+              <form onSubmit={resetPasswordForm.handleSubmit((data) => resetPassword.mutate({ userId: resetPasswordUser.id, newPassword: data.newPassword }))} className="space-y-4">
+                <FormField
+                  control={resetPasswordForm.control}
+                  name="newPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>New Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="Enter new password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {resetPasswordForm.formState.errors.newPassword && (
-                  <p className="text-sm text-red-500 mt-1">
-                    {resetPasswordForm.formState.errors.newPassword.message}
-                  </p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="confirmPassword">Confirm Password *</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  {...resetPasswordForm.register('confirmPassword')}
-                  placeholder="Confirm new password"
+                <FormField
+                  control={resetPasswordForm.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="Confirm new password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {resetPasswordForm.formState.errors.confirmPassword && (
-                  <p className="text-sm text-red-500 mt-1">
-                    {resetPasswordForm.formState.errors.confirmPassword.message}
-                  </p>
-                )}
-              </div>
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-sm text-yellow-800">
-                  <Key className="h-4 w-4 inline mr-1" />
-                  The user will need to use this new password to log in. Make sure to communicate it securely.
-                </p>
-              </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setResetPasswordUser(null)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={resetPassword.isPending}>
-                  {resetPassword.isPending ? 'Resetting...' : 'Reset Password'}
-                </Button>
-              </DialogFooter>
-            </form>
+                <DialogFooter>
+                  <Button type="submit" disabled={resetPassword.isPending}>
+                    {resetPassword.isPending ? 'Resetting...' : 'Reset Password'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
           </DialogContent>
         </Dialog>
-
-        {user?.role !== 'admin' && (
-          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <Shield className="h-4 w-4 inline mr-1" />
-              Only administrators can modify role permissions. Contact your system administrator for permission changes.
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 }
