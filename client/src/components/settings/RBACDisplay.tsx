@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Shield, Users, Settings, Eye, Edit, Trash2, Package, FileText, TruckIcon, UserCheck, Plus, UserPlus, Mail, Calendar, Activity } from 'lucide-react';
+import { Shield, Users, Settings, Eye, Edit, Trash2, Package, FileText, TruckIcon, UserCheck, Plus, UserPlus, Mail, Calendar, Activity, Key } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -55,8 +55,17 @@ const editUserSchema = z.object({
   active: z.boolean()
 });
 
+const resetPasswordSchema = z.object({
+  newPassword: z.string().min(6, 'Password must be at least 6 characters'),
+  confirmPassword: z.string().min(6, 'Password must be at least 6 characters')
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
 type CreateUserForm = z.infer<typeof createUserSchema>;
 type EditUserForm = z.infer<typeof editUserSchema>;
+type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
 
 interface RoleInfo {
   role: string;
@@ -140,6 +149,7 @@ export function RBACDisplay() {
   const queryClient = useQueryClient();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
 
   const createUserForm = useForm<CreateUserForm>({
     resolver: zodResolver(createUserSchema),
@@ -159,6 +169,14 @@ export function RBACDisplay() {
       email: '',
       role: 'warehouse',
       active: true
+    }
+  });
+
+  const resetPasswordForm = useForm<ResetPasswordForm>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      newPassword: '',
+      confirmPassword: ''
     }
   });
   
@@ -286,6 +304,41 @@ export function RBACDisplay() {
     },
   });
 
+  // Reset password mutation
+  const resetPassword = useMutation({
+    mutationFn: async ({ userId, newPassword }: { userId: number; newPassword: string }) => {
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password: newPassword }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to reset password');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Password reset successfully',
+      });
+      setResetPasswordUser(null);
+      resetPasswordForm.reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleCreateUser = (data: CreateUserForm) => {
     createUser.mutate(data);
   };
@@ -300,6 +353,12 @@ export function RBACDisplay() {
     deleteUser.mutate(userId);
   };
 
+  const handleResetPassword = (data: ResetPasswordForm) => {
+    if (resetPasswordUser) {
+      resetPassword.mutate({ userId: resetPasswordUser.id, newPassword: data.newPassword });
+    }
+  };
+
   const openEditDialog = (user: User) => {
     setEditingUser(user);
     editUserForm.reset({
@@ -308,6 +367,11 @@ export function RBACDisplay() {
       role: user.role as any,
       active: user.active
     });
+  };
+
+  const openResetPasswordDialog = (user: User) => {
+    setResetPasswordUser(user);
+    resetPasswordForm.reset();
   };
 
   if (isLoading) {
@@ -670,8 +734,19 @@ export function RBACDisplay() {
                               onClick={() => openEditDialog(currentUser)}
                               disabled={editUser.isPending}
                               className="h-8 w-8 p-0"
+                              title="Edit user"
                             >
                               <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openResetPasswordDialog(currentUser)}
+                              disabled={resetPassword.isPending}
+                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800"
+                              title="Reset password"
+                            >
+                              <Key className="h-3 w-3" />
                             </Button>
                             {currentUser.id !== user?.id && (
                               <AlertDialog>
@@ -681,6 +756,7 @@ export function RBACDisplay() {
                                     size="sm"
                                     disabled={deleteUser.isPending}
                                     className="h-8 w-8 p-0 text-red-600 hover:text-red-800"
+                                    title="Delete user"
                                   >
                                     <Trash2 className="h-3 w-3" />
                                   </Button>
@@ -797,6 +873,66 @@ export function RBACDisplay() {
                 </Button>
                 <Button type="submit" disabled={editUser.isPending}>
                   {editUser.isPending ? 'Updating...' : 'Update User'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Reset Password Dialog */}
+        <Dialog open={!!resetPasswordUser} onOpenChange={() => setResetPasswordUser(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Key className="h-5 w-5" />
+                Reset Password: {resetPasswordUser?.fullName || resetPasswordUser?.username}
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={resetPasswordForm.handleSubmit(handleResetPassword)} className="space-y-4">
+              <div>
+                <Label htmlFor="newPassword">New Password *</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  {...resetPasswordForm.register('newPassword')}
+                  placeholder="Enter new password"
+                />
+                {resetPasswordForm.formState.errors.newPassword && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {resetPasswordForm.formState.errors.newPassword.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  {...resetPasswordForm.register('confirmPassword')}
+                  placeholder="Confirm new password"
+                />
+                {resetPasswordForm.formState.errors.confirmPassword && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {resetPasswordForm.formState.errors.confirmPassword.message}
+                  </p>
+                )}
+              </div>
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  <Key className="h-4 w-4 inline mr-1" />
+                  The user will need to use this new password to log in. Make sure to communicate it securely.
+                </p>
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setResetPasswordUser(null)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={resetPassword.isPending}>
+                  {resetPassword.isPending ? 'Resetting...' : 'Reset Password'}
                 </Button>
               </DialogFooter>
             </form>
