@@ -16,7 +16,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Shield, Users, Settings, Eye, Edit, Trash2, Package, FileText, Truck, UserCheck, Plus, UserPlus, Mail, Calendar, Activity, Key, ToggleLeft, ToggleRight } from 'lucide-react';
-import { UserContext } from '@/contexts/UserContext';
+import { useUser } from '@/context/UserContext';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 
@@ -124,7 +124,7 @@ const getPermissionIcon = (permission: string) => {
 };
 
 export default function RBACDisplay() {
-  const { user } = useContext(UserContext);
+  const { user } = useUser();
   const { toast } = useToast();
 
   // State management
