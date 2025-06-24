@@ -34,7 +34,7 @@ interface User {
   username: string;
   fullName: string;
   role: string;
-  isActive: boolean;
+  active: boolean;
   createdAt: string;
   lastLogin: string | null;
 }
@@ -50,7 +50,7 @@ const createUserSchema = z.object({
 const editUserSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
   role: z.enum(['admin', 'front_office', 'warehouse']),
-  isActive: z.boolean()
+  active: z.boolean()
 });
 
 const resetPasswordSchema = z.object({
@@ -778,8 +778,8 @@ export default function RBACDisplay() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={userData.isActive ? 'default' : 'destructive'}>
-                        {userData.isActive ? 'Active' : 'Inactive'}
+                      <Badge variant={userData.active ? 'default' : 'destructive'}>
+                        {userData.active ? 'Active' : 'Inactive'}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -795,7 +795,7 @@ export default function RBACDisplay() {
                             editUserForm.reset({
                               fullName: userData.fullName,
                               role: userData.role as any,
-                              isActive: userData.isActive
+                              active: userData.active
                             });
                           }}
                         >
