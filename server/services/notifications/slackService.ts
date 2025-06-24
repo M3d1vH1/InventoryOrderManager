@@ -247,6 +247,72 @@ export class SlackNotificationService {
     return this.applyTemplate(template || defaultTemplate, data);
   }
   
+  // Format order picked notification using template
+  private formatOrderPickedNotification(order: Order, template?: string): SlackMessage {
+    // Default template if none is provided
+    const defaultTemplate = `✅ *Order Picked*
+• Order: #{orderNumber}
+• Customer: {customerName}
+• Picked Date: {pickedDate}
+• Status: {status}
+• Items: {totalItems}
+• View: {appUrl}/orders/{id}`;
+    
+    // Calculate derived properties
+    const totalItems = (order as any).totalItems || 1;
+    
+    // Prepare data for template variables
+    const data = {
+      id: order.id,
+      orderNumber: order.orderNumber,
+      customer: order.customerName,
+      customerName: order.customerName,
+      pickedDate: new Date().toLocaleDateString(),
+      status: order.status,
+      priority: order.priority || 'medium',
+      totalItems: totalItems,
+      notes: order.notes || 'No notes',
+      appUrl: process.env.APP_URL || '',
+    };
+    
+    console.log('Order picked notification data prepared for:', order.orderNumber);
+    
+    return this.applyTemplate(template || defaultTemplate, data);
+  }
+
+  // Format order shipped notification using template
+  private formatOrderShippedNotification(order: Order, template?: string): SlackMessage {
+    // Default template if none is provided
+    const defaultTemplate = `🚚 *Order Shipped*
+• Order: #{orderNumber}
+• Customer: {customerName}
+• Shipped Date: {shippedDate}
+• Status: {status}
+• Items: {totalItems}
+• View: {appUrl}/orders/{id}`;
+    
+    // Calculate derived properties
+    const totalItems = (order as any).totalItems || 1;
+    
+    // Prepare data for template variables
+    const data = {
+      id: order.id,
+      orderNumber: order.orderNumber,
+      customer: order.customerName,
+      customerName: order.customerName,
+      shippedDate: new Date().toLocaleDateString(),
+      status: order.status,
+      priority: order.priority || 'medium',
+      totalItems: totalItems,
+      notes: order.notes || 'No notes',
+      appUrl: process.env.APP_URL || '',
+    };
+    
+    console.log('Order shipped notification data prepared for:', order.orderNumber);
+    
+    return this.applyTemplate(template || defaultTemplate, data);
+  }
+
   // Format low stock notification using template
   private formatLowStockNotification(product: Product, template?: string): SlackMessage {
     // Default template if none is provided
@@ -409,6 +475,80 @@ export class SlackNotificationService {
     return this.sendSlackMessage(message, settings.slackWebhookUrl);
   }
   
+  // Notify about order picked
+  async notifyOrderPicked(order: Order): Promise<boolean> {
+    try {
+      console.log('Starting Slack notification for order picked:', order.orderNumber);
+      
+      const settings = await this.getNotificationSettings();
+      
+      if (!settings || !settings.slackEnabled || !settings.slackNotifyNewOrders) {
+        console.log('Slack notification skipped: not enabled in settings');
+        return false;
+      }
+      
+      if (!settings.slackWebhookUrl) {
+        console.log('Slack notification skipped: no webhook URL configured');
+        return false;
+      }
+      
+      // Use the order template for picked notifications (can be customized later)
+      const template = settings.slackOrderTemplate ? settings.slackOrderTemplate : undefined;
+      const message = this.formatOrderPickedNotification(order, template);
+      
+      const success = await this.sendSlackMessage(message, settings.slackWebhookUrl);
+      
+      if (success) {
+        console.log('Slack notification sent successfully for picked order:', order.orderNumber);
+      } else {
+        console.error('Failed to send Slack notification for picked order:', order.orderNumber);
+      }
+      
+      return success;
+      
+    } catch (error) {
+      console.error('Error in notifyOrderPicked:', error);
+      return false;
+    }
+  }
+
+  // Notify about order shipped
+  async notifyOrderShipped(order: Order): Promise<boolean> {
+    try {
+      console.log('Starting Slack notification for order shipped:', order.orderNumber);
+      
+      const settings = await this.getNotificationSettings();
+      
+      if (!settings || !settings.slackEnabled || !settings.slackNotifyNewOrders) {
+        console.log('Slack notification skipped: not enabled in settings');
+        return false;
+      }
+      
+      if (!settings.slackWebhookUrl) {
+        console.log('Slack notification skipped: no webhook URL configured');
+        return false;
+      }
+      
+      // Use the order template for shipped notifications (can be customized later)
+      const template = settings.slackOrderTemplate ? settings.slackOrderTemplate : undefined;
+      const message = this.formatOrderShippedNotification(order, template);
+      
+      const success = await this.sendSlackMessage(message, settings.slackWebhookUrl);
+      
+      if (success) {
+        console.log('Slack notification sent successfully for shipped order:', order.orderNumber);
+      } else {
+        console.error('Failed to send Slack notification for shipped order:', order.orderNumber);
+      }
+      
+      return success;
+      
+    } catch (error) {
+      console.error('Error in notifyOrderShipped:', error);
+      return false;
+    }
+  }
+
   // Notify about low stock
   async notifyLowStock(product: Product): Promise<boolean> {
     const settings = await this.getNotificationSettings();

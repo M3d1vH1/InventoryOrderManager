@@ -1716,6 +1716,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update the order status
       const updatedOrder = await storage.updateOrderStatus(id, status, undefined, userId);
       
+      // Import and create SlackService for notifications
+      const { createSlackService } = await import('./services/notifications/slackService');
+      const slackService = createSlackService(storage);
+      
+      // Send Slack notifications for status changes
+      if (status === 'picked' && updatedOrder) {
+        try {
+          await slackService.notifyOrderPicked(updatedOrder);
+        } catch (slackError) {
+          console.error('Error sending Slack notification for picked order:', slackError);
+          // Don't fail the order update if Slack notification fails
+        }
+      } else if (status === 'shipped' && updatedOrder) {
+        try {
+          await slackService.notifyOrderShipped(updatedOrder);
+        } catch (slackError) {
+          console.error('Error sending Slack notification for shipped order:', slackError);
+          // Don't fail the order update if Slack notification fails
+        }
+      }
+      
       // Send Slack notification if order has out-of-stock items
       if (hasOutOfStockItems && status === 'picked') {
         try {

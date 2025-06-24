@@ -50,6 +50,8 @@ const notificationSettingsSchema = z.object({
   slackWebhookUrl: z.string().nullable().default(null),
   slackFinanceWebhookUrl: z.string().nullable().default(null),
   slackNotifyNewOrders: z.boolean().default(false),
+  slackNotifyOrderPicked: z.boolean().default(false),
+  slackNotifyOrderShipped: z.boolean().default(false),
   slackNotifyCallLogs: z.boolean().default(false),
   slackNotifyLowStock: z.boolean().default(false),
   slackNotifyInvoices: z.boolean().default(false),
@@ -92,6 +94,8 @@ const Settings: React.FC = () => {
       slackWebhookUrl: "",
       slackFinanceWebhookUrl: "",
       slackNotifyNewOrders: false,
+      slackNotifyOrderPicked: false,
+      slackNotifyOrderShipped: false,
       slackNotifyCallLogs: false,
       slackNotifyLowStock: false,
       slackNotifyInvoices: false,
@@ -411,6 +415,30 @@ const Settings: React.FC = () => {
                                 <Switch checked={field.value} onCheckedChange={field.onChange} />
                               </FormControl>
                               <FormLabel className="text-sm font-normal">New Orders</FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={notificationForm.control}
+                          name="slackNotifyOrderPicked"
+                          render={({ field }) => (
+                            <FormItem className="flex items-center space-x-2 rounded p-2">
+                              <FormControl>
+                                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                              </FormControl>
+                              <FormLabel className="text-sm font-normal">Order Picked</FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={notificationForm.control}
+                          name="slackNotifyOrderShipped"
+                          render={({ field }) => (
+                            <FormItem className="flex items-center space-x-2 rounded p-2">
+                              <FormControl>
+                                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                              </FormControl>
+                              <FormLabel className="text-sm font-normal">Order Shipped</FormLabel>
                             </FormItem>
                           )}
                         />

@@ -432,6 +432,8 @@ export const notificationSettings = pgTable("notification_settings", {
   slackWebhookUrl: text("slack_webhook_url"),
   slackFinanceWebhookUrl: text("slack_finance_webhook_url"), // Separate webhook for invoices/payments
   slackNotifyNewOrders: boolean("slack_notify_new_orders").notNull().default(true),
+  slackNotifyOrderPicked: boolean("slack_notify_order_picked").notNull().default(false),
+  slackNotifyOrderShipped: boolean("slack_notify_order_shipped").notNull().default(false),
   slackNotifyCallLogs: boolean("slack_notify_call_logs").notNull().default(true),
   slackNotifyLowStock: boolean("slack_notify_low_stock").notNull().default(false),
   slackNotifyInvoices: boolean("slack_notify_invoices").notNull().default(true),
