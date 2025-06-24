@@ -101,6 +101,8 @@ const Settings: React.FC = () => {
       slackNotifyInvoices: false,
       slackNotifyPayments: false,
       slackOrderTemplate: "",
+      slackOrderPickedTemplate: "",
+      slackOrderShippedTemplate: "",
       slackCallLogTemplate: "",
       slackLowStockTemplate: "",
       slackInvoiceTemplate: "",
@@ -138,6 +140,8 @@ const Settings: React.FC = () => {
       const processedValues = {
         ...values,
         slackOrderTemplate: values.slackOrderTemplate || null,
+        slackOrderPickedTemplate: values.slackOrderPickedTemplate || null,
+        slackOrderShippedTemplate: values.slackOrderShippedTemplate || null,
         slackCallLogTemplate: values.slackCallLogTemplate || null,
         slackLowStockTemplate: values.slackLowStockTemplate || null,
         slackInvoiceTemplate: values.slackInvoiceTemplate || null,

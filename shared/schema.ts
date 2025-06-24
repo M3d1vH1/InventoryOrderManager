@@ -441,6 +441,8 @@ export const notificationSettings = pgTable("notification_settings", {
   
   // Slack notification templates
   slackOrderTemplate: text("slack_order_template"),
+  slackOrderPickedTemplate: text("slack_order_picked_template"),
+  slackOrderShippedTemplate: text("slack_order_shipped_template"),
   slackCallLogTemplate: text("slack_call_log_template"),
   slackLowStockTemplate: text("slack_low_stock_template"),
   slackInvoiceTemplate: text("slack_invoice_template"),

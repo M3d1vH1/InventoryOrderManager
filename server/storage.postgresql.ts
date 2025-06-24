@@ -2280,6 +2280,8 @@ export class DatabaseStorage implements IStorage {
         
         // Slack notification templates
         if (settings.slackOrderTemplate !== undefined) updateObject.slackOrderTemplate = settings.slackOrderTemplate;
+        if ((settings as any).slackOrderPickedTemplate !== undefined) updateObject.slackOrderPickedTemplate = (settings as any).slackOrderPickedTemplate;
+        if ((settings as any).slackOrderShippedTemplate !== undefined) updateObject.slackOrderShippedTemplate = (settings as any).slackOrderShippedTemplate;
         if (settings.slackCallLogTemplate !== undefined) updateObject.slackCallLogTemplate = settings.slackCallLogTemplate;
         if (settings.slackLowStockTemplate !== undefined) updateObject.slackLowStockTemplate = settings.slackLowStockTemplate;
         if (settings.slackInvoiceTemplate !== undefined) updateObject.slackInvoiceTemplate = settings.slackInvoiceTemplate;

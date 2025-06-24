@@ -492,8 +492,8 @@ export class SlackNotificationService {
         return false;
       }
       
-      // Use the order template for picked notifications (can be customized later)
-      const template = settings.slackOrderTemplate ? settings.slackOrderTemplate : undefined;
+      // Use the specific picked order template
+      const template = (settings as any).slackOrderPickedTemplate ? (settings as any).slackOrderPickedTemplate : undefined;
       const message = this.formatOrderPickedNotification(order, template);
       
       const success = await this.sendSlackMessage(message, settings.slackWebhookUrl);
@@ -529,8 +529,8 @@ export class SlackNotificationService {
         return false;
       }
       
-      // Use the order template for shipped notifications (can be customized later)
-      const template = settings.slackOrderTemplate ? settings.slackOrderTemplate : undefined;
+      // Use the specific shipped order template
+      const template = (settings as any).slackOrderShippedTemplate ? (settings as any).slackOrderShippedTemplate : undefined;
       const message = this.formatOrderShippedNotification(order, template);
       
       const success = await this.sendSlackMessage(message, settings.slackWebhookUrl);
