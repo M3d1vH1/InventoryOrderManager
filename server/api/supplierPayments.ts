@@ -9,76 +9,17 @@ import { suppliers, supplierInvoices as invoices, supplierPayments as payments,
 import { subDays, startOfMonth, endOfMonth, format } from 'date-fns';
 import { pool } from '../db';
 import { invoicePaymentNotificationService } from '../services/notifications/invoicePaymentNotificationService';
+import { InvoicePaymentService } from '../services/invoicePaymentService';
+import { PaymentAuditService } from '../services/paymentAuditService';
 
-// Helper function to update invoice payment status
-async function updateInvoicePaymentStatus(invoiceId: number) {
-  const client = await pool.connect();
-  try {
-    // Get invoice details
-    const invoiceResult = await client.query(
-      `SELECT id, amount, paid_amount, due_date, status FROM supplier_invoices WHERE id = $1`,
-      [invoiceId]
-    );
-    
-    if (invoiceResult.rows.length === 0) {
-      console.error(`Invoice with ID ${invoiceId} not found for status update`);
-      return;
-    }
-    
-    const invoice = invoiceResult.rows[0];
-    
-    // Get total payments for this invoice
-    const paymentsResult = await client.query(
-      `SELECT COALESCE(SUM(amount), 0) as total_paid FROM supplier_payments WHERE invoice_id = $1`,
-      [invoiceId]
-    );
-    
-    const totalPaid = parseFloat(paymentsResult.rows[0].total_paid || 0);
-    const invoiceAmount = parseFloat(invoice.amount);
-    const dueDate = new Date(invoice.due_date);
-    const today = new Date();
-    
-    // Don't update cancelled invoices
-    if (invoice.status === 'cancelled') {
-      return;
-    }
-    
-    // Update paid_amount field
-    await client.query(
-      `UPDATE supplier_invoices SET paid_amount = $1 WHERE id = $2`,
-      [totalPaid, invoiceId]
-    );
-    
-    // Determine new status
-    let newStatus = invoice.status;
-    const diff = Math.abs(invoiceAmount - totalPaid);
-    const tolerance = 0.01; // Small tolerance for floating-point comparisons
-    
-    if (diff <= tolerance) {
-      newStatus = 'paid';
-    } else if (totalPaid > 0) {
-      newStatus = 'partially_paid';
-    } else if (dueDate < today) {
-      newStatus = 'overdue';
-    } else {
-      newStatus = 'pending';
-    }
-    
-    // Only update if status changed
-    if (newStatus !== invoice.status) {
-      console.log(`Updating invoice ${invoiceId} status: ${invoice.status} -> ${newStatus}`);
-      console.log(`Invoice amount: ${invoiceAmount}, Paid amount: ${totalPaid}, Due date: ${format(dueDate, 'yyyy-MM-dd')}`);
-      
-      await client.query(
-        `UPDATE supplier_invoices SET status = $1 WHERE id = $2`,
-        [newStatus, invoiceId]
-      );
-    }
-  } catch (error) {
-    console.error('Error updating invoice payment status:', error);
-  } finally {
-    client.release();
-  }
+// Helper function to get user context for audit logging
+function getUserContext(req: any) {
+  return {
+    userId: req.user?.id,
+    userName: req.user?.fullName || req.user?.username,
+    ipAddress: req.ip || req.connection?.remoteAddress,
+    userAgent: req.get('User-Agent')
+  };
 }
 
 const router = Router();
@@ -619,15 +560,14 @@ router.post('/payments', async (req, res) => {
       return res.status(400).json({ error: 'Invoice not found' });
     }
     
-    // Validate that payment amount doesn't exceed remaining invoice amount
-    const existingPayments = await storage.getSupplierPaymentsByInvoice(data.invoiceId);
-    const totalPaidSoFar = existingPayments.reduce((sum, payment) => sum + Number(payment.amount), 0);
-    const remainingAmount = Number(invoice.amount) - totalPaidSoFar;
+    // Validate payment amount using new centralized service
+    const userContext = getUserContext(req);
+    const validation = await InvoicePaymentService.validatePaymentAmount(data.invoiceId, Number(data.amount));
     
-    if (Number(data.amount) > remainingAmount + 0.01) { // Small tolerance for rounding errors
+    if (!validation.isValid) {
       return res.status(400).json({
         error: 'Payment validation error',
-        message: `Payment amount (${data.amount}) exceeds remaining invoice amount (${remainingAmount.toFixed(2)})`
+        message: validation.error
       });
     }
 
@@ -688,8 +628,27 @@ router.post('/payments', async (req, res) => {
         const createdPayment = result.rows[0];
         console.log("Created payment:", JSON.stringify(createdPayment, null, 2));
         
-        // Use our new helper function to update invoice status
-        await updateInvoicePaymentStatus(data.invoiceId);
+        // Log payment creation in audit trail
+        await PaymentAuditService.logAction({
+          entityType: 'payment',
+          entityId: createdPayment.id,
+          action: 'created',
+          newValues: {
+            invoice_id: data.invoiceId,
+            amount: data.amount,
+            payment_method: data.paymentMethod,
+            payment_date: data.paymentDate
+          },
+          ...userContext,
+          reason: 'New payment created'
+        });
+        
+        // Update invoice status using centralized service
+        await InvoicePaymentService.updateInvoiceStatus({
+          invoiceId: data.invoiceId,
+          ...userContext,
+          reason: 'Payment added'
+        });
         
         // Get updated invoice and supplier for notification
         const updatedInvoice = await storage.getSupplierInvoice(data.invoiceId);
@@ -704,33 +663,6 @@ router.post('/payments', async (req, res) => {
             supplierName: supplier?.name
           });
         }
-        
-        // Get invoice amount for comparison
-        const invoiceResult = await client.query(
-          `SELECT amount FROM supplier_invoices WHERE id = $1`,
-          [data.invoiceId]
-        );
-        
-        const invoiceAmount = parseFloat(invoiceResult.rows[0].amount);
-        
-        // Calculate total paid amount including this new payment
-        const totalPaid = totalPaidSoFar + Number(data.amount);
-        
-        // Determine the new status based on payment amount
-        let newStatus = invoice.status;
-        if (totalPaid >= invoiceAmount) {
-          newStatus = 'paid';
-        } else if (totalPaid > 0) {
-          newStatus = 'partially_paid';
-        }
-        
-        // Update invoice status and paid_amount
-        await client.query(
-          `UPDATE supplier_invoices 
-           SET status = $1, paid_amount = $2 
-           WHERE id = $3`,
-          [newStatus, totalPaid, data.invoiceId]
-        );
         
         res.status(201).json(createdPayment);
       } finally {
@@ -883,21 +815,46 @@ router.patch('/payments/:id', async (req, res) => {
           return res.status(404).json({ error: 'Payment not found' });
         }
         
-        console.log("Updated payment:", JSON.stringify(result.rows[0], null, 2));
+        const updatedPayment = result.rows[0];
+        console.log("Updated payment:", JSON.stringify(updatedPayment, null, 2));
         
-        // If the payment amount was changed or invoice was changed, update the invoice(s)
+        // Log payment update in audit trail
+        await PaymentAuditService.logAction({
+          entityType: 'payment',
+          entityId: paymentId,
+          action: 'updated',
+          oldValues: {
+            invoice_id: payment.invoiceId,
+            amount: payment.amount,
+            payment_method: payment.paymentMethod,
+            payment_date: payment.paymentDate
+          },
+          newValues: data,
+          ...getUserContext(req),
+          reason: 'Payment details updated'
+        });
+        
+        // Update invoice status using centralized service
         if (data.amount !== undefined || data.invoiceId !== undefined) {
           // Update the original invoice if the invoice ID was changed
           if (data.invoiceId !== undefined && data.invoiceId !== payment.invoiceId) {
-            await updateInvoicePaidAmount(payment.invoiceId);
+            await InvoicePaymentService.updateInvoiceStatus({
+              invoiceId: payment.invoiceId,
+              ...getUserContext(req),
+              reason: 'Payment moved to different invoice'
+            });
           }
           
           // Update the current invoice
           const currentInvoiceId = data.invoiceId || payment.invoiceId;
-          await updateInvoicePaidAmount(currentInvoiceId);
+          await InvoicePaymentService.updateInvoiceStatus({
+            invoiceId: currentInvoiceId,
+            ...getUserContext(req),
+            reason: 'Payment amount or details updated'
+          });
         }
         
-        res.json(result.rows[0]);
+        res.json(updatedPayment);
       } finally {
         client.release();
       }
@@ -1085,42 +1042,8 @@ router.get('/summary', async (req, res) => {
   }
 });
 
-// Helper function to update invoice paid amount and status
-async function updateInvoicePaidAmount(invoiceId: number) {
-  try {
-    const invoice = await storage.getSupplierInvoice(invoiceId);
-    if (!invoice) {
-      return;
-    }
-    
-    const invoicePayments = await storage.getSupplierPaymentsByInvoice(invoiceId);
-    const totalPaid = invoicePayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
-    
-    // Determine the new status based on payment amount
-    let newStatus = invoice.status;
-    if (totalPaid >= Number(invoice.amount)) {
-      newStatus = 'paid';
-    } else if (totalPaid > 0) {
-      newStatus = 'partially_paid';
-    } else {
-      // If no payments, revert to pending or overdue status based on the due date
-      const today = new Date();
-      const dueDate = new Date(invoice.dueDate);
-      newStatus = dueDate < today ? 'overdue' : 'pending';
-    }
-    
-    // Update the invoice
-    await storage.updateInvoiceStatus(invoiceId, newStatus);
-  } catch (error) {
-    console.error("Error updating invoice paid amount:", error);
-  }
-}
-
-// Helper function to get total paid amount
-async function getTotalPaidAmount() {
-  const allPayments = await storage.getAllSupplierPayments();
-  return allPayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
-}
+// DEPRECATED: Old helper functions - replaced by InvoicePaymentService
+// Keeping for reference during transition period
 
 // Helper function to get paid this month
 async function getPaidThisMonth() {
