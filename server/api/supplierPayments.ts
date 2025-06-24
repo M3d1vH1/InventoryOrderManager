@@ -11,6 +11,7 @@ import { pool } from '../db';
 import { invoicePaymentNotificationService } from '../services/notifications/invoicePaymentNotificationService';
 import { InvoicePaymentService } from '../services/invoicePaymentService';
 import { PaymentAuditService } from '../services/paymentAuditService';
+import { generateInvoiceTrackingId, generatePaymentTrackingId } from '../services/trackingIdService';
 
 // Helper function to get user context for audit logging
 function getUserContext(req: any) {
@@ -606,14 +607,18 @@ router.post('/payments', async (req, res) => {
           throw new Error(`Payment validation failed: ${finalValidation.error}`);
         }
 
+        // Generate unique tracking ID for the payment
+        const trackingId = await generatePaymentTrackingId();
+
         const result = await client.query(
           `INSERT INTO supplier_payments 
-            (invoice_id, payment_date, amount, payment_method, reference_number, notes, receipt_path, company, reference,
+            (tracking_id, invoice_id, payment_date, amount, payment_method, reference_number, notes, receipt_path, company, reference,
              bank_account, callback_required, callback_date, callback_notes, callback_completed) 
            VALUES 
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) 
            RETURNING *`,
           [
+            trackingId,
             data.invoiceId,
             formatSqlDate(data.paymentDate),
             data.amount,

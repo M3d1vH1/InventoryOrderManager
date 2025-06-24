@@ -1361,6 +1361,7 @@ export const invoiceStatusEnum = pgEnum('invoice_status', [
 // Supplier Invoices Schema
 export const supplierInvoices = pgTable("supplier_invoices", {
   id: serial("id").primaryKey(),
+  trackingId: text("tracking_id").unique(), // New unique tracking ID like INV-001
   invoiceNumber: text("invoice_number").notNull(),
   supplierId: integer("supplier_id").notNull().references(() => suppliers.id),
   issueDate: date("issue_date").notNull(),  // Changed to match database column name
@@ -1486,6 +1487,7 @@ export const paymentMethodEnum = pgEnum('payment_method', [
 // Supplier Payments Schema
 export const supplierPayments = pgTable("supplier_payments", {
   id: serial("id").primaryKey(),
+  trackingId: text("tracking_id").unique(), // New unique tracking ID like PAY-001
   invoiceId: integer("invoice_id").notNull().references(() => supplierInvoices.id),
   paymentDate: date("payment_date").notNull(),
   amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),

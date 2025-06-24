@@ -5,6 +5,7 @@
  */
 import { pool } from '../db';
 import { PaymentAuditService } from './paymentAuditService';
+import { generateInvoiceTrackingId, generatePaymentTrackingId } from './trackingIdService';
 
 export interface InvoiceStatusUpdate {
   invoiceId: number;
