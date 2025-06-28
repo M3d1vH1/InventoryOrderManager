@@ -511,6 +511,80 @@ const Settings: React.FC = () => {
                       </div>
                     )}
                   </div>
+
+                  {/* Daily Report Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <h4 className="text-lg font-semibold">Daily Operations Report</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Send daily summary of new orders, picked orders, shipped orders, and outstanding orders to Slack
+                        </p>
+                      </div>
+                      <FormField
+                        control={notificationForm.control}
+                        name="dailyReportEnabled"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Switch
+                                checked={notificationForm.watch("dailyReportEnabled")}
+                                onCheckedChange={(checked) => {
+                                  notificationForm.setValue("dailyReportEnabled", checked);
+                                }}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {notificationForm.watch("dailyReportEnabled") && (
+                      <div className="space-y-4 ml-4 pl-4 border-l-2 border-gray-200">
+                        <FormField
+                          control={notificationForm.control}
+                          name="dailyReportTime"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Report Time</FormLabel>
+                              <FormControl>
+                                <input
+                                  type="time"
+                                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                Time to send daily reports (24-hour format, default: 17:30)
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={notificationForm.control}
+                          name="dailyReportWebhookUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Daily Report Slack Webhook URL</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="https://hooks.slack.com/services/... (optional)"
+                                  {...field}
+                                  value={field.value || ""}
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                Separate webhook URL for daily reports. If not provided, uses main Slack webhook above.
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+                  </div>
                   {/* Template Customization */}
                   {notificationForm.watch("slackEnabled") && (
                     <div className="space-y-4">

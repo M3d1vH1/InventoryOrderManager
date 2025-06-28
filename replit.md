@@ -4,6 +4,15 @@
 A comprehensive warehouse management system with order management, inventory tracking, supplier invoice/payment management, and shipping functionality. Built with React frontend and Express backend using PostgreSQL database.
 
 ## Recent Changes
+- **June 28, 2025**: Completed comprehensive daily operations scheduler with Slack reporting
+  - **Daily Report Scheduler**: Implemented automated daily reports using node-cron with configurable timing (default 5:30 PM)
+  - **Order Metrics Collection**: Added comprehensive metrics including new orders, picked orders, shipped orders, and outstanding orders
+  - **Professional Format**: Reports display in exact format "ORD-156 (ACME Corp)" with smart truncation for long customer name lists
+  - **Database Integration**: Added daily report settings (dailyReportEnabled, dailyReportTime, dailyReportWebhookUrl) to notification_settings table
+  - **Storage Methods**: Implemented getOrdersForReport method in DatabaseStorage class for efficient order data retrieval
+  - **Settings UI**: Added complete daily report configuration interface in Settings page with time picker and Slack webhook URL input
+  - **Service Architecture**: Created DailyReportScheduler service with start/stop lifecycle management and test report functionality
+  - **Production Ready**: Scheduler starts automatically with the application and integrates with existing notification system
 - **June 24, 2025**: Switched to production environment and prepared for deployment
   - **Production Mode**: Environment switched from development to production with NODE_ENV=production
   - **Production Configuration**: All security middleware, rate limiting, and CORS policies now active
@@ -160,6 +169,7 @@ A comprehensive warehouse management system with order management, inventory tra
 - Optimized multibox label printing with parallel loading and retry logic
 - Pre-print shipping company modification for labels
 - Real-time notifications and logging
+- Daily operations reporting with automated Slack summaries
 
 ## User Preferences
 - Language: English and Greek support
