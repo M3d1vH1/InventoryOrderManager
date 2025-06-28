@@ -4,6 +4,12 @@
 A comprehensive warehouse management system with order management, inventory tracking, supplier invoice/payment management, and shipping functionality. Built with React frontend and Express backend using PostgreSQL database.
 
 ## Recent Changes
+- **June 28, 2025**: Completely resolved daily report webhook URL persistence and verified full system functionality
+  - **API Schema Fix**: Fixed missing dailyReportWebhookUrl validation field in settings API endpoint
+  - **PostgreSQL Storage Fix**: Updated storage layer to properly handle daily report webhook URL in database operations
+  - **Database Persistence Verified**: All daily report settings save correctly to notification_settings table
+  - **End-to-End Testing**: Successfully tested complete workflow from settings UI to Slack webhook delivery
+  - **Production Deployment**: Daily report system fully operational with authentic Slack integration confirmed
 - **June 28, 2025**: Fixed critical storage persistence issue preventing settings from saving to database
   - **Storage Configuration Fix**: Corrected storage initialization to use DatabaseStorage instead of MemStorage by default
   - **Settings Persistence**: Daily report settings now properly save to notification_settings table in PostgreSQL database
