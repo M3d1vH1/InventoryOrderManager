@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -560,48 +561,267 @@ const Settings: React.FC = () => {
                     </div>
 
                     {notificationForm.watch("dailyReportEnabled") && (
-                      <div className="space-y-4 ml-4 pl-4 border-l-2 border-gray-200">
-                        <FormField
-                          control={notificationForm.control}
-                          name="dailyReportTime"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Report Time</FormLabel>
-                              <FormControl>
-                                <input
-                                  type="time"
-                                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormDescription>
-                                Time to send daily reports (24-hour format, default: 17:30)
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                      <div className="space-y-6 ml-4 pl-4 border-l-2 border-gray-200">
+                        {/* Basic Configuration */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={notificationForm.control}
+                            name="dailyReportTime"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Report Time</FormLabel>
+                                <FormControl>
+                                  <input
+                                    type="time"
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  Time to send daily reports (24-hour format, default: 17:30)
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
 
-                        <FormField
-                          control={notificationForm.control}
-                          name="dailyReportWebhookUrl"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Daily Report Slack Webhook URL</FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="https://hooks.slack.com/services/... (optional)"
-                                  {...field}
-                                  value={field.value || ""}
-                                />
-                              </FormControl>
-                              <FormDescription>
-                                Separate webhook URL for daily reports. If not provided, uses main Slack webhook above.
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
+                          <FormField
+                            control={notificationForm.control}
+                            name="dailyReportWebhookUrl"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Daily Report Slack Webhook URL</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="https://hooks.slack.com/services/... (optional)"
+                                    {...field}
+                                    value={field.value || ""}
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  Separate webhook URL for daily reports. If not provided, uses main Slack webhook above.
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        {/* Report Customization */}
+                        <div className="space-y-4">
+                          <h5 className="text-sm font-semibold text-gray-700">Report Customization</h5>
+                          
+                          <FormField
+                            control={notificationForm.control}
+                            name="dailyReportTitle"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Report Title</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    placeholder="Daily Operations Report"
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  Custom title for your daily reports
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={notificationForm.control}
+                            name="dailyReportFormat"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Report Format</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select report format" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="detailed">Detailed - Full metrics and order lists</SelectItem>
+                                    <SelectItem value="summary">Summary - Key metrics only</SelectItem>
+                                    <SelectItem value="metrics_only">Metrics Only - Numbers without lists</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormDescription>
+                                  Choose the level of detail for your reports
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <FormField
+                              control={notificationForm.control}
+                              name="dailyReportIncludeMetrics"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                                  <div className="space-y-0.5">
+                                    <FormLabel className="text-sm">Include Metrics</FormLabel>
+                                    <FormDescription className="text-xs">
+                                      Show order counts and statistics
+                                    </FormDescription>
+                                  </div>
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={notificationForm.control}
+                              name="dailyReportIncludeOutstanding"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                                  <div className="space-y-0.5">
+                                    <FormLabel className="text-sm">Outstanding Orders</FormLabel>
+                                    <FormDescription className="text-xs">
+                                      Show list of pending orders
+                                    </FormDescription>
+                                  </div>
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={notificationForm.control}
+                              name="dailyReportIncludeLink"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                                  <div className="space-y-0.5">
+                                    <FormLabel className="text-sm">Dashboard Link</FormLabel>
+                                    <FormDescription className="text-xs">
+                                      Include link to dashboard
+                                    </FormDescription>
+                                  </div>
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          {notificationForm.watch("dailyReportIncludeOutstanding") && (
+                            <FormField
+                              control={notificationForm.control}
+                              name="dailyReportMaxOutstanding"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Max Outstanding Orders to Show</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      min="1"
+                                      max="50"
+                                      {...field}
+                                      onChange={(e) => field.onChange(parseInt(e.target.value, 10))}
+                                    />
+                                  </FormControl>
+                                  <FormDescription>
+                                    Maximum number of outstanding orders to display (1-50)
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
                           )}
-                        />
+
+                          {/* Days of Week Selection */}
+                          <FormField
+                            control={notificationForm.control}
+                            name="dailyReportDaysOfWeek"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Report Days</FormLabel>
+                                <FormDescription>
+                                  Select which days to send reports
+                                </FormDescription>
+                                <FormControl>
+                                  <div className="flex flex-wrap gap-2">
+                                    {[
+                                      { value: '1', label: 'Mon' },
+                                      { value: '2', label: 'Tue' },
+                                      { value: '3', label: 'Wed' },
+                                      { value: '4', label: 'Thu' },
+                                      { value: '5', label: 'Fri' },
+                                      { value: '6', label: 'Sat' },
+                                      { value: '0', label: 'Sun' }
+                                    ].map((day) => {
+                                      const selectedDays = field.value?.split(',') || [];
+                                      const isSelected = selectedDays.includes(day.value);
+                                      
+                                      return (
+                                        <Button
+                                          key={day.value}
+                                          type="button"
+                                          variant={isSelected ? "default" : "outline"}
+                                          size="sm"
+                                          onClick={() => {
+                                            const currentDays = field.value?.split(',').filter(Boolean) || [];
+                                            let newDays;
+                                            if (isSelected) {
+                                              newDays = currentDays.filter(d => d !== day.value);
+                                            } else {
+                                              newDays = [...currentDays, day.value];
+                                            }
+                                            field.onChange(newDays.join(','));
+                                          }}
+                                        >
+                                          {day.label}
+                                        </Button>
+                                      );
+                                    })}
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          {/* Custom Template */}
+                          <FormField
+                            control={notificationForm.control}
+                            name="dailyReportTemplate"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Custom Template (Optional)</FormLabel>
+                                <FormControl>
+                                  <textarea
+                                    className="w-full min-h-[100px] p-3 border rounded-md resize-vertical"
+                                    placeholder="Custom message template using variables: {title}, {date}, {newOrders}, {pickedOrders}, {shippedOrders}, {outstandingOrders}, {outstandingList}, {dashboardUrl}"
+                                    value={field.value || ""}
+                                    onChange={(e) => field.onChange(e.target.value || null)}
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  Advanced: Customize the entire report format with variables
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                       </div>
                     )}
                   </div>

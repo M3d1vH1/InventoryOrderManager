@@ -56,6 +56,15 @@ export class DailyReportScheduler {
     const currentTime = now.toTimeString().slice(0, 5); // HH:mm format
     const reportTime = settings.dailyReportTime || '17:30';
 
+    // Check if today is a selected report day
+    const daysOfWeek = settings.dailyReportDaysOfWeek || '1,2,3,4,5'; // Default: weekdays
+    const selectedDays = daysOfWeek.split(',').map(d => parseInt(d.trim()));
+    const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    
+    if (!selectedDays.includes(currentDay)) {
+      return; // Not a report day
+    }
+
     // Check if current time matches report time (within same minute)
     if (currentTime === reportTime) {
       // Check if we already sent a report today
@@ -68,7 +77,7 @@ export class DailyReportScheduler {
       this.isRunning = true;
       
       try {
-        await this.sendDailyReport();
+        await this.sendDailyReport(settings);
         console.log(`[DailyReportScheduler] Daily report sent at ${currentTime}`);
       } catch (error) {
         console.error('[DailyReportScheduler] Failed to send daily report:', error);
