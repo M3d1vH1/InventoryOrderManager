@@ -4964,6 +4964,16 @@ export async function initStorage() {
     // Create the storage instance
     storage = new DatabaseStorage(db);
     
+    // Initialize daily report scheduler
+    try {
+      const { createDailyReportScheduler } = await import('./services/dailyReportScheduler');
+      const scheduler = createDailyReportScheduler(storage);
+      await scheduler.start();
+      log('Daily report scheduler started successfully', 'database');
+    } catch (schedulerError) {
+      log(`Failed to start daily report scheduler: ${schedulerError instanceof Error ? schedulerError.message : String(schedulerError)}`, 'database');
+    }
+    
     // Log success
     log('Database storage initialized successfully', 'database');
     

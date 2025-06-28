@@ -118,6 +118,9 @@ export interface IStorage {
   getNotificationSettings(): Promise<NotificationSettings | undefined>;
   updateNotificationSettings(settings: Partial<InsertNotificationSettings>): Promise<NotificationSettings | undefined>;
   
+  // Daily report methods
+  getOrdersForReport(): Promise<Order[]>;
+  
   // Role Permissions methods
   getRolePermissions(role: string): Promise<RolePermission[]>;
   getAllRolePermissions(): Promise<RolePermission[]>;

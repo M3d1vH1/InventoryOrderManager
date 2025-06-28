@@ -31,7 +31,6 @@ export class DailyReportScheduler {
         console.error('[DailyReportScheduler] Error in scheduled task:', error);
       }
     }, {
-      scheduled: true,
       timezone: "Europe/Athens" // Greek timezone
     });
 
@@ -106,37 +105,37 @@ export class DailyReportScheduler {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     // Get all orders for analysis
-    const allOrders = await this.storage.getOrders();
+    const allOrders = await this.storage.getOrdersForReport();
     
-    const newOrders = allOrders.filter(order => {
+    const newOrders = allOrders.filter((order: any) => {
       const orderDate = new Date(order.orderDate);
       return orderDate >= today && orderDate < tomorrow;
-    }).map(order => ({
+    }).map((order: any) => ({
       orderNumber: order.orderNumber,
       customerName: order.customerName
     }));
 
-    const pickedOrders = allOrders.filter(order => {
+    const pickedOrders = allOrders.filter((order: any) => {
       if (!order.pickedAt) return false;
       const pickedDate = new Date(order.pickedAt);
       return pickedDate >= today && pickedDate < tomorrow;
-    }).map(order => ({
+    }).map((order: any) => ({
       orderNumber: order.orderNumber,
       customerName: order.customerName
     }));
 
-    const shippedOrders = allOrders.filter(order => {
+    const shippedOrders = allOrders.filter((order: any) => {
       if (!order.shippedAt) return false;
       const shippedDate = new Date(order.shippedAt);
       return shippedDate >= today && shippedDate < tomorrow;
-    }).map(order => ({
+    }).map((order: any) => ({
       orderNumber: order.orderNumber,
       customerName: order.customerName
     }));
 
-    const outstandingOrders = allOrders.filter(order => 
+    const outstandingOrders = allOrders.filter((order: any) => 
       order.status === 'pending'
-    ).map(order => ({
+    ).map((order: any) => ({
       orderNumber: order.orderNumber,
       customerName: order.customerName
     }));
