@@ -439,6 +439,11 @@ export const notificationSettings = pgTable("notification_settings", {
   slackNotifyInvoices: boolean("slack_notify_invoices").notNull().default(true),
   slackNotifyPayments: boolean("slack_notify_payments").notNull().default(true),
   
+  // Daily report settings
+  dailyReportEnabled: boolean("daily_report_enabled").notNull().default(false),
+  dailyReportTime: text("daily_report_time").default('17:30'), // Format: HH:mm
+  dailyReportWebhookUrl: text("daily_report_webhook_url"), // Optional separate webhook for daily reports
+  
   // Slack notification templates
   slackOrderTemplate: text("slack_order_template"),
   slackOrderPickedTemplate: text("slack_order_picked_template"),
@@ -460,6 +465,9 @@ export const insertNotificationSettingsSchema = createInsertSchema(notificationS
     overdueInvoiceAlerts: z.boolean().default(true),
     slackNotifyInvoices: z.boolean().default(true),
     slackNotifyPayments: z.boolean().default(true),
+    dailyReportEnabled: z.boolean().default(false),
+    dailyReportTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Time must be in HH:mm format").default('17:30'),
+    dailyReportWebhookUrl: z.string().url().optional().or(z.literal('')),
   });
 
 export type InsertNotificationSettings = z.infer<typeof insertNotificationSettingsSchema>;

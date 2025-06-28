@@ -44,6 +44,11 @@
             "date": 1750745970714,
             "name": "/home/runner/workspace/logs/rejections-2025-06-24.log",
             "hash": "aaf0713ea4f64897a465019731a411d902a00d0e4119164bfedc76314cfa9d6f"
+        },
+        {
+            "date": 1751093366310,
+            "name": "/home/runner/workspace/logs/rejections-2025-06-28.log",
+            "hash": "fc005e5e1338a428ebc149827d27f27f8314f7c370cdc6b50e8de50f08a37b93"
         }
     ],
     "hashType": "sha256"
