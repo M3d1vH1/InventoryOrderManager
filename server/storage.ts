@@ -2874,10 +2874,25 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Initialize storage based on environment or configuration
-// For development or testing, use MemStorage
-// For production, use DatabaseStorage
+// Initialize storage - always try database first
 export let storage: IStorage;
+
+// Initialize storage with database by default
+async function initializeStorage() {
+  try {
+    // Try to initialize database storage first
+    const dbStorage = await initStorage();
+    storage = dbStorage;
+    log('Successfully initialized database storage', 'database');
+    return true;
+  } catch (error) {
+    log(`Failed to initialize database storage: ${error instanceof Error ? error.message : String(error)}`, 'database');
+    log('Falling back to in-memory storage', 'database');
+    // Fall back to in-memory storage
+    storage = new MemStorage();
+    return false;
+  }
+}
 
 // This function switches to database storage when called
 export async function useDatabase() {
@@ -2893,6 +2908,15 @@ export async function useDatabase() {
   } catch (error) {
     log(`Failed to switch to database storage: ${error instanceof Error ? error.message : String(error)}`, 'database');
     log('Falling back to in-memory storage', 'database');
+    // Ensure we have fallback storage
+    if (!storage) {
+      storage = new MemStorage();
+    }
     return false;
   }
 }
+
+// Initialize storage immediately and wait for it
+(async () => {
+  await initializeStorage();
+})();
