@@ -3834,6 +3834,9 @@ A 1
   // Test send notifications with all templates
   app.post('/api/settings/test-slack-templates', isAuthenticated, hasRole(['admin']), testSlackTemplate);
   
+  // Test daily report functionality
+  app.post('/api/settings/test-daily-report', isAuthenticated, hasRole(['admin']), testDailyReport);
+  
   // Role permissions management routes
   app.get('/api/role-permissions', isAuthenticated, hasRole(['admin']), async (req, res) => {
     try {
