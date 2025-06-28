@@ -60,6 +60,16 @@ const notificationSettingsSchema = z.object({
   dailyReportEnabled: z.boolean().default(false),
   dailyReportTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Time must be in HH:mm format").default('17:30'),
   dailyReportWebhookUrl: z.string().nullable().default(null),
+  
+  // Daily report customization
+  dailyReportTitle: z.string().min(1).default('Daily Operations Report'),
+  dailyReportIncludeMetrics: z.boolean().default(true),
+  dailyReportIncludeOutstanding: z.boolean().default(true),
+  dailyReportMaxOutstanding: z.number().int().min(1).max(50).default(10),
+  dailyReportIncludeLink: z.boolean().default(true),
+  dailyReportFormat: z.enum(['detailed', 'summary', 'metrics_only']).default('detailed'),
+  dailyReportDaysOfWeek: z.string().default('1,2,3,4,5'),
+  dailyReportTemplate: z.string().nullable().default(null),
   slackOrderTemplate: z.string().nullable().default(null),
   slackCallLogTemplate: z.string().nullable().default(null),
   slackLowStockTemplate: z.string().nullable().default(null),
@@ -107,6 +117,16 @@ const Settings: React.FC = () => {
       dailyReportEnabled: false,
       dailyReportTime: "17:30",
       dailyReportWebhookUrl: "",
+      
+      // Daily report customization
+      dailyReportTitle: "Daily Operations Report",
+      dailyReportIncludeMetrics: true,
+      dailyReportIncludeOutstanding: true,
+      dailyReportMaxOutstanding: 10,
+      dailyReportIncludeLink: true,
+      dailyReportFormat: "detailed" as const,
+      dailyReportDaysOfWeek: "1,2,3,4,5",
+      dailyReportTemplate: "",
       slackOrderTemplate: "",
       slackOrderPickedTemplate: "",
       slackOrderShippedTemplate: "",
