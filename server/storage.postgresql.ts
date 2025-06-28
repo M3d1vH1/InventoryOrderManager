@@ -2237,10 +2237,17 @@ export class DatabaseStorage implements IStorage {
             
             // Slack notification templates
             slackOrderTemplate: settings.slackOrderTemplate,
+            slackOrderPickedTemplate: (settings as any).slackOrderPickedTemplate,
+            slackOrderShippedTemplate: (settings as any).slackOrderShippedTemplate,
             slackCallLogTemplate: settings.slackCallLogTemplate,
             slackLowStockTemplate: settings.slackLowStockTemplate,
             slackInvoiceTemplate: settings.slackInvoiceTemplate,
             slackPaymentTemplate: settings.slackPaymentTemplate,
+            
+            // Daily report settings
+            dailyReportEnabled: (settings as any).dailyReportEnabled ?? false,
+            dailyReportTime: (settings as any).dailyReportTime ?? '17:30',
+            dailyReportWebhookUrl: (settings as any).dailyReportWebhookUrl,
             
             updatedAt: new Date(),
           })
@@ -2286,6 +2293,11 @@ export class DatabaseStorage implements IStorage {
         if (settings.slackLowStockTemplate !== undefined) updateObject.slackLowStockTemplate = settings.slackLowStockTemplate;
         if (settings.slackInvoiceTemplate !== undefined) updateObject.slackInvoiceTemplate = settings.slackInvoiceTemplate;
         if (settings.slackPaymentTemplate !== undefined) updateObject.slackPaymentTemplate = settings.slackPaymentTemplate;
+        
+        // Daily report settings
+        if ((settings as any).dailyReportEnabled !== undefined) updateObject.dailyReportEnabled = (settings as any).dailyReportEnabled;
+        if ((settings as any).dailyReportTime !== undefined) updateObject.dailyReportTime = (settings as any).dailyReportTime;
+        if ((settings as any).dailyReportWebhookUrl !== undefined) updateObject.dailyReportWebhookUrl = (settings as any).dailyReportWebhookUrl;
         
         // Log the update for debugging
         console.log("Updating notification settings with:", JSON.stringify(updateObject));

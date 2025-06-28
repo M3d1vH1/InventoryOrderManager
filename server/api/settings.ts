@@ -106,10 +106,17 @@ export async function updateNotificationSettings(req: Request, res: Response) {
       
       // Slack notification templates - allow null values
       slackOrderTemplate: z.string().nullable().optional(),
+      slackOrderPickedTemplate: z.string().nullable().optional(),
+      slackOrderShippedTemplate: z.string().nullable().optional(),
       slackCallLogTemplate: z.string().nullable().optional(),
       slackLowStockTemplate: z.string().nullable().optional(),
       slackInvoiceTemplate: z.string().nullable().optional(),
-      slackPaymentTemplate: z.string().nullable().optional()
+      slackPaymentTemplate: z.string().nullable().optional(),
+      
+      // Daily report settings
+      dailyReportEnabled: z.boolean().optional(),
+      dailyReportTime: z.string().optional(),
+      dailyReportWebhookUrl: z.string().nullable().optional()
     });
 
     const validatedData = schema.parse(req.body);
