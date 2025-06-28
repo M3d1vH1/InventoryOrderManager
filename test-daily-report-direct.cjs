@@ -57,16 +57,15 @@ async function testDailyReportDirect() {
     const shippedToday = parseInt(shippedTodayResult.rows[0].count);
 
     const outstandingResult = await pool.query(
-      'SELECT COUNT(*) as count FROM orders WHERE status IN ($1, $2, $3)',
-      ['pending', 'confirmed', 'picked']
+      'SELECT COUNT(*) as count FROM orders WHERE status IN ($1, $2)',
+      ['pending', 'picked']
     );
     const outstanding = parseInt(outstandingResult.rows[0].count);
 
-    // Get sample orders for formatting test
+    // Get sample orders for formatting test - first check table structure
     const sampleOrdersResult = await pool.query(`
-      SELECT o.id, o.tracking_id, c.name as customer_name
+      SELECT o.id, o.order_number, o.customer_name
       FROM orders o
-      LEFT JOIN customers c ON o.customer_id = c.id
       WHERE o.order_date >= $1 AND o.order_date < $2
       ORDER BY o.order_date DESC
       LIMIT 5
