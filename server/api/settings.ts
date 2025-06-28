@@ -116,7 +116,17 @@ export async function updateNotificationSettings(req: Request, res: Response) {
       // Daily report settings
       dailyReportEnabled: z.boolean().optional(),
       dailyReportTime: z.string().optional(),
-      dailyReportWebhookUrl: z.string().nullable().optional()
+      dailyReportWebhookUrl: z.string().nullable().optional(),
+      
+      // Daily report customization
+      dailyReportTitle: z.string().optional(),
+      dailyReportFormat: z.enum(['detailed', 'summary', 'metrics_only']).optional(),
+      dailyReportIncludeMetrics: z.boolean().optional(),
+      dailyReportIncludeOutstanding: z.boolean().optional(),
+      dailyReportIncludeLink: z.boolean().optional(),
+      dailyReportMaxOutstanding: z.number().min(1).max(50).optional(),
+      dailyReportDaysOfWeek: z.string().optional(),
+      dailyReportTemplate: z.string().nullable().optional()
     });
 
     const validatedData = schema.parse(req.body);
