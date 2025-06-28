@@ -4,6 +4,11 @@
 A comprehensive warehouse management system with order management, inventory tracking, supplier invoice/payment management, and shipping functionality. Built with React frontend and Express backend using PostgreSQL database.
 
 ## Recent Changes
+- **June 28, 2025**: Fixed critical storage persistence issue preventing settings from saving to database
+  - **Storage Configuration Fix**: Corrected storage initialization to use DatabaseStorage instead of MemStorage by default
+  - **Settings Persistence**: Daily report settings now properly save to notification_settings table in PostgreSQL database
+  - **Database Verification**: Confirmed all notification settings persist correctly including daily_report_enabled, daily_report_time, and daily_report_webhook_url
+  - **Production Ready**: Storage layer now fully operational with authentic database persistence
 - **June 28, 2025**: Successfully tested daily operations scheduler with real database data
   - **System Verification**: Confirmed daily report system working with actual warehouse data (239 total orders, 28 outstanding)
   - **Real Data Integration**: Professional report format displaying authentic order metrics instead of mock data
