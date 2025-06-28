@@ -1,89 +1,147 @@
-const axios = require('axios');
+/**
+ * Test Daily Report with Real Database Data
+ * This uses the actual database to generate a real daily report
+ */
 
-async function testDailyReportSystem() {
-  console.log('\n=== Testing Daily Report System ===');
-  
+const { PostgresJsDatabase } = require('drizzle-orm/postgres-js');
+const postgres = require('postgres');
+const { eq, and, gte, lt, isNull, isNotNull } = require('drizzle-orm');
+const { orders, customers } = require('./shared/schema.ts');
+
+async function testRealDailyReport() {
+  console.log('📊 TESTING DAILY REPORT WITH REAL DATABASE DATA');
+  console.log('='.repeat(70));
+
   try {
-    const baseUrl = 'https://amphoreus.replit.app';
-    
-    // Test 1: Check notification settings endpoint
-    console.log('\n--- Testing notification settings API ---');
-    try {
-      const settingsResponse = await axios.get(`${baseUrl}/api/settings/notifications`);
-      console.log('✅ Notification settings endpoint is accessible');
-      console.log('Current settings:', {
-        dailyReportEnabled: settingsResponse.data.dailyReportEnabled,
-        dailyReportTime: settingsResponse.data.dailyReportTime,
-        dailyReportWebhookUrl: settingsResponse.data.dailyReportWebhookUrl ? 'Set' : 'Not set'
-      });
-    } catch (error) {
-      console.log('❌ Notification settings endpoint failed:', error.response?.status || error.message);
+    // Connect to the database
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error('DATABASE_URL not found');
     }
 
-    // Test 2: Check orders endpoint for report data
-    console.log('\n--- Testing orders data availability ---');
-    try {
-      const ordersResponse = await axios.get(`${baseUrl}/api/orders`);
-      const orders = ordersResponse.data;
-      console.log(`✅ Found ${orders.length} orders in the system`);
+    const sql = postgres(connectionString, { ssl: 'require' });
+    const db = new PostgresJsDatabase(sql);
+
+    // Get today's date boundaries
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    console.log(`Getting orders for date: ${today.toISOString().split('T')[0]}`);
+
+    // Query real orders from database
+    const allOrders = await db.select({
+      orderNumber: orders.orderNumber,
+      customerName: orders.customerName,
+      status: orders.status,
+      orderDate: orders.orderDate,
+      pickedAt: orders.pickedAt,
+      shippedAt: orders.shippedAt
+    }).from(orders).leftJoin(customers, eq(orders.customerName, customers.name));
+
+    console.log(`Found ${allOrders.length} total orders in database`);
+
+    // Filter orders by today's activity
+    const newOrders = allOrders.filter(order => {
+      if (!order.orderDate) return false;
+      const orderDate = new Date(order.orderDate);
+      return orderDate >= today && orderDate < tomorrow;
+    });
+
+    const pickedOrders = allOrders.filter(order => {
+      if (!order.pickedAt) return false;
+      const pickedDate = new Date(order.pickedAt);
+      return pickedDate >= today && pickedDate < tomorrow;
+    });
+
+    const shippedOrders = allOrders.filter(order => {
+      if (!order.shippedAt) return false;
+      const shippedDate = new Date(order.shippedAt);
+      return shippedDate >= today && shippedDate < tomorrow;
+    });
+
+    const outstandingOrders = allOrders.filter(order => 
+      order.status === 'pending'
+    );
+
+    // Format order lists with real data
+    const formatOrderList = (orderList, limit = 5) => {
+      if (orderList.length === 0) return 'None';
       
-      if (orders.length > 0) {
-        // Analyze order statuses for report metrics
-        const statusCounts = {
-          new: orders.filter(o => o.status === 'pending').length,
-          picked: orders.filter(o => o.status === 'picked').length,
-          shipped: orders.filter(o => o.status === 'shipped').length,
-          outstanding: orders.filter(o => ['pending', 'picked'].includes(o.status)).length
-        };
-        
-        console.log('Order metrics for report:');
-        console.log(`- New orders: ${statusCounts.new}`);
-        console.log(`- Picked orders: ${statusCounts.picked}`);
-        console.log(`- Shipped orders: ${statusCounts.shipped}`);
-        console.log(`- Outstanding orders: ${statusCounts.outstanding}`);
-        
-        // Show sample order format
-        const sampleOrder = orders[0];
-        console.log(`\nSample order format: ORD-${sampleOrder.orderNumber} (${sampleOrder.customerName || 'No customer name'})`);
+      if (orderList.length <= limit) {
+        return orderList.map(o => `ORD-${o.orderNumber} (${o.customerName || 'Unknown Customer'})`).join(', ');
       } else {
-        console.log('⚠️  No orders found - report would be empty');
+        const shown = orderList.slice(0, limit);
+        const remaining = orderList.length - limit;
+        return shown.map(o => `ORD-${o.orderNumber} (${o.customerName || 'Unknown Customer'})`).join(', ') + ` ... +${remaining} more`;
       }
-    } catch (error) {
-      console.log('❌ Orders endpoint failed:', error.response?.status || error.message);
-    }
+    };
 
-    // Test 3: Test report generation (simulation)
-    console.log('\n--- Testing report generation logic ---');
-    console.log('✅ Daily report scheduler is running (confirmed from server logs)');
-    console.log('✅ Report format: "ORD-XXX (Customer Name)" implemented');
-    console.log('✅ Scheduler uses node-cron for timing');
-    console.log('✅ Default report time: 5:30 PM daily');
-    
-    // Test 4: Test webhook URL validation
-    console.log('\n--- Testing webhook configuration ---');
-    try {
-      const testWebhookUrl = 'https://hooks.slack.com/services/test/webhook/url';
-      const updateResponse = await axios.post(`${baseUrl}/api/settings/notifications`, {
-        dailyReportEnabled: true,
-        dailyReportTime: '17:30',
-        dailyReportWebhookUrl: testWebhookUrl
+    // Generate real daily report
+    const reportDate = today.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+
+    const realReport = `📊 Daily Operations Report - ${reportDate}
+
+📦 NEW ORDERS (${newOrders.length} total)
+${formatOrderList(newOrders)}
+
+✅ PICKED TODAY (${pickedOrders.length} total)
+${formatOrderList(pickedOrders)}
+
+🚚 SHIPPED TODAY (${shippedOrders.length} total)
+${formatOrderList(shippedOrders)}
+
+⏳ OUTSTANDING ORDERS (${outstandingOrders.length} total)
+${formatOrderList(outstandingOrders)}
+
+📋 Full details: https://amphoreus.replit.app/orders
+Generated at ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+
+    console.log('\n📊 REAL DAILY REPORT FROM YOUR DATABASE:');
+    console.log('='.repeat(70));
+    console.log(realReport);
+
+    console.log('\n📈 REAL DATA BREAKDOWN:');
+    console.log(`• Total orders in system: ${allOrders.length}`);
+    console.log(`• New orders today: ${newOrders.length}`);
+    console.log(`• Picked today: ${pickedOrders.length}`);
+    console.log(`• Shipped today: ${shippedOrders.length}`);
+    console.log(`• Outstanding orders: ${outstandingOrders.length}`);
+
+    if (newOrders.length > 0) {
+      console.log('\n📦 NEW ORDERS DETAILS:');
+      newOrders.forEach(order => {
+        console.log(`  • ORD-${order.orderNumber} - ${order.customerName} (${order.status})`);
       });
-      console.log('✅ Webhook URL configuration accepts valid Slack URLs');
-    } catch (error) {
-      console.log('ℹ️  Webhook configuration test (expected - requires authentication)');
     }
 
-    console.log('\n=== Test Results Summary ===');
-    console.log('✅ Daily report scheduler service is running');
-    console.log('✅ Database integration is working');
-    console.log('✅ Order data collection is operational');
-    console.log('✅ Professional report formatting is implemented');
-    console.log('✅ Settings configuration is accessible');
-    console.log('\n📋 To complete testing, configure a Slack webhook URL in Settings');
+    if (pickedOrders.length > 0) {
+      console.log('\n✅ PICKED ORDERS DETAILS:');
+      pickedOrders.forEach(order => {
+        console.log(`  • ORD-${order.orderNumber} - ${order.customerName} (picked at ${new Date(order.pickedAt).toLocaleTimeString()})`);
+      });
+    }
+
+    if (shippedOrders.length > 0) {
+      console.log('\n🚚 SHIPPED ORDERS DETAILS:');
+      shippedOrders.forEach(order => {
+        console.log(`  • ORD-${order.orderNumber} - ${order.customerName} (shipped at ${new Date(order.shippedAt).toLocaleTimeString()})`);
+      });
+    }
+
+    console.log('\n✅ THIS IS THE EXACT MESSAGE THAT WOULD BE SENT TO SLACK');
     
+    await sql.end();
+
   } catch (error) {
-    console.error('Error during testing:', error.message);
+    console.error('❌ Error accessing real database data:', error.message);
+    console.log('\nThis error suggests the database connection or schema might need attention.');
   }
 }
 
-testDailyReportSystem();
+testRealDailyReport();

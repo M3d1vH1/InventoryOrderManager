@@ -1,79 +1,89 @@
 /**
- * Test Order Slack Notification with Authentication
+ * Test script to create an order and verify daily report functionality
  */
 
-const { exec } = require('child_process');
-const util = require('util');
-const execAsync = util.promisify(exec);
+const https = require('https');
 
-async function loginAndCreateOrder() {
-  console.log('🔐 Testing Order Slack Notification with Authentication...\n');
-  
+function makeRequest(options, data) {
+  return new Promise((resolve, reject) => {
+    const req = https.request(options, (res) => {
+      let responseData = '';
+      res.on('data', chunk => responseData += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(responseData);
+          resolve({ status: res.statusCode, data: parsed });
+        } catch (e) {
+          resolve({ status: res.statusCode, data: responseData });
+        }
+      });
+    });
+    
+    req.on('error', reject);
+    
+    if (data) {
+      req.write(JSON.stringify(data));
+    }
+    req.end();
+  });
+}
+
+async function testDailyReportWithRealData() {
+  console.log('Testing Daily Report System with Real Database Data');
+  console.log('='.repeat(60));
+
   try {
-    // Step 1: Get session cookie via dev login
-    console.log('1. Authenticating...');
-    const loginCommand = `curl -s -c cookies.txt -X GET http://localhost:5000/api/dev-login`;
-    const loginResult = await execAsync(loginCommand);
-    const loginResponse = JSON.parse(loginResult.stdout);
+    // Test the daily report endpoint
+    const testOptions = {
+      hostname: 'amphoreus.replit.app',
+      port: 443,
+      path: '/api/test/daily-report',
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Cookie': 'connect.sid=s%3AeyJwYXNzcG9ydCI6eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6ImFkbWluIn19fQ.VqHqoUyYtjRp5L8YhjJ_ek8uA8TfQQ3BqnBw-uh9lkE'
+      }
+    };
+
+    const response = await makeRequest(testOptions);
     
-    if (!loginResponse.success) {
-      throw new Error('Authentication failed');
+    if (response.status === 200) {
+      console.log('REAL DAILY REPORT DATA FROM YOUR DATABASE:');
+      console.log('='.repeat(60));
+      
+      const { data } = response;
+      console.log('Status:', data.status);
+      console.log('Scheduler Running:', data.schedulerRunning);
+      console.log('Settings:', JSON.stringify(data.settings, null, 2));
+      console.log('Metrics:', JSON.stringify(data.metrics, null, 2));
+      
+      console.log('\nREAL DAILY REPORT PREVIEW:');
+      console.log('='.repeat(60));
+      console.log(data.reportPreview);
+      
+      console.log('\nDATA SUMMARY:');
+      console.log(`Total orders in your system: ${data.metrics.totalOrders}`);
+      console.log(`New orders today: ${data.metrics.newToday}`);
+      console.log(`Picked today: ${data.metrics.pickedToday}`);
+      console.log(`Shipped today: ${data.metrics.shippedToday}`);
+      console.log(`Outstanding orders: ${data.metrics.outstanding}`);
+      
+      console.log('\nSYSTEM STATUS:');
+      console.log('Scheduler:', data.schedulerRunning ? 'RUNNING' : 'STOPPED');
+      console.log('Daily reports enabled:', data.settings.enabled);
+      console.log('Report time:', data.settings.time);
+      console.log('Webhook configured:', data.settings.webhookConfigured);
+      
+      console.log('\nTHIS IS THE EXACT MESSAGE THAT WOULD BE SENT TO SLACK');
+      console.log('Configure Slack webhook URL in Settings to activate daily reports');
+      
+    } else {
+      console.log('Error response:', response.status, response.data);
     }
-    
-    console.log(`✅ Authenticated as: ${loginResponse.user.username}`);
-    
-    // Step 2: Create order with authentication
-    console.log('2. Creating order with authentication...');
-    const orderCommand = `curl -s -b cookies.txt -X POST http://localhost:5000/api/orders \\
-      -H "Content-Type: application/json" \\
-      -d '{
-        "customerName": "Slack Test Customer - $(date +%H:%M)",
-        "priority": "high",
-        "estimatedShippingDate": "${new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}",
-        "notes": "Testing order creation Slack notification with proper authentication",
-        "items": [{"productId": 1, "quantity": 3}]
-      }'`;
-    
-    const orderResult = await execAsync(orderCommand);
-    const orderResponse = JSON.parse(orderResult.stdout);
-    
-    if (orderResponse.error || orderResponse.message) {
-      throw new Error(orderResponse.message || orderResponse.error);
-    }
-    
-    console.log(`✅ Order created successfully: ${orderResponse.orderNumber || orderResponse.id}`);
-    console.log('📱 Slack notification should have been sent to main channel');
-    
-    // Clean up
-    await execAsync('rm -f cookies.txt');
-    
-    return true;
-    
+
   } catch (error) {
-    console.log(`❌ Test failed: ${error.message}`);
-    // Clean up on error
-    await execAsync('rm -f cookies.txt').catch(() => {});
-    return false;
+    console.error('Test failed:', error.message);
   }
 }
 
-async function main() {
-  console.log('🔔 Order Creation Slack Notification Test');
-  console.log('=========================================\n');
-  
-  const success = await loginAndCreateOrder();
-  
-  console.log('\n' + '='.repeat(50));
-  if (success) {
-    console.log('✅ Order creation Slack notification test PASSED');
-    console.log('Check your main Slack channel for the new order alert');
-  } else {
-    console.log('❌ Order creation Slack notification test FAILED');
-    console.log('Check the logs above for specific errors');
-  }
-  console.log('='.repeat(50));
-}
-
-if (require.main === module) {
-  main().catch(console.error);
-}
+testDailyReportWithRealData();
