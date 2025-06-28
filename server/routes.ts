@@ -5171,6 +5171,113 @@ A 1
 
   // Efficient inventory summary by category
   app.get('/api/inventory/summary/efficient', isAuthenticated, getEfficientInventorySummary);
+
+  // Daily report test endpoint
+  app.get('/api/test/daily-report', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { getDailyReportScheduler } = await import('./services/dailyReportScheduler.js');
+      const scheduler = getDailyReportScheduler();
+      
+      if (!scheduler) {
+        return res.status(503).json({ 
+          error: 'Daily report scheduler not available',
+          status: 'scheduler_not_found'
+        });
+      }
+
+      // Get current notification settings
+      const settings = await storage.getNotificationSettings();
+      
+      // Generate a preview of what the daily report would look like
+      const orders = await storage.getOrdersForReport();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      // Calculate metrics
+      const newOrders = orders.filter((order: any) => {
+        const orderDate = new Date(order.orderDate);
+        return orderDate >= today && orderDate < tomorrow;
+      });
+
+      const pickedOrders = orders.filter((order: any) => {
+        if (!order.pickedAt) return false;
+        const pickedDate = new Date(order.pickedAt);
+        return pickedDate >= today && pickedDate < tomorrow;
+      });
+
+      const shippedOrders = orders.filter((order: any) => {
+        if (!order.shippedAt) return false;
+        const shippedDate = new Date(order.shippedAt);
+        return shippedDate >= today && shippedDate < tomorrow;
+      });
+
+      const outstandingOrders = orders.filter((order: any) => 
+        order.status === 'pending'
+      );
+
+      // Format sample report preview
+      const formatOrderList = (orderList: any[], limit: number = 3): string => {
+        if (orderList.length === 0) return 'None';
+        
+        if (orderList.length <= limit) {
+          return orderList.map(o => `ORD-${o.orderNumber} (${o.customerName || 'Unknown Customer'})`).join(', ');
+        } else {
+          const shown = orderList.slice(0, limit);
+          const remaining = orderList.length - limit;
+          return shown.map(o => `ORD-${o.orderNumber} (${o.customerName || 'Unknown Customer'})`).join(', ') + ` ... +${remaining} more`;
+        }
+      };
+
+      const reportPreview = `📊 Daily Operations Report - ${today.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      })}
+
+📦 NEW ORDERS (${newOrders.length} total)
+${formatOrderList(newOrders)}
+
+✅ PICKED TODAY (${pickedOrders.length} total)
+${formatOrderList(pickedOrders)}
+
+🚚 SHIPPED TODAY (${shippedOrders.length} total)
+${formatOrderList(shippedOrders)}
+
+⏳ OUTSTANDING ORDERS (${outstandingOrders.length} total)
+${formatOrderList(outstandingOrders)}
+
+📋 Full details: ${process.env.APP_URL || 'https://amphoreus.replit.app'}/orders
+Generated at ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+
+      res.json({
+        status: 'success',
+        schedulerRunning: true,
+        settings: {
+          enabled: settings.dailyReportEnabled || false,
+          time: settings.dailyReportTime || '17:30',
+          webhookConfigured: !!settings.dailyReportWebhookUrl
+        },
+        metrics: {
+          totalOrders: orders.length,
+          newToday: newOrders.length,
+          pickedToday: pickedOrders.length,
+          shippedToday: shippedOrders.length,
+          outstanding: outstandingOrders.length
+        },
+        reportPreview,
+        message: 'Daily report system is operational and ready to send reports'
+      });
+
+    } catch (error) {
+      console.error('[DailyReport] Test endpoint error:', error);
+      res.status(500).json({ 
+        error: 'Failed to test daily report system',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
   
   return httpServer;
 }
