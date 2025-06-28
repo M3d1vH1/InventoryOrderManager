@@ -4950,6 +4950,21 @@ export class DatabaseStorage implements IStorage {
       company.toUpperCase().includes(keyword.toUpperCase())
     );
   }
+
+  // Daily report methods
+  async getOrdersForReport(): Promise<Order[]> {
+    try {
+      const result = await this.db
+        .select()
+        .from(orders)
+        .orderBy(desc(orders.orderDate));
+      
+      return result;
+    } catch (error) {
+      console.error("Error fetching orders for report:", error);
+      return [];
+    }
+  }
 }
 
 // This will be initialized when the server starts

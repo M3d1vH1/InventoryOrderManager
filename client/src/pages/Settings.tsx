@@ -57,6 +57,9 @@ const notificationSettingsSchema = z.object({
   slackNotifyLowStock: z.boolean().default(false),
   slackNotifyInvoices: z.boolean().default(false),
   slackNotifyPayments: z.boolean().default(false),
+  dailyReportEnabled: z.boolean().default(false),
+  dailyReportTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Time must be in HH:mm format").default('17:30'),
+  dailyReportWebhookUrl: z.string().nullable().default(null),
   slackOrderTemplate: z.string().nullable().default(null),
   slackCallLogTemplate: z.string().nullable().default(null),
   slackLowStockTemplate: z.string().nullable().default(null),
@@ -101,6 +104,9 @@ const Settings: React.FC = () => {
       slackNotifyLowStock: false,
       slackNotifyInvoices: false,
       slackNotifyPayments: false,
+      dailyReportEnabled: false,
+      dailyReportTime: "17:30",
+      dailyReportWebhookUrl: "",
       slackOrderTemplate: "",
       slackOrderPickedTemplate: "",
       slackOrderShippedTemplate: "",
@@ -123,10 +129,15 @@ const Settings: React.FC = () => {
       const formData = {
         ...notificationSettingsData,
         slackOrderTemplate: notificationSettingsData.slackOrderTemplate || "",
+        slackOrderPickedTemplate: notificationSettingsData.slackOrderPickedTemplate || "",
+        slackOrderShippedTemplate: notificationSettingsData.slackOrderShippedTemplate || "",
         slackCallLogTemplate: notificationSettingsData.slackCallLogTemplate || "",
         slackLowStockTemplate: notificationSettingsData.slackLowStockTemplate || "",
         slackInvoiceTemplate: notificationSettingsData.slackInvoiceTemplate || "",
         slackPaymentTemplate: notificationSettingsData.slackPaymentTemplate || "",
+        dailyReportEnabled: notificationSettingsData.dailyReportEnabled || false,
+        dailyReportTime: notificationSettingsData.dailyReportTime || "17:30",
+        dailyReportWebhookUrl: notificationSettingsData.dailyReportWebhookUrl || "",
       };
       notificationForm.reset(formData);
     }
@@ -147,6 +158,7 @@ const Settings: React.FC = () => {
         slackLowStockTemplate: values.slackLowStockTemplate || null,
         slackInvoiceTemplate: values.slackInvoiceTemplate || null,
         slackPaymentTemplate: values.slackPaymentTemplate || null,
+        dailyReportWebhookUrl: values.dailyReportWebhookUrl || null,
       };
       
       try {
