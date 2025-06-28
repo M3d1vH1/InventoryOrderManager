@@ -24,7 +24,7 @@ import { getEmailSettings, updateEmailSettings, testEmailConnection, getEmailTem
 import { getGeoblockingSettings, updateGeoblockingSettings } from "./api/geoblocking";
 import { getGeoblockingStatus, toggleGeoblocking, addToAllowlist, removeFromAllowlist } from "./api/geoblocking-routes";
 import { getLabelTemplate, updateLabelTemplate, getAllLabelTemplates, previewLabelTemplate } from "./api/labelTemplates";
-import { getCompanySettings, updateCompanySettings, getNotificationSettings, updateNotificationSettings, testSlackWebhook, testSlackNotification, testSlackTemplate } from "./api/settings";
+import { getCompanySettings, updateCompanySettings, getNotificationSettings, updateNotificationSettings, testSlackWebhook, testSlackNotification, testSlackTemplate, testDailyReport } from "./api/settings";
 import { getOrderErrors, getOrderQuality, createOrderError, updateOrderError, resolveOrderError, adjustInventoryForError, getErrorStats } from "./api/orderErrors";
 import { getInventoryChanges, getInventoryChange, addInventoryChange, getRecentInventoryChanges, getInventoryChangesByType } from "./api/inventoryChanges";
 import orderPdfRouter from "./api/orderPdf";

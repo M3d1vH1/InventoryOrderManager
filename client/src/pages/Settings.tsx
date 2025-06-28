@@ -249,6 +249,33 @@ const Settings: React.FC = () => {
     },
   });
 
+  // Test daily report functionality
+  const testDailyReport = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/settings/test-daily-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Daily report test sent successfully!" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Daily Report Test Failed", 
+        description: error?.message || "Failed to send test daily report.", 
+        variant: "destructive" 
+      });
+    },
+  });
+
   // Language toggle
   const toggleLanguage = () => {
     i18n.changeLanguage(i18n.language === "en" ? "el" : "en");
@@ -908,6 +935,17 @@ const Settings: React.FC = () => {
                         })}
                       >
                         {testWebhook.isPending ? "Testing..." : "Test Finance"}
+                      </Button>
+                    )}
+                    
+                    {notificationForm.watch("dailyReportEnabled") && notificationForm.watch("dailyReportWebhookUrl") && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={testDailyReport.isPending}
+                        onClick={() => testDailyReport.mutate()}
+                      >
+                        {testDailyReport.isPending ? "Testing..." : "Test Daily Report"}
                       </Button>
                     )}
                   </div>

@@ -462,3 +462,55 @@ export async function testSlackTemplate(req: Request, res: Response) {
     });
   }
 }
+
+/**
+ * Test daily report functionality
+ */
+export async function testDailyReport(req: Request, res: Response) {
+  try {
+    // Import the daily report scheduler service
+    const { DailyReportScheduler } = await import('../services/dailyReportScheduler');
+    
+    // Get notification settings to check if daily reports are enabled
+    const settings = await storage.getNotificationSettings();
+    
+    if (!settings?.dailyReportEnabled) {
+      return res.status(400).json({
+        success: false,
+        message: 'Daily reports are not enabled. Please enable daily reports in settings first.'
+      });
+    }
+    
+    if (!settings.dailyReportWebhookUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'Daily report webhook URL is not configured. Please add a webhook URL in settings.'
+      });
+    }
+    
+    // Create scheduler instance and send test report
+    const scheduler = new DailyReportScheduler(storage);
+    
+    console.log('Sending test daily report...');
+    const result = await scheduler.sendTestReport();
+    
+    if (result) {
+      return res.json({
+        success: true,
+        message: 'Test daily report sent successfully! Check your Slack channel.'
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: 'Failed to send test daily report. Please check your webhook URL and settings.'
+      });
+    }
+  } catch (error) {
+    console.error('Error testing daily report:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while testing the daily report',
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
