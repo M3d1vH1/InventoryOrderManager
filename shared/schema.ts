@@ -444,6 +444,16 @@ export const notificationSettings = pgTable("notification_settings", {
   dailyReportTime: text("daily_report_time").default('17:30'), // Format: HH:mm
   dailyReportWebhookUrl: text("daily_report_webhook_url"), // Optional separate webhook for daily reports
   
+  // Daily report customization options
+  dailyReportTitle: text("daily_report_title").default('Daily Operations Report'),
+  dailyReportIncludeMetrics: boolean("daily_report_include_metrics").notNull().default(true),
+  dailyReportIncludeOutstanding: boolean("daily_report_include_outstanding").notNull().default(true),
+  dailyReportMaxOutstanding: integer("daily_report_max_outstanding").default(10),
+  dailyReportIncludeLink: boolean("daily_report_include_link").notNull().default(true),
+  dailyReportFormat: text("daily_report_format").default('detailed'), // 'detailed', 'summary', 'metrics_only'
+  dailyReportDaysOfWeek: text("daily_report_days_of_week").default('1,2,3,4,5'), // Comma-separated: 0=Sunday, 1=Monday, etc.
+  dailyReportTemplate: text("daily_report_template"),
+  
   // Slack notification templates
   slackOrderTemplate: text("slack_order_template"),
   slackOrderPickedTemplate: text("slack_order_picked_template"),
@@ -468,6 +478,16 @@ export const insertNotificationSettingsSchema = createInsertSchema(notificationS
     dailyReportEnabled: z.boolean().default(false),
     dailyReportTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Time must be in HH:mm format").default('17:30'),
     dailyReportWebhookUrl: z.string().url().optional().or(z.literal('')),
+    
+    // Daily report customization
+    dailyReportTitle: z.string().min(1).default('Daily Operations Report'),
+    dailyReportIncludeMetrics: z.boolean().default(true),
+    dailyReportIncludeOutstanding: z.boolean().default(true),
+    dailyReportMaxOutstanding: z.number().int().min(1).max(50).default(10),
+    dailyReportIncludeLink: z.boolean().default(true),
+    dailyReportFormat: z.enum(['detailed', 'summary', 'metrics_only']).default('detailed'),
+    dailyReportDaysOfWeek: z.string().regex(/^[0-6](,[0-6])*$/, "Must be comma-separated day numbers (0=Sunday, 1=Monday, etc.)").default('1,2,3,4,5'),
+    dailyReportTemplate: z.string().optional(),
   });
 
 export type InsertNotificationSettings = z.infer<typeof insertNotificationSettingsSchema>;
