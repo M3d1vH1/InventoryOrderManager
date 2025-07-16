@@ -98,7 +98,7 @@ interface Product {
   tags?: string[];
 }
 
-// Simplified form schema without categories
+// Form schema with category autocomplete
 const productFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   sku: z.string().min(1, { message: "SKU is required" }),
@@ -109,7 +109,8 @@ const productFormSchema = z.object({
   location: z.string().optional(),
   unitsPerBox: z.coerce.number().min(0).optional(),
   imagePath: z.string().optional(),
-  tags: z.array(z.string()).optional().default([])
+  tags: z.array(z.string()).optional().default([]),
+  categoryName: z.string().min(1, { message: "Category is required" })
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
@@ -137,6 +138,9 @@ const Products = () => {
   // State to track file uploads
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  
+  // Category autocomplete state
+  const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
 
   useEffect(() => {
     setCurrentPage("Products");
@@ -184,6 +188,30 @@ const Products = () => {
     }
   });
 
+  // Category queries
+  const { data: categories = [] } = useQuery({
+    queryKey: ['/api/categories'],
+    select: (data: any) => {
+      if (data && typeof data === 'object' && 'data' in data) {
+        return Array.isArray(data.data) ? data.data : [];
+      }
+      return Array.isArray(data) ? data : [];
+    }
+  });
+
+  // Category creation mutation
+  const createCategoryMutation = useMutation({
+    mutationFn: async (categoryData: { name: string; description?: string }) => {
+      return await apiRequest('/api/categories', {
+        method: 'POST',
+        body: JSON.stringify(categoryData)
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+    }
+  });
+
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
@@ -196,7 +224,8 @@ const Products = () => {
       location: "",
       unitsPerBox: 0,
       imagePath: "",
-      tags: []
+      tags: [],
+      categoryName: ""
     }
   });
 
@@ -212,7 +241,8 @@ const Products = () => {
         location: editingProduct.location || "",
         unitsPerBox: editingProduct.unitsPerBox || 0,
         imagePath: editingProduct.imagePath || "",
-        tags: editingProduct.tags || []
+        tags: editingProduct.tags || [],
+        categoryName: "" // For existing products, leave empty as we'll need to lookup category
       });
     } else {
       form.reset({
@@ -225,16 +255,41 @@ const Products = () => {
         location: "",
         unitsPerBox: 0,
         imagePath: "",
-        tags: []
+        tags: [],
+        categoryName: ""
       });
     }
   }, [editingProduct, form]);
 
   const createProductMutation = useMutation({
     mutationFn: async (values: ProductFormValues) => {
+      let finalCategoryId: number;
+      
+      // Look for existing category by name
+      const existingCategory = categories.find(cat => 
+        cat.name.toLowerCase() === values.categoryName.toLowerCase()
+      );
+      
+      if (existingCategory) {
+        // Use existing category
+        finalCategoryId = existingCategory.id;
+      } else {
+        // Create new category
+        try {
+          const newCategory = await createCategoryMutation.mutateAsync({
+            name: values.categoryName.trim(),
+            description: `Created during product creation: ${values.name}`,
+          });
+          finalCategoryId = newCategory.data.id;
+        } catch (error) {
+          throw new Error(`Failed to create category: ${error.message}`);
+        }
+      }
+      
       // Sanitize form data - convert empty strings to undefined for optional fields
       const productData = {
         ...values,
+        categoryId: finalCategoryId,
         barcode: values.barcode?.trim() || undefined,
         description: values.description?.trim() || undefined,
         location: values.location?.trim() || undefined,
@@ -244,6 +299,9 @@ const Products = () => {
         currentStock: Number(values.currentStock) || 0,
         tags: Array.isArray(values.tags) ? values.tags : []
       };
+      
+      // Remove categoryName from product data since backend expects categoryId
+      delete productData.categoryName;
       
       // If there's an image file, use FormData to handle multipart/form-data
       if (imageFile) {
@@ -1315,7 +1373,64 @@ const Products = () => {
                     />
                   </div>
                   
-                  {/* Category field removed */}
+                  {/* Category Autocomplete Field */}
+                  <FormField
+                    control={form.control}
+                    name="categoryName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Category</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              {...field}
+                              placeholder="Type to search or create category..."
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                                setShowCategorySuggestions(e.target.value.length > 0);
+                              }}
+                              onFocus={() => setShowCategorySuggestions(field.value.length > 0)}
+                              onBlur={() => {
+                                // Small delay to allow click events on suggestions to fire
+                                setTimeout(() => setShowCategorySuggestions(false), 200);
+                              }}
+                            />
+                            {showCategorySuggestions && (
+                              <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                {categories.filter(cat => 
+                                  cat.name.toLowerCase().includes(field.value.toLowerCase())
+                                ).map(category => (
+                                  <div
+                                    key={category.id}
+                                    className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                                    onClick={() => {
+                                      field.onChange(category.name);
+                                      setShowCategorySuggestions(false);
+                                    }}
+                                  >
+                                    {category.name}
+                                  </div>
+                                ))}
+                                {/* Show create new category option if no exact match */}
+                                {categories.filter(cat => 
+                                  cat.name.toLowerCase().includes(field.value.toLowerCase())
+                                ).length === 0 && field.value && (
+                                  <div className="px-3 py-2 text-gray-500">
+                                    <div className="font-medium">Create new category: "{field.value}"</div>
+                                    <div className="text-sm">Will be created when you save the product</div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          Start typing to see existing categories or create a new one
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   
                   <FormField
                     control={form.control}
