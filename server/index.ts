@@ -20,8 +20,9 @@ import logger from './utils/logger';
 // Load environment variables from .env file
 dotenv.config();
 
-// Use environment variable or default to production
-const NODE_ENV = process.env.NODE_ENV || 'production';
+// Force development mode for testing
+const NODE_ENV = 'development';
+process.env.NODE_ENV = 'development';
 
 // Initialize database storage - wait for it to complete
 import { storage } from './storage';
