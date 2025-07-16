@@ -98,7 +98,7 @@ function AuthenticatedRouter() {
           <Route path="/product-barcode/:id" component={ProductBarcode} />
           <Route path="/unshipped-items" component={UnshippedItems} />
           <Route path="/orders/unshipped-items" component={UnshippedItems} />
-          <Route path="/products" component={ProductsShopify} />
+          <Route path="/products" component={Products} />
           <Route path="/inventory" component={Inventory} />
           <Route path="/inventory-predictions" component={InventoryPredictions} />
           <Route path="/production" component={Production} />
@@ -122,7 +122,8 @@ function AuthenticatedRouter() {
         <Route path="/orders" component={Orders} />
         <Route path="/order-quality" component={OrderQuality} />
         <Route path="/order-errors" component={OrderQuality} />
-        <Route path="/products" component={ProductsShopify} />
+        <Route path="/products" component={Products} />
+        <Route path="/products-shopify" component={ProductsShopify} />
         <Route path="/categories" component={Categories} />
         <Route path="/customers" component={Customers} />
         <Route path="/inventory" component={Inventory} />
