@@ -4,6 +4,14 @@
 A comprehensive warehouse management system with order management, inventory tracking, supplier invoice/payment management, and shipping functionality. Built with React frontend and Express backend using PostgreSQL database.
 
 ## Recent Changes
+- **July 16, 2025**: Implemented category autocomplete system in product creation
+  - **Product Form Enhancement**: Added category autocomplete field with real-time suggestions from database
+  - **Category Creation**: System automatically creates new categories when typed names don't exist
+  - **API Integration**: Updated product creation to handle category lookup and creation seamlessly
+  - **Schema Updates**: Modified ProductsShopify form to include categoryName field with proper validation
+  - **User Experience**: Users can now type to search existing categories or create new ones instantly
+  - **Database Integration**: Category queries and mutations properly integrated with PostgreSQL storage
+  - **Route Cleanup**: Removed duplicate Products.tsx page, consolidated to use only ProductsShopify.tsx
 - **June 28, 2025**: Successfully deployed to production with complete daily report customization system
   - **Production Deployment**: Application switched to production mode and deployed on Replit
   - **Daily Report Testing**: Added test button functionality for immediate daily report verification
