@@ -59,7 +59,7 @@ interface Category {
   color?: string;
 }
 
-// Form schema with category selection
+// Form schema with category input
 const productFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   sku: z.string().min(1, "SKU is required"),
@@ -71,8 +71,7 @@ const productFormSchema = z.object({
   unitsPerBox: z.coerce.number().min(1, "Units per box must be at least 1").optional(),
   imagePath: z.string().optional(),
   tags: z.array(z.string()).optional().default([]),
-  categoryId: z.coerce.number().min(1, "Category is required"),
-  newCategoryName: z.string().optional(),
+  categoryName: z.string().min(1, "Category is required"),
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
@@ -98,8 +97,7 @@ export default function Products() {
       unitsPerBox: 1,
       imagePath: "",
       tags: [],
-      categoryId: categories.length > 0 ? categories[0].id : 1,
-      newCategoryName: "",
+      categoryName: "",
     },
   });
 
@@ -116,8 +114,8 @@ export default function Products() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState("details");
-  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState("");
+  const [categoryInput, setCategoryInput] = useState("");
+  const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
 
   // Query: Get all products
   const { data: products = [], isLoading } = useQuery({
@@ -242,13 +240,21 @@ export default function Products() {
 
   const createProductMutation = useMutation({
     mutationFn: async (values: ProductFormValues) => {
-      let finalCategoryId = values.categoryId;
+      let finalCategoryId: number;
       
-      // If user wants to create a new category, do that first
-      if (values.newCategoryName && values.newCategoryName.trim()) {
+      // Look for existing category by name
+      const existingCategory = categories.find(cat => 
+        cat.name.toLowerCase() === values.categoryName.toLowerCase()
+      );
+      
+      if (existingCategory) {
+        // Use existing category
+        finalCategoryId = existingCategory.id;
+      } else {
+        // Create new category
         try {
           const newCategory = await createCategoryMutation.mutateAsync({
-            name: values.newCategoryName.trim(),
+            name: values.categoryName.trim(),
             description: `Created during product creation: ${values.name}`,
           });
           finalCategoryId = newCategory.data.id;
@@ -264,8 +270,8 @@ export default function Products() {
         tags: Array.isArray(values.tags) ? values.tags : []
       };
       
-      // Remove newCategoryName from product data since it's not needed for the product
-      delete productData.newCategoryName;
+      // Remove categoryName from product data since backend expects categoryId
+      delete productData.categoryName;
       
       // If there's an image file, don't send it via JSON
       // The server expects multipart form data for file uploads
@@ -843,6 +849,7 @@ export default function Products() {
                       unitsPerBox: 1,
                       imagePath: "",
                       tags: [],
+                      categoryName: "",
                     });
                     setImagePreview(null);
                     setImageFile(null);
@@ -1185,6 +1192,69 @@ export default function Products() {
                   )}
                 />
               </div>
+              
+              {/* Category Input with Autocomplete */}
+              <FormField
+                control={form.control}
+                name="categoryName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input 
+                          placeholder="Type category name or select from suggestions"
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e.target.value);
+                            setShowCategorySuggestions(e.target.value.length > 0);
+                          }}
+                          onFocus={() => setShowCategorySuggestions(field.value.length > 0)}
+                          onBlur={() => {
+                            // Small delay to allow click events on suggestions to fire
+                            setTimeout(() => setShowCategorySuggestions(false), 200);
+                          }}
+                        />
+                        {showCategorySuggestions && (
+                          <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                            {categories
+                              .filter(cat => 
+                                cat.name.toLowerCase().includes(field.value.toLowerCase())
+                              )
+                              .map(category => (
+                                <div
+                                  key={category.id}
+                                  className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                                  onClick={() => {
+                                    field.onChange(category.name);
+                                    setShowCategorySuggestions(false);
+                                  }}
+                                >
+                                  <div className="font-medium">{category.name}</div>
+                                  {category.description && (
+                                    <div className="text-sm text-gray-500">{category.description}</div>
+                                  )}
+                                </div>
+                              ))}
+                            {categories.filter(cat => 
+                              cat.name.toLowerCase().includes(field.value.toLowerCase())
+                            ).length === 0 && field.value && (
+                              <div className="px-3 py-2 text-gray-500">
+                                <div className="font-medium">Create new category: "{field.value}"</div>
+                                <div className="text-sm">Will be created when you save the product</div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      Start typing to see existing categories or create a new one
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField

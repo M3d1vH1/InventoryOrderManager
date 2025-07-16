@@ -2997,15 +2997,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Modified category endpoints for backward compatibility with simplified system
   app.get('/api/categories', async (req, res) => {
     try {
-      // Return a single default category for backward compatibility
-      res.json([
-        { 
-          id: 1, 
-          name: 'All Products',
-          description: 'Default category for all products in the simplified system',
-          createdAt: new Date()
-        }
-      ]);
+      const categories = await storage.getAllCategories();
+      res.json({
+        success: true,
+        data: categories
+      });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -3032,12 +3028,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // In the simplified system, categories can't be created, updated or deleted
   app.post('/api/categories', isAuthenticated, hasRole(['admin']), async (req, res) => {
     try {
-      // No new categories can be created in the simplified system
-      res.status(403).json({ 
-        message: 'Category creation is disabled in the simplified system' 
+      const { name, description, color } = req.body;
+      
+      if (!name || !name.trim()) {
+        return res.status(400).json({ 
+          message: 'Category name is required' 
+        });
+      }
+      
+      // Check if category already exists
+      const categories = await storage.getAllCategories();
+      const existingCategory = categories.find(cat => 
+        cat.name.toLowerCase() === name.toLowerCase()
+      );
+      
+      if (existingCategory) {
+        return res.status(409).json({ 
+          message: 'Category with this name already exists' 
+        });
+      }
+      
+      const newCategory = await storage.createCategory({
+        name: name.trim(),
+        description: description?.trim() || null,
+        color: color?.trim() || null
+      });
+      
+      res.status(201).json({
+        success: true,
+        data: newCategory
       });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
