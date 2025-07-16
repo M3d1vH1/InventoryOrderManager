@@ -115,15 +115,15 @@ export const insertProductSchema = createInsertSchema(products)
       z.string().optional()
     ),
     barcode: z.preprocess(
-      (val) => val === null || val === undefined ? undefined : val,
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
       z.string().optional()
     ),
     location: z.preprocess(
-      (val) => val === null || val === undefined ? undefined : val,
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
       z.string().optional()
     ),
     description: z.preprocess(
-      (val) => val === null || val === undefined ? undefined : val,
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
       z.string().optional()
     ),
     unitsPerBox: z.preprocess(

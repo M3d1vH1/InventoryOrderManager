@@ -268,24 +268,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .int('Minimum stock level must be an integer')
       .min(0, 'Minimum stock level cannot be negative')
       .max(10000, 'Minimum stock level cannot exceed 10,000'),
-    barcode: z.string()
-      .min(8, 'Barcode must be at least 8 characters')
-      .max(20, 'Barcode must not exceed 20 characters')
-      .regex(/^[0-9]+$/, 'Barcode can only contain numbers')
-      .optional(),
-    description: z.string()
-      .max(1000, 'Description must not exceed 1000 characters')
-      .trim()
-      .optional(),
-    location: z.string()
-      .max(100, 'Location must not exceed 100 characters')
-      .trim()
-      .optional(),
-    unitsPerBox: z.number()
-      .int('Units per box must be an integer')
-      .positive('Units per box must be positive')
-      .max(1000, 'Units per box cannot exceed 1,000')
-      .optional(),
+    barcode: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string()
+        .min(8, 'Barcode must be at least 8 characters')
+        .max(20, 'Barcode must not exceed 20 characters')
+        .regex(/^[0-9]+$/, 'Barcode can only contain numbers')
+        .optional()
+    ),
+    description: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string()
+        .max(1000, 'Description must not exceed 1000 characters')
+        .trim()
+        .optional()
+    ),
+    location: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.string()
+        .max(100, 'Location must not exceed 100 characters')
+        .trim()
+        .optional()
+    ),
+    unitsPerBox: z.preprocess(
+      (val) => val === null || val === undefined || val === '' ? undefined : val,
+      z.number()
+        .int('Units per box must be an integer')
+        .positive('Units per box must be positive')
+        .max(1000, 'Units per box cannot exceed 1,000')
+        .optional()
+    ),
     tags: z.array(z.string().trim().min(1)).optional().default([])
   });
 

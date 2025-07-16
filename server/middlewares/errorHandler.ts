@@ -72,11 +72,16 @@ export function globalErrorHandler(
   };
 
   if (process.env.NODE_ENV === 'production') {
-    // Production response - minimal information
+    // Production response - minimal information for server errors, detailed for client errors
     if (status >= 500) {
       response.message = 'Internal Server Error';
     } else {
       response.message = message;
+      
+      // Include validation details for 400 level errors to help users understand what went wrong
+      if (status >= 400 && status < 500 && err.details) {
+        response.details = err.details;
+      }
     }
   } else {
     // Development response - detailed information
