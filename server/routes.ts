@@ -474,6 +474,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
   ]);
   
   app.post('/api/products', [
+    // Add middleware to handle FormData parsing before validation
+    (req: Request, res: Response, next: NextFunction) => {
+      // If this is a FormData request, we need to parse it differently
+      if (req.is('multipart/form-data')) {
+        // Parse FormData fields into req.body
+        const parsedBody: any = {};
+        
+        // Copy all form fields to body
+        Object.keys(req.body).forEach(key => {
+          let value = req.body[key];
+          
+          // Handle tags specially
+          if (key === 'tags' && typeof value === 'string') {
+            try {
+              // Try to parse as JSON first
+              parsedBody[key] = JSON.parse(value);
+            } catch {
+              // If that fails, check if it's empty array string
+              if (value === '[]') {
+                parsedBody[key] = [];
+              } else {
+                parsedBody[key] = [value];
+              }
+            }
+          } else if (key === 'tagsJson') {
+            // Skip tagsJson, it's handled above
+            return;
+          } else {
+            // Convert string numbers to actual numbers
+            if (typeof value === 'string' && /^\d+$/.test(value)) {
+              parsedBody[key] = parseInt(value, 10);
+            } else {
+              parsedBody[key] = value;
+            }
+          }
+        });
+        
+        // Handle tags[] array format
+        if (req.body['tags[]']) {
+          const tagArray = Array.isArray(req.body['tags[]']) ? req.body['tags[]'] : [req.body['tags[]']];
+          parsedBody.tags = tagArray;
+        }
+        
+        // Ensure required fields are present
+        if (!parsedBody.categoryId) {
+          parsedBody.categoryId = 1; // Default category
+        }
+        
+        req.body = parsedBody;
+        
+        console.log('Parsed FormData body:', JSON.stringify(req.body, null, 2));
+      }
+      
+      next();
+    },
     validateRequest({ body: createProductSchema }),
     asyncHandler(async (req: Request, res: Response) => {
       const productData = req.body;
