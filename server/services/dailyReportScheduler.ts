@@ -1,6 +1,8 @@
 import * as cron from 'node-cron';
 import { IStorage } from '../storage';
 import { createSlackService } from './notifications/slackService';
+import * as fs from 'fs';
+import * as path from 'path';
 
 interface DailyMetrics {
   newOrders: Array<{ orderNumber: string; customerName: string }>;
@@ -52,33 +54,52 @@ export class DailyReportScheduler {
       return; // Daily reports are disabled
     }
 
+    // Get current time in Athens timezone
     const now = new Date();
-    const currentTime = now.toTimeString().slice(0, 5); // HH:mm format
+    const athensTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Athens' }));
+    const currentTime = athensTime.toTimeString().slice(0, 5); // HH:mm format
     const reportTime = settings.dailyReportTime || '17:30';
 
-    // Check if today is a selected report day
+    // Check if today is a selected report day (using Athens timezone)
     const daysOfWeek = settings.dailyReportDaysOfWeek || '1,2,3,4,5'; // Default: weekdays
     const selectedDays = daysOfWeek.split(',').map(d => parseInt(d.trim()));
-    const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const currentDay = athensTime.getDay(); // 0 = Sunday, 1 = Monday, etc.
     
     if (!selectedDays.includes(currentDay)) {
       return; // Not a report day
     }
 
+    // Debug logging
+    console.log(`[DailyReportScheduler] Checking at ${currentTime} Athens time (target: ${reportTime})`);
+    
     // Check if current time matches report time (within same minute)
-    if (currentTime === reportTime) {
-      // Check if we already sent a report today
-      const today = now.toISOString().split('T')[0];
-      const lastReportKey = `daily_report_${today}`;
+    // OR if we're past the report time and haven't sent today's report yet
+    const reportHour = parseInt(reportTime.split(':')[0]);
+    const reportMinute = parseInt(reportTime.split(':')[1]);
+    const currentHour = parseInt(currentTime.split(':')[0]);
+    const currentMinutes = parseInt(currentTime.split(':')[1]);
+    
+    const isPastReportTime = currentHour > reportHour || (currentHour === reportHour && currentMinutes >= reportMinute);
+    
+    if (currentTime === reportTime || isPastReportTime) {
+      // Check if we already sent a report today (using Athens timezone date)
+      const today = athensTime.toISOString().split('T')[0];
       
-      // Simple check to prevent duplicate reports (you might want to store this in DB)
+      // Check if report was already sent today
+      const reportSentToday = await this.checkReportSentToday(today);
+      if (reportSentToday) {
+        return; // Report already sent today
+      }
+      
+      // Simple check to prevent duplicate reports
       if (this.isRunning) return;
       
       this.isRunning = true;
       
       try {
         await this.sendDailyReport(settings);
-        console.log(`[DailyReportScheduler] Daily report sent at ${currentTime}`);
+        await this.markReportSentToday(today);
+        console.log(`[DailyReportScheduler] Daily report sent at ${currentTime} Athens time`);
       } catch (error) {
         console.error('[DailyReportScheduler] Failed to send daily report:', error);
       } finally {
@@ -107,7 +128,10 @@ export class DailyReportScheduler {
   }
 
   private async collectDailyMetrics(): Promise<DailyMetrics> {
-    const today = new Date();
+    // Use Athens timezone for date calculations
+    const now = new Date();
+    const athensTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Athens' }));
+    const today = new Date(athensTime);
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -281,6 +305,35 @@ export class DailyReportScheduler {
     } catch (error) {
       console.error('[DailyReportScheduler] Test report failed:', error);
       return false;
+    }
+  }
+
+  private async checkReportSentToday(dateString: string): Promise<boolean> {
+    try {
+      // Simple file-based tracking for now
+      const trackingFile = path.join(process.cwd(), 'temp', `daily_report_${dateString}.sent`);
+      
+      return fs.existsSync(trackingFile);
+    } catch (error) {
+      console.error('[DailyReportScheduler] Error checking report status:', error);
+      return false;
+    }
+  }
+
+  private async markReportSentToday(dateString: string): Promise<void> {
+    try {
+      // Simple file-based tracking for now
+      const tempDir = path.join(process.cwd(), 'temp');
+      
+      // Ensure temp directory exists
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+      
+      const trackingFile = path.join(tempDir, `daily_report_${dateString}.sent`);
+      fs.writeFileSync(trackingFile, new Date().toISOString());
+    } catch (error) {
+      console.error('[DailyReportScheduler] Error marking report as sent:', error);
     }
   }
 }
