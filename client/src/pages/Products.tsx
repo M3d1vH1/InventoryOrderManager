@@ -47,9 +47,19 @@ interface Product {
   unitsPerBox?: number;
   imagePath?: string;
   tags?: string[];
+  categoryId?: number;
+  category?: Category;
 }
 
-// Simplified form schema without categories
+// Interface for a Category
+interface Category {
+  id: number;
+  name: string;
+  description?: string;
+  color?: string;
+}
+
+// Form schema with category selection
 const productFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   sku: z.string().min(1, "SKU is required"),
@@ -61,7 +71,8 @@ const productFormSchema = z.object({
   unitsPerBox: z.coerce.number().min(1, "Units per box must be at least 1").optional(),
   imagePath: z.string().optional(),
   tags: z.array(z.string()).optional().default([]),
-  // Removed categoryId field
+  categoryId: z.coerce.number().min(1, "Category is required"),
+  newCategoryName: z.string().optional(),
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
@@ -87,6 +98,8 @@ export default function Products() {
       unitsPerBox: 1,
       imagePath: "",
       tags: [],
+      categoryId: categories.length > 0 ? categories[0].id : 1,
+      newCategoryName: "",
     },
   });
 
@@ -103,10 +116,25 @@ export default function Products() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState("details");
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
 
   // Query: Get all products
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['/api/products'],
+    select: (data: any) => {
+      // Handle API response structure: { success: true, data: [...] }
+      if (data && typeof data === 'object' && 'data' in data) {
+        return Array.isArray(data.data) ? data.data : [];
+      }
+      // Fallback for direct array response
+      return Array.isArray(data) ? data : [];
+    }
+  });
+
+  // Query: Get all categories
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+    queryKey: ['/api/categories'],
     select: (data: any) => {
       // Handle API response structure: { success: true, data: [...] }
       if (data && typeof data === 'object' && 'data' in data) {
@@ -195,14 +223,49 @@ export default function Products() {
   });
 
   // Mutations
+  // Create category mutation
+  const createCategoryMutation = useMutation({
+    mutationFn: async (categoryData: { name: string; description?: string }) => {
+      return apiRequest('/api/categories', {
+        method: 'POST',
+        body: JSON.stringify(categoryData),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      toast({
+        title: "Category Created",
+        description: "New category has been created successfully.",
+      });
+    },
+  });
+
   const createProductMutation = useMutation({
     mutationFn: async (values: ProductFormValues) => {
-      // Add default categoryId=1 for compatibility and ensure tags is always an array
+      let finalCategoryId = values.categoryId;
+      
+      // If user wants to create a new category, do that first
+      if (values.newCategoryName && values.newCategoryName.trim()) {
+        try {
+          const newCategory = await createCategoryMutation.mutateAsync({
+            name: values.newCategoryName.trim(),
+            description: `Created during product creation: ${values.name}`,
+          });
+          finalCategoryId = newCategory.data.id;
+        } catch (error) {
+          throw new Error(`Failed to create category: ${error.message}`);
+        }
+      }
+      
+      // Prepare product data and ensure tags is always an array
       const productData = { 
         ...values, 
-        categoryId: 1,
+        categoryId: finalCategoryId,
         tags: Array.isArray(values.tags) ? values.tags : []
       };
+      
+      // Remove newCategoryName from product data since it's not needed for the product
+      delete productData.newCategoryName;
       
       // If there's an image file, don't send it via JSON
       // The server expects multipart form data for file uploads
