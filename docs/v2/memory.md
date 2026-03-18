@@ -89,8 +89,15 @@ Migrate from Replit to Mac Mini M4 with:
 | 16 | MILESTONE_10_BACKUP.md | P2 | Nightly pg_dump → Backblaze B2, 7-day retention |
 | 17 | MILESTONE_11_DATA_MIGRATION.md | P1 | One-time Neon → Mac Mini data transfer |
 | 18 | MILESTONE_12_FRONTEND_CLEANUP.md | P3 | Error boundaries, remove remaining debug code |
+| 19 | **MILESTONE_19_SIDEBAR_FIX.md** | **P1** | **Fix window.location.href + DOM mutations in Sidebar; add flyout for collapsed mode** |
+| 20 | **MILESTONE_20_WAREHOUSE_PICKING_UX.md** | **P1** | **Mobile-first picking UI: card layout, progress bar, audio feedback, sticky CTA** |
+| 21 | **MILESTONE_21_DASHBOARD_V2.md** | **P2** | **Fix mock production stats, wire pagination, financial summary row, reorder alerts widget** |
+| 22 | **MILESTONE_22_ORDER_FORM_STREAMLINE.md** | **P2** | **Move New Order to /orders/new route; replace 12-field inline customer form with Quick Create popover** |
+| 23 | **MILESTONE_23_TABLE_IMPROVEMENTS.md** | **P2** | **Server-side pagination + sort for Customers/Products; Reports time range fix; reusable EmptyState** |
+| 24 | **MILESTONE_24_SETTINGS_REORGANIZATION.md** | **P3** | **Group 9 flat Settings tabs into 4 sections; remove theming controls from Login page** |
+| 25 | **MILESTONE_25_NOTIFICATION_PERSISTENCE.md** | **P3** | **Persist notifications to localStorage + DB; financial alert polling; remove console.log** |
 
-**Bold rows = new milestones added from codebase review (steps 8–14)**
+**Bold rows = new milestones added from codebase review (steps 8–14 and 19–25)**
 
 ### Why This Order
 
@@ -396,4 +403,13 @@ docs/v2/
 │  ── GO-LIVE ────────────────────────────────────────────────────────────────
 ├── MILESTONE_11_DATA_MIGRATION.md      ← Step 17: One-time Replit → Mac Mini migration
 └── MILESTONE_12_FRONTEND_CLEANUP.md    ← Step 18: Final polish + error boundaries
+│
+│  ── UX IMPROVEMENTS ───────────────────────────────────────────────────────
+├── MILESTONE_19_SIDEBAR_FIX.md         ← Step 19: Fix Sidebar nav (window.location.href, DOM mutations, flyout)
+├── MILESTONE_20_WAREHOUSE_PICKING_UX.md← Step 20: Mobile-first pick list (cards, progress, audio, sticky CTA)
+├── MILESTONE_21_DASHBOARD_V2.md        ← Step 21: Dashboard: live stats, pagination, financial row, reorder widget
+├── MILESTONE_22_ORDER_FORM_STREAMLINE.md← Step 22: New Order as full page; Quick Create Customer popover
+├── MILESTONE_23_TABLE_IMPROVEMENTS.md  ← Step 23: Server-side pagination/sort; EmptyState; remove debug routes
+├── MILESTONE_24_SETTINGS_REORGANIZATION.md← Step 24: 4-section Settings; remove Login theming controls
+└── MILESTONE_25_NOTIFICATION_PERSISTENCE.md← Step 25: Persist notifications; financial alerts; remove console.log
 ```
