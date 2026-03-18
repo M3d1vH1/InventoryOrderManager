@@ -106,6 +106,9 @@ Migrate from Replit to Mac Mini M4 with:
 - **API standardization (11) before tests (14):** Tests should test the stable, final API shape — not an inconsistent in-progress one.
 - **Tests (14) before CI/CD (15):** The CI pipeline runs tests. Tests must exist first.
 - **Data migration (17) near end:** Don't migrate real data onto a system that still has open security issues.
+- **Frontend cleanup (18) before UX milestones (19–25):** Clean up debug pages and error boundaries before building on top of the frontend.
+- **Sidebar fix (19) before picking UX (20) and order form (22):** Both depend on correct navigation — fix routing first.
+- **Steps 21, 23, 24, 25 are parallelizable** after their dependencies are met — they touch independent parts of the app.
 
 ---
 

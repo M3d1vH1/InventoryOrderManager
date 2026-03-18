@@ -165,6 +165,19 @@ amphoreus-v2/
 | 10 | Backup Strategy | pg_dump + rclone to Backblaze B2 | **P2** |
 | 11 | Data Migration | Replit → Mac Mini pg_dump/restore | **P3** |
 | 12 | Frontend Cleanup | Remove debug pages, fix form issues | **P3** |
+| 13 | Auth Hardening | Add auth to all unprotected routes, delete debug endpoints | **P1** |
+| 14 | API Standardization | Consistent { success, data, pagination } response shape | **P2** |
+| 15 | Query Optimization | Eliminate N+1 queries, push pagination/search into SQL | **P2** |
+| 16 | Structured Logging | Replace 165+ console.log with Winston | **P2** |
+| 17 | Shared Type Cleanup | Single-source types from Drizzle schema, fix role mismatch | **P3** |
+| 18 | Testing Foundation | Vitest + integration tests for order lifecycle, payments | **P2** |
+| 19 | Sidebar Fix | Fix broken navigation (window.location.href, DOM mutations, collapsed flyout) | **P1** |
+| 20 | Warehouse Picking UX | Mobile-first picking: card layout, progress bar, audio feedback | **P1** |
+| 21 | Dashboard V2 | Fix mock stats, wire pagination, financial summary, reorder alerts | **P2** |
+| 22 | Order Form Streamline | Route-based create, Quick Create customer popover | **P2** |
+| 23 | Table Improvements | Server-side pagination/sort, EmptyState component | **P2** |
+| 24 | Settings Reorganization | 4-section layout, remove Login theming controls | **P3** |
+| 25 | Notification Persistence | localStorage + DB persistence, financial alert polling | **P3** |
 
 ---
 
@@ -234,3 +247,16 @@ These steps require human action before or during the build:
 - [MILESTONE_10_BACKUP.md](./MILESTONE_10_BACKUP.md)
 - [MILESTONE_11_DATA_MIGRATION.md](./MILESTONE_11_DATA_MIGRATION.md)
 - [MILESTONE_12_FRONTEND_CLEANUP.md](./MILESTONE_12_FRONTEND_CLEANUP.md)
+- [MILESTONE_13_AUTH_HARDENING.md](./MILESTONE_13_AUTH_HARDENING.md)
+- [MILESTONE_14_API_STANDARDIZATION.md](./MILESTONE_14_API_STANDARDIZATION.md)
+- [MILESTONE_15_QUERY_OPTIMIZATION.md](./MILESTONE_15_QUERY_OPTIMIZATION.md)
+- [MILESTONE_16_STRUCTURED_LOGGING.md](./MILESTONE_16_STRUCTURED_LOGGING.md)
+- [MILESTONE_17_SHARED_TYPE_CLEANUP.md](./MILESTONE_17_SHARED_TYPE_CLEANUP.md)
+- [MILESTONE_18_TESTING_FOUNDATION.md](./MILESTONE_18_TESTING_FOUNDATION.md)
+- [MILESTONE_19_SIDEBAR_FIX.md](./MILESTONE_19_SIDEBAR_FIX.md)
+- [MILESTONE_20_WAREHOUSE_PICKING_UX.md](./MILESTONE_20_WAREHOUSE_PICKING_UX.md)
+- [MILESTONE_21_DASHBOARD_V2.md](./MILESTONE_21_DASHBOARD_V2.md)
+- [MILESTONE_22_ORDER_FORM_STREAMLINE.md](./MILESTONE_22_ORDER_FORM_STREAMLINE.md)
+- [MILESTONE_23_TABLE_IMPROVEMENTS.md](./MILESTONE_23_TABLE_IMPROVEMENTS.md)
+- [MILESTONE_24_SETTINGS_REORGANIZATION.md](./MILESTONE_24_SETTINGS_REORGANIZATION.md)
+- [MILESTONE_25_NOTIFICATION_PERSISTENCE.md](./MILESTONE_25_NOTIFICATION_PERSISTENCE.md)
