@@ -52,30 +52,53 @@ Migrate from Replit to Mac Mini M4 with:
 5. Cloudflare Tunnel for HTTPS without router port-forwarding
 6. DB schema hardened (FK constraints, CHECK constraints, triggers)
 7. Critical bug fixes (stock picking race condition, SKU update, image paths)
-8. CI/CD pipeline (GitHub Actions → SSH → docker compose build + restart)
-9. Automated nightly backup (pg_dump → rclone → Backblaze B2, 7-day retention)
-10. One-time data migration (Neon pg_dump → Mac Mini postgres restore)
+8. **Auth hardened** — most V1 routes are unauthenticated (public API)
+9. **Structured logging** — 165+ console.log replaced with Winston
+10. Routes split into domain modules
+11. **Consistent API response shape** across all 186 endpoints
+12. **Query optimization** — N+1 eliminated, pagination pushed to SQL
+13. **Shared TypeScript types** — single source of truth from Drizzle schema
+14. **Integration test suite** — order lifecycle, stock picking, payment triggers
+15. CI/CD pipeline (GitHub Actions → SSH → docker compose build + restart + tests)
+16. Automated nightly backup (pg_dump → rclone → Backblaze B2, 7-day retention)
+17. One-time data migration (Neon pg_dump → Mac Mini postgres restore)
 
 ---
 
 ## Milestone Map
 
-| # | File | Status | Priority | What It Does |
-|---|------|--------|----------|--------------|
-| 01 | MILESTONE_01_REPO_AND_DOCKER.md | Ready to implement | P1 | New repo + Dockerfile + docker-compose.yml |
-| 02 | MILESTONE_02_CLEAN_BUILD.md | Ready to implement | P1 | Remove @replit/* packages + vite.config fix |
-| 03 | MILESTONE_03_ENV_CONFIG.md | Ready to implement | P1 | .env.example + startup validation |
-| 04 | MILESTONE_04_REDIS_WIRING.md | Ready to implement | P1 | Wire ioredis into cacheManager.ts |
-| 05 | MILESTONE_05_GEOBLOCKING.md | Ready to implement | P1 | Remove geoip-lite, move to Cloudflare |
-| 06 | MILESTONE_06_DATABASE_SCHEMA.md | Ready to implement | P1 | SQL migration: reserved_stock + FK + triggers |
-| 07 | MILESTONE_07_BUG_FIXES.md | Ready to implement | P1 | Order picking fix + SKU fix + image fix |
-| 08 | MILESTONE_08_ROUTES_SPLIT.md | Ready to implement | P2 | Split 5,374-line routes.ts into domain modules |
-| 09 | MILESTONE_09_CI_CD.md | Ready to implement | P2 | GitHub Actions push-to-deploy |
-| 10 | MILESTONE_10_BACKUP.md | Ready to implement | P2 | Nightly pg_dump → Backblaze B2 |
-| 11 | MILESTONE_11_DATA_MIGRATION.md | Ready to implement | P1 | One-time Neon → Mac Mini data transfer |
-| 12 | MILESTONE_12_FRONTEND_CLEANUP.md | Ready to implement | P3 | Remove debug endpoints, error boundaries |
+### Execution Order (follow this sequence exactly)
 
-**Recommended build order:** 01 → 02 → 03 → 04 → 05 → 06 → 07 → 11 → 08 → 09 → 10 → 12
+| Step | File | Priority | What It Does |
+|------|------|----------|--------------|
+| 1 | MILESTONE_01_REPO_AND_DOCKER.md | P1 | New repo + Dockerfile + docker-compose.yml |
+| 2 | MILESTONE_02_CLEAN_BUILD.md | P1 | Remove @replit/* packages + vite.config fix |
+| 3 | MILESTONE_03_ENV_CONFIG.md | P1 | .env.example + startup validation (fail-fast on missing vars) |
+| 4 | MILESTONE_04_REDIS_WIRING.md | P1 | Wire ioredis into cacheManager.ts |
+| 5 | MILESTONE_05_GEOBLOCKING.md | P1 | Remove geoip-lite, move blocking to Cloudflare |
+| 6 | MILESTONE_06_DATABASE_SCHEMA.md | P1 | SQL migration: reserved_stock + FK + CHECK + triggers |
+| 7 | MILESTONE_07_BUG_FIXES.md | P1 | Stock picking race condition + SKU bug + image paths |
+| 8 | **MILESTONE_13_AUTH_HARDENING.md** | **P1** | **Add auth to all unprotected routes, delete debug endpoints, fix cookie.secure** |
+| 9 | **MILESTONE_16_STRUCTURED_LOGGING.md** | **P2** | **Replace 165+ console.log with Winston, sanitize passwords from logs** |
+| 10 | MILESTONE_08_ROUTES_SPLIT.md | P2 | Split 5,374-line routes.ts into 12 domain modules |
+| 11 | **MILESTONE_14_API_STANDARDIZATION.md** | **P2** | **Consistent { success, data, pagination } shape across all endpoints** |
+| 12 | **MILESTONE_15_QUERY_OPTIMIZATION.md** | **P2** | **Eliminate N+1 queries, push pagination/search into SQL** |
+| 13 | **MILESTONE_17_SHARED_TYPE_CLEANUP.md** | **P3** | **Single-source types from schema, fix role mismatch, delete .bak files** |
+| 14 | **MILESTONE_18_TESTING_FOUNDATION.md** | **P2** | **Vitest + integration tests for order lifecycle, stock picking, payments** |
+| 15 | MILESTONE_09_CI_CD.md | P2 | GitHub Actions push-to-deploy (now runs tests before deploying) |
+| 16 | MILESTONE_10_BACKUP.md | P2 | Nightly pg_dump → Backblaze B2, 7-day retention |
+| 17 | MILESTONE_11_DATA_MIGRATION.md | P1 | One-time Neon → Mac Mini data transfer |
+| 18 | MILESTONE_12_FRONTEND_CLEANUP.md | P3 | Error boundaries, remove remaining debug code |
+
+**Bold rows = new milestones added from codebase review (steps 8–14)**
+
+### Why This Order
+
+- **Auth hardening (8) before routes split (10):** Harden routes while they're still in one file — easier to audit. Reorganize only after they're secure.
+- **Logging (9) before CI/CD (15):** Production needs structured logs before the system goes live.
+- **API standardization (11) before tests (14):** Tests should test the stable, final API shape — not an inconsistent in-progress one.
+- **Tests (14) before CI/CD (15):** The CI pipeline runs tests. Tests must exist first.
+- **Data migration (17) near end:** Don't migrate real data onto a system that still has open security issues.
 
 ---
 
@@ -106,6 +129,33 @@ sku: z.preprocess(
 **Problem:** `server/api/imageUploadFix.ts` writes files to a path but returns a URL pointing to a symlink path. On Docker, symlinks don't work cross-container. Also: the URL is saved before confirming the file exists.
 
 **Fix:** `server/services/storageService.ts` — write file first, confirm it exists, then return the URL for DB storage. Serve files from `/api/files/products/:filename`.
+
+---
+
+## Additional V1 Security & Quality Issues (from codebase review)
+
+These are addressed in milestones 13–18:
+
+| Issue | Severity | Milestone |
+|---|---|---|
+| ~60 routes have no `isAuthenticated` guard — API is effectively public | CRITICAL | 13 |
+| `/api/debug/*` endpoints fire real Slack notifications unauthenticated | HIGH | 13 |
+| `cookie.secure: false` hardcoded in auth.ts:37 | HIGH | 13 |
+| Default `admin / admin123` created automatically in production | HIGH | 13 |
+| `userId: 1` fallback in 9 places corrupts audit trail silently | MEDIUM | 13 |
+| 165+ `console.log` in routes.ts — no structured logging | MEDIUM | 16 |
+| `req.body` (incl. passwords) logged in error handler | MEDIUM | 16 |
+| N+1 query on `GET /api/orders` — 100 orders = 101 queries | CRITICAL | 15 |
+| Full table loaded to memory, filtered in JS (search, customer history) | HIGH | 15 |
+| Application-level pagination — database never sees LIMIT/OFFSET | HIGH | 15 |
+| `createOrder` is non-atomic (TEMP order left on crash) | MEDIUM | 15 |
+| Three different API response shapes — frontend uses `as any` to handle | HIGH | 14 |
+| `POST /api/users` registered twice — second has no Zod validation | HIGH | 14 |
+| `req.user as any` used 10+ times — no type safety on session user | HIGH | 17 |
+| `'manager'` role in frontend type, not in backend schema | MEDIUM | 17 |
+| Order types redefined in 5+ components, diverge from DB schema | MEDIUM | 17 |
+| 5 `.bak` files committed to repo | LOW | 17 |
+| Zero test coverage — no test framework installed | CRITICAL | 18 |
 
 ---
 
@@ -314,18 +364,36 @@ These are needed to fill in the `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_PATH` GitH
 
 ```
 docs/v2/
-├── memory.md                          ← THIS FILE — load at session start
-├── MASTER_PLAN.md                     ← Full architecture overview + decisions log
-├── MILESTONE_01_REPO_AND_DOCKER.md    ← New repo + Docker stack
-├── MILESTONE_02_CLEAN_BUILD.md        ← Remove Replit artifacts
-├── MILESTONE_03_ENV_CONFIG.md         ← Env vars + startup validation
-├── MILESTONE_04_REDIS_WIRING.md       ← Wire Redis into cacheManager
-├── MILESTONE_05_GEOBLOCKING.md        ← Remove geoip-lite
-├── MILESTONE_06_DATABASE_SCHEMA.md    ← SQL migrations + schema hardening
-├── MILESTONE_07_BUG_FIXES.md          ← Stock picking + SKU + images
-├── MILESTONE_08_ROUTES_SPLIT.md       ← Split monolithic routes.ts
-├── MILESTONE_09_CI_CD.md              ← GitHub Actions deploy workflow
-├── MILESTONE_10_BACKUP.md             ← Nightly pg_dump to Backblaze B2
-├── MILESTONE_11_DATA_MIGRATION.md     ← One-time Replit → Mac Mini migration
-└── MILESTONE_12_FRONTEND_CLEANUP.md   ← Debug cleanup + error boundaries
+├── memory.md                           ← THIS FILE — load at session start
+├── MASTER_PLAN.md                      ← Full architecture overview + decisions log
+│
+│  ── INFRASTRUCTURE ──────────────────────────────────────────────────────────
+├── MILESTONE_01_REPO_AND_DOCKER.md     ← Step 1:  New repo + Docker stack
+├── MILESTONE_02_CLEAN_BUILD.md         ← Step 2:  Remove Replit artifacts
+├── MILESTONE_03_ENV_CONFIG.md          ← Step 3:  Env vars + startup validation
+├── MILESTONE_04_REDIS_WIRING.md        ← Step 4:  Wire Redis into cacheManager
+├── MILESTONE_05_GEOBLOCKING.md         ← Step 5:  Remove geoip-lite
+│
+│  ── DATABASE & CORE FIXES ──────────────────────────────────────────────────
+├── MILESTONE_06_DATABASE_SCHEMA.md     ← Step 6:  SQL migration: FK + CHECK + triggers
+├── MILESTONE_07_BUG_FIXES.md           ← Step 7:  Stock picking + SKU + images
+│
+│  ── SECURITY & QUALITY ─────────────────────────────────────────────────────
+├── MILESTONE_13_AUTH_HARDENING.md      ← Step 8:  Auth on all routes, delete debug endpoints
+├── MILESTONE_16_STRUCTURED_LOGGING.md  ← Step 9:  Replace console.log with Winston
+│
+│  ── CODE ORGANIZATION ──────────────────────────────────────────────────────
+├── MILESTONE_08_ROUTES_SPLIT.md        ← Step 10: Split 5374-line routes.ts
+├── MILESTONE_14_API_STANDARDIZATION.md ← Step 11: Consistent response shape
+├── MILESTONE_15_QUERY_OPTIMIZATION.md  ← Step 12: Eliminate N+1, SQL pagination
+├── MILESTONE_17_SHARED_TYPE_CLEANUP.md ← Step 13: Single-source types, fix role mismatch
+│
+│  ── TESTING & CI/CD ────────────────────────────────────────────────────────
+├── MILESTONE_18_TESTING_FOUNDATION.md  ← Step 14: Vitest + integration tests
+├── MILESTONE_09_CI_CD.md               ← Step 15: GitHub Actions (runs tests first)
+├── MILESTONE_10_BACKUP.md              ← Step 16: Nightly pg_dump → Backblaze B2
+│
+│  ── GO-LIVE ────────────────────────────────────────────────────────────────
+├── MILESTONE_11_DATA_MIGRATION.md      ← Step 17: One-time Replit → Mac Mini migration
+└── MILESTONE_12_FRONTEND_CLEANUP.md    ← Step 18: Final polish + error boundaries
 ```
