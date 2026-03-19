@@ -49,9 +49,7 @@ app.use(
   "/trpc/*",
   trpcServer({
     router: appRouter,
-    createContext: (opts, c) => {
-      return createContext(c as any);
-    },
+    createContext: (_opts, c) => createContext(c),
     onError({ error, path }) {
       logger.error(`tRPC error on ${path}`, {
         code: error.code,

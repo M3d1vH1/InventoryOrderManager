@@ -123,6 +123,8 @@ export const sessions = pgTable("sessions", {
   }).notNull(),
 });
 
+
+
 // ─── Categories ──────────────────────────────────────────────────────────────
 
 export const categories = pgTable("categories", {
