@@ -9,10 +9,8 @@ RUN npm ci
 COPY tsconfig.json tsconfig.server.json tsconfig.client.json vite.config.ts drizzle.config.ts ./
 COPY src/ src/
 
-# Build frontend (Vite) and backend (tsc)
 RUN npm run build
 
-# Prune dev dependencies
 RUN npm prune --production
 
 # ---------- Stage 2: Production ----------
@@ -24,15 +22,12 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy production node_modules and built output
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
 
-# Vite build output is served as static files
 COPY --from=builder /app/dist/client ./dist/client
 
-# Copy drizzle migrations for runtime migration
 COPY --from=builder /app/drizzle ./drizzle
 
 EXPOSE 3000

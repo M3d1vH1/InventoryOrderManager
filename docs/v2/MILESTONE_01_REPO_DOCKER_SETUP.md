@@ -470,7 +470,26 @@ export default defineConfig({
 });
 ```
 
-### 13. `.gitignore`
+### 13. `drizzle.config.ts` (stub for Milestone 01)
+
+This is a stub so TypeScript compiles cleanly in Milestone 01. The actual schema file (`src/server/db/schema.ts`) will be created in Milestone 02.
+
+```ts
+// /drizzle.config.ts
+import { defineConfig } from "drizzle-kit";
+import { env } from "./src/server/lib/env";
+
+export default defineConfig({
+  schema: "./src/server/db/schema.ts",
+  out: "./drizzle",
+  dialect: "postgresql",
+  dbCredentials: {
+    url: env.DATABASE_URL,
+  },
+});
+```
+
+### 14. `.gitignore`
 
 ```gitignore
 # /.gitignore
@@ -484,7 +503,7 @@ drizzle/meta/
 *.tsbuildinfo
 ```
 
-### 14. `.dockerignore`
+### 15. `.dockerignore`
 
 ```dockerignore
 # /.dockerignore
@@ -514,9 +533,9 @@ docs/
 | `.env.example` | Documented environment variable template |
 | `src/server/lib/env.ts` | Zod-validated env loader |
 | `vite.config.ts` | Vite config with API proxy |
+| `drizzle.config.ts` | Drizzle Kit config stub pointing at `src/server/db/schema.ts` (schema implemented in Milestone 02) |
 | `.gitignore` | Git ignore rules |
 | `.dockerignore` | Docker build context ignore rules |
-| `drizzle.config.ts` | Drizzle Kit config (created in Milestone 2) |
 
 ---
 
