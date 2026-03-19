@@ -14,12 +14,28 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "@server/*": ["src/server/*"],
-      "@client/*": ["src/client/*"],
-      "@shared/*": ["src/shared/*"]
+      "@server/*": [
+        "src/server/*"
+      ],
+      "@client/*": [
+        "src/client/*"
+      ],
+      "@shared/*": [
+        "src/shared/*"
+      ]
     },
-    "types": ["node"]
+    "jsx": "react-jsx",
+    "types": [
+      "node",
+      "vite/client"
+    ]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }
