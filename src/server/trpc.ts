@@ -7,6 +7,7 @@ export interface TRPCContext extends Record<string, unknown> {
   db: Database;
   user: SafeUser | null;
   sessionId: string | null;
+  honoCtx: HonoContext; // raw Hono context — used by auth router to set cookies
 }
 
 export async function createContext(c: HonoContext): Promise<TRPCContext> {
@@ -19,6 +20,7 @@ export async function createContext(c: HonoContext): Promise<TRPCContext> {
     db,
     user,
     sessionId,
+    honoCtx: c,
   };
 }
 
