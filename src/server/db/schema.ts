@@ -1,0 +1,551 @@
+// src/server/db/schema.ts
+import {
+  pgTable,
+  pgEnum,
+  text,
+  varchar,
+  integer,
+  boolean,
+  timestamp,
+  jsonb,
+  serial,
+  index,
+  uniqueIndex,
+  check,
+  primaryKey,
+  real,
+} from "drizzle-orm/pg-core";
+import { sql, relations } from "drizzle-orm";
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+export const userRoleEnum = pgEnum("user_role", [
+  "admin",
+  "front_office",
+  "warehouse",
+]);
+
+export const orderStatusEnum = pgEnum("order_status", [
+  "pending",
+  "confirmed",
+  "processing",
+  "picking",
+  "picked",
+  "partially_shipped",
+  "shipped",
+  "delivered",
+  "cancelled",
+  "on_hold",
+]);
+
+export const orderPriorityEnum = pgEnum("order_priority", [
+  "low",
+  "normal",
+  "high",
+  "urgent",
+]);
+
+export const shippingCompanyEnum = pgEnum("shipping_company", [
+  "brt",
+  "dhl",
+  "gls",
+  "sda",
+  "tnt",
+  "ups",
+  "fedex",
+  "poste_italiane",
+  "other",
+  "pickup",
+]);
+
+export const changelogActionEnum = pgEnum("changelog_action", [
+  "created",
+  "status_changed",
+  "items_modified",
+  "priority_changed",
+  "assigned",
+  "shipping_updated",
+  "note_added",
+  "partial_fulfillment_approved",
+  "quality_issue_reported",
+  "cancelled",
+  "restored",
+]);
+
+export const orderQualityTypeEnum = pgEnum("order_quality_type", [
+  "wrong_item",
+  "wrong_quantity",
+  "damaged",
+  "missing_item",
+  "labeling_error",
+  "packaging_error",
+  "other",
+]);
+
+export const inventoryChangeTypeEnum = pgEnum("inventory_change_type", [
+  "manual_adjustment",
+  "order_shipped",
+  "order_cancelled",
+  "return_received",
+  "stock_received",
+  "damaged",
+  "cycle_count",
+  "reservation",
+  "reservation_released",
+]);
+
+// ─── Users ───────────────────────────────────────────────────────────────────
+
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: varchar("username", { length: 50 }).notNull().unique(),
+  password: text("password").notNull(),
+  fullName: varchar("full_name", { length: 100 }).notNull(),
+  role: userRoleEnum("role").notNull().default("warehouse"),
+  email: varchar("email", { length: 255 }),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  lastLogin: timestamp("last_login", { withTimezone: true }),
+});
+
+// ─── Sessions (Lucia) ────────────────────────────────────────────────────────
+
+export const sessions = pgTable("sessions", {
+  id: text("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at", {
+    withTimezone: true,
+    mode: "date",
+  }).notNull(),
+});
+
+// ─── Categories ──────────────────────────────────────────────────────────────
+
+export const categories = pgTable("categories", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  color: varchar("color", { length: 7 }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// ─── Tags ────────────────────────────────────────────────────────────────────
+
+export const tags = pgTable("tags", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  color: varchar("color", { length: 7 }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// ─── Products ────────────────────────────────────────────────────────────────
+
+export const products = pgTable(
+  "products",
+  {
+    id: serial("id").primaryKey(),
+    name: varchar("name", { length: 255 }).notNull(),
+    sku: varchar("sku", { length: 50 }).notNull().unique(),
+    barcode: varchar("barcode", { length: 100 }),
+    categoryId: integer("category_id").references(() => categories.id, {
+      onDelete: "set null",
+    }),
+    description: text("description"),
+    minStockLevel: integer("min_stock_level").notNull().default(0),
+    currentStock: integer("current_stock").notNull().default(0),
+    reservedStock: integer("reserved_stock").notNull().default(0),
+    location: varchar("location", { length: 100 }),
+    unitsPerBox: integer("units_per_box"),
+    imagePath: text("image_path"),
+    lastStockUpdate: timestamp("last_stock_update", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("idx_products_sku").on(table.sku),
+    index("idx_products_category_id").on(table.categoryId),
+    index("idx_products_barcode").on(table.barcode),
+    check("chk_current_stock_non_negative", sql`${table.currentStock} >= 0`),
+    check("chk_reserved_stock_non_negative", sql`${table.reservedStock} >= 0`),
+    check(
+      "chk_reserved_lte_current",
+      sql`${table.reservedStock} <= ${table.currentStock}`
+    ),
+  ]
+);
+
+// ─── Product Tags (junction) ─────────────────────────────────────────────────
+
+export const productTags = pgTable(
+  "product_tags",
+  {
+    productId: integer("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    tagId: integer("tag_id")
+      .notNull()
+      .references(() => tags.id, { onDelete: "cascade" }),
+  },
+  (table) => [primaryKey({ columns: [table.productId, table.tagId] })]
+);
+
+// ─── Customers ───────────────────────────────────────────────────────────────
+
+export const customers = pgTable("customers", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  vatNumber: varchar("vat_number", { length: 50 }),
+  address: text("address"),
+  city: varchar("city", { length: 100 }),
+  state: varchar("state", { length: 100 }),
+  postalCode: varchar("postal_code", { length: 20 }),
+  country: varchar("country", { length: 100 }).default("IT"),
+  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 50 }),
+  contactPerson: varchar("contact_person", { length: 255 }),
+  shippingCompany: shippingCompanyEnum("shipping_company"),
+  preferredShippingCompany: shippingCompanyEnum("preferred_shipping_company"),
+  billingCompany: varchar("billing_company", { length: 255 }),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// ─── Orders ──────────────────────────────────────────────────────────────────
+
+export const orders = pgTable(
+  "orders",
+  {
+    id: serial("id").primaryKey(),
+    orderNumber: varchar("order_number", { length: 50 }).notNull().unique(),
+    customerId: integer("customer_id")
+      .notNull()
+      .references(() => customers.id),
+    orderDate: timestamp("order_date", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    estimatedShippingDate: timestamp("estimated_shipping_date", {
+      withTimezone: true,
+    }),
+    actualShippingDate: timestamp("actual_shipping_date", {
+      withTimezone: true,
+    }),
+    status: orderStatusEnum("status").notNull().default("pending"),
+    priority: orderPriorityEnum("priority").notNull().default("normal"),
+    area: varchar("area", { length: 100 }),
+    notes: text("notes"),
+    hasShippingDocument: boolean("has_shipping_document")
+      .notNull()
+      .default(false),
+    isPartialFulfillment: boolean("is_partial_fulfillment")
+      .notNull()
+      .default(false),
+    partialFulfillmentApproved: boolean("partial_fulfillment_approved")
+      .notNull()
+      .default(false),
+    partialFulfillmentApprovedById: integer(
+      "partial_fulfillment_approved_by_id"
+    ).references(() => users.id),
+    partialFulfillmentApprovedAt: timestamp(
+      "partial_fulfillment_approved_at",
+      { withTimezone: true }
+    ),
+    percentageShipped: real("percentage_shipped").default(0),
+    createdById: integer("created_by_id").references(() => users.id),
+    updatedById: integer("updated_by_id").references(() => users.id),
+    lastUpdated: timestamp("last_updated", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("idx_orders_status").on(table.status),
+    index("idx_orders_customer_id").on(table.customerId),
+    uniqueIndex("idx_orders_order_number").on(table.orderNumber),
+  ]
+);
+
+// ─── Order Items ─────────────────────────────────────────────────────────────
+
+export const orderItems = pgTable(
+  "order_items",
+  {
+    id: serial("id").primaryKey(),
+    orderId: integer("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    productId: integer("product_id")
+      .notNull()
+      .references(() => products.id),
+    quantity: integer("quantity").notNull(),
+    shippedQuantity: integer("shipped_quantity").notNull().default(0),
+    shippingStatus: varchar("shipping_status", { length: 50 }),
+    hasQualityIssues: boolean("has_quality_issues").notNull().default(false),
+    picked: boolean("picked").notNull().default(false),
+    actualQuantity: integer("actual_quantity"),
+    pickedAt: timestamp("picked_at", { withTimezone: true }),
+    pickedById: integer("picked_by_id").references(() => users.id),
+  },
+  (table) => [
+    index("idx_order_items_order_id").on(table.orderId),
+    index("idx_order_items_product_id").on(table.productId),
+    check("chk_quantity_positive", sql`${table.quantity} > 0`),
+    check(
+      "chk_shipped_quantity_non_negative",
+      sql`${table.shippedQuantity} >= 0`
+    ),
+  ]
+);
+
+// ─── Order Changelogs ────────────────────────────────────────────────────────
+
+export const orderChangelogs = pgTable("order_changelogs", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id")
+    .notNull()
+    .references(() => orders.id, { onDelete: "cascade" }),
+  userId: integer("user_id").references(() => users.id),
+  action: changelogActionEnum("action").notNull(),
+  timestamp: timestamp("timestamp", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  changes: jsonb("changes"),
+  previousValues: jsonb("previous_values"),
+  notes: text("notes"),
+});
+
+// ─── Unshipped Items ─────────────────────────────────────────────────────────
+
+export const unshippedItems = pgTable("unshipped_items", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id")
+    .notNull()
+    .references(() => orders.id),
+  productId: integer("product_id")
+    .notNull()
+    .references(() => products.id),
+  quantity: integer("quantity").notNull(),
+  customerId: integer("customer_id").references(() => customers.id),
+  originalOrderNumber: varchar("original_order_number", { length: 50 }),
+  date: timestamp("date", { withTimezone: true }).notNull().defaultNow(),
+  shipped: boolean("shipped").notNull().default(false),
+  shippedInOrderId: integer("shipped_in_order_id").references(() => orders.id),
+  shippedAt: timestamp("shipped_at", { withTimezone: true }),
+  authorized: boolean("authorized").notNull().default(false),
+  authorizedById: integer("authorized_by_id").references(() => users.id),
+  authorizedAt: timestamp("authorized_at", { withTimezone: true }),
+  notes: text("notes"),
+});
+
+// ─── Shipping Documents ──────────────────────────────────────────────────────
+
+export const shippingDocuments = pgTable("shipping_documents", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id")
+    .notNull()
+    .unique()
+    .references(() => orders.id, { onDelete: "cascade" }),
+  documentPath: text("document_path").notNull(),
+  documentType: varchar("document_type", { length: 50 }),
+  trackingNumber: varchar("tracking_number", { length: 100 }),
+  uploadDate: timestamp("upload_date", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  notes: text("notes"),
+});
+
+// ─── Order Quality ───────────────────────────────────────────────────────────
+
+export const orderQuality = pgTable("order_quality", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id")
+    .notNull()
+    .references(() => orders.id),
+  orderNumber: varchar("order_number", { length: 50 }),
+  reportDate: timestamp("report_date", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  reportedById: integer("reported_by_id").references(() => users.id),
+  errorType: orderQualityTypeEnum("error_type").notNull(),
+  description: text("description"),
+  affectedProductIds: jsonb("affected_product_ids").$type<number[]>(),
+  correctiveAction: text("corrective_action"),
+  inventoryAdjusted: boolean("inventory_adjusted").notNull().default(false),
+  resolved: boolean("resolved").notNull().default(false),
+  resolvedById: integer("resolved_by_id").references(() => users.id),
+  resolvedDate: timestamp("resolved_date", { withTimezone: true }),
+  rootCause: text("root_cause"),
+  preventiveMeasures: text("preventive_measures"),
+});
+
+// ─── Inventory Changes ──────────────────────────────────────────────────────
+
+export const inventoryChanges = pgTable(
+  "inventory_changes",
+  {
+    id: serial("id").primaryKey(),
+    productId: integer("product_id")
+      .notNull()
+      .references(() => products.id),
+    userId: integer("user_id").references(() => users.id),
+    changeType: inventoryChangeTypeEnum("change_type").notNull(),
+    previousQuantity: integer("previous_quantity").notNull(),
+    newQuantity: integer("new_quantity").notNull(),
+    quantityChanged: integer("quantity_changed").notNull(),
+    timestamp: timestamp("timestamp", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    reference: varchar("reference", { length: 255 }),
+    notes: text("notes"),
+  },
+  (table) => [
+    index("idx_inventory_changes_product_id").on(table.productId),
+    index("idx_inventory_changes_timestamp").on(table.timestamp),
+  ]
+);
+
+// ─── Barcode Scan Logs ───────────────────────────────────────────────────────
+
+export const barcodeScanLogs = pgTable("barcode_scan_logs", {
+  id: serial("id").primaryKey(),
+  barcode: varchar("barcode", { length: 100 }).notNull(),
+  scanType: varchar("scan_type", { length: 50 }),
+  timestamp: timestamp("timestamp", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  userId: integer("user_id").references(() => users.id),
+  productId: integer("product_id").references(() => products.id),
+  notes: text("notes"),
+  quantity: integer("quantity"),
+});
+
+// ─── Relations ───────────────────────────────────────────────────────────────
+
+export const usersRelations = relations(users, ({ many }) => ({
+  sessions: many(sessions),
+}));
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, {
+    fields: [sessions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  products: many(products),
+}));
+
+export const tagsRelations = relations(tags, ({ many }) => ({
+  productTags: many(productTags),
+}));
+
+export const productsRelations = relations(products, ({ one, many }) => ({
+  category: one(categories, {
+    fields: [products.categoryId],
+    references: [categories.id],
+  }),
+  productTags: many(productTags),
+  orderItems: many(orderItems),
+  inventoryChanges: many(inventoryChanges),
+}));
+
+export const productTagsRelations = relations(productTags, ({ one }) => ({
+  product: one(products, {
+    fields: [productTags.productId],
+    references: [products.id],
+  }),
+  tag: one(tags, {
+    fields: [productTags.tagId],
+    references: [tags.id],
+  }),
+}));
+
+export const customersRelations = relations(customers, ({ many }) => ({
+  orders: many(orders),
+}));
+
+export const ordersRelations = relations(orders, ({ one, many }) => ({
+  customer: one(customers, {
+    fields: [orders.customerId],
+    references: [customers.id],
+  }),
+  createdBy: one(users, {
+    fields: [orders.createdById],
+    references: [users.id],
+  }),
+  items: many(orderItems),
+  changelogs: many(orderChangelogs),
+  shippingDocument: one(shippingDocuments, {
+    fields: [orders.id],
+    references: [shippingDocuments.orderId],
+  }),
+}));
+
+export const orderItemsRelations = relations(orderItems, ({ one }) => ({
+  order: one(orders, {
+    fields: [orderItems.orderId],
+    references: [orders.id],
+  }),
+  product: one(products, {
+    fields: [orderItems.productId],
+    references: [products.id],
+  }),
+  pickedBy: one(users, {
+    fields: [orderItems.pickedById],
+    references: [users.id],
+  }),
+}));
+
+export const orderChangelogsRelations = relations(
+  orderChangelogs,
+  ({ one }) => ({
+    order: one(orders, {
+      fields: [orderChangelogs.orderId],
+      references: [orders.id],
+    }),
+    user: one(users, {
+      fields: [orderChangelogs.userId],
+      references: [users.id],
+    }),
+  })
+);
+
+export const inventoryChangesRelations = relations(
+  inventoryChanges,
+  ({ one }) => ({
+    product: one(products, {
+      fields: [inventoryChanges.productId],
+      references: [products.id],
+    }),
+    user: one(users, {
+      fields: [inventoryChanges.userId],
+      references: [users.id],
+    }),
+  })
+);
+
+export const barcodeScanLogsRelations = relations(
+  barcodeScanLogs,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [barcodeScanLogs.userId],
+      references: [users.id],
+    }),
+    product: one(products, {
+      fields: [barcodeScanLogs.productId],
+      references: [products.id],
+    }),
+  })
+);
