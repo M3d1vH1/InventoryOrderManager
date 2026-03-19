@@ -6,7 +6,10 @@ import path from "path";
 
 export default defineConfig({
   plugins: [
-    TanStackRouterVite(),
+    TanStackRouterVite({
+      routesDirectory: "routes",
+      generatedRouteTree: "routeTree.gen.ts",
+    }),
     react(),
     tailwindcss(),
   ],
