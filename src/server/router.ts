@@ -9,6 +9,7 @@ import { shippingRouter } from "./routers/shipping.js";
 import { settingsRouter } from "./routers/settings.js";
 import { barcodeRouter } from "./routers/barcode.js";
 import { dashboardRouter } from "./routers/dashboard.js";
+import { suppliersRouter } from "./routers/suppliers.js";
 
 export const appRouter = router({
   auth: authRouter,
@@ -21,6 +22,7 @@ export const appRouter = router({
   settings: settingsRouter,
   barcode: barcodeRouter,
   dashboard: dashboardRouter,
+  suppliers: suppliersRouter,
 });
 
 export type AppRouter = typeof appRouter;
