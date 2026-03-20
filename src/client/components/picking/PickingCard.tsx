@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { trpc } from "../../lib/trpc";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
-import { Card, CardContent, CardHeader } from "../ui/card";
-import { PickItemDialog } from "./PickItemDialog";
-import { CheckCircle, Package, ChevronDown, ChevronUp } from "lucide-react";
+import { Card, CardHeader, CardContent } from "../ui/card";
+import { PickItemCard } from "./PickItemCard";
+import { PickProgress } from "./PickProgress";
+import { CheckCircle, Package, ChevronDown, ChevronUp, Barcode, Loader2 } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 interface PickingOrder {
@@ -23,95 +24,191 @@ interface PickingOrder {
 
 export function PickingCard({ order }: { order: PickingOrder }) {
     const [expanded, setExpanded] = useState(false);
-    const [pickingItem, setPickingItem] = useState<{ id: number; qty: number } | null>(null);
-    const utils = trpc.useUtils();
+    const [localPickedIds, setLocalPickedIds] = useState<Set<number>>(new Set());
+    const [initialItems, setInitialItems] = useState<typeof order.unpickedItems>([]);
 
-    const pickAllMutation = trpc.picking.pickAll.useMutation({
-        onSuccess: () => utils.picking.queue.invalidate(),
+    const utils = trpc.useUtils();
+    const barcodeInputRef = useRef<HTMLInputElement>(null);
+
+    const pickItemMutation = trpc.picking.pickItem.useMutation({
+        onSuccess: (_, variables) => {
+            playPickSound();
+            setLocalPickedIds((prev) => {
+                const next = new Set(prev);
+                next.add(variables.orderItemId);
+                return next;
+            });
+            // We intentionally do NOT invalidate the queue here so the card stays on screen
+        },
     });
 
-    const progress = order.totalItems > 0
-        ? Math.round((order.pickedItems / order.totalItems) * 100)
-        : 0;
+    const markOrderPickedMutation = trpc.picking.pickAll.useMutation({
+        onSuccess: () => {
+            setExpanded(false);
+            utils.picking.queue.invalidate();
+        }
+    });
+
+    // Capture the initial items when expanded, so we don't lose them from view if queries refetch
+    // while we are picking.
+    useEffect(() => {
+        if (expanded) {
+            setInitialItems(order.unpickedItems);
+            setLocalPickedIds(new Set());
+            // Auto-focus barcode scanner
+            setTimeout(() => {
+                barcodeInputRef.current?.focus();
+            }, 100);
+        }
+    }, [expanded, order.unpickedItems]);
+
+    // Derived states
+    const itemsToDisplay = expanded ? initialItems : order.unpickedItems;
+    const currentPickedCount = order.pickedItems + localPickedIds.size;
+    const allItemsPicked = currentPickedCount >= order.totalItems;
+
+    function playPickSound() {
+        try {
+            const ctx = new window.AudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.setValueAtTime(880, ctx.currentTime);       // A5
+            osc.frequency.setValueAtTime(1174, ctx.currentTime + 0.1); // D6
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.3);
+        } catch {
+            // ignore — AudioContext not available
+        }
+    }
+
+    const handlePick = (item: typeof itemsToDisplay[0]) => {
+        if (localPickedIds.has(item.id) || pickItemMutation.isPending) return;
+        pickItemMutation.mutate({
+            orderItemId: item.id,
+            pickedQuantity: item.quantity,
+            hasQualityIssues: false,
+        });
+    };
+
+    const handleBarcodeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value.trim().toLowerCase();
+        if (!val) return;
+
+        // Find matching item by SKU
+        const match = itemsToDisplay.find(i => i.product?.sku?.toLowerCase() === val);
+        if (match) {
+            // Scroll to view & highlight
+            const el = document.getElementById(`pick-item-${match.id}`);
+            if (el) {
+                el.scrollIntoView({ behavior: "smooth", block: "center" });
+                el.classList.add("ring-4", "ring-primary");
+                setTimeout(() => el.classList.remove("ring-4", "ring-primary"), 1500);
+            }
+            e.target.value = ""; // clear input
+        }
+    };
+
+    const handleMarkOrderPicked = () => {
+        // Technically pickAll safely skips already picked items and marks the order if 100% done
+        markOrderPickedMutation.mutate({ orderId: order.id });
+    };
 
     return (
         <Card className={cn(
-            order.priority === "urgent" && "border-red-300 bg-red-50/50",
-            order.priority === "high" && "border-yellow-300 bg-yellow-50/50",
+            "overflow-hidden transition-all duration-300",
+            order.priority === "urgent" && "border-red-300 bg-red-50/10 dark:bg-red-900/10",
+            order.priority === "high" && "border-yellow-300 bg-yellow-50/10 dark:bg-yellow-900/10",
+            expanded && "shadow-lg border-primary/20",
+            allItemsPicked && expanded && "pb-24" // Extra padding to ensure scroll clears the sticky button
         )}>
-            <CardHeader className="pb-3 cursor-pointer select-none" onClick={() => setExpanded(!expanded)}>
-                <div className="flex items-center justify-between">
+            <CardHeader className="p-4 cursor-pointer select-none" onClick={() => setExpanded(!expanded)}>
+                <div className="flex items-start justify-between">
                     <div>
-                        <span className="font-mono font-bold text-lg">{order.orderNumber}</span>
-                        <div className="text-muted-foreground text-sm flex items-center gap-2 mt-1">
-                            <span>{order.customer.name}</span>
+                        <span className="font-mono font-bold text-lg leading-none">{order.orderNumber}</span>
+                        <div className="text-muted-foreground text-sm flex items-center gap-2 mt-1.5">
+                            <span className="font-medium text-foreground">{order.customer.name}</span>
                             {order.priority !== "normal" && (
-                                <Badge variant={order.priority === "urgent" ? "destructive" : "default"} className="uppercase text-[10px] px-1.5">
+                                <Badge variant={order.priority === "urgent" ? "destructive" : "default"} className="uppercase text-[10px] px-1.5 h-4">
                                     {order.priority}
                                 </Badge>
                             )}
                         </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
-                        <span className="text-sm font-medium bg-muted px-2 py-1 rounded-md">
-                            {order.pickedItems} / {order.totalItems} picked
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        <span className="text-sm font-semibold bg-muted px-2.5 py-1 rounded-md text-foreground">
+                            {currentPickedCount} / {order.totalItems} picked
                         </span>
-                        <div className="text-muted-foreground mt-1">
-                            {expanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                        <div className="text-muted-foreground mt-1 bg-muted/50 p-1.5 rounded-full">
+                            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </div>
                     </div>
-                </div>
-                {/* Progress bar */}
-                <div className="w-full h-1.5 bg-muted rounded-full mt-3 overflow-hidden">
-                    <div
-                        className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
-                        style={{ width: `${progress}%` }}
-                    />
                 </div>
             </CardHeader>
 
             {expanded && (
-                <CardContent className="space-y-4 pt-1">
-                    {order.unpickedItems.map((item) => (
-                        <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-background rounded-lg border shadow-sm gap-4 sm:gap-0">
-                            <div className="flex-1">
-                                <p className="font-semibold text-base">{item.product?.name ?? "Unknown Product"}</p>
-                                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
-                                    <span>SKU: <span className="font-mono text-foreground">{item.product?.sku}</span></span>
-                                    <span>Target: <span className="font-medium text-foreground">{item.quantity}</span> units</span>
-                                    <span>Shelf: <span className="font-medium text-foreground">{item.product?.currentStock ?? 0}</span></span>
-                                </div>
+                <CardContent className="p-4 pt-0 border-t bg-muted/10 relative">
+                    <div className="py-4">
+                        <PickProgress total={order.totalItems} picked={currentPickedCount} />
+
+                        {/* Barcode scanner promotion */}
+                        <div className="mb-5">
+                            <label className="block text-sm font-semibold text-foreground mb-1.5">
+                                Scan barcode to find item
+                            </label>
+                            <div className="relative shadow-sm rounded-xl">
+                                <Barcode className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                <input
+                                    ref={barcodeInputRef}
+                                    type="text"
+                                    inputMode="none"
+                                    placeholder="Scan item barcode..."
+                                    className="w-full h-12 pl-10 pr-4 rounded-xl border border-input focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-base bg-background transition-colors"
+                                    onChange={handleBarcodeInput}
+                                />
                             </div>
-                            <Button size="lg" className="w-full sm:w-auto h-12" onClick={() => setPickingItem({ id: item.id, qty: item.quantity })}>
-                                <CheckCircle className="h-5 w-5 mr-2" /> Pick Item
-                            </Button>
                         </div>
-                    ))}
 
-                    {order.unpickedItems.length > 1 && (
-                        <div className="pt-2 border-t border-dashed mt-2">
-                            <Button
-                                variant="outline"
-                                className="w-full h-12 border-primary/20 hover:bg-primary/5 text-primary"
-                                onClick={() => pickAllMutation.mutate({ orderId: order.id })}
-                                disabled={pickAllMutation.isPending}
-                            >
-                                <Package className="h-5 w-5 mr-2" />
-                                {pickAllMutation.isPending ? "Picking all..." : "Pick All Remaining Items"}
-                            </Button>
-                            {pickAllMutation.error && (
-                                <p className="text-red-600 text-sm mt-2 text-center">{pickAllMutation.error.message}</p>
-                            )}
+                        {/* Pick list */}
+                        <div className="space-y-3">
+                            {itemsToDisplay.map((item) => (
+                                <PickItemCard
+                                    key={item.id}
+                                    item={{
+                                        id: item.id,
+                                        productName: item.product?.name ?? "Unknown Product",
+                                        sku: item.product?.sku,
+                                        quantity: item.quantity,
+                                        location: undefined, // Add location to schema if needed
+                                        isPicked: localPickedIds.has(item.id)
+                                    }}
+                                    onPick={() => handlePick(item)}
+                                />
+                            ))}
                         </div>
-                    )}
+                    </div>
 
-                    {pickingItem && (
-                        <PickItemDialog
-                            orderItemId={pickingItem.id}
-                            defaultQuantity={pickingItem.qty}
-                            open={!!pickingItem}
-                            onClose={() => setPickingItem(null)}
-                        />
+                    {/* Complete Order Sticky Button */}
+                    {allItemsPicked && (
+                        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] z-50 animate-in slide-in-from-bottom-6 duration-300">
+                            <div className="max-w-4xl mx-auto">
+                                <Button
+                                    onClick={handleMarkOrderPicked}
+                                    className="w-full h-14 text-base font-bold bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/20 transition-all hover:scale-[1.02]"
+                                    disabled={markOrderPickedMutation.isPending}
+                                >
+                                    {markOrderPickedMutation.isPending ? (
+                                        <Loader2 className="animate-spin w-5 h-5 mr-2" />
+                                    ) : (
+                                        <CheckCircle className="w-5 h-5 mr-2" />
+                                    )}
+                                    Complete Order #{order.orderNumber}
+                                </Button>
+                            </div>
+                        </div>
                     )}
                 </CardContent>
             )}
