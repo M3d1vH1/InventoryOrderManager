@@ -12,10 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
+import { Route as AuthSuppliersIndexRouteImport } from './routes/_auth/suppliers/index'
 import { Route as AuthProductsIndexRouteImport } from './routes/_auth/products/index'
 import { Route as AuthPickingIndexRouteImport } from './routes/_auth/picking/index'
 import { Route as AuthOrdersIndexRouteImport } from './routes/_auth/orders/index'
 import { Route as AuthCustomersIndexRouteImport } from './routes/_auth/customers/index'
+import { Route as AuthSuppliersNewRouteImport } from './routes/_auth/suppliers/new'
+import { Route as AuthSuppliersSupplierIdRouteImport } from './routes/_auth/suppliers/$supplierId'
 import { Route as AuthProductsNewRouteImport } from './routes/_auth/products/new'
 import { Route as AuthProductsProductIdRouteImport } from './routes/_auth/products/$productId'
 import { Route as AuthOrdersNewRouteImport } from './routes/_auth/orders/new'
@@ -38,6 +41,11 @@ const AuthIndexRoute = AuthIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthSuppliersIndexRoute = AuthSuppliersIndexRouteImport.update({
+  id: '/suppliers/',
+  path: '/suppliers/',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthProductsIndexRoute = AuthProductsIndexRouteImport.update({
   id: '/products/',
   path: '/products/',
@@ -56,6 +64,16 @@ const AuthOrdersIndexRoute = AuthOrdersIndexRouteImport.update({
 const AuthCustomersIndexRoute = AuthCustomersIndexRouteImport.update({
   id: '/customers/',
   path: '/customers/',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthSuppliersNewRoute = AuthSuppliersNewRouteImport.update({
+  id: '/suppliers/new',
+  path: '/suppliers/new',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthSuppliersSupplierIdRoute = AuthSuppliersSupplierIdRouteImport.update({
+  id: '/suppliers/$supplierId',
+  path: '/suppliers/$supplierId',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthProductsNewRoute = AuthProductsNewRouteImport.update({
@@ -104,10 +122,13 @@ export interface FileRoutesByFullPath {
   '/orders/new': typeof AuthOrdersNewRoute
   '/products/$productId': typeof AuthProductsProductIdRoute
   '/products/new': typeof AuthProductsNewRoute
+  '/suppliers/$supplierId': typeof AuthSuppliersSupplierIdRoute
+  '/suppliers/new': typeof AuthSuppliersNewRoute
   '/customers/': typeof AuthCustomersIndexRoute
   '/orders/': typeof AuthOrdersIndexRoute
   '/picking/': typeof AuthPickingIndexRoute
   '/products/': typeof AuthProductsIndexRoute
+  '/suppliers/': typeof AuthSuppliersIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -119,10 +140,13 @@ export interface FileRoutesByTo {
   '/orders/new': typeof AuthOrdersNewRoute
   '/products/$productId': typeof AuthProductsProductIdRoute
   '/products/new': typeof AuthProductsNewRoute
+  '/suppliers/$supplierId': typeof AuthSuppliersSupplierIdRoute
+  '/suppliers/new': typeof AuthSuppliersNewRoute
   '/customers': typeof AuthCustomersIndexRoute
   '/orders': typeof AuthOrdersIndexRoute
   '/picking': typeof AuthPickingIndexRoute
   '/products': typeof AuthProductsIndexRoute
+  '/suppliers': typeof AuthSuppliersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -136,10 +160,13 @@ export interface FileRoutesById {
   '/_auth/orders/new': typeof AuthOrdersNewRoute
   '/_auth/products/$productId': typeof AuthProductsProductIdRoute
   '/_auth/products/new': typeof AuthProductsNewRoute
+  '/_auth/suppliers/$supplierId': typeof AuthSuppliersSupplierIdRoute
+  '/_auth/suppliers/new': typeof AuthSuppliersNewRoute
   '/_auth/customers/': typeof AuthCustomersIndexRoute
   '/_auth/orders/': typeof AuthOrdersIndexRoute
   '/_auth/picking/': typeof AuthPickingIndexRoute
   '/_auth/products/': typeof AuthProductsIndexRoute
+  '/_auth/suppliers/': typeof AuthSuppliersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -153,10 +180,13 @@ export interface FileRouteTypes {
     | '/orders/new'
     | '/products/$productId'
     | '/products/new'
+    | '/suppliers/$supplierId'
+    | '/suppliers/new'
     | '/customers/'
     | '/orders/'
     | '/picking/'
     | '/products/'
+    | '/suppliers/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -168,10 +198,13 @@ export interface FileRouteTypes {
     | '/orders/new'
     | '/products/$productId'
     | '/products/new'
+    | '/suppliers/$supplierId'
+    | '/suppliers/new'
     | '/customers'
     | '/orders'
     | '/picking'
     | '/products'
+    | '/suppliers'
   id:
     | '__root__'
     | '/_auth'
@@ -184,10 +217,13 @@ export interface FileRouteTypes {
     | '/_auth/orders/new'
     | '/_auth/products/$productId'
     | '/_auth/products/new'
+    | '/_auth/suppliers/$supplierId'
+    | '/_auth/suppliers/new'
     | '/_auth/customers/'
     | '/_auth/orders/'
     | '/_auth/picking/'
     | '/_auth/products/'
+    | '/_auth/suppliers/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -218,6 +254,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthIndexRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/suppliers/': {
+      id: '/_auth/suppliers/'
+      path: '/suppliers'
+      fullPath: '/suppliers/'
+      preLoaderRoute: typeof AuthSuppliersIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/products/': {
       id: '/_auth/products/'
       path: '/products'
@@ -244,6 +287,20 @@ declare module '@tanstack/react-router' {
       path: '/customers'
       fullPath: '/customers/'
       preLoaderRoute: typeof AuthCustomersIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/suppliers/new': {
+      id: '/_auth/suppliers/new'
+      path: '/suppliers/new'
+      fullPath: '/suppliers/new'
+      preLoaderRoute: typeof AuthSuppliersNewRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/suppliers/$supplierId': {
+      id: '/_auth/suppliers/$supplierId'
+      path: '/suppliers/$supplierId'
+      fullPath: '/suppliers/$supplierId'
+      preLoaderRoute: typeof AuthSuppliersSupplierIdRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/products/new': {
@@ -307,10 +364,13 @@ interface AuthRouteChildren {
   AuthOrdersNewRoute: typeof AuthOrdersNewRoute
   AuthProductsProductIdRoute: typeof AuthProductsProductIdRoute
   AuthProductsNewRoute: typeof AuthProductsNewRoute
+  AuthSuppliersSupplierIdRoute: typeof AuthSuppliersSupplierIdRoute
+  AuthSuppliersNewRoute: typeof AuthSuppliersNewRoute
   AuthCustomersIndexRoute: typeof AuthCustomersIndexRoute
   AuthOrdersIndexRoute: typeof AuthOrdersIndexRoute
   AuthPickingIndexRoute: typeof AuthPickingIndexRoute
   AuthProductsIndexRoute: typeof AuthProductsIndexRoute
+  AuthSuppliersIndexRoute: typeof AuthSuppliersIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
@@ -322,10 +382,13 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthOrdersNewRoute: AuthOrdersNewRoute,
   AuthProductsProductIdRoute: AuthProductsProductIdRoute,
   AuthProductsNewRoute: AuthProductsNewRoute,
+  AuthSuppliersSupplierIdRoute: AuthSuppliersSupplierIdRoute,
+  AuthSuppliersNewRoute: AuthSuppliersNewRoute,
   AuthCustomersIndexRoute: AuthCustomersIndexRoute,
   AuthOrdersIndexRoute: AuthOrdersIndexRoute,
   AuthPickingIndexRoute: AuthPickingIndexRoute,
   AuthProductsIndexRoute: AuthProductsIndexRoute,
+  AuthSuppliersIndexRoute: AuthSuppliersIndexRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)

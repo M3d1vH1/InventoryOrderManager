@@ -14,6 +14,8 @@ import {
   check,
   primaryKey,
   real,
+  numeric,
+  uuid,
 } from "drizzle-orm/pg-core";
 import { sql, relations } from "drizzle-orm";
 
@@ -551,3 +553,94 @@ export const barcodeScanLogsRelations = relations(
     }),
   })
 );
+
+// ─── Supplier Enums ──────────────────────────────────────────────────────────
+
+export const supplierInvoiceStatusEnum = pgEnum("supplier_invoice_status", [
+  "pending",
+  "partially_paid",
+  "paid",
+  "overdue",
+]);
+
+export const supplierPaymentMethodEnum = pgEnum("supplier_payment_method", [
+  "bank_transfer",
+  "cash",
+  "check",
+  "other",
+]);
+
+// ─── Suppliers ───────────────────────────────────────────────────────────────
+
+export const suppliers = pgTable("suppliers", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 255 }).notNull(),
+  contactPerson: varchar("contact_person", { length: 255 }),
+  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 50 }),
+  address: text("address"),
+  city: varchar("city", { length: 100 }),
+  taxId: varchar("tax_id", { length: 50 }),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const supplierInvoices = pgTable("supplier_invoices", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  supplierId: uuid("supplier_id").notNull().references(() => suppliers.id, { onDelete: "cascade" }),
+  invoiceNumber: varchar("invoice_number", { length: 100 }).notNull(),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  taxAmount: numeric("tax_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  totalAmount: numeric("total_amount", { precision: 12, scale: 2 }).notNull(),
+  invoiceDate: timestamp("invoice_date").notNull(),
+  dueDate: timestamp("due_date"),
+  status: supplierInvoiceStatusEnum("status").notNull().default("pending"),
+  notes: text("notes"),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const supplierPayments = pgTable("supplier_payments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  invoiceId: uuid("invoice_id").notNull().references(() => supplierInvoices.id, { onDelete: "cascade" }),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  paymentMethod: supplierPaymentMethodEnum("payment_method").notNull(),
+  paymentDate: timestamp("payment_date").notNull(),
+  referenceNumber: varchar("reference_number", { length: 100 }),
+  notes: text("notes"),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const supplierInvoiceChangelogs = pgTable("supplier_invoice_changelogs", {
+  id: serial("id").primaryKey(),
+  invoiceId: uuid("invoice_id").notNull().references(() => supplierInvoices.id, { onDelete: "cascade" }),
+  action: varchar("action", { length: 100 }).notNull(),
+  details: text("details"),
+  changedById: integer("changed_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ─── Supplier Relations ──────────────────────────────────────────────────────
+
+export const suppliersRelations = relations(suppliers, ({ many }) => ({
+  invoices: many(supplierInvoices),
+}));
+
+export const supplierInvoicesRelations = relations(supplierInvoices, ({ one, many }) => ({
+  supplier: one(suppliers, { fields: [supplierInvoices.supplierId], references: [suppliers.id] }),
+  payments: many(supplierPayments),
+  changelogs: many(supplierInvoiceChangelogs),
+  createdBy: one(users, { fields: [supplierInvoices.createdById], references: [users.id] }),
+}));
+
+export const supplierPaymentsRelations = relations(supplierPayments, ({ one }) => ({
+  invoice: one(supplierInvoices, { fields: [supplierPayments.invoiceId], references: [supplierInvoices.id] }),
+  createdBy: one(users, { fields: [supplierPayments.createdById], references: [users.id] }),
+}));
+
+export const supplierInvoiceChangelogsRelations = relations(supplierInvoiceChangelogs, ({ one }) => ({
+  invoice: one(supplierInvoices, { fields: [supplierInvoiceChangelogs.invoiceId], references: [supplierInvoices.id] }),
+  changedBy: one(users, { fields: [supplierInvoiceChangelogs.changedById], references: [users.id] }),
+}));
