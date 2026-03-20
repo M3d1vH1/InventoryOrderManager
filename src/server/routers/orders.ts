@@ -6,15 +6,24 @@ import { db } from "../db/index.js";
 import { orders, orderItems, orderChangelogs, products, customers } from "../db/schema.js";
 import { createOrder, cancelOrder } from "../services/orderService.js";
 
-const statusEnum = z.enum(["pending", "picked", "partially_shipped", "shipped", "cancelled"]);
-const priorityEnum = z.enum(["normal", "high", "urgent"]);
+const statusEnum = z.enum([
+    "pending", "confirmed", "processing", "picking",
+    "picked", "partially_shipped", "shipped", "delivered",
+    "cancelled", "on_hold"
+]);
+const priorityEnum = z.enum(["low", "normal", "high", "urgent"]);
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
-    pending: ["picked", "cancelled"],
+    pending: ["confirmed", "processing", "picking", "cancelled", "on_hold"],
+    confirmed: ["processing", "picking", "cancelled", "on_hold"],
+    processing: ["picking", "cancelled", "on_hold"],
+    picking: ["picked", "cancelled", "on_hold"],
     picked: ["partially_shipped", "shipped", "cancelled"],
     partially_shipped: ["shipped", "cancelled"],
-    shipped: [],
+    shipped: ["delivered"],
+    delivered: [],
     cancelled: [],
+    on_hold: ["pending", "cancelled"],
 };
 
 export const ordersRouter = router({
@@ -236,11 +245,11 @@ export const ordersRouter = router({
                     });
                 }
 
-                await tx.insert(orderItems).values({
+                const [newItem] = await tx.insert(orderItems).values({
                     orderId: input.orderId,
                     productId: input.productId,
                     quantity: input.quantity,
-                });
+                }).returning();
 
                 await tx
                     .update(products)
@@ -253,6 +262,7 @@ export const ordersRouter = router({
                     notes: `Added ${input.quantity}x ${product.name}`,
                     userId: ctx.user.id,
                 });
+                return newItem;
             });
         }),
 
@@ -266,7 +276,9 @@ export const ordersRouter = router({
                     .where(eq(orderItems.id, input.orderItemId));
                 if (!item) throw new TRPCError({ code: "NOT_FOUND" });
 
-                const [order] = await tx.select().from(orders).where(eq(orders.id, item.orderId));
+                const [order] = await tx.select().from(orders).where(eq(orders.id, item.orderId)).for("update");
+                if (!order) throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
+
                 if (order.status !== "pending") {
                     throw new TRPCError({ code: "BAD_REQUEST", message: "Can only remove items from pending orders" });
                 }

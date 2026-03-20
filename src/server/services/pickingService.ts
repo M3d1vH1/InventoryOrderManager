@@ -55,6 +55,13 @@ export async function pickItem(input: PickItemInput) {
 
         const actualQty = input.pickedQuantity;
 
+        if (product.currentStock < actualQty) {
+            throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: `Cannot pick ${actualQty} units — only ${product.currentStock} in stock for "${product.name}"`,
+            });
+        }
+
         // Deduct physical stock and release reservation
         await tx
             .update(products)
@@ -71,7 +78,7 @@ export async function pickItem(input: PickItemInput) {
             quantityChanged: -actualQty,
             previousQuantity: product.currentStock,
             newQuantity: product.currentStock - actualQty,
-            changeType: "order_shipped",
+            changeType: "reservation_released",
             userId: input.pickedById,
             notes: `Order ${order.orderNumber}, item picked`,
         });
