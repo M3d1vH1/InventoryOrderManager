@@ -19,6 +19,17 @@ import {
 
 export const Route = createFileRoute("/_auth/")({
     component: DashboardPage,
+    errorComponent: () => {
+        return (
+            <PageShell title="Dashboard">
+                <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
+                    <AlertTriangle className="h-12 w-12 text-destructive" />
+                    <h2 className="text-xl font-semibold">Failed to load dashboard data</h2>
+                    <p className="text-muted-foreground">Please check your connection and try refreshing the page.</p>
+                </div>
+            </PageShell>
+        );
+    },
 });
 
 function DashboardPage() {
