@@ -10,6 +10,7 @@ import { settingsRouter } from "./routers/settings.js";
 import { barcodeRouter } from "./routers/barcode.js";
 import { dashboardRouter } from "./routers/dashboard.js";
 import { suppliersRouter } from "./routers/suppliers.js";
+import { productionRouter } from "./routers/production.js";
 
 export const appRouter = router({
   auth: authRouter,
@@ -23,6 +24,7 @@ export const appRouter = router({
   barcode: barcodeRouter,
   dashboard: dashboardRouter,
   suppliers: suppliersRouter,
+  production: productionRouter,
 });
 
 export type AppRouter = typeof appRouter;
