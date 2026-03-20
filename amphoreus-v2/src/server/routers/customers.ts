@@ -4,6 +4,7 @@ import { eq, ilike, or, sql, desc, asc } from "drizzle-orm";
 import { router, protectedProcedure, adminProcedure } from "../trpc.js";
 import { db } from "../db/index.js";
 import { customers, orders } from "../db/schema.js";
+import { cached, invalidateTag } from "../lib/cache.js";
 
 /* ── Schemas ─────────────────────────────────────── */
 
@@ -40,28 +41,32 @@ const listInput = z.object({
 
 export const customersRouter = router({
     list: protectedProcedure.input(listInput).query(async ({ input }) => {
-        const { page, perPage, search, sortBy, sortDir } = input;
-        const offset = (page - 1) * perPage;
+        const cacheKey = `cache:customers:list:${JSON.stringify(input)}`;
 
-        const where = search
-            ? or(
-                ilike(customers.name, `%${search}%`),
-                ilike(customers.phone, `%${search}%`),
-                ilike(customers.email, `%${search}%`)
-            )
-            : undefined;
+        return cached(cacheKey, async () => {
+            const { page, perPage, search, sortBy, sortDir } = input;
+            const offset = (page - 1) * perPage;
 
-        let orderCol: any = customers.name;
-        if (sortBy === "city") orderCol = customers.city;
-        if (sortBy === "createdAt") orderCol = customers.createdAt;
-        const orderFn = sortDir === "desc" ? desc(orderCol) : asc(orderCol);
+            const where = search
+                ? or(
+                    ilike(customers.name, `%${search}%`),
+                    ilike(customers.phone, `%${search}%`),
+                    ilike(customers.email, `%${search}%`)
+                )
+                : undefined;
 
-        const [rows, countResult] = await Promise.all([
-            db.select().from(customers).where(where).orderBy(orderFn).limit(perPage).offset(offset),
-            db.select({ count: sql<number>`count(*)` }).from(customers).where(where),
-        ]);
+            let orderCol: any = customers.name;
+            if (sortBy === "city") orderCol = customers.city;
+            if (sortBy === "createdAt") orderCol = customers.createdAt;
+            const orderFn = sortDir === "desc" ? desc(orderCol) : asc(orderCol);
 
-        return { items: rows, total: Number(countResult[0].count), page, perPage };
+            const [rows, countResult] = await Promise.all([
+                db.select().from(customers).where(where).orderBy(orderFn).limit(perPage).offset(offset),
+                db.select({ count: sql<number>`count(*)` }).from(customers).where(where),
+            ]);
+
+            return { items: rows, total: Number(countResult[0].count), page, perPage };
+        }, { ttl: 120, tags: ["customers"] });
     }),
 
     getById: protectedProcedure
@@ -110,6 +115,7 @@ export const customersRouter = router({
                 email: input.email === "" ? null : input.email,
             };
             const [customer] = await db.insert(customers).values(data).returning();
+            await invalidateTag("customers");
             return customer;
         }),
 
@@ -124,6 +130,8 @@ export const customersRouter = router({
                 .where(eq(customers.id, id))
                 .returning();
             if (!updated) throw new TRPCError({ code: "NOT_FOUND" });
+
+            await invalidateTag("customers");
             return updated;
         }),
 
@@ -143,6 +151,7 @@ export const customersRouter = router({
             }
 
             await db.delete(customers).where(eq(customers.id, input.id));
+            await invalidateTag("customers");
             return { success: true };
         }),
 });

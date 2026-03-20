@@ -15,6 +15,7 @@ import {
     productTags,
     inventoryChanges,
 } from "../db/schema.js";
+import { cached, invalidateTag } from "../lib/cache.js";
 
 /* ── Zod Schemas ────────────────────────────────────── */
 
@@ -63,67 +64,71 @@ const stockAdjustInput = z.object({
 
 export const productsRouter = router({
     list: protectedProcedure.input(listInput).query(async ({ input }) => {
-        const { page, perPage, search, categoryId, stockStatus, sortBy, sortDir } = input;
-        const offset = (page - 1) * perPage;
+        const cacheKey = `cache:products:list:${JSON.stringify(input)}`;
 
-        const conditions = [];
-        if (search) {
-            conditions.push(
-                sql`(${products.name} ILIKE ${"%" + search + "%"} OR ${products.sku} ILIKE ${"%" + search + "%"})`
-            );
-        }
-        if (categoryId) conditions.push(eq(products.categoryId, categoryId));
-        if (stockStatus === "out_of_stock")
-            conditions.push(eq(products.currentStock, 0));
-        if (stockStatus === "low_stock")
-            conditions.push(
-                sql`${products.currentStock} > 0 AND ${products.currentStock} <= ${products.minStockLevel}`
-            );
-        if (stockStatus === "in_stock")
-            conditions.push(sql`${products.currentStock} > ${products.minStockLevel}`);
+        return cached(cacheKey, async () => {
+            const { page, perPage, search, categoryId, stockStatus, sortBy, sortDir } = input;
+            const offset = (page - 1) * perPage;
 
-        const where = conditions.length ? and(...conditions) : undefined;
+            const conditions = [];
+            if (search) {
+                conditions.push(
+                    sql`(${products.name} ILIKE ${"%" + search + "%"} OR ${products.sku} ILIKE ${"%" + search + "%"})`
+                );
+            }
+            if (categoryId) conditions.push(eq(products.categoryId, categoryId));
+            if (stockStatus === "out_of_stock")
+                conditions.push(eq(products.currentStock, 0));
+            if (stockStatus === "low_stock")
+                conditions.push(
+                    sql`${products.currentStock} > 0 AND ${products.currentStock} <= ${products.minStockLevel}`
+                );
+            if (stockStatus === "in_stock")
+                conditions.push(sql`${products.currentStock} > ${products.minStockLevel}`);
 
-        let orderCol: any = products.name;
-        if (sortBy === "sku") orderCol = products.sku;
-        if (sortBy === "currentStock") orderCol = products.currentStock;
-        if (sortBy === "createdAt") orderCol = products.createdAt;
+            const where = conditions.length ? and(...conditions) : undefined;
 
-        const orderFn = sortDir === "desc" ? desc(orderCol) : asc(orderCol);
+            let orderCol: any = products.name;
+            if (sortBy === "sku") orderCol = products.sku;
+            if (sortBy === "currentStock") orderCol = products.currentStock;
+            if (sortBy === "createdAt") orderCol = products.createdAt;
 
-        const [rows, countResult] = await Promise.all([
-            db
-                .select({
-                    id: products.id,
-                    name: products.name,
-                    sku: products.sku,
-                    barcode: products.barcode,
-                    currentStock: products.currentStock,
-                    reservedStock: products.reservedStock,
-                    minStockLevel: products.minStockLevel,
-                    imageUrl: products.imagePath,
-                    categoryId: products.categoryId,
-                    categoryName: categories.name,
-                    createdAt: products.createdAt,
-                })
-                .from(products)
-                .leftJoin(categories, eq(products.categoryId, categories.id))
-                .where(where)
-                .orderBy(orderFn)
-                .limit(perPage)
-                .offset(offset),
-            db.select({ count: sql<number>`count(*)` }).from(products).where(where),
-        ]);
+            const orderFn = sortDir === "desc" ? desc(orderCol) : asc(orderCol);
 
-        return {
-            items: rows.map((r) => ({
-                ...r,
-                availableStock: r.currentStock - r.reservedStock,
-            })),
-            total: Number(countResult[0].count),
-            page,
-            perPage,
-        };
+            const [rows, countResult] = await Promise.all([
+                db
+                    .select({
+                        id: products.id,
+                        name: products.name,
+                        sku: products.sku,
+                        barcode: products.barcode,
+                        currentStock: products.currentStock,
+                        reservedStock: products.reservedStock,
+                        minStockLevel: products.minStockLevel,
+                        imageUrl: products.imagePath,
+                        categoryId: products.categoryId,
+                        categoryName: categories.name,
+                        createdAt: products.createdAt,
+                    })
+                    .from(products)
+                    .leftJoin(categories, eq(products.categoryId, categories.id))
+                    .where(where)
+                    .orderBy(orderFn)
+                    .limit(perPage)
+                    .offset(offset),
+                db.select({ count: sql<number>`count(*)` }).from(products).where(where),
+            ]);
+
+            return {
+                items: rows.map((r) => ({
+                    ...r,
+                    availableStock: r.currentStock - r.reservedStock,
+                })),
+                total: Number(countResult[0].count),
+                page,
+                perPage,
+            };
+        }, { ttl: 120, tags: ["products"] });
     }),
 
     getById: protectedProcedure
@@ -155,7 +160,7 @@ export const productsRouter = router({
         .mutation(async ({ input, ctx }) => {
             const { tagIds, imageUrl, ...data } = input;
 
-            return db.transaction(async (tx) => {
+            const result = await db.transaction(async (tx) => {
                 const [product] = await tx.insert(products).values({ ...data, imagePath: imageUrl }).returning();
 
                 if (tagIds?.length) {
@@ -177,6 +182,9 @@ export const productsRouter = router({
 
                 return product;
             });
+
+            await invalidateTag("products");
+            return result;
         }),
 
     update: protectedProcedure
@@ -184,7 +192,7 @@ export const productsRouter = router({
         .mutation(async ({ input }) => {
             const { id, tagIds, imageUrl, ...data } = input;
 
-            return db.transaction(async (tx) => {
+            const result = await db.transaction(async (tx) => {
                 const updateData: any = { ...data };
                 if (imageUrl !== undefined) {
                     updateData.imagePath = imageUrl;
@@ -208,19 +216,23 @@ export const productsRouter = router({
 
                 return updated;
             });
+
+            await invalidateTag("products");
+            return result;
         }),
 
     delete: adminProcedure
         .input(z.object({ id: z.number().int() }))
         .mutation(async ({ input }) => {
             await db.delete(products).where(eq(products.id, input.id));
+            await invalidateTag("products");
             return { success: true };
         }),
 
     updateStock: protectedProcedure
         .input(stockAdjustInput)
         .mutation(async ({ input, ctx }) => {
-            return db.transaction(async (tx) => {
+            const result = await db.transaction(async (tx) => {
                 const [product] = await tx
                     .select()
                     .from(products)
@@ -258,6 +270,8 @@ export const productsRouter = router({
 
                 return { currentStock: newStock, availableStock: newStock - product.reservedStock };
             });
+            await invalidateTag("products");
+            return result;
         }),
 
     bulkUpdateStock: protectedProcedure
@@ -312,6 +326,7 @@ export const productsRouter = router({
                 }
             });
 
+            await invalidateTag("products");
             return results;
         }),
 
@@ -319,13 +334,18 @@ export const productsRouter = router({
 
     categories: router({
         list: protectedProcedure.query(() =>
-            db.select().from(categories).orderBy(asc(categories.name))
+            cached("cache:categories:all",
+                () => db.select().from(categories).orderBy(asc(categories.name)),
+                { ttl: 600, tags: ["categories"] }
+            )
         ),
         create: protectedProcedure
             .input(z.object({ name: z.string().min(1).max(100) }))
-            .mutation(({ input }) =>
-                db.insert(categories).values(input).returning()
-            ),
+            .mutation(async ({ input }) => {
+                const res = await db.insert(categories).values(input).returning();
+                await invalidateTag("categories");
+                return res;
+            }),
         update: protectedProcedure
             .input(z.object({ id: z.number().int(), name: z.string().min(1) }))
             .mutation(({ input }) =>
@@ -342,17 +362,24 @@ export const productsRouter = router({
 
     tags: router({
         list: protectedProcedure.query(() =>
-            db.select().from(tags).orderBy(asc(tags.name))
+            cached("cache:tags:all",
+                () => db.select().from(tags).orderBy(asc(tags.name)),
+                { ttl: 600, tags: ["tags"] }
+            )
         ),
         create: protectedProcedure
             .input(z.object({ name: z.string().min(1).max(50) }))
-            .mutation(({ input }) =>
-                db.insert(tags).values(input).returning()
-            ),
+            .mutation(async ({ input }) => {
+                const res = await db.insert(tags).values(input).returning();
+                await invalidateTag("tags");
+                return res;
+            }),
         delete: adminProcedure
             .input(z.object({ id: z.number().int() }))
-            .mutation(({ input }) =>
-                db.delete(tags).where(eq(tags.id, input.id))
-            ),
+            .mutation(async ({ input }) => {
+                const res = await db.delete(tags).where(eq(tags.id, input.id));
+                await invalidateTag("tags");
+                return res;
+            }),
     }),
 });
