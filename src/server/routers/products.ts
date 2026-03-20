@@ -348,14 +348,18 @@ export const productsRouter = router({
             }),
         update: protectedProcedure
             .input(z.object({ id: z.number().int(), name: z.string().min(1) }))
-            .mutation(({ input }) =>
-                db.update(categories).set({ name: input.name }).where(eq(categories.id, input.id)).returning()
-            ),
+            .mutation(async ({ input }) => {
+                const res = await db.update(categories).set({ name: input.name }).where(eq(categories.id, input.id)).returning();
+                await invalidateTag("categories");
+                return res;
+            }),
         delete: adminProcedure
             .input(z.object({ id: z.number().int() }))
-            .mutation(({ input }) =>
-                db.delete(categories).where(eq(categories.id, input.id))
-            ),
+            .mutation(async ({ input }) => {
+                const res = await db.delete(categories).where(eq(categories.id, input.id));
+                await invalidateTag("categories");
+                return res;
+            }),
     }),
 
     /* ── Tags sub-router ────────────────────────────── */

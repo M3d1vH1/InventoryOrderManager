@@ -6,3 +6,7 @@ dist/
 .DS_Store
 drizzle/meta/
 *.tsbuildinfo
+
+# Backup files — never commit database dumps to git
+backups/
+*.sql.gz
