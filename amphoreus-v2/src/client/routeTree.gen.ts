@@ -13,15 +13,16 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
 import { Route as AuthProductsIndexRouteImport } from './routes/_auth/products/index'
-import { Route as AuthProductsNewRouteImport } from './routes/_auth/products/new'
-import { Route as AuthProductsProductIdRouteImport } from './routes/_auth/products/$productId'
-import { Route as AuthCustomersIndexRouteImport } from './routes/_auth/customers/index'
-import { Route as AuthCustomersNewRouteImport } from './routes/_auth/customers/new'
-import { Route as AuthCustomersCustomerIdRouteImport } from './routes/_auth/customers/$customerId'
 import { Route as AuthPickingIndexRouteImport } from './routes/_auth/picking/index'
 import { Route as AuthOrdersIndexRouteImport } from './routes/_auth/orders/index'
+import { Route as AuthCustomersIndexRouteImport } from './routes/_auth/customers/index'
+import { Route as AuthProductsNewRouteImport } from './routes/_auth/products/new'
+import { Route as AuthProductsProductIdRouteImport } from './routes/_auth/products/$productId'
 import { Route as AuthOrdersNewRouteImport } from './routes/_auth/orders/new'
 import { Route as AuthOrdersOrderIdRouteImport } from './routes/_auth/orders/$orderId'
+import { Route as AuthInventoryScanRouteImport } from './routes/_auth/inventory/scan'
+import { Route as AuthCustomersNewRouteImport } from './routes/_auth/customers/new'
+import { Route as AuthCustomersCustomerIdRouteImport } from './routes/_auth/customers/$customerId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -42,6 +43,21 @@ const AuthProductsIndexRoute = AuthProductsIndexRouteImport.update({
   path: '/products/',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthPickingIndexRoute = AuthPickingIndexRouteImport.update({
+  id: '/picking/',
+  path: '/picking/',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthOrdersIndexRoute = AuthOrdersIndexRouteImport.update({
+  id: '/orders/',
+  path: '/orders/',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthCustomersIndexRoute = AuthCustomersIndexRouteImport.update({
+  id: '/customers/',
+  path: '/customers/',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthProductsNewRoute = AuthProductsNewRouteImport.update({
   id: '/products/new',
   path: '/products/new',
@@ -50,26 +66,6 @@ const AuthProductsNewRoute = AuthProductsNewRouteImport.update({
 const AuthProductsProductIdRoute = AuthProductsProductIdRouteImport.update({
   id: '/products/$productId',
   path: '/products/$productId',
-  getParentRoute: () => AuthRoute,
-} as any)
-const AuthCustomersIndexRoute = AuthCustomersIndexRouteImport.update({
-  id: '/customers/',
-  path: '/customers/',
-  getParentRoute: () => AuthRoute,
-} as any)
-const AuthCustomersNewRoute = AuthCustomersNewRouteImport.update({
-  id: '/customers/new',
-  path: '/customers/new',
-  getParentRoute: () => AuthRoute,
-} as any)
-const AuthCustomersCustomerIdRoute = AuthCustomersCustomerIdRouteImport.update({
-  id: '/customers/$customerId',
-  path: '/customers/$customerId',
-  getParentRoute: () => AuthRoute,
-} as any)
-const AuthOrdersIndexRoute = AuthOrdersIndexRouteImport.update({
-  id: '/orders/',
-  path: '/orders/',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthOrdersNewRoute = AuthOrdersNewRouteImport.update({
@@ -82,94 +78,116 @@ const AuthOrdersOrderIdRoute = AuthOrdersOrderIdRouteImport.update({
   path: '/orders/$orderId',
   getParentRoute: () => AuthRoute,
 } as any)
-const AuthPickingIndexRoute = AuthPickingIndexRouteImport.update({
-  id: '/picking/',
-  path: '/picking/',
+const AuthInventoryScanRoute = AuthInventoryScanRouteImport.update({
+  id: '/inventory/scan',
+  path: '/inventory/scan',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthCustomersNewRoute = AuthCustomersNewRouteImport.update({
+  id: '/customers/new',
+  path: '/customers/new',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthCustomersCustomerIdRoute = AuthCustomersCustomerIdRouteImport.update({
+  id: '/customers/$customerId',
+  path: '/customers/$customerId',
   getParentRoute: () => AuthRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
   '/login': typeof LoginRoute
+  '/customers/$customerId': typeof AuthCustomersCustomerIdRoute
+  '/customers/new': typeof AuthCustomersNewRoute
+  '/inventory/scan': typeof AuthInventoryScanRoute
+  '/orders/$orderId': typeof AuthOrdersOrderIdRoute
+  '/orders/new': typeof AuthOrdersNewRoute
   '/products/$productId': typeof AuthProductsProductIdRoute
   '/products/new': typeof AuthProductsNewRoute
-  '/products/': typeof AuthProductsIndexRoute
   '/customers/': typeof AuthCustomersIndexRoute
-  '/customers/new': typeof AuthCustomersNewRoute
-  '/customers/$customerId': typeof AuthCustomersCustomerIdRoute
   '/orders/': typeof AuthOrdersIndexRoute
-  '/orders/new': typeof AuthOrdersNewRoute
-  '/orders/$orderId': typeof AuthOrdersOrderIdRoute
   '/picking/': typeof AuthPickingIndexRoute
+  '/products/': typeof AuthProductsIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/': typeof AuthIndexRoute
+  '/customers/$customerId': typeof AuthCustomersCustomerIdRoute
+  '/customers/new': typeof AuthCustomersNewRoute
+  '/inventory/scan': typeof AuthInventoryScanRoute
+  '/orders/$orderId': typeof AuthOrdersOrderIdRoute
+  '/orders/new': typeof AuthOrdersNewRoute
   '/products/$productId': typeof AuthProductsProductIdRoute
   '/products/new': typeof AuthProductsNewRoute
-  '/products': typeof AuthProductsIndexRoute
   '/customers': typeof AuthCustomersIndexRoute
-  '/customers/new': typeof AuthCustomersNewRoute
-  '/customers/$customerId': typeof AuthCustomersCustomerIdRoute
   '/orders': typeof AuthOrdersIndexRoute
-  '/orders/new': typeof AuthOrdersNewRoute
-  '/orders/$orderId': typeof AuthOrdersOrderIdRoute
   '/picking': typeof AuthPickingIndexRoute
+  '/products': typeof AuthProductsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_auth': typeof AuthRouteWithChildren
   '/login': typeof LoginRoute
   '/_auth/': typeof AuthIndexRoute
+  '/_auth/customers/$customerId': typeof AuthCustomersCustomerIdRoute
+  '/_auth/customers/new': typeof AuthCustomersNewRoute
+  '/_auth/inventory/scan': typeof AuthInventoryScanRoute
+  '/_auth/orders/$orderId': typeof AuthOrdersOrderIdRoute
+  '/_auth/orders/new': typeof AuthOrdersNewRoute
   '/_auth/products/$productId': typeof AuthProductsProductIdRoute
   '/_auth/products/new': typeof AuthProductsNewRoute
-  '/_auth/products/': typeof AuthProductsIndexRoute
   '/_auth/customers/': typeof AuthCustomersIndexRoute
-  '/_auth/customers/new': typeof AuthCustomersNewRoute
-  '/_auth/customers/$customerId': typeof AuthCustomersCustomerIdRoute
+  '/_auth/orders/': typeof AuthOrdersIndexRoute
+  '/_auth/picking/': typeof AuthPickingIndexRoute
+  '/_auth/products/': typeof AuthProductsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-  | '/'
-  | '/login'
-  | '/products/$productId'
-  | '/products/new'
-  | '/products/'
-  | '/customers/'
-  | '/customers/new'
-  | '/customers/$customerId'
-  | '/orders/'
-  | '/orders/new'
-  | '/orders/$orderId'
+    | '/'
+    | '/login'
+    | '/customers/$customerId'
+    | '/customers/new'
+    | '/inventory/scan'
+    | '/orders/$orderId'
+    | '/orders/new'
+    | '/products/$productId'
+    | '/products/new'
+    | '/customers/'
+    | '/orders/'
+    | '/picking/'
+    | '/products/'
   fileRoutesByTo: FileRoutesByTo
   to:
-  | '/login'
-  | '/'
-  | '/products/$productId'
-  | '/products/new'
-  | '/products'
-  | '/customers'
-  | '/customers/new'
-  | '/customers/$customerId'
-  | '/orders'
-  | '/orders/new'
-  | '/orders/$orderId'
+    | '/login'
+    | '/'
+    | '/customers/$customerId'
+    | '/customers/new'
+    | '/inventory/scan'
+    | '/orders/$orderId'
+    | '/orders/new'
+    | '/products/$productId'
+    | '/products/new'
+    | '/customers'
+    | '/orders'
+    | '/picking'
+    | '/products'
   id:
-  | '__root__'
-  | '/_auth'
-  | '/login'
-  | '/_auth/'
-  | '/_auth/products/$productId'
-  | '/_auth/products/new'
-  | '/_auth/products/'
-  | '/_auth/customers/'
-  | '/_auth/customers/new'
-  | '/_auth/customers/$customerId'
-  | '/_auth/orders/'
-  | '/_auth/orders/new'
-  | '/_auth/orders/$orderId'
-  | '/_auth/picking/'
+    | '__root__'
+    | '/_auth'
+    | '/login'
+    | '/_auth/'
+    | '/_auth/customers/$customerId'
+    | '/_auth/customers/new'
+    | '/_auth/inventory/scan'
+    | '/_auth/orders/$orderId'
+    | '/_auth/orders/new'
+    | '/_auth/products/$productId'
+    | '/_auth/products/new'
+    | '/_auth/customers/'
+    | '/_auth/orders/'
+    | '/_auth/picking/'
+    | '/_auth/products/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -207,6 +225,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthProductsIndexRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/picking/': {
+      id: '/_auth/picking/'
+      path: '/picking'
+      fullPath: '/picking/'
+      preLoaderRoute: typeof AuthPickingIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/orders/': {
+      id: '/_auth/orders/'
+      path: '/orders'
+      fullPath: '/orders/'
+      preLoaderRoute: typeof AuthOrdersIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/customers/': {
+      id: '/_auth/customers/'
+      path: '/customers'
+      fullPath: '/customers/'
+      preLoaderRoute: typeof AuthCustomersIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/products/new': {
       id: '/_auth/products/new'
       path: '/products/new'
@@ -219,34 +258,6 @@ declare module '@tanstack/react-router' {
       path: '/products/$productId'
       fullPath: '/products/$productId'
       preLoaderRoute: typeof AuthProductsProductIdRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/customers/': {
-      id: '/_auth/customers/'
-      path: '/customers'
-      fullPath: '/customers/'
-      preLoaderRoute: typeof AuthCustomersIndexRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/customers/new': {
-      id: '/_auth/customers/new'
-      path: '/customers/new'
-      fullPath: '/customers/new'
-      preLoaderRoute: typeof AuthCustomersNewRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/customers/$customerId': {
-      id: '/_auth/customers/$customerId'
-      path: '/customers/$customerId'
-      fullPath: '/customers/$customerId'
-      preLoaderRoute: typeof AuthCustomersCustomerIdRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/orders/': {
-      id: '/_auth/orders/'
-      path: '/orders'
-      fullPath: '/orders/'
-      preLoaderRoute: typeof AuthOrdersIndexRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/orders/new': {
@@ -263,11 +274,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthOrdersOrderIdRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/_auth/picking/': {
-      id: '/_auth/picking/'
-      path: '/picking'
-      fullPath: '/picking/'
-      preLoaderRoute: typeof AuthPickingIndexRouteImport
+    '/_auth/inventory/scan': {
+      id: '/_auth/inventory/scan'
+      path: '/inventory/scan'
+      fullPath: '/inventory/scan'
+      preLoaderRoute: typeof AuthInventoryScanRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/customers/new': {
+      id: '/_auth/customers/new'
+      path: '/customers/new'
+      fullPath: '/customers/new'
+      preLoaderRoute: typeof AuthCustomersNewRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/customers/$customerId': {
+      id: '/_auth/customers/$customerId'
+      path: '/customers/$customerId'
+      fullPath: '/customers/$customerId'
+      preLoaderRoute: typeof AuthCustomersCustomerIdRouteImport
       parentRoute: typeof AuthRoute
     }
   }
@@ -275,30 +300,32 @@ declare module '@tanstack/react-router' {
 
 interface AuthRouteChildren {
   AuthIndexRoute: typeof AuthIndexRoute
+  AuthCustomersCustomerIdRoute: typeof AuthCustomersCustomerIdRoute
+  AuthCustomersNewRoute: typeof AuthCustomersNewRoute
+  AuthInventoryScanRoute: typeof AuthInventoryScanRoute
+  AuthOrdersOrderIdRoute: typeof AuthOrdersOrderIdRoute
+  AuthOrdersNewRoute: typeof AuthOrdersNewRoute
   AuthProductsProductIdRoute: typeof AuthProductsProductIdRoute
   AuthProductsNewRoute: typeof AuthProductsNewRoute
-  AuthProductsIndexRoute: typeof AuthProductsIndexRoute
   AuthCustomersIndexRoute: typeof AuthCustomersIndexRoute
-  AuthCustomersNewRoute: typeof AuthCustomersNewRoute
-  AuthCustomersCustomerIdRoute: typeof AuthCustomersCustomerIdRoute
   AuthOrdersIndexRoute: typeof AuthOrdersIndexRoute
-  AuthOrdersNewRoute: typeof AuthOrdersNewRoute
-  AuthOrdersOrderIdRoute: typeof AuthOrdersOrderIdRoute
   AuthPickingIndexRoute: typeof AuthPickingIndexRoute
+  AuthProductsIndexRoute: typeof AuthProductsIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthIndexRoute: AuthIndexRoute,
+  AuthCustomersCustomerIdRoute: AuthCustomersCustomerIdRoute,
+  AuthCustomersNewRoute: AuthCustomersNewRoute,
+  AuthInventoryScanRoute: AuthInventoryScanRoute,
+  AuthOrdersOrderIdRoute: AuthOrdersOrderIdRoute,
+  AuthOrdersNewRoute: AuthOrdersNewRoute,
   AuthProductsProductIdRoute: AuthProductsProductIdRoute,
   AuthProductsNewRoute: AuthProductsNewRoute,
-  AuthProductsIndexRoute: AuthProductsIndexRoute,
   AuthCustomersIndexRoute: AuthCustomersIndexRoute,
-  AuthCustomersNewRoute: AuthCustomersNewRoute,
-  AuthCustomersCustomerIdRoute: AuthCustomersCustomerIdRoute,
   AuthOrdersIndexRoute: AuthOrdersIndexRoute,
-  AuthOrdersNewRoute: AuthOrdersNewRoute,
-  AuthOrdersOrderIdRoute: AuthOrdersOrderIdRoute,
   AuthPickingIndexRoute: AuthPickingIndexRoute,
+  AuthProductsIndexRoute: AuthProductsIndexRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
