@@ -1,0 +1,45 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy to Mac Mini
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd /opt/amphoreus-v2
+            git pull origin main
+            docker compose build --no-cache app
+            docker compose up -d app
+            docker compose exec app npm run db:migrate
+            docker image prune -f
+            echo "Deployed $(git rev-parse --short HEAD) at $(date)"
+
+      - name: Health check
+        run: |
+          sleep 10
+          curl -sf https://${{ secrets.APP_DOMAIN }}/api/health || exit 1
+
+      - name: Notify Slack
+        if: always()
+        uses: slackapi/slack-github-action@v2
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "${{ job.status == 'success' && '✅' || '❌' }} Deploy ${{ job.status }}: amphoreus-v2 @ ${{ github.sha }}"
+            }
