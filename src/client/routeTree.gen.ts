@@ -18,6 +18,7 @@ import { Route as AuthProductsProductIdRouteImport } from './routes/_auth/produc
 import { Route as AuthCustomersIndexRouteImport } from './routes/_auth/customers/index'
 import { Route as AuthCustomersNewRouteImport } from './routes/_auth/customers/new'
 import { Route as AuthCustomersCustomerIdRouteImport } from './routes/_auth/customers/$customerId'
+import { Route as AuthPickingIndexRouteImport } from './routes/_auth/picking/index'
 import { Route as AuthOrdersIndexRouteImport } from './routes/_auth/orders/index'
 import { Route as AuthOrdersNewRouteImport } from './routes/_auth/orders/new'
 import { Route as AuthOrdersOrderIdRouteImport } from './routes/_auth/orders/$orderId'
@@ -81,6 +82,11 @@ const AuthOrdersOrderIdRoute = AuthOrdersOrderIdRouteImport.update({
   path: '/orders/$orderId',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthPickingIndexRoute = AuthPickingIndexRouteImport.update({
+  id: '/picking/',
+  path: '/picking/',
+  getParentRoute: () => AuthRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/orders/': typeof AuthOrdersIndexRoute
   '/orders/new': typeof AuthOrdersNewRoute
   '/orders/$orderId': typeof AuthOrdersOrderIdRoute
+  '/picking/': typeof AuthPickingIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -107,6 +114,7 @@ export interface FileRoutesByTo {
   '/orders': typeof AuthOrdersIndexRoute
   '/orders/new': typeof AuthOrdersNewRoute
   '/orders/$orderId': typeof AuthOrdersOrderIdRoute
+  '/picking': typeof AuthPickingIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -161,6 +169,7 @@ export interface FileRouteTypes {
   | '/_auth/orders/'
   | '/_auth/orders/new'
   | '/_auth/orders/$orderId'
+  | '/_auth/picking/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -254,6 +263,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthOrdersOrderIdRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/picking/': {
+      id: '/_auth/picking/'
+      path: '/picking'
+      fullPath: '/picking/'
+      preLoaderRoute: typeof AuthPickingIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
   }
 }
 
@@ -268,6 +284,7 @@ interface AuthRouteChildren {
   AuthOrdersIndexRoute: typeof AuthOrdersIndexRoute
   AuthOrdersNewRoute: typeof AuthOrdersNewRoute
   AuthOrdersOrderIdRoute: typeof AuthOrdersOrderIdRoute
+  AuthPickingIndexRoute: typeof AuthPickingIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
@@ -281,6 +298,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthOrdersIndexRoute: AuthOrdersIndexRoute,
   AuthOrdersNewRoute: AuthOrdersNewRoute,
   AuthOrdersOrderIdRoute: AuthOrdersOrderIdRoute,
+  AuthPickingIndexRoute: AuthPickingIndexRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
