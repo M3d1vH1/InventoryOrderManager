@@ -8,7 +8,7 @@ import { logger } from "./lib/logger.js";
 import { appRouter } from "./router.js";
 import { createContext } from "./trpc.js";
 import { closeDatabase } from "./db/index.js";
-import { cache } from "./lib/cache.js";
+import { initRedis, getRedis } from "./lib/cache.js";
 import { sessionMiddleware } from "./auth/middleware.js";
 
 const app = new Hono();
@@ -88,9 +88,11 @@ app.onError((err, c) => {
 // ── Start server ─────────────────────────────────────────────────────────────
 const port = env.APP_PORT;
 
-serve({ fetch: app.fetch, port }, () => {
-  logger.info(`Amphoreus server running on http://localhost:${port}`, {
-    env: env.NODE_ENV,
+initRedis().then(() => {
+  serve({ fetch: app.fetch, port }, () => {
+    logger.info(`Amphoreus server running on http://localhost:${port}`, {
+      env: env.NODE_ENV,
+    });
   });
 });
 
@@ -98,7 +100,7 @@ serve({ fetch: app.fetch, port }, () => {
 async function shutdown() {
   logger.info("Shutting down gracefully...");
   await closeDatabase();
-  await cache.disconnect();
+  await getRedis()?.disconnect();
   process.exit(0);
 }
 
