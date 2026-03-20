@@ -8,6 +8,7 @@ import {
 import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import fs from "fs/promises";
+import { createWriteStream } from "fs";
 import path from "path";
 
 const LABELS_DIR = path.join(process.cwd(), "data", "labels");
@@ -51,6 +52,17 @@ export async function generateShippingLabel(input: GenerateLabelInput) {
         await generateZplLabel(order, filePath);
     }
 
+    // Delete existing shipping document to allow regeneration (avoid UNIQUE constraint violation)
+    const existing = await db
+        .select({ id: shippingDocuments.id, documentPath: shippingDocuments.documentPath })
+        .from(shippingDocuments)
+        .where(eq(shippingDocuments.orderId, input.orderId));
+
+    if (existing.length > 0) {
+        await fs.rm(existing[0].documentPath, { force: true });
+        await db.delete(shippingDocuments).where(eq(shippingDocuments.orderId, input.orderId));
+    }
+
     // Create shipping document record
     const [doc] = await db
         .insert(shippingDocuments)
@@ -90,7 +102,7 @@ async function generatePdfLabel(
 ): Promise<void> {
     return new Promise((resolve, reject) => {
         const doc = new PDFDocument({ size: "A4", margin: 40 });
-        const stream = require("fs").createWriteStream(outputPath);
+        const stream = createWriteStream(outputPath);
         doc.pipe(stream);
 
         // Company header

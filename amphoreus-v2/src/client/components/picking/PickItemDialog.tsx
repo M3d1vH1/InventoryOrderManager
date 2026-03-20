@@ -57,6 +57,7 @@ export function PickItemDialog({
                         <Input
                             type="number"
                             min={0}
+                            max={defaultQuantity * 2}
                             value={pickedQuantity ?? ""}
                             onChange={(e) => setPickedQuantity(parseInt(e.target.value) || 0)}
                             placeholder="Enter quantity physically picked"

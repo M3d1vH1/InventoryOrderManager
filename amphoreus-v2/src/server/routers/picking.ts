@@ -9,7 +9,7 @@ export const pickingRouter = router({
         .input(
             z.object({
                 orderItemId: z.number().int(),
-                pickedQuantity: z.number().int().min(0),
+                pickedQuantity: z.number().int().min(0).max(10000),
                 hasQualityIssues: z.boolean().default(false),
             })
         )

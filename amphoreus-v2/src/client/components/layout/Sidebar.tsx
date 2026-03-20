@@ -32,6 +32,7 @@ interface NavItem {
     href: string;
     icon: LucideIcon;
     roles?: UserRole[];
+    disabled?: boolean;
 }
 
 interface NavGroup {
@@ -59,9 +60,9 @@ const navigation: NavEntry[] = [
         items: [
             { label: "All Orders", href: "/orders", icon: ClipboardList },
             { label: "Picking", href: "/picking", icon: ScanBarcode },
-            { label: "Shipping", href: "/shipping", icon: Truck },
-            { label: "Unshipped Items", href: "/unshipped", icon: AlertTriangle },
-            { label: "Quality", href: "/quality", icon: AlertTriangle },
+            { label: "Shipping", href: "/shipping", icon: Truck, disabled: true },
+            { label: "Unshipped Items", href: "/unshipped", icon: AlertTriangle, disabled: true },
+            { label: "Quality", href: "/quality", icon: AlertTriangle, disabled: true },
         ],
     },
     {
@@ -69,8 +70,8 @@ const navigation: NavEntry[] = [
         icon: Package,
         items: [
             { label: "Products", href: "/products", icon: Archive },
-            { label: "Categories", href: "/categories", icon: Tags },
-            { label: "Stock Changes", href: "/inventory-changes", icon: BarChart3 },
+            { label: "Categories", href: "/categories", icon: Tags, disabled: true },
+            { label: "Stock Changes", href: "/inventory-changes", icon: BarChart3, disabled: true },
         ],
     },
     {
@@ -85,6 +86,7 @@ const navigation: NavEntry[] = [
         href: "/settings",
         icon: Settings,
         roles: ["admin"],
+        disabled: true,
     },
 ];
 
@@ -181,7 +183,26 @@ function NavLinkItem({ item, collapsed, currentPath }: NavLinkItemProps) {
     const isActive = currentPath === item.href;
     const Icon = item.icon;
 
-    const link = (
+    const inner = (
+        <>
+            <Icon className="h-5 w-5 shrink-0" />
+            {!collapsed && <span>{item.label}</span>}
+        </>
+    );
+
+    const link = item.disabled ? (
+        <li>
+            <span
+                className={cn(
+                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors opacity-40 cursor-not-allowed select-none",
+                    collapsed && "justify-center px-2"
+                )}
+                title="Coming Soon"
+            >
+                {inner}
+            </span>
+        </li>
+    ) : (
         <li>
             <Link
                 to={item.href}
@@ -193,8 +214,7 @@ function NavLinkItem({ item, collapsed, currentPath }: NavLinkItemProps) {
                     collapsed && "justify-center px-2"
                 )}
             >
-                <Icon className="h-5 w-5 shrink-0" />
-                {!collapsed && <span>{item.label}</span>}
+                {inner}
             </Link>
         </li>
     );
@@ -261,21 +281,35 @@ function NavGroupItem({
                         <p className="px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase">
                             {group.label}
                         </p>
-                        {visibleItems.map((item) => (
-                            <Link
-                                key={item.href}
-                                to={item.href}
-                                className={cn(
-                                    "flex items-center gap-2 px-3 py-1.5 text-sm transition-colors",
-                                    currentPath === item.href
-                                        ? "bg-gray-100 text-gray-900 font-medium"
-                                        : "text-gray-700 hover:bg-gray-50"
-                                )}
-                            >
-                                <item.icon className="h-4 w-4" />
-                                {item.label}
-                            </Link>
-                        ))}
+                        {visibleItems.map((item) => {
+                            if (item.disabled) {
+                                return (
+                                    <span
+                                        key={item.href}
+                                        className="flex items-center gap-2 px-3 py-1.5 text-sm transition-colors text-gray-400 opacity-50 cursor-not-allowed select-none"
+                                        title="Coming Soon"
+                                    >
+                                        <item.icon className="h-4 w-4" />
+                                        {item.label}
+                                    </span>
+                                );
+                            }
+                            return (
+                                <Link
+                                    key={item.href}
+                                    to={item.href}
+                                    className={cn(
+                                        "flex items-center gap-2 px-3 py-1.5 text-sm transition-colors",
+                                        currentPath === item.href
+                                            ? "bg-gray-100 text-gray-900 font-medium"
+                                            : "text-gray-700 hover:bg-gray-50"
+                                    )}
+                                >
+                                    <item.icon className="h-4 w-4" />
+                                    {item.label}
+                                </Link>
+                            );
+                        })}
                     </div>
                 </TooltipContent>
             </Tooltip>
@@ -308,7 +342,17 @@ function NavGroupItem({
                 <ul className="ml-4 mt-1 space-y-0.5 border-l border-gray-800 pl-3">
                     {visibleItems.map((item) => {
                         const isActive = currentPath === item.href;
-                        return (
+                        return item.disabled ? (
+                            <li key={item.href}>
+                                <span
+                                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors text-gray-500 opacity-40 cursor-not-allowed select-none"
+                                    title="Coming Soon"
+                                >
+                                    <item.icon className="h-4 w-4 shrink-0" />
+                                    <span>{item.label}</span>
+                                </span>
+                            </li>
+                        ) : (
                             <li key={item.href}>
                                 <Link
                                     to={item.href}

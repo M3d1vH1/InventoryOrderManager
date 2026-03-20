@@ -5,7 +5,7 @@ import { TRPCError } from "@trpc/server";
 
 interface CreateOrderInput {
     customerId: number;
-    priority: "normal" | "high" | "urgent";
+    priority: "low" | "normal" | "high" | "urgent";
     notes?: string;
     estimatedShippingDate?: Date;
     items: { productId: number; quantity: number }[];
