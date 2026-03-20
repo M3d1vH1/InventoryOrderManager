@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { trpc } from "../../lib/trpc";
 import { PageShell } from "../../components/layout/PageShell";
@@ -5,6 +6,8 @@ import { StatCard } from "../../components/dashboard/StatCard";
 import { RecentActivity } from "../../components/dashboard/RecentActivity";
 import { LowStockAlerts } from "../../components/dashboard/LowStockAlerts";
 import { OrdersTrendChart } from "../../components/dashboard/OrdersTrendChart";
+import { FinancialSummaryRow } from "../../components/dashboard/FinancialSummaryRow";
+import { ReorderAlerts } from "../../components/dashboard/ReorderAlerts";
 import { Skeleton } from "../../components/ui/skeleton";
 import {
     ShoppingCart,
@@ -33,12 +36,16 @@ export const Route = createFileRoute("/_auth/")({
 });
 
 function DashboardPage() {
+    const [activityPage, setActivityPage] = useState(0);
+    const ACTIVITY_LIMIT = 10;
+
     const { data: stats, isLoading } = trpc.dashboard.stats.useQuery(undefined, {
         refetchInterval: 30_000,
     });
-    const { data: activity } = trpc.dashboard.recentActivity.useQuery(undefined, {
-        refetchInterval: 30_000,
-    });
+    const { data: activityData, isFetching: activityFetching } = trpc.dashboard.recentActivity.useQuery(
+        { limit: ACTIVITY_LIMIT, offset: activityPage * ACTIVITY_LIMIT },
+        { refetchInterval: 30_000 }
+    );
     const { data: lowStock } = trpc.dashboard.lowStockProducts.useQuery(undefined, {
         refetchInterval: 60_000,
     });
@@ -123,17 +130,32 @@ function DashboardPage() {
                 />
             </div>
 
+            {/* Financial Stats (Role-gated) */}
+            <FinancialSummaryRow />
+
             {/* Charts + Activity */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[500px]">
                 <div className="lg:col-span-2 h-full">
                     <OrdersTrendChart data={trend ?? []} />
                 </div>
-                <div className="flex flex-col gap-6 h-full">
-                    <div className="flex-1 min-h-0">
+                <div className="flex flex-col gap-6 h-full overflow-hidden">
+                    <div className="shrink-0 space-y-4">
                         <LowStockAlerts products={lowStock ?? []} />
+                        <ReorderAlerts />
                     </div>
-                    <div className="flex-1 min-h-0">
-                        <RecentActivity entries={activity ?? []} />
+                    <div className="flex-1 min-h-[0] relative flex flex-col pt-4">
+                        {activityFetching && (
+                            <div className="absolute inset-0 bg-background/50 z-10 flex items-center justify-center backdrop-blur-sm rounded-lg opacity-0 transition-opacity aria-busy:opacity-100 pointer-events-none" aria-busy={activityFetching}>
+                                <span className="text-sm font-medium text-muted-foreground animate-pulse">Updating...</span>
+                            </div>
+                        )}
+                        <RecentActivity
+                            entries={activityData?.data ?? []}
+                            page={activityPage}
+                            totalPages={Math.ceil((activityData?.pagination.total ?? 0) / ACTIVITY_LIMIT)}
+                            onNext={() => setActivityPage((p) => p + 1)}
+                            onPrev={() => setActivityPage((p) => Math.max(0, p - 1))}
+                        />
                     </div>
                 </div>
             </div>

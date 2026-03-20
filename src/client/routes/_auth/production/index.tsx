@@ -21,8 +21,14 @@ function ProductionDashboard() {
     });
     const { data: materials, isLoading: materialsLoading } = trpc.production.materials.list.useQuery();
 
+    const { data: statsData } = trpc.production.stats.useQuery();
+
     const lowStockMaterials = materials?.filter((m: any) => m.currentStock <= m.minStockLevel) ?? [];
-    const activeBatchesCount = batches?.length ?? 0;
+
+    // Dynamic values populated from new stats endpoint
+    const activeBatchesCount = statsData?.activeBatchesCount ?? batches?.length ?? 0;
+    const lowStockCount = statsData?.lowStockMaterialsCount ?? lowStockMaterials.length;
+    const qualityChecksToday = statsData?.qualityChecksToday ?? 0;
 
     return (
         <div className="p-6 space-y-6">
@@ -61,7 +67,7 @@ function ProductionDashboard() {
                         </div>
                         <div>
                             <p className="text-sm font-medium text-muted-foreground">Low Stock Materials</p>
-                            <h3 className="text-2xl font-bold">{lowStockMaterials.length}</h3>
+                            <h3 className="text-2xl font-bold">{lowStockCount}</h3>
                         </div>
                     </div>
                 </div>
@@ -73,7 +79,7 @@ function ProductionDashboard() {
                         </div>
                         <div>
                             <p className="text-sm font-medium text-muted-foreground">Quality Checks Today</p>
-                            <h3 className="text-2xl font-bold">0</h3>
+                            <h3 className="text-2xl font-bold">{qualityChecksToday}</h3>
                         </div>
                     </div>
                 </div>
