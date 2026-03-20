@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
 import { Route as AuthSuppliersIndexRouteImport } from './routes/_auth/suppliers/index'
 import { Route as AuthProductsIndexRouteImport } from './routes/_auth/products/index'
+import { Route as AuthProductionIndexRouteImport } from './routes/_auth/production/index'
 import { Route as AuthPickingIndexRouteImport } from './routes/_auth/picking/index'
 import { Route as AuthOrdersIndexRouteImport } from './routes/_auth/orders/index'
 import { Route as AuthCustomersIndexRouteImport } from './routes/_auth/customers/index'
@@ -26,6 +27,12 @@ import { Route as AuthOrdersOrderIdRouteImport } from './routes/_auth/orders/$or
 import { Route as AuthInventoryScanRouteImport } from './routes/_auth/inventory/scan'
 import { Route as AuthCustomersNewRouteImport } from './routes/_auth/customers/new'
 import { Route as AuthCustomersCustomerIdRouteImport } from './routes/_auth/customers/$customerId'
+import { Route as AuthProductionRecipesIndexRouteImport } from './routes/_auth/production/recipes/index'
+import { Route as AuthProductionMaterialsIndexRouteImport } from './routes/_auth/production/materials/index'
+import { Route as AuthProductionBatchesIndexRouteImport } from './routes/_auth/production/batches/index'
+import { Route as AuthProductionRecipesNewRouteImport } from './routes/_auth/production/recipes/new'
+import { Route as AuthProductionBatchesNewRouteImport } from './routes/_auth/production/batches/new'
+import { Route as AuthProductionBatchesBatchIdRouteImport } from './routes/_auth/production/batches/$batchId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -49,6 +56,11 @@ const AuthSuppliersIndexRoute = AuthSuppliersIndexRouteImport.update({
 const AuthProductsIndexRoute = AuthProductsIndexRouteImport.update({
   id: '/products/',
   path: '/products/',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthProductionIndexRoute = AuthProductionIndexRouteImport.update({
+  id: '/production/',
+  path: '/production/',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthPickingIndexRoute = AuthPickingIndexRouteImport.update({
@@ -111,6 +123,42 @@ const AuthCustomersCustomerIdRoute = AuthCustomersCustomerIdRouteImport.update({
   path: '/customers/$customerId',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthProductionRecipesIndexRoute =
+  AuthProductionRecipesIndexRouteImport.update({
+    id: '/production/recipes/',
+    path: '/production/recipes/',
+    getParentRoute: () => AuthRoute,
+  } as any)
+const AuthProductionMaterialsIndexRoute =
+  AuthProductionMaterialsIndexRouteImport.update({
+    id: '/production/materials/',
+    path: '/production/materials/',
+    getParentRoute: () => AuthRoute,
+  } as any)
+const AuthProductionBatchesIndexRoute =
+  AuthProductionBatchesIndexRouteImport.update({
+    id: '/production/batches/',
+    path: '/production/batches/',
+    getParentRoute: () => AuthRoute,
+  } as any)
+const AuthProductionRecipesNewRoute =
+  AuthProductionRecipesNewRouteImport.update({
+    id: '/production/recipes/new',
+    path: '/production/recipes/new',
+    getParentRoute: () => AuthRoute,
+  } as any)
+const AuthProductionBatchesNewRoute =
+  AuthProductionBatchesNewRouteImport.update({
+    id: '/production/batches/new',
+    path: '/production/batches/new',
+    getParentRoute: () => AuthRoute,
+  } as any)
+const AuthProductionBatchesBatchIdRoute =
+  AuthProductionBatchesBatchIdRouteImport.update({
+    id: '/production/batches/$batchId',
+    path: '/production/batches/$batchId',
+    getParentRoute: () => AuthRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
@@ -127,8 +175,15 @@ export interface FileRoutesByFullPath {
   '/customers/': typeof AuthCustomersIndexRoute
   '/orders/': typeof AuthOrdersIndexRoute
   '/picking/': typeof AuthPickingIndexRoute
+  '/production/': typeof AuthProductionIndexRoute
   '/products/': typeof AuthProductsIndexRoute
   '/suppliers/': typeof AuthSuppliersIndexRoute
+  '/production/batches/$batchId': typeof AuthProductionBatchesBatchIdRoute
+  '/production/batches/new': typeof AuthProductionBatchesNewRoute
+  '/production/recipes/new': typeof AuthProductionRecipesNewRoute
+  '/production/batches/': typeof AuthProductionBatchesIndexRoute
+  '/production/materials/': typeof AuthProductionMaterialsIndexRoute
+  '/production/recipes/': typeof AuthProductionRecipesIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -145,8 +200,15 @@ export interface FileRoutesByTo {
   '/customers': typeof AuthCustomersIndexRoute
   '/orders': typeof AuthOrdersIndexRoute
   '/picking': typeof AuthPickingIndexRoute
+  '/production': typeof AuthProductionIndexRoute
   '/products': typeof AuthProductsIndexRoute
   '/suppliers': typeof AuthSuppliersIndexRoute
+  '/production/batches/$batchId': typeof AuthProductionBatchesBatchIdRoute
+  '/production/batches/new': typeof AuthProductionBatchesNewRoute
+  '/production/recipes/new': typeof AuthProductionRecipesNewRoute
+  '/production/batches': typeof AuthProductionBatchesIndexRoute
+  '/production/materials': typeof AuthProductionMaterialsIndexRoute
+  '/production/recipes': typeof AuthProductionRecipesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -165,8 +227,15 @@ export interface FileRoutesById {
   '/_auth/customers/': typeof AuthCustomersIndexRoute
   '/_auth/orders/': typeof AuthOrdersIndexRoute
   '/_auth/picking/': typeof AuthPickingIndexRoute
+  '/_auth/production/': typeof AuthProductionIndexRoute
   '/_auth/products/': typeof AuthProductsIndexRoute
   '/_auth/suppliers/': typeof AuthSuppliersIndexRoute
+  '/_auth/production/batches/$batchId': typeof AuthProductionBatchesBatchIdRoute
+  '/_auth/production/batches/new': typeof AuthProductionBatchesNewRoute
+  '/_auth/production/recipes/new': typeof AuthProductionRecipesNewRoute
+  '/_auth/production/batches/': typeof AuthProductionBatchesIndexRoute
+  '/_auth/production/materials/': typeof AuthProductionMaterialsIndexRoute
+  '/_auth/production/recipes/': typeof AuthProductionRecipesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -185,8 +254,15 @@ export interface FileRouteTypes {
     | '/customers/'
     | '/orders/'
     | '/picking/'
+    | '/production/'
     | '/products/'
     | '/suppliers/'
+    | '/production/batches/$batchId'
+    | '/production/batches/new'
+    | '/production/recipes/new'
+    | '/production/batches/'
+    | '/production/materials/'
+    | '/production/recipes/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -203,8 +279,15 @@ export interface FileRouteTypes {
     | '/customers'
     | '/orders'
     | '/picking'
+    | '/production'
     | '/products'
     | '/suppliers'
+    | '/production/batches/$batchId'
+    | '/production/batches/new'
+    | '/production/recipes/new'
+    | '/production/batches'
+    | '/production/materials'
+    | '/production/recipes'
   id:
     | '__root__'
     | '/_auth'
@@ -222,8 +305,15 @@ export interface FileRouteTypes {
     | '/_auth/customers/'
     | '/_auth/orders/'
     | '/_auth/picking/'
+    | '/_auth/production/'
     | '/_auth/products/'
     | '/_auth/suppliers/'
+    | '/_auth/production/batches/$batchId'
+    | '/_auth/production/batches/new'
+    | '/_auth/production/recipes/new'
+    | '/_auth/production/batches/'
+    | '/_auth/production/materials/'
+    | '/_auth/production/recipes/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -266,6 +356,13 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/products/'
       preLoaderRoute: typeof AuthProductsIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/production/': {
+      id: '/_auth/production/'
+      path: '/production'
+      fullPath: '/production/'
+      preLoaderRoute: typeof AuthProductionIndexRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/picking/': {
@@ -352,6 +449,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCustomersCustomerIdRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/production/recipes/': {
+      id: '/_auth/production/recipes/'
+      path: '/production/recipes'
+      fullPath: '/production/recipes/'
+      preLoaderRoute: typeof AuthProductionRecipesIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/production/materials/': {
+      id: '/_auth/production/materials/'
+      path: '/production/materials'
+      fullPath: '/production/materials/'
+      preLoaderRoute: typeof AuthProductionMaterialsIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/production/batches/': {
+      id: '/_auth/production/batches/'
+      path: '/production/batches'
+      fullPath: '/production/batches/'
+      preLoaderRoute: typeof AuthProductionBatchesIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/production/recipes/new': {
+      id: '/_auth/production/recipes/new'
+      path: '/production/recipes/new'
+      fullPath: '/production/recipes/new'
+      preLoaderRoute: typeof AuthProductionRecipesNewRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/production/batches/new': {
+      id: '/_auth/production/batches/new'
+      path: '/production/batches/new'
+      fullPath: '/production/batches/new'
+      preLoaderRoute: typeof AuthProductionBatchesNewRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/production/batches/$batchId': {
+      id: '/_auth/production/batches/$batchId'
+      path: '/production/batches/$batchId'
+      fullPath: '/production/batches/$batchId'
+      preLoaderRoute: typeof AuthProductionBatchesBatchIdRouteImport
+      parentRoute: typeof AuthRoute
+    }
   }
 }
 
@@ -369,8 +508,15 @@ interface AuthRouteChildren {
   AuthCustomersIndexRoute: typeof AuthCustomersIndexRoute
   AuthOrdersIndexRoute: typeof AuthOrdersIndexRoute
   AuthPickingIndexRoute: typeof AuthPickingIndexRoute
+  AuthProductionIndexRoute: typeof AuthProductionIndexRoute
   AuthProductsIndexRoute: typeof AuthProductsIndexRoute
   AuthSuppliersIndexRoute: typeof AuthSuppliersIndexRoute
+  AuthProductionBatchesBatchIdRoute: typeof AuthProductionBatchesBatchIdRoute
+  AuthProductionBatchesNewRoute: typeof AuthProductionBatchesNewRoute
+  AuthProductionRecipesNewRoute: typeof AuthProductionRecipesNewRoute
+  AuthProductionBatchesIndexRoute: typeof AuthProductionBatchesIndexRoute
+  AuthProductionMaterialsIndexRoute: typeof AuthProductionMaterialsIndexRoute
+  AuthProductionRecipesIndexRoute: typeof AuthProductionRecipesIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
@@ -387,8 +533,15 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthCustomersIndexRoute: AuthCustomersIndexRoute,
   AuthOrdersIndexRoute: AuthOrdersIndexRoute,
   AuthPickingIndexRoute: AuthPickingIndexRoute,
+  AuthProductionIndexRoute: AuthProductionIndexRoute,
   AuthProductsIndexRoute: AuthProductsIndexRoute,
   AuthSuppliersIndexRoute: AuthSuppliersIndexRoute,
+  AuthProductionBatchesBatchIdRoute: AuthProductionBatchesBatchIdRoute,
+  AuthProductionBatchesNewRoute: AuthProductionBatchesNewRoute,
+  AuthProductionRecipesNewRoute: AuthProductionRecipesNewRoute,
+  AuthProductionBatchesIndexRoute: AuthProductionBatchesIndexRoute,
+  AuthProductionMaterialsIndexRoute: AuthProductionMaterialsIndexRoute,
+  AuthProductionRecipesIndexRoute: AuthProductionRecipesIndexRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)

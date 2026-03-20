@@ -16,6 +16,8 @@ import {
     Tags,
     ScanBarcode,
     LayoutDashboard,
+    Factory,
+    Layers,
     type LucideIcon,
 } from "lucide-react";
 import {
@@ -79,6 +81,23 @@ const navigation: NavEntry[] = [
         icon: BarChart3,
         items: [
             { label: "Customers", href: "/customers", icon: Users },
+        ],
+    },
+    {
+        label: "Manufacturing",
+        icon: Factory,
+        items: [
+            { label: "Production Home", href: "/production", icon: LayoutDashboard },
+            { label: "Raw Materials", href: "/production/materials", icon: Package },
+            { label: "Recipes", href: "/production/recipes", icon: ClipboardList },
+            { label: "Batches", href: "/production/batches", icon: Layers },
+        ],
+    },
+    {
+        label: "Purchasing",
+        icon: ShoppingCart,
+        items: [
+            { label: "Suppliers", href: "/suppliers", icon: Users },
         ],
     },
     {

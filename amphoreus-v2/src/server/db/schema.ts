@@ -644,3 +644,164 @@ export const supplierInvoiceChangelogsRelations = relations(supplierInvoiceChang
   invoice: one(supplierInvoices, { fields: [supplierInvoiceChangelogs.invoiceId], references: [supplierInvoices.id] }),
   changedBy: one(users, { fields: [supplierInvoiceChangelogs.changedById], references: [users.id] }),
 }));
+
+// ─── Production Enums ────────────────────────────────────────────────────────
+
+export const rawMaterialUnitEnum = pgEnum("raw_material_unit", [
+  "kg",
+  "liters",
+  "pieces",
+  "bottles",
+  "cans",
+]);
+
+export const productionBatchStatusEnum = pgEnum("production_batch_status", [
+  "planned",
+  "in_progress",
+  "completed",
+  "cancelled",
+]);
+
+export const materialInventoryReasonEnum = pgEnum("material_inventory_reason", [
+  "received",
+  "damaged",
+  "correction",
+  "consumed",
+  "other",
+]);
+
+export const qualityCheckTypeEnum = pgEnum("quality_check_type", [
+  "visual",
+  "chemical",
+  "taste",
+  "weight",
+]);
+
+export const qualityCheckResultEnum = pgEnum("quality_check_result", [
+  "pass",
+  "fail",
+  "warning",
+]);
+
+// ─── Production Tables ───────────────────────────────────────────────────────
+
+export const rawMaterials = pgTable("raw_materials", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 255 }).notNull(),
+  sku: varchar("sku", { length: 100 }).notNull().unique(),
+  unit: rawMaterialUnitEnum("unit").notNull(),
+  currentStock: real("current_stock").notNull().default(0),
+  minStockLevel: real("min_stock_level").notNull().default(0),
+  unitCost: numeric("unit_cost", { precision: 12, scale: 4 }),
+  supplierId: uuid("supplier_id").references(() => suppliers.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const productionRecipes = pgTable("production_recipes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  productId: integer("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  yieldQuantity: integer("yield_quantity").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const recipeIngredients = pgTable("recipe_ingredients", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  recipeId: uuid("recipe_id").notNull().references(() => productionRecipes.id, { onDelete: "cascade" }),
+  rawMaterialId: uuid("raw_material_id").notNull().references(() => rawMaterials.id, { onDelete: "cascade" }),
+  quantity: real("quantity").notNull(),
+  unit: rawMaterialUnitEnum("unit").notNull(), // to confirm matching material
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const productionBatches = pgTable("production_batches", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  recipeId: uuid("recipe_id").notNull().references(() => productionRecipes.id),
+  batchNumber: varchar("batch_number", { length: 100 }).notNull().unique(),
+  status: productionBatchStatusEnum("status").notNull().default("planned"),
+  plannedQuantity: integer("planned_quantity").notNull(),
+  actualQuantity: integer("actual_quantity"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  createdById: integer("created_by_id").references(() => users.id),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const materialConsumptions = pgTable("material_consumptions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  batchId: uuid("batch_id").notNull().references(() => productionBatches.id, { onDelete: "cascade" }),
+  rawMaterialId: uuid("raw_material_id").notNull().references(() => rawMaterials.id),
+  plannedQuantity: real("planned_quantity").notNull(),
+  actualQuantity: real("actual_quantity").notNull(),
+  consumedAt: timestamp("consumed_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const productionQualityChecks = pgTable("production_quality_checks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  batchId: uuid("batch_id").notNull().references(() => productionBatches.id, { onDelete: "cascade" }),
+  checkType: qualityCheckTypeEnum("check_type").notNull(),
+  result: qualityCheckResultEnum("result").notNull(),
+  value: varchar("value", { length: 100 }),
+  notes: text("notes"),
+  checkedById: integer("checked_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const materialInventoryChanges = pgTable("material_inventory_changes", {
+  id: serial("id").primaryKey(),
+  rawMaterialId: uuid("raw_material_id").notNull().references(() => rawMaterials.id, { onDelete: "cascade" }),
+  quantityChange: real("quantity_change").notNull(),
+  newQuantity: real("new_quantity").notNull(),
+  reason: materialInventoryReasonEnum("reason").notNull(),
+  notes: text("notes"),
+  changedById: integer("changed_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ─── Production Relations ────────────────────────────────────────────────────
+
+export const rawMaterialsRelations = relations(rawMaterials, ({ one, many }) => ({
+  supplier: one(suppliers, { fields: [rawMaterials.supplierId], references: [suppliers.id] }),
+  ingredients: many(recipeIngredients),
+  consumptions: many(materialConsumptions),
+  inventoryChanges: many(materialInventoryChanges),
+}));
+
+export const productionRecipesRelations = relations(productionRecipes, ({ one, many }) => ({
+  product: one(products, { fields: [productionRecipes.productId], references: [products.id] }),
+  ingredients: many(recipeIngredients),
+  batches: many(productionBatches),
+}));
+
+export const recipeIngredientsRelations = relations(recipeIngredients, ({ one }) => ({
+  recipe: one(productionRecipes, { fields: [recipeIngredients.recipeId], references: [productionRecipes.id] }),
+  rawMaterial: one(rawMaterials, { fields: [recipeIngredients.rawMaterialId], references: [rawMaterials.id] }),
+}));
+
+export const productionBatchesRelations = relations(productionBatches, ({ one, many }) => ({
+  recipe: one(productionRecipes, { fields: [productionBatches.recipeId], references: [productionRecipes.id] }),
+  createdBy: one(users, { fields: [productionBatches.createdById], references: [users.id] }),
+  consumptions: many(materialConsumptions),
+  qualityChecks: many(productionQualityChecks),
+}));
+
+export const materialConsumptionsRelations = relations(materialConsumptions, ({ one }) => ({
+  batch: one(productionBatches, { fields: [materialConsumptions.batchId], references: [productionBatches.id] }),
+  rawMaterial: one(rawMaterials, { fields: [materialConsumptions.rawMaterialId], references: [rawMaterials.id] }),
+}));
+
+export const productionQualityChecksRelations = relations(productionQualityChecks, ({ one }) => ({
+  batch: one(productionBatches, { fields: [productionQualityChecks.batchId], references: [productionBatches.id] }),
+  checkedBy: one(users, { fields: [productionQualityChecks.checkedById], references: [users.id] }),
+}));
+
+export const materialInventoryChangesRelations = relations(materialInventoryChanges, ({ one }) => ({
+  rawMaterial: one(rawMaterials, { fields: [materialInventoryChanges.rawMaterialId], references: [rawMaterials.id] }),
+  changedBy: one(users, { fields: [materialInventoryChanges.changedById], references: [users.id] }),
+}));
