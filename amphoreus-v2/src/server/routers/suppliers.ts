@@ -80,20 +80,36 @@ export const suppliersRouter = router({
                 .where(eq(supplierInvoices.supplierId, input.id))
                 .orderBy(desc(supplierInvoices.createdAt));
 
-            const totalInvoiced = invoiceList.reduce((sum, inv) => sum + Number(inv.totalAmount), 0);
-
-            const [{ total: totalPaid }] = await db.select({
-                total: sql<number>`COALESCE(SUM(${supplierPayments.amount}), 0)`,
-            }).from(supplierPayments)
+            const payments = await db.select().from(supplierPayments)
                 .innerJoin(supplierInvoices, eq(supplierPayments.invoiceId, supplierInvoices.id))
                 .where(eq(supplierInvoices.supplierId, input.id));
 
+            // Compute paid amounts per invoice
+            const paidPerInvoice = payments.reduce((acc, row) => {
+                const invId = row.supplier_invoices.id;
+                acc[invId] = (acc[invId] || 0) + Number(row.supplier_payments.amount);
+                return acc;
+            }, {} as Record<string, number>);
+
+            const totalInvoiced = invoiceList.reduce((sum, inv) => sum + Number(inv.totalAmount), 0);
+            const totalPaid = payments.reduce((sum, row) => sum + Number(row.supplier_payments.amount), 0);
+
+            // Enhance invoices with per-invoice balances
+            const enhancedInvoices = invoiceList.map((inv) => {
+                const paid = paidPerInvoice[inv.id] || 0;
+                return {
+                    ...inv,
+                    totalPaid: paid,
+                    remainingBalance: Number(inv.totalAmount) - paid,
+                };
+            });
+
             return {
                 ...supplier,
-                invoices: invoiceList,
+                invoices: enhancedInvoices,
                 totalInvoiced,
-                totalPaid: Number(totalPaid),
-                outstandingBalance: totalInvoiced - Number(totalPaid),
+                totalPaid,
+                outstandingBalance: totalInvoiced - totalPaid,
             };
         }),
 

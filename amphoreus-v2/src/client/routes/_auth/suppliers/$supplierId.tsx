@@ -166,7 +166,7 @@ function SupplierDetailPage() {
                 <RecordPaymentDialog
                     invoiceId={payingInvoice.id}
                     invoiceNumber={payingInvoice.invoiceNumber}
-                    remainingBalance={Number(payingInvoice.totalAmount)}
+                    remainingBalance={payingInvoice.remainingBalance}
                     onClose={() => setPayingInvoiceId(null)}
                     onSuccess={() => setPayingInvoiceId(null)}
                 />
