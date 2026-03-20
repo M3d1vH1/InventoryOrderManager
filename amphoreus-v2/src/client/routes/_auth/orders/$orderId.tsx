@@ -12,6 +12,7 @@ import {
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "../../../components/ui/dialog";
+import { ShipOrderDialog } from "../../../components/orders/ShipOrderDialog";
 import { ArrowLeft, XCircle, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/_auth/orders/$orderId")({
@@ -35,6 +36,7 @@ function OrderDetailPage() {
     const navigate = useNavigate();
     const [cancelOpen, setCancelOpen] = useState(false);
     const [cancelError, setCancelError] = useState<string | null>(null);
+    const [shipOpen, setShipOpen] = useState(false);
 
     const { data: order, isLoading, refetch } = trpc.orders.getById.useQuery({ id: numericId });
     const utils = trpc.useUtils();
@@ -148,7 +150,13 @@ function OrderDetailPage() {
                                     key={t.value}
                                     variant="outline"
                                     disabled={updateStatusMutation.isPending}
-                                    onClick={() => updateStatusMutation.mutate({ id: numericId, status: t.value as any })}
+                                    onClick={() => {
+                                        if (t.value === "shipped" || t.value === "partially_shipped") {
+                                            setShipOpen(true);
+                                        } else {
+                                            updateStatusMutation.mutate({ id: numericId, status: t.value as any });
+                                        }
+                                    }}
                                 >
                                     {t.label}
                                 </Button>
@@ -238,6 +246,12 @@ function OrderDetailPage() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            <ShipOrderDialog
+                orderId={numericId}
+                open={shipOpen}
+                onOpenChange={setShipOpen}
+            />
         </PageShell>
     );
 }
