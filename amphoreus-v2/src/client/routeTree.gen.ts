@@ -18,6 +18,9 @@ import { Route as AuthProductsProductIdRouteImport } from './routes/_auth/produc
 import { Route as AuthCustomersIndexRouteImport } from './routes/_auth/customers/index'
 import { Route as AuthCustomersNewRouteImport } from './routes/_auth/customers/new'
 import { Route as AuthCustomersCustomerIdRouteImport } from './routes/_auth/customers/$customerId'
+import { Route as AuthOrdersIndexRouteImport } from './routes/_auth/orders/index'
+import { Route as AuthOrdersNewRouteImport } from './routes/_auth/orders/new'
+import { Route as AuthOrdersOrderIdRouteImport } from './routes/_auth/orders/$orderId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -63,6 +66,21 @@ const AuthCustomersCustomerIdRoute = AuthCustomersCustomerIdRouteImport.update({
   path: '/customers/$customerId',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthOrdersIndexRoute = AuthOrdersIndexRouteImport.update({
+  id: '/orders/',
+  path: '/orders/',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthOrdersNewRoute = AuthOrdersNewRouteImport.update({
+  id: '/orders/new',
+  path: '/orders/new',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthOrdersOrderIdRoute = AuthOrdersOrderIdRouteImport.update({
+  id: '/orders/$orderId',
+  path: '/orders/$orderId',
+  getParentRoute: () => AuthRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
@@ -73,6 +91,9 @@ export interface FileRoutesByFullPath {
   '/customers/': typeof AuthCustomersIndexRoute
   '/customers/new': typeof AuthCustomersNewRoute
   '/customers/$customerId': typeof AuthCustomersCustomerIdRoute
+  '/orders/': typeof AuthOrdersIndexRoute
+  '/orders/new': typeof AuthOrdersNewRoute
+  '/orders/$orderId': typeof AuthOrdersOrderIdRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -83,6 +104,9 @@ export interface FileRoutesByTo {
   '/customers': typeof AuthCustomersIndexRoute
   '/customers/new': typeof AuthCustomersNewRoute
   '/customers/$customerId': typeof AuthCustomersCustomerIdRoute
+  '/orders': typeof AuthOrdersIndexRoute
+  '/orders/new': typeof AuthOrdersNewRoute
+  '/orders/$orderId': typeof AuthOrdersOrderIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +131,9 @@ export interface FileRouteTypes {
   | '/customers/'
   | '/customers/new'
   | '/customers/$customerId'
+  | '/orders/'
+  | '/orders/new'
+  | '/orders/$orderId'
   fileRoutesByTo: FileRoutesByTo
   to:
   | '/login'
@@ -117,6 +144,9 @@ export interface FileRouteTypes {
   | '/customers'
   | '/customers/new'
   | '/customers/$customerId'
+  | '/orders'
+  | '/orders/new'
+  | '/orders/$orderId'
   id:
   | '__root__'
   | '/_auth'
@@ -128,6 +158,9 @@ export interface FileRouteTypes {
   | '/_auth/customers/'
   | '/_auth/customers/new'
   | '/_auth/customers/$customerId'
+  | '/_auth/orders/'
+  | '/_auth/orders/new'
+  | '/_auth/orders/$orderId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -200,6 +233,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCustomersCustomerIdRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/orders/': {
+      id: '/_auth/orders/'
+      path: '/orders'
+      fullPath: '/orders/'
+      preLoaderRoute: typeof AuthOrdersIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/orders/new': {
+      id: '/_auth/orders/new'
+      path: '/orders/new'
+      fullPath: '/orders/new'
+      preLoaderRoute: typeof AuthOrdersNewRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/orders/$orderId': {
+      id: '/_auth/orders/$orderId'
+      path: '/orders/$orderId'
+      fullPath: '/orders/$orderId'
+      preLoaderRoute: typeof AuthOrdersOrderIdRouteImport
+      parentRoute: typeof AuthRoute
+    }
   }
 }
 
@@ -211,6 +265,9 @@ interface AuthRouteChildren {
   AuthCustomersIndexRoute: typeof AuthCustomersIndexRoute
   AuthCustomersNewRoute: typeof AuthCustomersNewRoute
   AuthCustomersCustomerIdRoute: typeof AuthCustomersCustomerIdRoute
+  AuthOrdersIndexRoute: typeof AuthOrdersIndexRoute
+  AuthOrdersNewRoute: typeof AuthOrdersNewRoute
+  AuthOrdersOrderIdRoute: typeof AuthOrdersOrderIdRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
@@ -221,6 +278,9 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthCustomersIndexRoute: AuthCustomersIndexRoute,
   AuthCustomersNewRoute: AuthCustomersNewRoute,
   AuthCustomersCustomerIdRoute: AuthCustomersCustomerIdRoute,
+  AuthOrdersIndexRoute: AuthOrdersIndexRoute,
+  AuthOrdersNewRoute: AuthOrdersNewRoute,
+  AuthOrdersOrderIdRoute: AuthOrdersOrderIdRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
