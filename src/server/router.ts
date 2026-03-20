@@ -8,6 +8,7 @@ import { pickingRouter } from "./routers/picking.js";
 import { shippingRouter } from "./routers/shipping.js";
 import { settingsRouter } from "./routers/settings.js";
 import { barcodeRouter } from "./routers/barcode.js";
+import { dashboardRouter } from "./routers/dashboard.js";
 
 export const appRouter = router({
   auth: authRouter,
@@ -19,7 +20,7 @@ export const appRouter = router({
   shipping: shippingRouter,
   settings: settingsRouter,
   barcode: barcodeRouter,
+  dashboard: dashboardRouter,
 });
 
 export type AppRouter = typeof appRouter;
-
