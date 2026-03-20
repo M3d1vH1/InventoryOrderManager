@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { eq, ilike, sql, desc, asc, and, lte } from "drizzle-orm";
+import { eq, ilike, sql, desc, asc, and, lte, inArray, gte } from "drizzle-orm";
 import { router, protectedProcedure, adminProcedure } from "../trpc.js";
 import { db } from "../db/index.js";
 import {
@@ -220,6 +220,62 @@ export const suppliersRouter = router({
     /* ── Payments ──────────────────────────────────── */
 
     payments: router({
+        summary: protectedProcedure.query(async () => {
+            const today = new Date();
+            const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            const next7Days = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+            const pendingInvs = await db.select({
+                id: supplierInvoices.id,
+                totalAmount: supplierInvoices.totalAmount,
+                dueDate: supplierInvoices.dueDate,
+            })
+                .from(supplierInvoices)
+                .where(inArray(supplierInvoices.status, ["pending", "partially_paid"]));
+
+            const pendingIds = pendingInvs.map(i => i.id);
+            const paymentsPending = pendingIds.length > 0 ? await db.select()
+                .from(supplierPayments)
+                .where(inArray(supplierPayments.invoiceId, pendingIds)) : [];
+
+            const paidMap = paymentsPending.reduce((acc, p) => {
+                acc[p.invoiceId] = (acc[p.invoiceId] || 0) + Number(p.amount);
+                return acc;
+            }, {} as Record<string, number>);
+
+            let outstandingTotal = 0;
+            let overdueTotal = 0;
+            let dueSoon = 0;
+            let dueSoonCount = 0;
+
+            for (const inv of pendingInvs) {
+                const paid = paidMap[inv.id] || 0;
+                const remaining = Number(inv.totalAmount) - paid;
+                if (remaining <= 0) continue;
+
+                outstandingTotal += remaining;
+
+                if (inv.dueDate && inv.dueDate < today) {
+                    overdueTotal += remaining;
+                } else if (inv.dueDate && inv.dueDate <= next7Days) {
+                    dueSoon += remaining;
+                    dueSoonCount++;
+                }
+            }
+
+            const thisMonthPayments = await db.select({ total: sql<number>`SUM(${supplierPayments.amount})::numeric` })
+                .from(supplierPayments)
+                .where(gte(supplierPayments.paymentDate, startOfMonth));
+
+            return {
+                outstandingTotal,
+                overdueTotal,
+                dueSoon,
+                dueSoonCount,
+                paidThisMonth: Number(thisMonthPayments[0]?.total || 0),
+            };
+        }),
+
         create: protectedProcedure
             .input(paymentCreateInput)
             .mutation(async ({ input, ctx }) => {

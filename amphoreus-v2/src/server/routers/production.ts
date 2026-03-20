@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { eq, sql, desc, and } from "drizzle-orm";
+import { eq, sql, desc, and, gte } from "drizzle-orm";
 import { router, protectedProcedure } from "../trpc.js";
 import { db } from "../db/index.js";
 import {
@@ -16,6 +16,30 @@ import {
 } from "../db/schema.js";
 
 export const productionRouter = router({
+    /* ── Stats ─────────────────────────────────────────── */
+    stats: protectedProcedure.query(async () => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const [activeBatches, lowStock, qcToday] = await Promise.all([
+            db.select({ count: sql<number>`count(*)::int` })
+                .from(productionBatches)
+                .where(eq(productionBatches.status, "in_progress")),
+            db.select({ count: sql<number>`count(*)::int` })
+                .from(rawMaterials)
+                .where(sql`${rawMaterials.currentStock} <= ${rawMaterials.minStockLevel}`),
+            db.select({ count: sql<number>`count(*)::int` })
+                .from(productionQualityChecks)
+                .where(gte(productionQualityChecks.createdAt, today)),
+        ]);
+
+        return {
+            activeBatchesCount: activeBatches[0].count,
+            lowStockMaterialsCount: lowStock[0].count,
+            qualityChecksToday: qcToday[0].count,
+        };
+    }),
+
     /* ── Raw Materials ─────────────────────────────────── */
 
     materials: router({

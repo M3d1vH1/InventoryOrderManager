@@ -98,25 +98,37 @@ export const dashboardRouter = router({
         }, { ttl: 30, tags: ["dashboard"] });
     }),
 
-    recentActivity: protectedProcedure.query(async () => {
-        return cached("cache:dashboard:recentActivity", async () => {
-            const recentChanges = await db
-                .select({
-                    id: orderChangelogs.id,
-                    orderId: orderChangelogs.orderId,
-                    action: orderChangelogs.action,
-                    notes: orderChangelogs.notes,
-                    timestamp: orderChangelogs.timestamp,
-                    orderNumber: orders.orderNumber,
-                })
-                .from(orderChangelogs)
-                .innerJoin(orders, eq(orderChangelogs.orderId, orders.id))
-                .orderBy(desc(orderChangelogs.timestamp))
-                .limit(20);
+    recentActivity: protectedProcedure
+        .input(z.object({
+            limit: z.number().int().min(1).max(100).default(10),
+            offset: z.number().int().min(0).default(0),
+        }).optional())
+        .query(async ({ input }) => {
+            const limit = input?.limit ?? 10;
+            const offset = input?.offset ?? 0;
 
-            return recentChanges;
-        }, { ttl: 30, tags: ["dashboard"] });
-    }),
+            return cached(`cache:dashboard:recentActivity:${limit}:${offset}`, async () => {
+                const [data, [{ total }]] = await Promise.all([
+                    db.select({
+                        id: orderChangelogs.id,
+                        orderId: orderChangelogs.orderId,
+                        action: orderChangelogs.action,
+                        notes: orderChangelogs.notes,
+                        timestamp: orderChangelogs.timestamp,
+                        orderNumber: orders.orderNumber,
+                    })
+                        .from(orderChangelogs)
+                        .innerJoin(orders, eq(orderChangelogs.orderId, orders.id))
+                        .orderBy(desc(orderChangelogs.timestamp))
+                        .limit(limit)
+                        .offset(offset),
+
+                    db.select({ total: sql<number>`count(*)::int` }).from(orderChangelogs)
+                ]);
+
+                return { data, pagination: { total, limit, offset } };
+            }, { ttl: 30, tags: ["dashboard"] });
+        }),
 
     lowStockProducts: protectedProcedure.query(async () => {
         return cached("cache:dashboard:lowStockProducts", async () => {
