@@ -43,7 +43,7 @@ role_permissions
 // src/server/routers/settings.ts
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { router, protectedProcedure, adminProcedure } from "../trpc.js";
 import { db } from "../db/index.js";
 import {
@@ -294,8 +294,6 @@ export const settingsRouter = router({
     }),
   }),
 });
-
-import { sql } from "drizzle-orm";
 ```
 
 ### 3. Frontend Pages

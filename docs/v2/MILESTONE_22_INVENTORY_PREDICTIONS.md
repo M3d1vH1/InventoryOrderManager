@@ -17,17 +17,42 @@ Implement an inventory prediction system that analyzes historical sales data to 
 
 ## Implementation
 
-### 1. Database Schema (from Milestone 02)
+### 1. Database Schema (from Milestone 02) — Required Unique Constraints
+
+The schema already defines `inventory_predictions` and `seasonal_patterns`, but the `onConflictDoUpdate` calls in the prediction service require unique constraints that are **not yet present**. Add a migration:
+
+```sql
+-- drizzle migration (new file in drizzle/)
+ALTER TABLE inventory_predictions
+  ADD CONSTRAINT uq_inventory_predictions_product_id UNIQUE (product_id);
+
+ALTER TABLE seasonal_patterns
+  ADD CONSTRAINT uq_seasonal_patterns_product_month UNIQUE (product_id, month);
+```
+
+In `src/server/db/schema.ts`, update both table definitions to include these constraints so Drizzle is aware of them:
+
+```ts
+// inventoryPredictions table — add to the constraints array:
+uniqueIndex("uq_inventory_predictions_product_id").on(table.productId),
+
+// seasonalPatterns table — add to the constraints array:
+uniqueIndex("uq_seasonal_patterns_product_month").on(table.productId, table.month),
+```
+
+Without these, calling `onConflictDoUpdate({ target: [inventoryPredictions.productId] })` will throw:
+> `there is no unique or exclusion constraint matching the ON CONFLICT specification`
 
 ```
 inventory_predictions
-  - id, product_id (FK), predicted_daily_demand, days_until_stockout,
+  - id, product_id (FK, UNIQUE), predicted_daily_demand, days_until_stockout,
     suggested_reorder_quantity, confidence_score (0-1),
     calculated_at, created_at
 
 seasonal_patterns
   - id, product_id (FK), month (1-12), avg_daily_demand,
     demand_multiplier (vs annual avg), sample_size, created_at
+  - UNIQUE (product_id, month)
 ```
 
 ### 2. Prediction Service — `src/server/services/predictionService.ts`
@@ -41,7 +66,7 @@ import {
 import { eq, and, gte, sql, desc } from "drizzle-orm";
 
 interface ProductPrediction {
-  productId: string;
+  productId: number; // products.id is serial (integer), not uuid
   productName: string;
   currentStock: number;
   reservedStock: number;

@@ -37,12 +37,11 @@ If R2 is not set up yet, the upload endpoint can instead write files to `public/
 ```bash
 # Server — image processing + S3-compatible upload client
 npm install sharp @aws-sdk/client-s3 @aws-sdk/lib-storage
-npm install --save-dev @types/sharp
 
 # No new client dependencies — native File API + fetch
 ```
 
-`sharp` is a libvips binding; it is the fastest Node.js image processor and produces the smallest WebP output. It installs a prebuilt native binary for the platform so no compiler is needed.
+`sharp` is a libvips binding; it is the fastest Node.js image processor and produces the smallest WebP output. It installs a prebuilt native binary for the platform so no compiler is needed. **Do not install `@types/sharp`** — `sharp` ≥ 0.29 ships its own bundled TypeScript declarations; installing `@types/sharp` alongside it creates conflicting duplicate type definitions and will cause `tsc` errors.
 
 ---
 
@@ -61,15 +60,17 @@ R2_BUCKET_NAME=amphoreus-products
 R2_PUBLIC_URL=https://pub-xxxx.r2.dev
 ```
 
-`src/server/lib/env.ts` — add to the Zod schema:
+`src/server/lib/env.ts` — add to the Zod schema as **optional** so the app starts without R2 configured (local-disk fallback is still usable):
 
 ```typescript
-R2_ACCOUNT_ID: z.string().min(1),
-R2_ACCESS_KEY_ID: z.string().min(1),
-R2_SECRET_ACCESS_KEY: z.string().min(1),
-R2_BUCKET_NAME: z.string().min(1),
-R2_PUBLIC_URL: z.string().url(),
+R2_ACCOUNT_ID: z.string().min(1).optional(),
+R2_ACCESS_KEY_ID: z.string().min(1).optional(),
+R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+R2_BUCKET_NAME: z.string().min(1).optional(),
+R2_PUBLIC_URL: z.string().url().optional(),
 ```
+
+`imageService.ts` must check these at call time and throw a clear error if an upload is attempted without R2 configured (see Section 3 below). Making them required in Zod causes the app to refuse to start at all — unacceptable during development or when using the local-disk fallback.
 
 ---
 
@@ -90,14 +91,23 @@ export const CARD_WIDTH = 400;
 export const FULL_WIDTH = 1200;
 const WEBP_QUALITY = 82; // good perceptual quality at ~30-50% smaller than JPEG
 
-const s3 = new S3Client({
-  region: "auto",
-  endpoint: `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: env.R2_ACCESS_KEY_ID,
-    secretAccessKey: env.R2_SECRET_ACCESS_KEY,
-  },
-});
+// Lazy-initialised so the module can be imported even when R2 is not configured.
+// An error is thrown only when an upload is actually attempted.
+function getS3Client(): S3Client {
+  if (!env.R2_ACCOUNT_ID || !env.R2_ACCESS_KEY_ID || !env.R2_SECRET_ACCESS_KEY) {
+    throw new Error(
+      "R2 is not configured. Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY in .env"
+    );
+  }
+  return new S3Client({
+    region: "auto",
+    endpoint: `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: env.R2_ACCESS_KEY_ID,
+      secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+    },
+  });
+}
 
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
 const MAX_INPUT_BYTES = 10 * 1024 * 1024; // 10 MB
@@ -144,19 +154,23 @@ export async function uploadProductImage(
 }
 
 export async function deleteProductImage(cardUrl: string): Promise<void> {
-  // Derive both keys from the card URL — delete both variants
+  // Only attempt deletion if this looks like an R2-managed URL (contains our key pattern).
+  // Legacy products may have external image URLs — skip deletion for those.
+  if (!env.R2_PUBLIC_URL || !cardUrl.startsWith(env.R2_PUBLIC_URL)) return;
+
   const cardKey = cardUrl.replace(`${env.R2_PUBLIC_URL}/`, "");
   const fullKey = cardKey.replace("-card.webp", "-full.webp");
+  const s3 = getS3Client();
   await Promise.allSettled([
-    s3.send(new DeleteObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: cardKey })),
-    s3.send(new DeleteObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: fullKey })),
+    s3.send(new DeleteObjectCommand({ Bucket: env.R2_BUCKET_NAME!, Key: cardKey })),
+    s3.send(new DeleteObjectCommand({ Bucket: env.R2_BUCKET_NAME!, Key: fullKey })),
   ]);
   // allSettled — don't throw if the object was already deleted
 }
 
 async function uploadToR2(key: string, body: Buffer): Promise<void> {
   const upload = new Upload({
-    client: s3,
+    client: getS3Client(),
     params: {
       Bucket: env.R2_BUCKET_NAME,
       Key: key,
@@ -174,15 +188,19 @@ async function uploadToR2(key: string, body: Buffer): Promise<void> {
 
 ### 4. Upload Endpoint (`src/server/index.ts`)
 
-tRPC does not support binary file uploads. Add a plain Hono route before the tRPC mount:
+tRPC does not support binary file uploads. Add a plain Hono route **before the tRPC mount** (around line 50, after the health check). `sessionMiddleware` is already applied globally to all routes — no need to add it here again.
 
 ```typescript
-import { uploadProductImage } from "./services/imageService";
-import { sessionMiddleware } from "./auth/middleware";
+import { uploadProductImage } from "./services/imageService.js";
 
 // POST /api/upload/product-image
-// Auth required (any logged-in user can upload)
-app.post("/api/upload/product-image", sessionMiddleware, async (c) => {
+// Note: sessionMiddleware is already applied globally via app.use("*", sessionMiddleware)
+app.post("/api/upload/product-image", async (c) => {
+  // Require authentication — sessionMiddleware populates c.get("user")
+  if (!c.get("user")) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
   const formData = await c.req.formData();
   const file = formData.get("image");
 
@@ -205,17 +223,20 @@ app.post("/api/upload/product-image", sessionMiddleware, async (c) => {
 
 ### 5. tRPC Product Router — Cleanup on Delete/Replace
 
-**`src/server/routers/products.ts`** — add image deletion in two places:
+**`src/server/routers/products.ts`** — add image deletion in two places.
+
+> **Field name note:** The tRPC input schema uses `imageUrl` (maps to `products.imagePath` in the DB). When reading back from the DB, the column comes through as `imagePath`. Keep this distinction in mind.
 
 ```typescript
-import { deleteProductImage } from "../services/imageService";
+import { deleteProductImage } from "../services/imageService.js";
 
-// In the updateProduct mutation — when imagePath changes and old one was an R2 URL
-if (input.imagePath !== undefined && existing.imagePath && existing.imagePath !== input.imagePath) {
-  await deleteProductImage(existing.imagePath).catch(() => {}); // fire-and-forget
+// In the update mutation — fetch the existing row first, then check if imageUrl changed
+// `input.imageUrl` is the new URL; `existing.imagePath` is the old stored URL
+if (input.imageUrl !== undefined && existing.imagePath && existing.imagePath !== input.imageUrl) {
+  await deleteProductImage(existing.imagePath).catch(() => {}); // fire-and-forget, don't block save
 }
 
-// In the deleteProduct mutation — after removing DB row
+// In the delete mutation — after db.delete() returns the deleted row via .returning()
 if (deletedProduct.imagePath) {
   await deleteProductImage(deletedProduct.imagePath).catch(() => {});
 }
@@ -225,17 +246,22 @@ if (deletedProduct.imagePath) {
 
 ### 6. Database Schema — No Migration Required
 
-`products.imagePath` already exists as a `text` column. We store the **card URL** there (what all existing code reads). The full URL is derived: `cardUrl.replace("-card.webp", "-full.webp")`.
+`products.imagePath` already exists as a `text` column. We store the **card URL** there. All existing tRPC code surfaces this column as `imageUrl` (the Drizzle select aliases it). The full URL is derived client-side from the card URL.
 
-Add a typed helper to `src/shared/utils.ts`:
+Add a typed helper to `src/shared/utils.ts` (create the file if it doesn't exist at `src/shared/utils.ts`):
 
 ```typescript
 export function productFullImageUrl(cardUrl: string): string {
-  return cardUrl.replace("-card.webp", "-full.webp");
+  // Only transform R2-managed URLs that follow our naming convention.
+  // Legacy/external URLs are returned unchanged — they don't have a separate full-size variant.
+  if (cardUrl.includes("-card.webp")) {
+    return cardUrl.replace("-card.webp", "-full.webp");
+  }
+  return cardUrl;
 }
 ```
 
-Update the Zod product schema to accept R2 URLs alongside external URLs — the existing `.url()` validator already accepts any HTTPS URL, so no change is needed.
+The existing tRPC Zod input schema for `imageUrl` is already `z.string().url().optional()` — no change needed there.
 
 ---
 
@@ -328,34 +354,66 @@ export function ImageUploadField({ value, onChange }: Props) {
 
 **`src/client/components/products/ProductForm.tsx`**
 
-Replace the current `imageUrl` text input with `<ImageUploadField>`:
+The existing form uses `react-hook-form` with `form.register()` directly (not the shadcn `<FormField>` wrapper). Use `Controller` for the upload field since `ImageUploadField` is a controlled component (not a native input).
 
+**Step 1 — Update imports:**
 ```tsx
+import { useForm, Controller } from "react-hook-form";
 import { ImageUploadField } from "./ImageUploadField";
-
-// In the form JSX, replace the imageUrl text field:
-<FormField
-  control={form.control}
-  name="imagePath"
-  render={({ field }) => (
-    <FormItem>
-      <FormLabel>Product Image</FormLabel>
-      <FormControl>
-        <ImageUploadField
-          value={field.value ?? null}
-          onChange={field.onChange}
-        />
-      </FormControl>
-      <FormMessage />
-    </FormItem>
-  )}
-/>
 ```
 
-Update the Zod form schema for `imagePath` to accept `null` in addition to a URL string:
+**Step 2 — Update the Zod schema** (the field is `imageUrl` in the form schema — matches the tRPC input):
+```tsx
+// Replace:
+imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 
-```typescript
-imagePath: z.string().url().nullable().optional(),
+// With:
+imageUrl: z.string().url().nullable().optional(),
+```
+
+**Step 3 — Update the default values:**
+```tsx
+// Replace:
+imageUrl: initialData?.imageUrl || "",
+
+// With:
+imageUrl: initialData?.imageUrl ?? null,
+```
+
+**Step 4 — Update the submit handler** (remove the empty-string conversion, use null instead):
+```tsx
+// Replace:
+const payload = {
+  ...data,
+  imageUrl: data.imageUrl === "" ? undefined : data.imageUrl,
+};
+
+// With:
+const payload = {
+  ...data,
+  imageUrl: data.imageUrl ?? undefined, // null → undefined so tRPC treats it as absent
+};
+```
+
+**Step 5 — Replace the Image URL `<div>` in the JSX:**
+```tsx
+{/* Replace the entire "Image URL" div block with: */}
+<div className="space-y-2 md:col-span-2">
+  <Label>Product Image</Label>
+  <Controller
+    control={form.control}
+    name="imageUrl"
+    render={({ field }) => (
+      <ImageUploadField
+        value={field.value ?? null}
+        onChange={field.onChange}
+      />
+    )}
+  />
+  {form.formState.errors.imageUrl && (
+    <p className="text-red-600 text-sm">{form.formState.errors.imageUrl.message}</p>
+  )}
+</div>
 ```
 
 ---
@@ -387,13 +445,15 @@ The placeholder `<div>` already sets the same dimensions so there is no layout s
 
 **`src/client/routes/_auth/products/$productId.tsx`**
 
+The tRPC query returns `imageUrl` (aliased from `imagePath` in the DB). Use that field:
+
 ```tsx
 import { productFullImageUrl } from "../../../../shared/utils";
 
 // In the product detail JSX:
-{product.imagePath && (
+{product.imageUrl && (
   <img
-    src={productFullImageUrl(product.imagePath)}
+    src={productFullImageUrl(product.imageUrl)}
     alt={product.name}
     loading="eager"
     decoding="async"
@@ -415,11 +475,11 @@ import { productFullImageUrl } from "../../../../shared/utils";
 | `.env.example` | **Modify** — add R2 vars with comments |
 | `src/shared/utils.ts` | **Modify** — add `productFullImageUrl()` helper |
 | `src/client/components/products/ImageUploadField.tsx` | **Create** — upload widget |
-| `src/client/components/products/ProductForm.tsx` | **Modify** — swap text input for upload widget |
-| `src/client/components/products/ProductCard.tsx` | **Modify** — add `loading="lazy"` and `decoding="async"` |
-| `src/client/routes/_auth/products/$productId.tsx` | **Modify** — render full-size image |
+| `src/client/components/products/ProductForm.tsx` | **Modify** — add `Controller` import, update `imageUrl` Zod type to `nullable().optional()`, replace text input with `<ImageUploadField>` wrapped in `<Controller>` |
+| `src/client/components/products/ProductCard.tsx` | **Modify** — add `loading="lazy"` and `decoding="async"` to `<img>` |
+| `src/client/routes/_auth/products/$productId.tsx` | **Modify** — render full-size image using `productFullImageUrl(product.imageUrl)` |
 
-No database migration is required — `products.imagePath` already exists.
+No database migration is required — `products.imagePath` already exists. The tRPC layer surfaces it as `imageUrl`.
 
 ---
 

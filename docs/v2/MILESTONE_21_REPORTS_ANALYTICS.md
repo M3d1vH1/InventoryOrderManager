@@ -15,6 +15,24 @@ Build a reports page with pre-built analytical queries: sales by period, top pro
 
 ---
 
+## Schema Prerequisite
+
+The `orders` table has no `total_amount` column and `order_items` has no `line_total` column — revenue must be computed from a `unit_price` stored on each order line. Add this column in a migration **before** implementing the reports router:
+
+```sql
+-- drizzle migration (new file in drizzle/)
+ALTER TABLE order_items ADD COLUMN unit_price numeric(10,2) NOT NULL DEFAULT 0;
+```
+
+In `src/server/db/schema.ts`, add to `orderItems`:
+```ts
+unitPrice: numeric("unit_price", { precision: 10, scale: 2 }).notNull().default("0"),
+```
+
+The `unit_price` is populated at order-creation time (copied from the product's price at that moment) so revenue figures are historically accurate even if product prices change later. All report queries below use `oi.quantity * oi.unit_price` for revenue.
+
+---
+
 ## Implementation
 
 ### 1. tRPC Router — `src/server/routers/reports.ts`
@@ -45,29 +63,38 @@ export const reportsRouter = router({
       );
 
       const [summary, dailyBreakdown] = await Promise.all([
-        db.select({
-          totalOrders: sql<number>`count(*)::int`,
-          totalRevenue: sql<number>`COALESCE(SUM(${orders.totalAmount}), 0)`,
-          avgOrderValue: sql<number>`COALESCE(AVG(${orders.totalAmount}), 0)`,
-          shippedOrders: sql<number>`count(*) FILTER (WHERE ${orders.status} = 'shipped')::int`,
-          cancelledOrders: sql<number>`count(*) FILTER (WHERE ${orders.status} = 'cancelled')::int`,
-        }).from(orders).where(dateFilter),
+        db.execute(sql`
+          SELECT
+            COUNT(DISTINCT o.id)::int as total_orders,
+            COALESCE(SUM(oi.quantity * oi.unit_price), 0) as total_revenue,
+            CASE WHEN COUNT(DISTINCT o.id) > 0
+              THEN COALESCE(SUM(oi.quantity * oi.unit_price), 0) / COUNT(DISTINCT o.id)
+              ELSE 0
+            END as avg_order_value,
+            COUNT(DISTINCT o.id) FILTER (WHERE o.status = 'shipped')::int as shipped_orders,
+            COUNT(DISTINCT o.id) FILTER (WHERE o.status = 'cancelled')::int as cancelled_orders
+          FROM orders o
+          LEFT JOIN order_items oi ON oi.order_id = o.id
+          WHERE o.created_at >= ${new Date(input.from)}
+            AND o.created_at <= ${new Date(input.to)}
+        `).then((r) => r.rows[0]),
 
         db.execute(sql`
           SELECT
-            DATE(created_at) as date,
-            COUNT(*)::int as orders,
-            COALESCE(SUM(total_amount), 0) as revenue,
-            COUNT(*) FILTER (WHERE status = 'shipped')::int as shipped
-          FROM orders
-          WHERE created_at >= ${new Date(input.from)}
-            AND created_at <= ${new Date(input.to)}
-          GROUP BY DATE(created_at)
+            DATE(o.created_at) as date,
+            COUNT(DISTINCT o.id)::int as orders,
+            COALESCE(SUM(oi.quantity * oi.unit_price), 0) as revenue,
+            COUNT(DISTINCT o.id) FILTER (WHERE o.status = 'shipped')::int as shipped
+          FROM orders o
+          LEFT JOIN order_items oi ON oi.order_id = o.id
+          WHERE o.created_at >= ${new Date(input.from)}
+            AND o.created_at <= ${new Date(input.to)}
+          GROUP BY DATE(o.created_at)
           ORDER BY date
         `),
       ]);
 
-      return { summary: summary[0], dailyBreakdown: dailyBreakdown.rows };
+      return { summary, dailyBreakdown: dailyBreakdown.rows };
     }),
 
   topProducts: protectedProcedure
@@ -79,7 +106,7 @@ export const reportsRouter = router({
         SELECT
           p.id, p.name, p.sku,
           SUM(oi.quantity)::int as total_sold,
-          SUM(oi.line_total) as total_revenue,
+          COALESCE(SUM(oi.quantity * oi.unit_price), 0) as total_revenue,
           COUNT(DISTINCT oi.order_id)::int as order_count
         FROM order_items oi
         JOIN products p ON oi.product_id = p.id
@@ -101,11 +128,12 @@ export const reportsRouter = router({
       return db.execute(sql`
         SELECT
           c.id, c.name, c.city,
-          COUNT(o.id)::int as order_count,
-          COALESCE(SUM(o.total_amount), 0) as total_spent,
+          COUNT(DISTINCT o.id)::int as order_count,
+          COALESCE(SUM(oi.quantity * oi.unit_price), 0) as total_spent,
           MAX(o.created_at) as last_order_date
         FROM customers c
         JOIN orders o ON o.customer_id = c.id
+        JOIN order_items oi ON oi.order_id = o.id
         WHERE o.created_at >= ${new Date(input.from)}
           AND o.created_at <= ${new Date(input.to)}
           AND o.status != 'cancelled'

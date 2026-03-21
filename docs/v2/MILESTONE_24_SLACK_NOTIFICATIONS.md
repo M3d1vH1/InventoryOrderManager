@@ -34,6 +34,8 @@ interface SlackBlock {
   type: "section" | "divider" | "header" | "context";
   text?: { type: "mrkdwn" | "plain_text"; text: string };
   fields?: { type: "mrkdwn"; text: string }[];
+  // context blocks use `elements`, not `text` (Slack Block Kit spec)
+  elements?: { type: "mrkdwn" | "plain_text"; text: string }[];
 }
 
 const WEBHOOK_URL = env.SLACK_WEBHOOK_URL;
@@ -167,8 +169,9 @@ export async function notifyDailySummary(stats: {
         ],
       },
       stats.lowStockCount > 0 ? {
+        // context blocks require `elements` array, not `text` — Slack API rejects `text` here
         type: "context",
-        text: { type: "mrkdwn", text: `⚠️ ${stats.lowStockCount} products below minimum stock level` },
+        elements: [{ type: "mrkdwn", text: `⚠️ ${stats.lowStockCount} products below minimum stock level` }],
       } : { type: "divider" },
     ],
   });
@@ -287,7 +290,8 @@ import { orders, products } from "../db/schema.js";
 import { sql, eq, gte, and } from "drizzle-orm";
 
 export function scheduleDailySummary() {
-  // Run at 6 PM Greece time (UTC+2/+3)
+  // Run at 6 PM Greece time — pass timezone so node-cron interprets the schedule
+  // in Europe/Athens rather than the server's local timezone (which may be UTC)
   cron.schedule("0 18 * * *", async () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -295,13 +299,24 @@ export function scheduleDailySummary() {
     // Gather stats
     const [created] = await db.select({ count: sql<number>`count(*)::int` })
       .from(orders).where(gte(orders.createdAt, today));
+    // orders has `lastUpdated`, not `updatedAt` — use lastUpdated to filter today's shipments
     const [shipped] = await db.select({ count: sql<number>`count(*)::int` })
-      .from(orders).where(and(eq(orders.status, "shipped"), gte(orders.updatedAt, today)));
-    const [revenue] = await db.select({ total: sql<number>`COALESCE(SUM(${orders.totalAmount}), 0)` })
-      .from(orders).where(and(eq(orders.status, "shipped"), gte(orders.updatedAt, today)));
-    const [queue] = await db.select({ count: sql<number>`count(DISTINCT order_id)::int` })
-      .from(sql`order_items oi JOIN orders o ON oi.order_id = o.id`)
-      .where(sql`oi.picked_at IS NULL AND o.status NOT IN ('shipped', 'cancelled')`);
+      .from(orders).where(and(eq(orders.status, "shipped"), gte(orders.lastUpdated, today)));
+    // Revenue = sum of (quantity * unit_price) from order_items for today's shipped orders
+    // orders has no totalAmount column — compute from order_items (see M21 schema prerequisite)
+    const [revenue] = await db.execute(sql`
+      SELECT COALESCE(SUM(oi.quantity * oi.unit_price), 0) as total
+      FROM orders o
+      JOIN order_items oi ON oi.order_id = o.id
+      WHERE o.status = 'shipped' AND o.last_updated >= ${today}
+    `).then((r) => r.rows as [{ total: number }]);
+    const [queue] = await db.execute(sql`
+      SELECT COUNT(DISTINCT oi.order_id)::int as count
+      FROM order_items oi
+      JOIN orders o ON oi.order_id = o.id
+      WHERE oi.picked_at IS NULL
+        AND o.status NOT IN ('shipped', 'cancelled')
+    `).then((r) => r.rows as [{ count: number }]);
     const lowStock = await db.select()
       .from(products)
       .where(sql`${products.currentStock} - ${products.reservedStock} <= ${products.minStockLevel}`);
@@ -313,6 +328,9 @@ export function scheduleDailySummary() {
       pickingQueue: queue.count,
       lowStockCount: lowStock.length,
     });
+    // Note: `cron.schedule` also accepts a third argument `{ timezone: "Europe/Athens" }`
+    // to ensure the 18:00 fires in Greek local time rather than server UTC. Add this
+    // after confirming the node-cron version in use supports the option (v3+).
 
     if (lowStock.length > 0) {
       await notifyLowStock(lowStock.map((p) => ({
