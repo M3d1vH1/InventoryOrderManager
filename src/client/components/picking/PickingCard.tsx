@@ -5,7 +5,7 @@ import { Badge } from "../ui/badge";
 import { Card, CardHeader, CardContent } from "../ui/card";
 import { PickItemCard } from "./PickItemCard";
 import { PickProgress } from "./PickProgress";
-import { CheckCircle, Package, ChevronDown, ChevronUp, Barcode, Loader2 } from "lucide-react";
+import { CheckCircle, ChevronDown, ChevronUp, Barcode, Loader2 } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 interface PickingOrder {
@@ -49,8 +49,8 @@ export function PickingCard({ order }: { order: PickingOrder }) {
         }
     });
 
-    // Capture the initial items when expanded, so we don't lose them from view if queries refetch
-    // while we are picking.
+    // Capture the initial items when first expanded so they don't disappear if tRPC refetches
+    // while we are actively picking. localPickedIds is also reset only on open.
     useEffect(() => {
         if (expanded) {
             setInitialItems(order.unpickedItems);
@@ -60,7 +60,8 @@ export function PickingCard({ order }: { order: PickingOrder }) {
                 barcodeInputRef.current?.focus();
             }, 100);
         }
-    }, [expanded, order.unpickedItems]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [expanded]); // intentionally omit order.unpickedItems — changes while picking must not reset state
 
     // Derived states
     const itemsToDisplay = expanded ? initialItems : order.unpickedItems;
