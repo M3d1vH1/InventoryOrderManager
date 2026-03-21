@@ -12,6 +12,7 @@ import { dashboardRouter } from "./routers/dashboard.js";
 import { suppliersRouter } from "./routers/suppliers.js";
 import { productionRouter } from "./routers/production.js";
 import { predictionsRouter } from "./routers/predictions.js";
+import { calendarRouter } from "./routers/calendar.js";
 
 export const appRouter = router({
   auth: authRouter,
@@ -27,6 +28,7 @@ export const appRouter = router({
   suppliers: suppliersRouter,
   production: productionRouter,
   predictions: predictionsRouter,
+  calendar: calendarRouter,
 });
 
 export type AppRouter = typeof appRouter;

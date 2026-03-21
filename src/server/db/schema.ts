@@ -836,3 +836,32 @@ export const inventoryPredictionsRelations = relations(inventoryPredictions, ({ 
 export const seasonalPatternsRelations = relations(seasonalPatterns, ({ one }) => ({
   product: one(products, { fields: [seasonalPatterns.productId], references: [products.id] }),
 }));
+
+// ─── Calendar Events ─────────────────────────────────────────────────────────
+
+export const calendarEventTypeEnum = pgEnum("calendar_event_type", [
+  "custom",
+  "shipping",
+  "production",
+  "follow_up",
+  "invoice_due",
+]);
+
+export const calendarEvents = pgTable("calendar_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  startDate: timestamp("start_date", { withTimezone: true }).notNull(),
+  endDate: timestamp("end_date", { withTimezone: true }),
+  eventType: calendarEventTypeEnum("event_type").notNull().default("custom"),
+  referenceId: varchar("reference_id", { length: 100 }),
+  referenceType: varchar("reference_type", { length: 50 }),
+  color: varchar("color", { length: 20 }),
+  allDay: boolean("all_day").notNull().default(false),
+  createdById: integer("created_by_id").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const calendarEventsRelations = relations(calendarEvents, ({ one }) => ({
+  createdBy: one(users, { fields: [calendarEvents.createdById], references: [users.id] }),
+}));
