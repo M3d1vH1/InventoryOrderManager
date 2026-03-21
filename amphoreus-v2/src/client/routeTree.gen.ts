@@ -25,6 +25,7 @@ import { Route as AuthProductsProductIdRouteImport } from './routes/_auth/produc
 import { Route as AuthOrdersNewRouteImport } from './routes/_auth/orders/new'
 import { Route as AuthOrdersOrderIdRouteImport } from './routes/_auth/orders/$orderId'
 import { Route as AuthInventoryScanRouteImport } from './routes/_auth/inventory/scan'
+import { Route as AuthInventoryPredictionsRouteImport } from './routes/_auth/inventory/predictions'
 import { Route as AuthCustomersNewRouteImport } from './routes/_auth/customers/new'
 import { Route as AuthCustomersCustomerIdRouteImport } from './routes/_auth/customers/$customerId'
 import { Route as AuthProductionRecipesIndexRouteImport } from './routes/_auth/production/recipes/index'
@@ -113,6 +114,11 @@ const AuthInventoryScanRoute = AuthInventoryScanRouteImport.update({
   path: '/inventory/scan',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthInventoryPredictionsRoute = AuthInventoryPredictionsRouteImport.update({
+  id: '/inventory/predictions',
+  path: '/inventory/predictions',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthCustomersNewRoute = AuthCustomersNewRouteImport.update({
   id: '/customers/new',
   path: '/customers/new',
@@ -166,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/customers/$customerId': typeof AuthCustomersCustomerIdRoute
   '/customers/new': typeof AuthCustomersNewRoute
   '/inventory/scan': typeof AuthInventoryScanRoute
+  '/inventory/predictions': typeof AuthInventoryPredictionsRoute
   '/orders/$orderId': typeof AuthOrdersOrderIdRoute
   '/orders/new': typeof AuthOrdersNewRoute
   '/products/$productId': typeof AuthProductsProductIdRoute
@@ -191,6 +198,7 @@ export interface FileRoutesByTo {
   '/customers/$customerId': typeof AuthCustomersCustomerIdRoute
   '/customers/new': typeof AuthCustomersNewRoute
   '/inventory/scan': typeof AuthInventoryScanRoute
+  '/inventory/predictions': typeof AuthInventoryPredictionsRoute
   '/orders/$orderId': typeof AuthOrdersOrderIdRoute
   '/orders/new': typeof AuthOrdersNewRoute
   '/products/$productId': typeof AuthProductsProductIdRoute
@@ -218,6 +226,7 @@ export interface FileRoutesById {
   '/_auth/customers/$customerId': typeof AuthCustomersCustomerIdRoute
   '/_auth/customers/new': typeof AuthCustomersNewRoute
   '/_auth/inventory/scan': typeof AuthInventoryScanRoute
+  '/_auth/inventory/predictions': typeof AuthInventoryPredictionsRoute
   '/_auth/orders/$orderId': typeof AuthOrdersOrderIdRoute
   '/_auth/orders/new': typeof AuthOrdersNewRoute
   '/_auth/products/$productId': typeof AuthProductsProductIdRoute
@@ -240,80 +249,83 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
-    | '/login'
-    | '/customers/$customerId'
-    | '/customers/new'
-    | '/inventory/scan'
-    | '/orders/$orderId'
-    | '/orders/new'
-    | '/products/$productId'
-    | '/products/new'
-    | '/suppliers/$supplierId'
-    | '/suppliers/new'
-    | '/customers/'
-    | '/orders/'
-    | '/picking/'
-    | '/production/'
-    | '/products/'
-    | '/suppliers/'
-    | '/production/batches/$batchId'
-    | '/production/batches/new'
-    | '/production/recipes/new'
-    | '/production/batches/'
-    | '/production/materials/'
-    | '/production/recipes/'
+  | '/'
+  | '/login'
+  | '/customers/$customerId'
+  | '/customers/new'
+  | '/inventory/scan'
+  | '/inventory/predictions'
+  | '/orders/$orderId'
+  | '/orders/new'
+  | '/products/$productId'
+  | '/products/new'
+  | '/suppliers/$supplierId'
+  | '/suppliers/new'
+  | '/customers/'
+  | '/orders/'
+  | '/picking/'
+  | '/production/'
+  | '/products/'
+  | '/suppliers/'
+  | '/production/batches/$batchId'
+  | '/production/batches/new'
+  | '/production/recipes/new'
+  | '/production/batches/'
+  | '/production/materials/'
+  | '/production/recipes/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/login'
-    | '/'
-    | '/customers/$customerId'
-    | '/customers/new'
-    | '/inventory/scan'
-    | '/orders/$orderId'
-    | '/orders/new'
-    | '/products/$productId'
-    | '/products/new'
-    | '/suppliers/$supplierId'
-    | '/suppliers/new'
-    | '/customers'
-    | '/orders'
-    | '/picking'
-    | '/production'
-    | '/products'
-    | '/suppliers'
-    | '/production/batches/$batchId'
-    | '/production/batches/new'
-    | '/production/recipes/new'
-    | '/production/batches'
-    | '/production/materials'
-    | '/production/recipes'
+  | '/login'
+  | '/'
+  | '/customers/$customerId'
+  | '/customers/new'
+  | '/inventory/scan'
+  | '/inventory/predictions'
+  | '/orders/$orderId'
+  | '/orders/new'
+  | '/products/$productId'
+  | '/products/new'
+  | '/suppliers/$supplierId'
+  | '/suppliers/new'
+  | '/customers'
+  | '/orders'
+  | '/picking'
+  | '/production'
+  | '/products'
+  | '/suppliers'
+  | '/production/batches/$batchId'
+  | '/production/batches/new'
+  | '/production/recipes/new'
+  | '/production/batches'
+  | '/production/materials'
+  | '/production/recipes'
   id:
-    | '__root__'
-    | '/_auth'
-    | '/login'
-    | '/_auth/'
-    | '/_auth/customers/$customerId'
-    | '/_auth/customers/new'
-    | '/_auth/inventory/scan'
-    | '/_auth/orders/$orderId'
-    | '/_auth/orders/new'
-    | '/_auth/products/$productId'
-    | '/_auth/products/new'
-    | '/_auth/suppliers/$supplierId'
-    | '/_auth/suppliers/new'
-    | '/_auth/customers/'
-    | '/_auth/orders/'
-    | '/_auth/picking/'
-    | '/_auth/production/'
-    | '/_auth/products/'
-    | '/_auth/suppliers/'
-    | '/_auth/production/batches/$batchId'
-    | '/_auth/production/batches/new'
-    | '/_auth/production/recipes/new'
-    | '/_auth/production/batches/'
-    | '/_auth/production/materials/'
-    | '/_auth/production/recipes/'
+  | '__root__'
+  | '/_auth'
+  | '/login'
+  | '/_auth/'
+  | '/_auth/customers/$customerId'
+  | '/_auth/customers/new'
+  | '/_auth/inventory/scan'
+  | '/_auth/inventory/predictions'
+  | '/_auth/orders/$orderId'
+  | '/_auth/orders/new'
+  | '/_auth/products/$productId'
+  | '/_auth/products/new'
+  | '/_auth/suppliers/$supplierId'
+  | '/_auth/suppliers/new'
+  | '/_auth/customers/'
+  | '/_auth/orders/'
+  | '/_auth/picking/'
+  | '/_auth/production/'
+  | '/_auth/products/'
+  | '/_auth/suppliers/'
+  | '/_auth/production/batches/$batchId'
+  | '/_auth/production/batches/new'
+  | '/_auth/production/recipes/new'
+  | '/_auth/production/batches/'
+  | '/_auth/production/materials/'
+  | '/_auth/production/recipes/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -435,6 +447,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthInventoryScanRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/inventory/predictions': {
+      id: '/_auth/inventory/predictions'
+      path: '/inventory/predictions'
+      fullPath: '/inventory/predictions'
+      preLoaderRoute: typeof AuthInventoryPredictionsRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/customers/new': {
       id: '/_auth/customers/new'
       path: '/customers/new'
@@ -499,6 +518,7 @@ interface AuthRouteChildren {
   AuthCustomersCustomerIdRoute: typeof AuthCustomersCustomerIdRoute
   AuthCustomersNewRoute: typeof AuthCustomersNewRoute
   AuthInventoryScanRoute: typeof AuthInventoryScanRoute
+  AuthInventoryPredictionsRoute: typeof AuthInventoryPredictionsRoute
   AuthOrdersOrderIdRoute: typeof AuthOrdersOrderIdRoute
   AuthOrdersNewRoute: typeof AuthOrdersNewRoute
   AuthProductsProductIdRoute: typeof AuthProductsProductIdRoute
@@ -524,6 +544,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthCustomersCustomerIdRoute: AuthCustomersCustomerIdRoute,
   AuthCustomersNewRoute: AuthCustomersNewRoute,
   AuthInventoryScanRoute: AuthInventoryScanRoute,
+  AuthInventoryPredictionsRoute: AuthInventoryPredictionsRoute,
   AuthOrdersOrderIdRoute: AuthOrdersOrderIdRoute,
   AuthOrdersNewRoute: AuthOrdersNewRoute,
   AuthProductsProductIdRoute: AuthProductsProductIdRoute,
