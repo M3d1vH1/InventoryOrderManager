@@ -3,8 +3,10 @@ import { TRPCError } from "@trpc/server";
 import { eq, and, gte, lte, sql, desc, asc, ilike, or } from "drizzle-orm";
 import { router, protectedProcedure } from "../trpc.js";
 import { db } from "../db/index.js";
-import { orders, orderItems, orderChangelogs, products, customers } from "../db/schema.js";
+import { orders, orderItems, orderChangelogs, products, customers, users } from "../db/schema.js";
 import { createOrder, cancelOrder } from "../services/orderService.js";
+import { notifyNewOrder, notifyOrderShipped } from "../services/slackService.js";
+import { createNotification } from "./notifications.js";
 
 const statusEnum = z.enum([
     "pending", "confirmed", "processing", "picking",
@@ -133,13 +135,45 @@ export const ordersRouter = router({
             })
         )
         .mutation(async ({ input, ctx }) => {
-            return createOrder({
+            const order = await createOrder({
                 ...input,
                 estimatedShippingDate: input.estimatedShippingDate
                     ? new Date(input.estimatedShippingDate)
                     : undefined,
                 createdById: ctx.user.id,
             });
+
+            // Fire notifications without blocking return
+            (async () => {
+                try {
+                    const [customer] = await db.select().from(customers).where(eq(customers.id, input.customerId));
+                    const totalQuantity = input.items.reduce((sum, item) => sum + item.quantity, 0);
+
+                    await notifyNewOrder({
+                        orderNumber: order.orderNumber,
+                        customerName: customer?.name ?? "Unknown",
+                        totalAmount: 0,
+                        itemCount: totalQuantity,
+                        priority: order.priority,
+                    });
+
+                    const targets = await db.select().from(users).where(or(eq(users.role, "admin"), eq(users.role, "front_office")));
+                    for (const u of targets) {
+                        await createNotification({
+                            userId: u.id,
+                            title: `New Order: ${order.orderNumber}`,
+                            message: `Priority: ${order.priority}, Items: ${totalQuantity}`,
+                            type: "new_order",
+                            referenceId: String(order.id),
+                            referenceType: "order"
+                        });
+                    }
+                } catch (err) {
+                    console.error("Order notification failed:", err);
+                }
+            })();
+
+            return order;
         }),
 
     update: protectedProcedure
@@ -210,6 +244,31 @@ export const ordersRouter = router({
                 notes: `Status changed from "${order.status}" to "${input.status}"`,
                 userId: ctx.user.id,
             });
+
+            if (input.status === "shipped") {
+                (async () => {
+                    try {
+                        const [customer] = await db.select().from(customers).where(eq(customers.id, order.customerId));
+                        await notifyOrderShipped({
+                            orderNumber: order.orderNumber,
+                            customerName: customer?.name ?? "Unknown"
+                        });
+
+                        if (order.createdById) {
+                            await createNotification({
+                                userId: order.createdById,
+                                title: `Order Shipped: ${order.orderNumber}`,
+                                message: `Order for ${customer?.name ?? "Unknown"} has shipped`,
+                                type: "order_shipped",
+                                referenceId: String(order.id),
+                                referenceType: "order"
+                            });
+                        }
+                    } catch (err) {
+                        console.error("Order shipping notification failed:", err);
+                    }
+                })();
+            }
 
             return { success: true };
         }),

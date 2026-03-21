@@ -10,6 +10,7 @@ import { createContext } from "./trpc.js";
 import { closeDatabase } from "./db/index.js";
 import { initRedis, getRedis } from "./lib/cache.js";
 import { sessionMiddleware } from "./auth/middleware.js";
+import { scheduleDailySummary } from "./jobs/dailySummary.js";
 
 const app = new Hono();
 
@@ -93,6 +94,7 @@ initRedis().then(() => {
     logger.info(`Amphoreus server running on http://localhost:${port}`, {
       env: env.NODE_ENV,
     });
+    scheduleDailySummary();
   });
 });
 

@@ -2,6 +2,7 @@ import { LogOut, User } from "lucide-react";
 import { trpc } from "../../lib/trpc";
 import { cn } from "../../lib/utils";
 import type { SafeUser } from "../../../shared/types";
+import { NotificationBell } from "./NotificationBell";
 
 interface HeaderProps {
     user: Omit<SafeUser, "createdAt" | "lastLogin"> & {
@@ -38,6 +39,8 @@ export function Header({ user, sidebarCollapsed }: HeaderProps) {
 
             {/* Right: User info + logout */}
             <div className="flex items-center gap-4">
+                <NotificationBell />
+
                 {/* Role badge */}
                 <span
                     className={cn(

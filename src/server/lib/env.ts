@@ -19,6 +19,7 @@ const envSchema = z.object({
     .min(32, "SESSION_SECRET must be at least 32 characters"),
 
   ADMIN_INITIAL_PASSWORD: z.string().min(8).optional(),
+  SLACK_WEBHOOK_URL: z.string().url().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

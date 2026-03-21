@@ -865,3 +865,21 @@ export const calendarEvents = pgTable("calendar_events", {
 export const calendarEventsRelations = relations(calendarEvents, ({ one }) => ({
   createdBy: one(users, { fields: [calendarEvents.createdById], references: [users.id] }),
 }));
+
+// ─── In-App Notifications ───────────────────────────────────────────────────────
+
+export const notifications = pgTable("notifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  type: varchar("type", { length: 50 }).notNull().default("info"),
+  referenceId: varchar("reference_id", { length: 100 }),
+  referenceType: varchar("reference_type", { length: 50 }),
+  read: boolean("read").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, { fields: [notifications.userId], references: [users.id] }),
+}));
