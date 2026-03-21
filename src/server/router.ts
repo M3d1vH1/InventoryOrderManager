@@ -11,6 +11,7 @@ import { barcodeRouter } from "./routers/barcode.js";
 import { dashboardRouter } from "./routers/dashboard.js";
 import { suppliersRouter } from "./routers/suppliers.js";
 import { productionRouter } from "./routers/production.js";
+import { predictionsRouter } from "./routers/predictions.js";
 
 export const appRouter = router({
   auth: authRouter,
@@ -25,6 +26,7 @@ export const appRouter = router({
   dashboard: dashboardRouter,
   suppliers: suppliersRouter,
   production: productionRouter,
+  predictions: predictionsRouter,
 });
 
 export type AppRouter = typeof appRouter;

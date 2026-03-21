@@ -805,3 +805,34 @@ export const materialInventoryChangesRelations = relations(materialInventoryChan
   rawMaterial: one(rawMaterials, { fields: [materialInventoryChanges.rawMaterialId], references: [rawMaterials.id] }),
   changedBy: one(users, { fields: [materialInventoryChanges.changedById], references: [users.id] }),
 }));
+
+// ─── Inventory Predictions ───────────────────────────────────────────────────
+
+export const inventoryPredictions = pgTable("inventory_predictions", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  predictedDailyDemand: real("predicted_daily_demand").notNull(),
+  daysUntilStockout: integer("days_until_stockout").notNull(),
+  suggestedReorderQuantity: integer("suggested_reorder_quantity").notNull(),
+  confidenceScore: real("confidence_score").notNull(),
+  calculatedAt: timestamp("calculated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const seasonalPatterns = pgTable("seasonal_patterns", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  month: integer("month").notNull(),
+  avgDailyDemand: real("avg_daily_demand").notNull(),
+  demandMultiplier: real("demand_multiplier").notNull(),
+  sampleSize: integer("sample_size").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const inventoryPredictionsRelations = relations(inventoryPredictions, ({ one }) => ({
+  product: one(products, { fields: [inventoryPredictions.productId], references: [products.id] }),
+}));
+
+export const seasonalPatternsRelations = relations(seasonalPatterns, ({ one }) => ({
+  product: one(products, { fields: [seasonalPatterns.productId], references: [products.id] }),
+}));
