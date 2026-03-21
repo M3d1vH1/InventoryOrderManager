@@ -34,7 +34,6 @@
     "@trpc/client": "^11.0.0",
     "@trpc/react-query": "^11.0.0",
     "@trpc/server": "^11.0.0",
-    "@types/redis": "^4.0.10",
     "@zxing/browser": "^0.1.5",
     "@zxing/library": "^0.21.3",
     "bcrypt": "^5.1.1",
