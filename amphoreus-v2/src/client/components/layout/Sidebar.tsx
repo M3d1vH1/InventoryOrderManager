@@ -105,7 +105,6 @@ const navigation: NavEntry[] = [
         href: "/settings",
         icon: Settings,
         roles: ["admin"],
-        disabled: true,
     },
 ];
 

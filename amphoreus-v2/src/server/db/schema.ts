@@ -25,6 +25,7 @@ export const userRoleEnum = pgEnum("user_role", [
   "admin",
   "front_office",
   "warehouse",
+  "viewer",
 ]);
 
 export const orderStatusEnum = pgEnum("order_status", [
@@ -883,3 +884,57 @@ export const notifications = pgTable("notifications", {
 export const notificationsRelations = relations(notifications, ({ one }) => ({
   user: one(users, { fields: [notifications.userId], references: [users.id] }),
 }));
+
+// ─── Settings & Configuration ───────────────────────────────────────────────
+
+export const companySettings = pgTable("company_settings", {
+  id: serial("id").primaryKey(),
+  companyName: varchar("company_name", { length: 255 }).notNull(),
+  address: text("address"),
+  city: varchar("city", { length: 100 }),
+  postalCode: varchar("postal_code", { length: 50 }),
+  country: varchar("country", { length: 100 }),
+  taxId: varchar("tax_id", { length: 50 }),
+  phone: varchar("phone", { length: 50 }),
+  email: varchar("email", { length: 255 }),
+  logoUrl: text("logo_url"),
+  website: text("website"),
+  defaultCurrency: varchar("default_currency", { length: 10 }).default("EUR").notNull(),
+  timezone: varchar("timezone", { length: 100 }).default("Europe/Athens").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const emailSettings = pgTable("email_settings", {
+  id: serial("id").primaryKey(),
+  smtpHost: varchar("smtp_host", { length: 255 }),
+  smtpPort: integer("smtp_port"),
+  smtpUser: varchar("smtp_user", { length: 255 }),
+  smtpPass: text("smtp_pass"),
+  fromName: varchar("from_name", { length: 255 }),
+  fromEmail: varchar("from_email", { length: 255 }),
+  enabled: boolean("enabled").default(false).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const notificationSettings = pgTable("notification_settings", {
+  id: serial("id").primaryKey(),
+  slackWebhookUrl: text("slack_webhook_url"),
+  slackEnabled: boolean("slack_enabled").default(false).notNull(),
+  emailEnabled: boolean("email_enabled").default(false).notNull(),
+  notifyNewOrder: boolean("notify_new_order").default(true).notNull(),
+  notifyShipped: boolean("notify_shipped").default(true).notNull(),
+  notifyLowStock: boolean("notify_low_stock").default(true).notNull(),
+  dailySummaryEnabled: boolean("daily_summary_enabled").default(true).notNull(),
+  dailySummaryTime: varchar("daily_summary_time", { length: 10 }).default("18:00").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const rolePermissions = pgTable("role_permissions", {
+  id: serial("id").primaryKey(),
+  role: userRoleEnum("role").notNull(),
+  permission: varchar("permission", { length: 100 }).notNull(),
+  enabled: boolean("enabled").default(true).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("idx_role_permission").on(table.role, table.permission),
+]);

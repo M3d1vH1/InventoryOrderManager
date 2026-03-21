@@ -12,21 +12,28 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
+import { Route as AuthSettingsRouteRouteImport } from './routes/_auth/settings/route'
 import { Route as AuthSuppliersIndexRouteImport } from './routes/_auth/suppliers/index'
+import { Route as AuthSettingsIndexRouteImport } from './routes/_auth/settings/index'
 import { Route as AuthProductsIndexRouteImport } from './routes/_auth/products/index'
 import { Route as AuthProductionIndexRouteImport } from './routes/_auth/production/index'
 import { Route as AuthPickingIndexRouteImport } from './routes/_auth/picking/index'
 import { Route as AuthOrdersIndexRouteImport } from './routes/_auth/orders/index'
 import { Route as AuthCustomersIndexRouteImport } from './routes/_auth/customers/index'
+import { Route as AuthCalendarIndexRouteImport } from './routes/_auth/calendar/index'
 import { Route as AuthSuppliersNewRouteImport } from './routes/_auth/suppliers/new'
 import { Route as AuthSuppliersSupplierIdRouteImport } from './routes/_auth/suppliers/$supplierId'
+import { Route as AuthSettingsUsersRouteImport } from './routes/_auth/settings/users'
+import { Route as AuthSettingsSystemRouteImport } from './routes/_auth/settings/system'
+import { Route as AuthSettingsNotificationsRouteImport } from './routes/_auth/settings/notifications'
+import { Route as AuthSettingsEmailRouteImport } from './routes/_auth/settings/email'
+import { Route as AuthSettingsCompanyRouteImport } from './routes/_auth/settings/company'
 import { Route as AuthProductsNewRouteImport } from './routes/_auth/products/new'
 import { Route as AuthProductsProductIdRouteImport } from './routes/_auth/products/$productId'
 import { Route as AuthOrdersNewRouteImport } from './routes/_auth/orders/new'
 import { Route as AuthOrdersOrderIdRouteImport } from './routes/_auth/orders/$orderId'
 import { Route as AuthInventoryScanRouteImport } from './routes/_auth/inventory/scan'
 import { Route as AuthInventoryPredictionsRouteImport } from './routes/_auth/inventory/predictions'
-import { Route as AuthCalendarIndexRouteImport } from './routes/_auth/calendar/index'
 import { Route as AuthCustomersNewRouteImport } from './routes/_auth/customers/new'
 import { Route as AuthCustomersCustomerIdRouteImport } from './routes/_auth/customers/$customerId'
 import { Route as AuthProductionRecipesIndexRouteImport } from './routes/_auth/production/recipes/index'
@@ -50,10 +57,20 @@ const AuthIndexRoute = AuthIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthSettingsRouteRoute = AuthSettingsRouteRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthSuppliersIndexRoute = AuthSuppliersIndexRouteImport.update({
   id: '/suppliers/',
   path: '/suppliers/',
   getParentRoute: () => AuthRoute,
+} as any)
+const AuthSettingsIndexRoute = AuthSettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthSettingsRouteRoute,
 } as any)
 const AuthProductsIndexRoute = AuthProductsIndexRouteImport.update({
   id: '/products/',
@@ -80,6 +97,11 @@ const AuthCustomersIndexRoute = AuthCustomersIndexRouteImport.update({
   path: '/customers/',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthCalendarIndexRoute = AuthCalendarIndexRouteImport.update({
+  id: '/calendar/',
+  path: '/calendar/',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthSuppliersNewRoute = AuthSuppliersNewRouteImport.update({
   id: '/suppliers/new',
   path: '/suppliers/new',
@@ -89,6 +111,32 @@ const AuthSuppliersSupplierIdRoute = AuthSuppliersSupplierIdRouteImport.update({
   id: '/suppliers/$supplierId',
   path: '/suppliers/$supplierId',
   getParentRoute: () => AuthRoute,
+} as any)
+const AuthSettingsUsersRoute = AuthSettingsUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthSettingsRouteRoute,
+} as any)
+const AuthSettingsSystemRoute = AuthSettingsSystemRouteImport.update({
+  id: '/system',
+  path: '/system',
+  getParentRoute: () => AuthSettingsRouteRoute,
+} as any)
+const AuthSettingsNotificationsRoute =
+  AuthSettingsNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthSettingsRouteRoute,
+  } as any)
+const AuthSettingsEmailRoute = AuthSettingsEmailRouteImport.update({
+  id: '/email',
+  path: '/email',
+  getParentRoute: () => AuthSettingsRouteRoute,
+} as any)
+const AuthSettingsCompanyRoute = AuthSettingsCompanyRouteImport.update({
+  id: '/company',
+  path: '/company',
+  getParentRoute: () => AuthSettingsRouteRoute,
 } as any)
 const AuthProductsNewRoute = AuthProductsNewRouteImport.update({
   id: '/products/new',
@@ -115,16 +163,12 @@ const AuthInventoryScanRoute = AuthInventoryScanRouteImport.update({
   path: '/inventory/scan',
   getParentRoute: () => AuthRoute,
 } as any)
-const AuthInventoryPredictionsRoute = AuthInventoryPredictionsRouteImport.update({
-  id: '/inventory/predictions',
-  path: '/inventory/predictions',
-  getParentRoute: () => AuthRoute,
-} as any)
-const AuthCalendarIndexRoute = AuthCalendarIndexRouteImport.update({
-  id: '/calendar/',
-  path: '/calendar/',
-  getParentRoute: () => AuthRoute,
-} as any)
+const AuthInventoryPredictionsRoute =
+  AuthInventoryPredictionsRouteImport.update({
+    id: '/inventory/predictions',
+    path: '/inventory/predictions',
+    getParentRoute: () => AuthRoute,
+  } as any)
 const AuthCustomersNewRoute = AuthCustomersNewRouteImport.update({
   id: '/customers/new',
   path: '/customers/new',
@@ -175,21 +219,29 @@ const AuthProductionBatchesBatchIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
   '/login': typeof LoginRoute
+  '/settings': typeof AuthSettingsRouteRouteWithChildren
   '/customers/$customerId': typeof AuthCustomersCustomerIdRoute
   '/customers/new': typeof AuthCustomersNewRoute
-  '/inventory/scan': typeof AuthInventoryScanRoute
   '/inventory/predictions': typeof AuthInventoryPredictionsRoute
+  '/inventory/scan': typeof AuthInventoryScanRoute
   '/orders/$orderId': typeof AuthOrdersOrderIdRoute
   '/orders/new': typeof AuthOrdersNewRoute
   '/products/$productId': typeof AuthProductsProductIdRoute
   '/products/new': typeof AuthProductsNewRoute
+  '/settings/company': typeof AuthSettingsCompanyRoute
+  '/settings/email': typeof AuthSettingsEmailRoute
+  '/settings/notifications': typeof AuthSettingsNotificationsRoute
+  '/settings/system': typeof AuthSettingsSystemRoute
+  '/settings/users': typeof AuthSettingsUsersRoute
   '/suppliers/$supplierId': typeof AuthSuppliersSupplierIdRoute
   '/suppliers/new': typeof AuthSuppliersNewRoute
+  '/calendar/': typeof AuthCalendarIndexRoute
   '/customers/': typeof AuthCustomersIndexRoute
   '/orders/': typeof AuthOrdersIndexRoute
   '/picking/': typeof AuthPickingIndexRoute
   '/production/': typeof AuthProductionIndexRoute
   '/products/': typeof AuthProductsIndexRoute
+  '/settings/': typeof AuthSettingsIndexRoute
   '/suppliers/': typeof AuthSuppliersIndexRoute
   '/production/batches/$batchId': typeof AuthProductionBatchesBatchIdRoute
   '/production/batches/new': typeof AuthProductionBatchesNewRoute
@@ -197,26 +249,32 @@ export interface FileRoutesByFullPath {
   '/production/batches/': typeof AuthProductionBatchesIndexRoute
   '/production/materials/': typeof AuthProductionMaterialsIndexRoute
   '/production/recipes/': typeof AuthProductionRecipesIndexRoute
-  '/calendar/': typeof AuthCalendarIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/': typeof AuthIndexRoute
   '/customers/$customerId': typeof AuthCustomersCustomerIdRoute
   '/customers/new': typeof AuthCustomersNewRoute
-  '/inventory/scan': typeof AuthInventoryScanRoute
   '/inventory/predictions': typeof AuthInventoryPredictionsRoute
+  '/inventory/scan': typeof AuthInventoryScanRoute
   '/orders/$orderId': typeof AuthOrdersOrderIdRoute
   '/orders/new': typeof AuthOrdersNewRoute
   '/products/$productId': typeof AuthProductsProductIdRoute
   '/products/new': typeof AuthProductsNewRoute
+  '/settings/company': typeof AuthSettingsCompanyRoute
+  '/settings/email': typeof AuthSettingsEmailRoute
+  '/settings/notifications': typeof AuthSettingsNotificationsRoute
+  '/settings/system': typeof AuthSettingsSystemRoute
+  '/settings/users': typeof AuthSettingsUsersRoute
   '/suppliers/$supplierId': typeof AuthSuppliersSupplierIdRoute
   '/suppliers/new': typeof AuthSuppliersNewRoute
+  '/calendar': typeof AuthCalendarIndexRoute
   '/customers': typeof AuthCustomersIndexRoute
   '/orders': typeof AuthOrdersIndexRoute
   '/picking': typeof AuthPickingIndexRoute
   '/production': typeof AuthProductionIndexRoute
   '/products': typeof AuthProductsIndexRoute
+  '/settings': typeof AuthSettingsIndexRoute
   '/suppliers': typeof AuthSuppliersIndexRoute
   '/production/batches/$batchId': typeof AuthProductionBatchesBatchIdRoute
   '/production/batches/new': typeof AuthProductionBatchesNewRoute
@@ -224,29 +282,35 @@ export interface FileRoutesByTo {
   '/production/batches': typeof AuthProductionBatchesIndexRoute
   '/production/materials': typeof AuthProductionMaterialsIndexRoute
   '/production/recipes': typeof AuthProductionRecipesIndexRoute
-  '/calendar': typeof AuthCalendarIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_auth': typeof AuthRouteWithChildren
   '/login': typeof LoginRoute
+  '/_auth/settings': typeof AuthSettingsRouteRouteWithChildren
   '/_auth/': typeof AuthIndexRoute
   '/_auth/customers/$customerId': typeof AuthCustomersCustomerIdRoute
   '/_auth/customers/new': typeof AuthCustomersNewRoute
-  '/_auth/inventory/scan': typeof AuthInventoryScanRoute
   '/_auth/inventory/predictions': typeof AuthInventoryPredictionsRoute
-  '/_auth/calendar/': typeof AuthCalendarIndexRoute
+  '/_auth/inventory/scan': typeof AuthInventoryScanRoute
   '/_auth/orders/$orderId': typeof AuthOrdersOrderIdRoute
   '/_auth/orders/new': typeof AuthOrdersNewRoute
   '/_auth/products/$productId': typeof AuthProductsProductIdRoute
   '/_auth/products/new': typeof AuthProductsNewRoute
+  '/_auth/settings/company': typeof AuthSettingsCompanyRoute
+  '/_auth/settings/email': typeof AuthSettingsEmailRoute
+  '/_auth/settings/notifications': typeof AuthSettingsNotificationsRoute
+  '/_auth/settings/system': typeof AuthSettingsSystemRoute
+  '/_auth/settings/users': typeof AuthSettingsUsersRoute
   '/_auth/suppliers/$supplierId': typeof AuthSuppliersSupplierIdRoute
   '/_auth/suppliers/new': typeof AuthSuppliersNewRoute
+  '/_auth/calendar/': typeof AuthCalendarIndexRoute
   '/_auth/customers/': typeof AuthCustomersIndexRoute
   '/_auth/orders/': typeof AuthOrdersIndexRoute
   '/_auth/picking/': typeof AuthPickingIndexRoute
   '/_auth/production/': typeof AuthProductionIndexRoute
   '/_auth/products/': typeof AuthProductsIndexRoute
+  '/_auth/settings/': typeof AuthSettingsIndexRoute
   '/_auth/suppliers/': typeof AuthSuppliersIndexRoute
   '/_auth/production/batches/$batchId': typeof AuthProductionBatchesBatchIdRoute
   '/_auth/production/batches/new': typeof AuthProductionBatchesNewRoute
@@ -258,86 +322,106 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-  | '/'
-  | '/login'
-  | '/customers/$customerId'
-  | '/customers/new'
-  | '/inventory/scan'
-  | '/inventory/predictions'
-  | '/orders/$orderId'
-  | '/orders/new'
-  | '/products/$productId'
-  | '/products/new'
-  | '/suppliers/$supplierId'
-  | '/suppliers/new'
-  | '/customers/'
-  | '/orders/'
-  | '/picking/'
-  | '/production/'
-  | '/products/'
-  | '/suppliers/'
-  | '/production/batches/$batchId'
-  | '/production/batches/new'
-  | '/production/recipes/new'
-  | '/production/batches/'
-  | '/production/materials/'
-  | '/production/recipes/'
-  | '/calendar/'
+    | '/'
+    | '/login'
+    | '/settings'
+    | '/customers/$customerId'
+    | '/customers/new'
+    | '/inventory/predictions'
+    | '/inventory/scan'
+    | '/orders/$orderId'
+    | '/orders/new'
+    | '/products/$productId'
+    | '/products/new'
+    | '/settings/company'
+    | '/settings/email'
+    | '/settings/notifications'
+    | '/settings/system'
+    | '/settings/users'
+    | '/suppliers/$supplierId'
+    | '/suppliers/new'
+    | '/calendar/'
+    | '/customers/'
+    | '/orders/'
+    | '/picking/'
+    | '/production/'
+    | '/products/'
+    | '/settings/'
+    | '/suppliers/'
+    | '/production/batches/$batchId'
+    | '/production/batches/new'
+    | '/production/recipes/new'
+    | '/production/batches/'
+    | '/production/materials/'
+    | '/production/recipes/'
   fileRoutesByTo: FileRoutesByTo
   to:
-  | '/login'
-  | '/'
-  | '/customers/$customerId'
-  | '/customers/new'
-  | '/inventory/scan'
-  | '/inventory/predictions'
-  | '/orders/$orderId'
-  | '/orders/new'
-  | '/products/$productId'
-  | '/products/new'
-  | '/suppliers/$supplierId'
-  | '/suppliers/new'
-  | '/customers'
-  | '/orders'
-  | '/picking'
-  | '/production'
-  | '/products'
-  | '/suppliers'
-  | '/production/batches/$batchId'
-  | '/production/batches/new'
-  | '/production/recipes/new'
-  | '/production/batches'
-  | '/production/materials'
-  | '/production/recipes'
-  | '/calendar'
+    | '/login'
+    | '/'
+    | '/customers/$customerId'
+    | '/customers/new'
+    | '/inventory/predictions'
+    | '/inventory/scan'
+    | '/orders/$orderId'
+    | '/orders/new'
+    | '/products/$productId'
+    | '/products/new'
+    | '/settings/company'
+    | '/settings/email'
+    | '/settings/notifications'
+    | '/settings/system'
+    | '/settings/users'
+    | '/suppliers/$supplierId'
+    | '/suppliers/new'
+    | '/calendar'
+    | '/customers'
+    | '/orders'
+    | '/picking'
+    | '/production'
+    | '/products'
+    | '/settings'
+    | '/suppliers'
+    | '/production/batches/$batchId'
+    | '/production/batches/new'
+    | '/production/recipes/new'
+    | '/production/batches'
+    | '/production/materials'
+    | '/production/recipes'
   id:
-  | '__root__'
-  | '/_auth'
-  | '/login'
-  | '/_auth/'
-  | '/_auth/customers/$customerId'
-  | '/_auth/customers/new'
-  | '/_auth/inventory/scan'
-  | '/_auth/inventory/predictions'
-  | '/_auth/calendar/'
-  | '/_auth/orders/$orderId'
-  | '/_auth/orders/new'
-  | '/_auth/products/$productId'
-  | '/_auth/products/new'
-  | '/_auth/suppliers/$supplierId'
-  | '/_auth/suppliers/new'
-  | '/_auth/customers/'
-  | '/_auth/orders/'
-  | '/_auth/picking/'
-  | '/_auth/production/'
-  | '/_auth/products/'
-  | '/_auth/suppliers/'
-  | '/_auth/production/batches/$batchId'
-  | '/_auth/production/batches/new'
-  | '/_auth/production/recipes/new'
-  | '/_auth/production/batches/'
-  | '/_auth/production/materials/'
-  | '/_auth/production/recipes/'
+    | '__root__'
+    | '/_auth'
+    | '/login'
+    | '/_auth/settings'
+    | '/_auth/'
+    | '/_auth/customers/$customerId'
+    | '/_auth/customers/new'
+    | '/_auth/inventory/predictions'
+    | '/_auth/inventory/scan'
+    | '/_auth/orders/$orderId'
+    | '/_auth/orders/new'
+    | '/_auth/products/$productId'
+    | '/_auth/products/new'
+    | '/_auth/settings/company'
+    | '/_auth/settings/email'
+    | '/_auth/settings/notifications'
+    | '/_auth/settings/system'
+    | '/_auth/settings/users'
+    | '/_auth/suppliers/$supplierId'
+    | '/_auth/suppliers/new'
+    | '/_auth/calendar/'
+    | '/_auth/customers/'
+    | '/_auth/orders/'
+    | '/_auth/picking/'
+    | '/_auth/production/'
+    | '/_auth/products/'
+    | '/_auth/settings/'
+    | '/_auth/suppliers/'
+    | '/_auth/production/batches/$batchId'
+    | '/_auth/production/batches/new'
+    | '/_auth/production/recipes/new'
+    | '/_auth/production/batches/'
+    | '/_auth/production/materials/'
+    | '/_auth/production/recipes/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -368,12 +452,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthIndexRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/settings': {
+      id: '/_auth/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthSettingsRouteRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/suppliers/': {
       id: '/_auth/suppliers/'
       path: '/suppliers'
       fullPath: '/suppliers/'
       preLoaderRoute: typeof AuthSuppliersIndexRouteImport
       parentRoute: typeof AuthRoute
+    }
+    '/_auth/settings/': {
+      id: '/_auth/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AuthSettingsIndexRouteImport
+      parentRoute: typeof AuthSettingsRouteRoute
     }
     '/_auth/products/': {
       id: '/_auth/products/'
@@ -410,6 +508,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCustomersIndexRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/calendar/': {
+      id: '/_auth/calendar/'
+      path: '/calendar'
+      fullPath: '/calendar/'
+      preLoaderRoute: typeof AuthCalendarIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/suppliers/new': {
       id: '/_auth/suppliers/new'
       path: '/suppliers/new'
@@ -423,6 +528,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/suppliers/$supplierId'
       preLoaderRoute: typeof AuthSuppliersSupplierIdRouteImport
       parentRoute: typeof AuthRoute
+    }
+    '/_auth/settings/users': {
+      id: '/_auth/settings/users'
+      path: '/users'
+      fullPath: '/settings/users'
+      preLoaderRoute: typeof AuthSettingsUsersRouteImport
+      parentRoute: typeof AuthSettingsRouteRoute
+    }
+    '/_auth/settings/system': {
+      id: '/_auth/settings/system'
+      path: '/system'
+      fullPath: '/settings/system'
+      preLoaderRoute: typeof AuthSettingsSystemRouteImport
+      parentRoute: typeof AuthSettingsRouteRoute
+    }
+    '/_auth/settings/notifications': {
+      id: '/_auth/settings/notifications'
+      path: '/notifications'
+      fullPath: '/settings/notifications'
+      preLoaderRoute: typeof AuthSettingsNotificationsRouteImport
+      parentRoute: typeof AuthSettingsRouteRoute
+    }
+    '/_auth/settings/email': {
+      id: '/_auth/settings/email'
+      path: '/email'
+      fullPath: '/settings/email'
+      preLoaderRoute: typeof AuthSettingsEmailRouteImport
+      parentRoute: typeof AuthSettingsRouteRoute
+    }
+    '/_auth/settings/company': {
+      id: '/_auth/settings/company'
+      path: '/company'
+      fullPath: '/settings/company'
+      preLoaderRoute: typeof AuthSettingsCompanyRouteImport
+      parentRoute: typeof AuthSettingsRouteRoute
     }
     '/_auth/products/new': {
       id: '/_auth/products/new'
@@ -464,13 +604,6 @@ declare module '@tanstack/react-router' {
       path: '/inventory/predictions'
       fullPath: '/inventory/predictions'
       preLoaderRoute: typeof AuthInventoryPredictionsRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/calendar/': {
-      id: '/_auth/calendar/'
-      path: '/calendar'
-      fullPath: '/calendar/'
-      preLoaderRoute: typeof AuthCalendarIndexRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/customers/new': {
@@ -532,18 +665,41 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthSettingsRouteRouteChildren {
+  AuthSettingsCompanyRoute: typeof AuthSettingsCompanyRoute
+  AuthSettingsEmailRoute: typeof AuthSettingsEmailRoute
+  AuthSettingsNotificationsRoute: typeof AuthSettingsNotificationsRoute
+  AuthSettingsSystemRoute: typeof AuthSettingsSystemRoute
+  AuthSettingsUsersRoute: typeof AuthSettingsUsersRoute
+  AuthSettingsIndexRoute: typeof AuthSettingsIndexRoute
+}
+
+const AuthSettingsRouteRouteChildren: AuthSettingsRouteRouteChildren = {
+  AuthSettingsCompanyRoute: AuthSettingsCompanyRoute,
+  AuthSettingsEmailRoute: AuthSettingsEmailRoute,
+  AuthSettingsNotificationsRoute: AuthSettingsNotificationsRoute,
+  AuthSettingsSystemRoute: AuthSettingsSystemRoute,
+  AuthSettingsUsersRoute: AuthSettingsUsersRoute,
+  AuthSettingsIndexRoute: AuthSettingsIndexRoute,
+}
+
+const AuthSettingsRouteRouteWithChildren =
+  AuthSettingsRouteRoute._addFileChildren(AuthSettingsRouteRouteChildren)
+
 interface AuthRouteChildren {
+  AuthSettingsRouteRoute: typeof AuthSettingsRouteRouteWithChildren
   AuthIndexRoute: typeof AuthIndexRoute
   AuthCustomersCustomerIdRoute: typeof AuthCustomersCustomerIdRoute
   AuthCustomersNewRoute: typeof AuthCustomersNewRoute
-  AuthInventoryScanRoute: typeof AuthInventoryScanRoute
   AuthInventoryPredictionsRoute: typeof AuthInventoryPredictionsRoute
+  AuthInventoryScanRoute: typeof AuthInventoryScanRoute
   AuthOrdersOrderIdRoute: typeof AuthOrdersOrderIdRoute
   AuthOrdersNewRoute: typeof AuthOrdersNewRoute
   AuthProductsProductIdRoute: typeof AuthProductsProductIdRoute
   AuthProductsNewRoute: typeof AuthProductsNewRoute
   AuthSuppliersSupplierIdRoute: typeof AuthSuppliersSupplierIdRoute
   AuthSuppliersNewRoute: typeof AuthSuppliersNewRoute
+  AuthCalendarIndexRoute: typeof AuthCalendarIndexRoute
   AuthCustomersIndexRoute: typeof AuthCustomersIndexRoute
   AuthOrdersIndexRoute: typeof AuthOrdersIndexRoute
   AuthPickingIndexRoute: typeof AuthPickingIndexRoute
@@ -556,21 +712,22 @@ interface AuthRouteChildren {
   AuthProductionBatchesIndexRoute: typeof AuthProductionBatchesIndexRoute
   AuthProductionMaterialsIndexRoute: typeof AuthProductionMaterialsIndexRoute
   AuthProductionRecipesIndexRoute: typeof AuthProductionRecipesIndexRoute
-  AuthCalendarIndexRoute: typeof AuthCalendarIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
+  AuthSettingsRouteRoute: AuthSettingsRouteRouteWithChildren,
   AuthIndexRoute: AuthIndexRoute,
   AuthCustomersCustomerIdRoute: AuthCustomersCustomerIdRoute,
   AuthCustomersNewRoute: AuthCustomersNewRoute,
-  AuthInventoryScanRoute: AuthInventoryScanRoute,
   AuthInventoryPredictionsRoute: AuthInventoryPredictionsRoute,
+  AuthInventoryScanRoute: AuthInventoryScanRoute,
   AuthOrdersOrderIdRoute: AuthOrdersOrderIdRoute,
   AuthOrdersNewRoute: AuthOrdersNewRoute,
   AuthProductsProductIdRoute: AuthProductsProductIdRoute,
   AuthProductsNewRoute: AuthProductsNewRoute,
   AuthSuppliersSupplierIdRoute: AuthSuppliersSupplierIdRoute,
   AuthSuppliersNewRoute: AuthSuppliersNewRoute,
+  AuthCalendarIndexRoute: AuthCalendarIndexRoute,
   AuthCustomersIndexRoute: AuthCustomersIndexRoute,
   AuthOrdersIndexRoute: AuthOrdersIndexRoute,
   AuthPickingIndexRoute: AuthPickingIndexRoute,
@@ -583,7 +740,6 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthProductionBatchesIndexRoute: AuthProductionBatchesIndexRoute,
   AuthProductionMaterialsIndexRoute: AuthProductionMaterialsIndexRoute,
   AuthProductionRecipesIndexRoute: AuthProductionRecipesIndexRoute,
-  AuthCalendarIndexRoute: AuthCalendarIndexRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
