@@ -26,6 +26,7 @@ import { Route as AuthOrdersNewRouteImport } from './routes/_auth/orders/new'
 import { Route as AuthOrdersOrderIdRouteImport } from './routes/_auth/orders/$orderId'
 import { Route as AuthInventoryScanRouteImport } from './routes/_auth/inventory/scan'
 import { Route as AuthInventoryPredictionsRouteImport } from './routes/_auth/inventory/predictions'
+import { Route as AuthCalendarIndexRouteImport } from './routes/_auth/calendar/index'
 import { Route as AuthCustomersNewRouteImport } from './routes/_auth/customers/new'
 import { Route as AuthCustomersCustomerIdRouteImport } from './routes/_auth/customers/$customerId'
 import { Route as AuthProductionRecipesIndexRouteImport } from './routes/_auth/production/recipes/index'
@@ -119,6 +120,11 @@ const AuthInventoryPredictionsRoute = AuthInventoryPredictionsRouteImport.update
   path: '/inventory/predictions',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthCalendarIndexRoute = AuthCalendarIndexRouteImport.update({
+  id: '/calendar/',
+  path: '/calendar/',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthCustomersNewRoute = AuthCustomersNewRouteImport.update({
   id: '/customers/new',
   path: '/customers/new',
@@ -191,6 +197,7 @@ export interface FileRoutesByFullPath {
   '/production/batches/': typeof AuthProductionBatchesIndexRoute
   '/production/materials/': typeof AuthProductionMaterialsIndexRoute
   '/production/recipes/': typeof AuthProductionRecipesIndexRoute
+  '/calendar/': typeof AuthCalendarIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -217,6 +224,7 @@ export interface FileRoutesByTo {
   '/production/batches': typeof AuthProductionBatchesIndexRoute
   '/production/materials': typeof AuthProductionMaterialsIndexRoute
   '/production/recipes': typeof AuthProductionRecipesIndexRoute
+  '/calendar': typeof AuthCalendarIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -227,6 +235,7 @@ export interface FileRoutesById {
   '/_auth/customers/new': typeof AuthCustomersNewRoute
   '/_auth/inventory/scan': typeof AuthInventoryScanRoute
   '/_auth/inventory/predictions': typeof AuthInventoryPredictionsRoute
+  '/_auth/calendar/': typeof AuthCalendarIndexRoute
   '/_auth/orders/$orderId': typeof AuthOrdersOrderIdRoute
   '/_auth/orders/new': typeof AuthOrdersNewRoute
   '/_auth/products/$productId': typeof AuthProductsProductIdRoute
@@ -273,6 +282,7 @@ export interface FileRouteTypes {
   | '/production/batches/'
   | '/production/materials/'
   | '/production/recipes/'
+  | '/calendar/'
   fileRoutesByTo: FileRoutesByTo
   to:
   | '/login'
@@ -299,6 +309,7 @@ export interface FileRouteTypes {
   | '/production/batches'
   | '/production/materials'
   | '/production/recipes'
+  | '/calendar'
   id:
   | '__root__'
   | '/_auth'
@@ -308,6 +319,7 @@ export interface FileRouteTypes {
   | '/_auth/customers/new'
   | '/_auth/inventory/scan'
   | '/_auth/inventory/predictions'
+  | '/_auth/calendar/'
   | '/_auth/orders/$orderId'
   | '/_auth/orders/new'
   | '/_auth/products/$productId'
@@ -454,6 +466,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthInventoryPredictionsRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/calendar/': {
+      id: '/_auth/calendar/'
+      path: '/calendar'
+      fullPath: '/calendar/'
+      preLoaderRoute: typeof AuthCalendarIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/customers/new': {
       id: '/_auth/customers/new'
       path: '/customers/new'
@@ -537,6 +556,7 @@ interface AuthRouteChildren {
   AuthProductionBatchesIndexRoute: typeof AuthProductionBatchesIndexRoute
   AuthProductionMaterialsIndexRoute: typeof AuthProductionMaterialsIndexRoute
   AuthProductionRecipesIndexRoute: typeof AuthProductionRecipesIndexRoute
+  AuthCalendarIndexRoute: typeof AuthCalendarIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
@@ -563,6 +583,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthProductionBatchesIndexRoute: AuthProductionBatchesIndexRoute,
   AuthProductionMaterialsIndexRoute: AuthProductionMaterialsIndexRoute,
   AuthProductionRecipesIndexRoute: AuthProductionRecipesIndexRoute,
+  AuthCalendarIndexRoute: AuthCalendarIndexRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
