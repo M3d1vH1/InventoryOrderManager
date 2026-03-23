@@ -12,6 +12,7 @@ import {
 import { LineItemEditor } from "../../../components/orders/LineItemEditor";
 import { CustomerCombobox } from "../../../components/orders/CustomerCombobox";
 import { QuickCreateCustomerPopover } from "../../../components/customers/QuickCreateCustomerPopover";
+import { UnshippedSuggestions } from "../../../components/orders/UnshippedSuggestions";
 import { ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/_auth/orders/new")({
@@ -31,6 +32,7 @@ function NewOrderPage() {
     const [customerId, setCustomerId] = useState<number | null>(null);
     const [priority, setPriority] = useState<"normal" | "high" | "urgent">("normal");
     const [notes, setNotes] = useState("");
+    const [area, setArea] = useState("");
     const [estimatedDate, setEstimatedDate] = useState("");
     const [items, setItems] = useState<LineItem[]>([]);
     const { t } = useTranslation("orders");
@@ -53,9 +55,24 @@ function NewOrderPage() {
             customerId,
             priority,
             notes: notes || undefined,
+            area: area || undefined,
             estimatedShippingDate: estimatedDate || undefined,
             items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
         });
+    };
+
+    const addSuggestedItem = (product: { id: number; name: string; sku: string; availableStock: number }, quantity: number) => {
+        if (items.some((i) => i.productId === product.id)) return;
+        setItems([
+            ...items,
+            {
+                productId: product.id,
+                productName: product.name,
+                sku: product.sku,
+                quantity: Math.min(quantity, product.availableStock),
+                available: product.availableStock,
+            },
+        ]);
     };
 
     return (
@@ -81,6 +98,15 @@ function NewOrderPage() {
                         />
                     </div>
                 </div>
+
+                {/* Suggestions */}
+                {customerId && (
+                    <UnshippedSuggestions
+                        customerId={customerId}
+                        onAdd={addSuggestedItem}
+                        alreadyAddedIds={items.map((i) => i.productId)}
+                    />
+                )}
 
                 {/* Priority */}
                 <div className="space-y-2">
@@ -111,6 +137,17 @@ function NewOrderPage() {
                         value={estimatedDate}
                         onChange={(e) => setEstimatedDate(e.target.value)}
                         className="w-48"
+                    />
+                </div>
+
+                {/* Area */}
+                <div className="space-y-2">
+                    <Label>{t("form.area", "Shipping Area")}</Label>
+                    <Input
+                        value={area}
+                        onChange={(e) => setArea(e.target.value)}
+                        className="w-full"
+                        placeholder="e.g. North Zone, Local Delivery"
                     />
                 </div>
 

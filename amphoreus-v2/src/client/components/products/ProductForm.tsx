@@ -120,25 +120,31 @@ export function ProductForm({ initialData, onSubmitSuccess }: ProductFormProps) 
                             )}
                         </div>
 
-                        {/* Category */}
                         <div className="space-y-2">
                             <Label>{t("form.category")}</Label>
-                            <Select
-                                disabled={loadingCategories}
-                                defaultValue={form.getValues("categoryId")?.toString()}
-                                onValueChange={(val) => form.setValue("categoryId", Number(val))}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder={t("form.selectCategory")} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {categories?.map((cat) => (
-                                        <SelectItem key={cat.id} value={cat.id.toString()}>
-                                            {cat.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <Controller
+                                control={form.control}
+                                name="categoryId"
+                                render={({ field }) => (
+                                    <Select
+                                        disabled={loadingCategories}
+                                        value={field.value?.toString() || ""}
+                                        onValueChange={(val) => field.onChange(val ? Number(val) : undefined)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder={t("form.selectCategory")} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">{t("form.noCategory", "No Category")}</SelectItem>
+                                            {categories?.map((cat) => (
+                                                <SelectItem key={cat.id} value={cat.id.toString()}>
+                                                    {cat.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            />
                         </div>
 
                         {/* Barcode */}

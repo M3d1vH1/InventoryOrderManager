@@ -64,7 +64,7 @@ const navigation: NavEntry[] = [
             { label: "allOrders", href: "/orders", icon: ClipboardList },
             { label: "picking", href: "/picking", icon: ScanBarcode },
             { label: "shipping", href: "/shipping", icon: Truck, disabled: true },
-            { label: "unshippedItems", href: "/unshipped", icon: AlertTriangle, disabled: true },
+            { label: "unshippedItems", href: "/unshipped", icon: AlertTriangle },
             { label: "quality", href: "/quality", icon: AlertTriangle, disabled: true },
         ],
     },
@@ -73,7 +73,7 @@ const navigation: NavEntry[] = [
         icon: Package,
         items: [
             { label: "products", href: "/products", icon: Archive },
-            { label: "categories", href: "/categories", icon: Tags, disabled: true },
+            { label: "categories", href: "/categories", icon: Tags },
             { label: "stockChanges", href: "/inventory-changes", icon: BarChart3, disabled: true },
         ],
     },

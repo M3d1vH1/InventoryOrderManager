@@ -22,6 +22,7 @@ export function ShipOrderDialog({
     open: boolean;
     onOpenChange: (v: boolean) => void;
 }) {
+    const [carrier, setCarrier] = useState("");
     const [tracking, setTracking] = useState("");
     const [notes, setNotes] = useState("");
     const [format, setFormat] = useState<"pdf" | "zpl">("pdf");
@@ -43,6 +44,15 @@ export function ShipOrderDialog({
                     <DialogTitle>{t("components.shipDialogTitle")}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                        <Label>{t("components.shipCarrierLabel", "Carrier")}</Label>
+                        <Input
+                            value={carrier}
+                            onChange={(e) => setCarrier(e.target.value)}
+                            placeholder="e.g. BRT, DHL, TNT"
+                        />
+                    </div>
+
                     <div className="space-y-2">
                         <Label>{t("components.shipTrackingLabel")}</Label>
                         <Input
@@ -87,6 +97,7 @@ export function ShipOrderDialog({
                         onClick={() =>
                             generateMutation.mutate({
                                 orderId,
+                                carrier: carrier || undefined,
                                 trackingNumber: tracking || undefined,
                                 notes: notes || undefined,
                                 labelFormat: format,

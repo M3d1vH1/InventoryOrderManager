@@ -1,5 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { secureHeaders } from "hono/secure-headers";
+import { compress } from "hono/compress";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { trpcServer } from "@hono/trpc-server";
@@ -14,6 +16,10 @@ import { scheduleDailySummary } from "./jobs/dailySummary.js";
 import { uploadProductImage } from "./services/imageService.js";
 
 const app = new Hono();
+
+// ── Security & Optimization ──────────────────────────────────────────────────
+app.use("*", secureHeaders());
+app.use("*", compress());
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
 app.use(

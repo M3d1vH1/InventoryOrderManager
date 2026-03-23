@@ -18,6 +18,17 @@ export default defineConfig({
   build: {
     outDir: "../../dist/client",
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom"],
+          "vendor-tanstack": ["@tanstack/react-query", "@tanstack/react-router"],
+          "vendor-recharts": ["recharts"],
+          "vendor-utils": ["date-fns", "lucide-react", "clsx", "tailwind-merge", "i18next", "react-i18next"],
+          "vendor-ui": ["@radix-ui/react-slot"],
+        },
+      },
+    },
   },
   resolve: {
     alias: {

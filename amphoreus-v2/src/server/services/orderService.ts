@@ -7,6 +7,7 @@ interface CreateOrderInput {
     customerId: number;
     priority: "low" | "normal" | "high" | "urgent";
     notes?: string;
+    area?: string;
     estimatedShippingDate?: Date;
     items: { productId: number; quantity: number }[];
     createdById: number;
@@ -79,6 +80,7 @@ export async function createOrder(input: CreateOrderInput) {
                 status: "pending",
                 priority: input.priority,
                 notes: input.notes,
+                area: input.area,
                 estimatedShippingDate: input.estimatedShippingDate,
                 createdById: input.createdById,
             })

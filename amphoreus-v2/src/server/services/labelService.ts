@@ -2,6 +2,7 @@ import PDFDocument from "pdfkit";
 import { db } from "../db/index.js";
 import {
     orders,
+    orderItems,
     shippingDocuments,
     orderChangelogs,
 } from "../db/schema.js";
@@ -15,6 +16,7 @@ const LABELS_DIR = path.join(process.cwd(), "data", "labels");
 
 interface GenerateLabelInput {
     orderId: number;
+    carrier?: string;
     trackingNumber?: string;
     notes?: string;
     labelFormat: "pdf" | "zpl";
@@ -82,8 +84,25 @@ export async function generateShippingLabel(input: GenerateLabelInput) {
 
     await db
         .update(orders)
-        .set({ status: newStatus })
+        .set({
+            status: newStatus,
+            shippingCompany: input.carrier,
+            trackingNumber: input.trackingNumber
+        })
         .where(eq(orders.id, input.orderId));
+
+    // Update shippedQuantity for items that were picked
+    for (const item of order.items) {
+        if (item.picked || item.pickedAt !== null) {
+            await db
+                .update(orderItems)
+                .set({
+                    shippedQuantity: item.quantity,
+                    shippingStatus: "shipped"
+                })
+                .where(eq(orderItems.id, item.id));
+        }
+    }
 
     await db.insert(orderChangelogs).values({
         orderId: input.orderId,
