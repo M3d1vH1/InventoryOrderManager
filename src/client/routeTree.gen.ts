@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
+import { Route as AuthUnshippedRouteImport } from './routes/_auth/unshipped'
+import { Route as AuthCategoriesRouteImport } from './routes/_auth/categories'
 import { Route as AuthSettingsRouteRouteImport } from './routes/_auth/settings/route'
 import { Route as AuthSuppliersIndexRouteImport } from './routes/_auth/suppliers/index'
 import { Route as AuthSettingsIndexRouteImport } from './routes/_auth/settings/index'
@@ -55,6 +57,16 @@ const AuthRoute = AuthRouteImport.update({
 const AuthIndexRoute = AuthIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthUnshippedRoute = AuthUnshippedRouteImport.update({
+  id: '/unshipped',
+  path: '/unshipped',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthCategoriesRoute = AuthCategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthSettingsRouteRoute = AuthSettingsRouteRouteImport.update({
@@ -220,6 +232,8 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
   '/login': typeof LoginRoute
   '/settings': typeof AuthSettingsRouteRouteWithChildren
+  '/categories': typeof AuthCategoriesRoute
+  '/unshipped': typeof AuthUnshippedRoute
   '/customers/$customerId': typeof AuthCustomersCustomerIdRoute
   '/customers/new': typeof AuthCustomersNewRoute
   '/inventory/predictions': typeof AuthInventoryPredictionsRoute
@@ -252,6 +266,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/categories': typeof AuthCategoriesRoute
+  '/unshipped': typeof AuthUnshippedRoute
   '/': typeof AuthIndexRoute
   '/customers/$customerId': typeof AuthCustomersCustomerIdRoute
   '/customers/new': typeof AuthCustomersNewRoute
@@ -288,6 +304,8 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/login': typeof LoginRoute
   '/_auth/settings': typeof AuthSettingsRouteRouteWithChildren
+  '/_auth/categories': typeof AuthCategoriesRoute
+  '/_auth/unshipped': typeof AuthUnshippedRoute
   '/_auth/': typeof AuthIndexRoute
   '/_auth/customers/$customerId': typeof AuthCustomersCustomerIdRoute
   '/_auth/customers/new': typeof AuthCustomersNewRoute
@@ -325,6 +343,8 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/settings'
+    | '/categories'
+    | '/unshipped'
     | '/customers/$customerId'
     | '/customers/new'
     | '/inventory/predictions'
@@ -357,6 +377,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
+    | '/categories'
+    | '/unshipped'
     | '/'
     | '/customers/$customerId'
     | '/customers/new'
@@ -392,6 +414,8 @@ export interface FileRouteTypes {
     | '/_auth'
     | '/login'
     | '/_auth/settings'
+    | '/_auth/categories'
+    | '/_auth/unshipped'
     | '/_auth/'
     | '/_auth/customers/$customerId'
     | '/_auth/customers/new'
@@ -450,6 +474,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/unshipped': {
+      id: '/_auth/unshipped'
+      path: '/unshipped'
+      fullPath: '/unshipped'
+      preLoaderRoute: typeof AuthUnshippedRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/categories': {
+      id: '/_auth/categories'
+      path: '/categories'
+      fullPath: '/categories'
+      preLoaderRoute: typeof AuthCategoriesRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/settings': {
@@ -688,6 +726,8 @@ const AuthSettingsRouteRouteWithChildren =
 
 interface AuthRouteChildren {
   AuthSettingsRouteRoute: typeof AuthSettingsRouteRouteWithChildren
+  AuthCategoriesRoute: typeof AuthCategoriesRoute
+  AuthUnshippedRoute: typeof AuthUnshippedRoute
   AuthIndexRoute: typeof AuthIndexRoute
   AuthCustomersCustomerIdRoute: typeof AuthCustomersCustomerIdRoute
   AuthCustomersNewRoute: typeof AuthCustomersNewRoute
@@ -716,6 +756,8 @@ interface AuthRouteChildren {
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthSettingsRouteRoute: AuthSettingsRouteRouteWithChildren,
+  AuthCategoriesRoute: AuthCategoriesRoute,
+  AuthUnshippedRoute: AuthUnshippedRoute,
   AuthIndexRoute: AuthIndexRoute,
   AuthCustomersCustomerIdRoute: AuthCustomersCustomerIdRoute,
   AuthCustomersNewRoute: AuthCustomersNewRoute,

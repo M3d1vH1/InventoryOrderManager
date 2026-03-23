@@ -14,6 +14,7 @@ export const shippingRouter = router({
         .input(
             z.object({
                 orderId: z.number().int(),
+                carrier: z.string().optional(),
                 trackingNumber: z.string().optional(),
                 notes: z.string().optional(),
                 labelFormat: z.enum(["pdf", "zpl"]).default("pdf"),

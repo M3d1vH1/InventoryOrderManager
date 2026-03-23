@@ -41,8 +41,8 @@ const customerSchema = z.object({
     country: z.string().max(100).optional(),
     contactPerson: z.string().max(255).optional(),
     billingCompany: z.string().max(255).optional(),
-    shippingCompany: z.enum(["brt", "dhl", "gls", "sda", "tnt", "ups", "fedex", "poste_italiane", "other", "pickup"]).optional(),
-    preferredShippingCompany: z.enum(["brt", "dhl", "gls", "sda", "tnt", "ups", "fedex", "poste_italiane", "other", "pickup"]).optional(),
+    shippingCompany: z.string().max(255).optional(),
+    preferredShippingCompany: z.string().max(255).optional(),
     notes: z.string().optional(),
 });
 
@@ -62,8 +62,8 @@ interface CustomerFormProps {
         country?: string | null;
         contactPerson?: string | null;
         billingCompany?: string | null;
-        shippingCompany?: "brt" | "dhl" | "gls" | "sda" | "tnt" | "ups" | "fedex" | "poste_italiane" | "other" | "pickup" | null;
-        preferredShippingCompany?: "brt" | "dhl" | "gls" | "sda" | "tnt" | "ups" | "fedex" | "poste_italiane" | "other" | "pickup" | null;
+        shippingCompany?: string | null;
+        preferredShippingCompany?: string | null;
         notes?: string | null;
     }>;
     onSubmitSuccess: (customer: { id: number; name: string }) => void;
@@ -164,42 +164,8 @@ export function CustomerForm({ initialData, onSubmitSuccess }: CustomerFormProps
                             {t("form.shippingTitle")}
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <Label>{t("form.defaultCarrier")}</Label>
-                                <Select
-                                    defaultValue={form.getValues("shippingCompany")}
-                                    onValueChange={(v) => form.setValue("shippingCompany", v as any)}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder={t("form.selectCarrier")} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {SHIPPING_COMPANIES.map((c) => (
-                                            <SelectItem key={c.value} value={c.value}>
-                                                {t(`form.carriers.${c.value}`, c.label)}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label>{t("form.preferredCarrier")}</Label>
-                                <Select
-                                    defaultValue={form.getValues("preferredShippingCompany")}
-                                    onValueChange={(v) => form.setValue("preferredShippingCompany", v as any)}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder={t("form.selectCarrier")} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {SHIPPING_COMPANIES.map((c) => (
-                                            <SelectItem key={c.value} value={c.value}>
-                                                {t(`form.carriers.${c.value}`, c.label)}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                            {field("shippingCompany", t("form.defaultCarrier"))}
+                            {field("preferredShippingCompany", t("form.preferredCarrier"))}
                         </div>
                     </div>
 

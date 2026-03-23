@@ -180,6 +180,7 @@ export const products = pgTable(
     index("idx_products_sku").on(table.sku),
     index("idx_products_category_id").on(table.categoryId),
     index("idx_products_barcode").on(table.barcode),
+    index("idx_products_name_trgm").using("gin", sql`${table.name} gin_trgm_ops`),
     check("chk_current_stock_non_negative", sql`${table.currentStock} >= 0`),
     check("chk_reserved_stock_non_negative", sql`${table.reservedStock} >= 0`),
     check(
@@ -218,14 +219,16 @@ export const customers = pgTable("customers", {
   email: varchar("email", { length: 255 }),
   phone: varchar("phone", { length: 50 }),
   contactPerson: varchar("contact_person", { length: 255 }),
-  shippingCompany: shippingCompanyEnum("shipping_company"),
-  preferredShippingCompany: shippingCompanyEnum("preferred_shipping_company"),
+  shippingCompany: varchar("shipping_company", { length: 255 }),
+  preferredShippingCompany: varchar("preferred_shipping_company", { length: 255 }),
   billingCompany: varchar("billing_company", { length: 255 }),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}, (table) => [
+  index("idx_customers_name_trgm").using("gin", sql`${table.name} gin_trgm_ops`),
+]);
 
 // ─── Orders ──────────────────────────────────────────────────────────────────
 
@@ -249,6 +252,7 @@ export const orders = pgTable(
     status: orderStatusEnum("status").notNull().default("pending"),
     priority: orderPriorityEnum("priority").notNull().default("normal"),
     area: varchar("area", { length: 100 }),
+    shippingCompany: varchar("shipping_company", { length: 255 }),
     notes: text("notes"),
     hasShippingDocument: boolean("has_shipping_document")
       .notNull()

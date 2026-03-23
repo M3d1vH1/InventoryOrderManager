@@ -123,6 +123,7 @@ export const ordersRouter = router({
                 customerId: z.number().int(),
                 priority: priorityEnum.default("normal"),
                 notes: z.string().optional(),
+                area: z.string().optional(),
                 estimatedShippingDate: z.string().optional(),
                 items: z
                     .array(
@@ -182,6 +183,7 @@ export const ordersRouter = router({
                 id: z.number().int(),
                 priority: priorityEnum.optional(),
                 notes: z.string().optional(),
+                area: z.string().optional(),
                 estimatedShippingDate: z.string().optional(),
             })
         )
@@ -375,4 +377,77 @@ export const ordersRouter = router({
                 .where(eq(orderChangelogs.orderId, input.orderId))
                 .orderBy(desc(orderChangelogs.timestamp))
         ),
+
+    listUnshipped: protectedProcedure
+        .query(async () => {
+            return db
+                .select({
+                    id: orderItems.id,
+                    orderId: orderItems.orderId,
+                    orderNumber: orders.orderNumber,
+                    productId: orderItems.productId,
+                    productName: products.name,
+                    sku: products.sku,
+                    quantity: orderItems.quantity,
+                    shippedQuantity: orderItems.shippedQuantity,
+                    remainingQuantity: sql<number>`${orderItems.quantity} - ${orderItems.shippedQuantity}`,
+                    customerName: customers.name,
+                    orderDate: orders.orderDate,
+                })
+                .from(orderItems)
+                .innerJoin(orders, eq(orderItems.orderId, orders.id))
+                .innerJoin(products, eq(orderItems.productId, products.id))
+                .innerJoin(customers, eq(orders.customerId, customers.id))
+                .where(
+                    and(
+                        sql`${orderItems.shippedQuantity} < ${orderItems.quantity}`,
+                        or(
+                            eq(orders.status, "pending"),
+                            eq(orders.status, "confirmed"),
+                            eq(orders.status, "processing"),
+                            eq(orders.status, "picking"),
+                            eq(orders.status, "picked"),
+                            eq(orders.status, "partially_shipped")
+                        )
+                    )
+                )
+                .orderBy(asc(orders.orderDate));
+        }),
+
+    listUnshippedByCustomer: protectedProcedure
+        .input(z.object({ customerId: z.number().int() }))
+        .query(async ({ input }) => {
+            return db
+                .select({
+                    id: orderItems.id,
+                    orderId: orderItems.orderId,
+                    orderNumber: orders.orderNumber,
+                    productId: orderItems.productId,
+                    productName: products.name,
+                    sku: products.sku,
+                    quantity: orderItems.quantity,
+                    shippedQuantity: orderItems.shippedQuantity,
+                    remainingQuantity: sql<number>`${orderItems.quantity} - ${orderItems.shippedQuantity}`,
+                    availableStock: products.availableStock,
+                    orderDate: orders.orderDate,
+                })
+                .from(orderItems)
+                .innerJoin(orders, eq(orderItems.orderId, orders.id))
+                .innerJoin(products, eq(orderItems.productId, products.id))
+                .where(
+                    and(
+                        eq(orders.customerId, input.customerId),
+                        sql`${orderItems.shippedQuantity} < ${orderItems.quantity}`,
+                        or(
+                            eq(orders.status, "pending"),
+                            eq(orders.status, "confirmed"),
+                            eq(orders.status, "processing"),
+                            eq(orders.status, "picking"),
+                            eq(orders.status, "picked"),
+                            eq(orders.status, "partially_shipped")
+                        )
+                    )
+                )
+                .orderBy(asc(orders.orderDate));
+        }),
 });

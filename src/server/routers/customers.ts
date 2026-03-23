@@ -20,12 +20,8 @@ const customerInput = z.object({
     country: z.string().max(100).optional(),
     contactPerson: z.string().max(255).optional(),
     billingCompany: z.string().max(255).optional(),
-    shippingCompany: z
-        .enum(["brt", "dhl", "gls", "sda", "tnt", "ups", "fedex", "poste_italiane", "other", "pickup"])
-        .optional(),
-    preferredShippingCompany: z
-        .enum(["brt", "dhl", "gls", "sda", "tnt", "ups", "fedex", "poste_italiane", "other", "pickup"])
-        .optional(),
+    shippingCompany: z.string().max(255).optional(),
+    preferredShippingCompany: z.string().max(255).optional(),
     notes: z.string().optional(),
 });
 
@@ -49,7 +45,7 @@ export const customersRouter = router({
 
             const where = search
                 ? or(
-                    ilike(customers.name, `%${search}%`),
+                    sql`similarity(${customers.name}, ${search}) > 0.3`,
                     ilike(customers.phone, `%${search}%`),
                     ilike(customers.email, `%${search}%`)
                 )

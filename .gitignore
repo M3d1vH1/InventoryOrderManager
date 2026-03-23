@@ -10,3 +10,9 @@ drizzle/meta/
 # Backup files — never commit database dumps to git
 backups/
 *.sql.gz
+
+# Data and reports
+data/
+playwright-report/
+test-results/
+.tanstack/

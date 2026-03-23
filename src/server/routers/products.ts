@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { eq, ilike, and, sql, desc, asc, inArray } from "drizzle-orm";
+import { eq, ilike, and, or, sql, desc, asc, inArray } from "drizzle-orm";
 import {
     router,
     publicProcedure,
@@ -73,8 +73,13 @@ export const productsRouter = router({
 
             const conditions = [];
             if (search) {
+                // Use trigram similarity for fuzzy matching (Greek-friendly)
+                // We also keep SKU as ILIKE because it's usually exact or prefix
                 conditions.push(
-                    sql`(${products.name} ILIKE ${"%" + search + "%"} OR ${products.sku} ILIKE ${"%" + search + "%"})`
+                    or(
+                        sql`similarity(${products.name}, ${search}) > 0.3`,
+                        ilike(products.sku, `%${search}%`)
+                    )!
                 );
             }
             if (categoryId) conditions.push(eq(products.categoryId, categoryId));

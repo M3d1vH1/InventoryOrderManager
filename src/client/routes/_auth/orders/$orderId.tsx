@@ -138,6 +138,24 @@ function OrderDetailPage() {
                                     <p>{new Date(order.estimatedShippingDate).toLocaleDateString(i18n.language === "el" ? "el-GR" : "en-GB")}</p>
                                 </div>
                             )}
+                            {order.area && (
+                                <div>
+                                    <p className="text-muted-foreground text-xs">{t("form.area", "Shipping Area")}</p>
+                                    <p>{order.area}</p>
+                                </div>
+                            )}
+                            {order.shippingCompany && (
+                                <div>
+                                    <p className="text-muted-foreground text-xs">{t("detail.shippingCompany", "Carrier")}</p>
+                                    <p>{order.shippingCompany}</p>
+                                </div>
+                            )}
+                            {order.trackingNumber && (
+                                <div>
+                                    <p className="text-muted-foreground text-xs">{t("detail.trackingNumber", "Tracking #")}</p>
+                                    <p className="font-mono">{order.trackingNumber}</p>
+                                </div>
+                            )}
                         </div>
                         {order.notes && (
                             <p className="text-sm text-muted-foreground border-t pt-3">{order.notes}</p>

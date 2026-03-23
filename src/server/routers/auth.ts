@@ -8,6 +8,7 @@ import { router, publicProcedure, protectedProcedure } from "../trpc.js";
 import { users } from "../db/schema.js";
 import { lucia } from "../auth/lucia.js";
 import { logger } from "../lib/logger.js";
+import { getRedis } from "../lib/cache.js";
 import type { SafeUser } from "../../shared/types.js";
 
 const BCRYPT_ROUNDS = 12;
@@ -25,6 +26,23 @@ export const authRouter = router({
         )
         .mutation(async ({ ctx, input }) => {
             const { username, password } = input;
+
+            // Rate limiting (brute-force protection)
+            const redis = getRedis();
+            if (redis?.isReady) {
+                const limitKey = `ratelimit:login:${username}`;
+                const attempts = await redis.incr(limitKey);
+                if (attempts === 1) {
+                    await redis.expire(limitKey, 60); // 1 minute window
+                }
+                if (attempts > 5) {
+                    logger.warn("Login rate limit exceeded", { username });
+                    throw new TRPCError({
+                        code: "TOO_MANY_REQUESTS",
+                        message: "Too many login attempts. Please try again in a minute.",
+                    });
+                }
+            }
 
             // Find user by username
             const [user] = await ctx.db
