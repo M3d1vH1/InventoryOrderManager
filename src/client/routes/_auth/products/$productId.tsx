@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Box } from "lucide-react";
+import { productFullImageUrl } from "../../../../shared/utils";
 import { trpc } from "../../../lib/trpc";
 import { PageShell } from "../../../components/layout/PageShell";
 import { ProductForm } from "../../../components/products/ProductForm";
@@ -64,6 +65,17 @@ function ProductDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl">
                 {/* Main Details & Edit form */}
                 <div className="md:col-span-2 space-y-6">
+                    {product.imageUrl && (
+                        <div className="mb-6 flex justify-center bg-gray-50 rounded-xl p-4 border border-dashed text-center">
+                            <img
+                                src={productFullImageUrl(product.imageUrl)}
+                                alt={product.name}
+                                loading="eager"
+                                decoding="async"
+                                className="rounded-xl object-cover w-full max-w-sm shadow-sm"
+                            />
+                        </div>
+                    )}
                     <ProductForm
                         initialData={product}
                         onSubmitSuccess={() => {

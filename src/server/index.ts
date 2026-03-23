@@ -11,6 +11,7 @@ import { closeDatabase } from "./db/index.js";
 import { initRedis, getRedis } from "./lib/cache.js";
 import { sessionMiddleware } from "./auth/middleware.js";
 import { scheduleDailySummary } from "./jobs/dailySummary.js";
+import { uploadProductImage } from "./services/imageService.js";
 
 const app = new Hono();
 
@@ -39,6 +40,29 @@ app.use("*", async (c, next) => {
 
 // ── Session middleware (validates cookie, attaches user to context) ──────────
 app.use("*", sessionMiddleware);
+
+// ── Upload ───────────────────────────────────────────────────────────────────
+app.post("/api/upload/product-image", async (c) => {
+  if (!(c as any).get("user")) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const formData = await c.req.formData();
+  const file = formData.get("image");
+
+  if (!(file instanceof File)) {
+    return c.json({ error: "No image file provided." }, 400);
+  }
+
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const result = await uploadProductImage(buffer, file.type);
+    return c.json(result);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Upload failed.";
+    return c.json({ error: message }, 400);
+  }
+});
 
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get("/api/health", (c) => {

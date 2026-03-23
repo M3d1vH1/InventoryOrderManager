@@ -44,9 +44,11 @@ export function ProductCard({
                 <img
                     src={product.imageUrl}
                     alt={product.name}
+                    loading="lazy"
+                    decoding="async"
                     className={cn(
                         "object-cover rounded bg-gray-50",
-                        viewMode === "list" ? "h-16 w-16" : "h-40 w-full"
+                        viewMode === "list" ? "h-16 w-16 shrink-0" : "h-40 w-full"
                     )}
                 />
             ) : (
