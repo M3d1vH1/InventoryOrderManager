@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { createFileRoute } from "@tanstack/react-router";
 import { trpc } from "../../lib/trpc";
 import { PageShell } from "../../components/layout/PageShell";
@@ -23,12 +24,13 @@ import {
 export const Route = createFileRoute("/_auth/")({
     component: DashboardPage,
     errorComponent: () => {
+        const { t } = useTranslation("dashboard");
         return (
-            <PageShell title="Dashboard">
+            <PageShell title={t("title")}>
                 <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
                     <AlertTriangle className="h-12 w-12 text-destructive" />
-                    <h2 className="text-xl font-semibold">Failed to load dashboard data</h2>
-                    <p className="text-muted-foreground">Please check your connection and try refreshing the page.</p>
+                    <h2 className="text-xl font-semibold">{t("errorTitle")}</h2>
+                    <p className="text-muted-foreground">{t("errorMessage")}</p>
                 </div>
             </PageShell>
         );
@@ -38,6 +40,7 @@ export const Route = createFileRoute("/_auth/")({
 function DashboardPage() {
     const [activityPage, setActivityPage] = useState(0);
     const ACTIVITY_LIMIT = 10;
+    const { t } = useTranslation("dashboard");
 
     const { data: stats, isLoading } = trpc.dashboard.stats.useQuery(undefined, {
         refetchInterval: 30_000,
@@ -55,7 +58,7 @@ function DashboardPage() {
 
     if (isLoading) {
         return (
-            <PageShell title="Dashboard">
+            <PageShell title={t("title")}>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                     {Array.from({ length: 8 }).map((_, i) => (
                         <Skeleton key={i} className="h-28 rounded-lg" />
@@ -70,31 +73,31 @@ function DashboardPage() {
     }
 
     return (
-        <PageShell title="Dashboard">
+        <PageShell title={t("title")}>
             {/* KPI Cards — top row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <StatCard
-                    title="Orders Today"
+                    title={t("ordersToday")}
                     value={stats?.today.newOrders ?? 0}
                     icon={ShoppingCart}
                     href="/orders"
                 />
                 <StatCard
-                    title="Shipped Today"
+                    title={t("shippedToday")}
                     value={stats?.today.shipped ?? 0}
                     icon={Truck}
                     variant="success"
                     href="/orders?status=shipped"
                 />
                 <StatCard
-                    title="Picking Queue"
+                    title={t("pickingQueue")}
                     value={stats?.pickingQueueDepth ?? 0}
                     icon={ClipboardList}
                     variant={stats?.pickingQueueDepth ? "warning" : "default"}
                     href="/picking"
                 />
                 <StatCard
-                    title="Items Picked Today"
+                    title={t("itemsPickedToday")}
                     value={stats?.today.itemsPicked ?? 0}
                     icon={TrendingUp}
                     variant="success"
@@ -104,26 +107,26 @@ function DashboardPage() {
             {/* Secondary stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <StatCard
-                    title="Pending Orders"
+                    title={t("pendingOrders")}
                     value={stats?.orders.pending ?? 0}
                     icon={ShoppingCart}
                     href="/orders?status=pending"
                 />
                 <StatCard
-                    title="Low Stock Alerts"
+                    title={t("lowStockAlerts")}
                     value={stats?.lowStockAlerts ?? 0}
                     icon={AlertTriangle}
                     variant={stats?.lowStockAlerts ? "destructive" : "default"}
                     href="/products"
                 />
                 <StatCard
-                    title="Total Products"
+                    title={t("totalProducts")}
                     value={stats?.totalProducts ?? 0}
                     icon={Package}
                     href="/products"
                 />
                 <StatCard
-                    title="Total Customers"
+                    title={t("totalCustomers")}
                     value={stats?.totalCustomers ?? 0}
                     icon={Users}
                     href="/customers"
@@ -146,7 +149,7 @@ function DashboardPage() {
                     <div className="flex-1 min-h-[0] relative flex flex-col pt-4">
                         {activityFetching && (
                             <div className="absolute inset-0 bg-background/50 z-10 flex items-center justify-center backdrop-blur-sm rounded-lg opacity-0 transition-opacity aria-busy:opacity-100 pointer-events-none" aria-busy={activityFetching}>
-                                <span className="text-sm font-medium text-muted-foreground animate-pulse">Updating...</span>
+                                <span className="text-sm font-medium text-muted-foreground animate-pulse">{t("updating")}</span>
                             </div>
                         )}
                         <RecentActivity

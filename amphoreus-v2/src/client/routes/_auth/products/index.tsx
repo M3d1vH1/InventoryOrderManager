@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { trpc } from "../../../lib/trpc";
 import { PageShell } from "../../../components/layout/PageShell";
 import { ProductCard } from "../../../components/products/ProductCard";
@@ -20,6 +21,7 @@ function ProductsPage() {
     >("all");
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
     const [page, setPage] = useState(1);
+    const { t } = useTranslation("products");
 
     const { data, isLoading } = trpc.products.list.useQuery({
         page,
@@ -32,11 +34,11 @@ function ProductsPage() {
 
     return (
         <PageShell
-            title="Products"
+            title={t("title")}
             actions={
                 <Button asChild>
                     <Link to="/products/new">
-                        <Plus className="mr-2 h-4 w-4" /> Add Product
+                        <Plus className="mr-2 h-4 w-4" /> {t("addProduct")}
                     </Link>
                 </Button>
             }
@@ -44,7 +46,7 @@ function ProductsPage() {
             {/* Search + Filters */}
             <div className="flex flex-wrap gap-3 mb-6">
                 <Input
-                    placeholder="Search products..."
+                    placeholder={t("searchPlaceholder")}
                     value={search}
                     onChange={(e) => {
                         setSearch(e.target.value);
@@ -83,7 +85,7 @@ function ProductsPage() {
                                     setPage(1);
                                 }}
                             >
-                                {s.replace(/_/g, " ")}
+                                {t(`stockStatus.${s}`)}
                             </Button>
                         )
                     )}
@@ -128,7 +130,7 @@ function ProductsPage() {
                     ))}
                     {data?.items.length === 0 && (
                         <div className="col-span-full py-12 text-center text-muted-foreground border border-dashed rounded-lg bg-gray-50/50">
-                            No products found matching your generic criteria.
+                            {t("noProducts")}
                         </div>
                     )}
                 </div>
@@ -142,17 +144,17 @@ function ProductsPage() {
                         disabled={page <= 1}
                         onClick={() => setPage(page - 1)}
                     >
-                        Previous
+                        {t("previous")}
                     </Button>
                     <span className="text-sm text-gray-600 font-medium">
-                        Page {page} of {Math.ceil(data.total / data.perPage)}
+                        {t("pageCount", { page, total: Math.ceil(data.total / data.perPage) })}
                     </span>
                     <Button
                         variant="outline"
                         disabled={page >= Math.ceil(data.total / data.perPage)}
                         onClick={() => setPage(page + 1)}
                     >
-                        Next
+                        {t("next")}
                     </Button>
                 </div>
             )}

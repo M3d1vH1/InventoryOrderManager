@@ -1,0 +1,82 @@
+{
+    "title": "Πελάτες",
+    "addCustomer": "Προσθήκη Πελάτη",
+    "searchPlaceholder": "Αναζήτηση με όνομα, τηλέφωνο, ή email...",
+    "tableCols": {
+        "name": "Όνομα",
+        "phone": "Τηλέφωνο",
+        "email": "Email",
+        "city": "Πόλη",
+        "shippingCo": "Μεταφορική",
+        "added": "Προστέθηκε"
+    },
+    "noCustomers": "Δεν βρέθηκαν πελάτες.",
+    "pageCount": "Σελίδα {{page}} από {{total}}",
+    "previous": "Προηγούμενο",
+    "next": "Επόμενο",
+    "new": {
+        "title": "Προσθήκη Νέου Πελάτη",
+        "back": "Πίσω στους Πελάτες"
+    },
+    "detail": {
+        "loading": "Φόρτωση...",
+        "notFoundTitle": "Ο Πελάτης δεν Βρέθηκε",
+        "notFoundMessage": "Αυτός ο πελάτης δεν μπόρεσε να βρεθεί.",
+        "return": "Επιστροφή",
+        "back": "Πίσω",
+        "delete": "Διαγραφή",
+        "summaryTitle": "Σύνοψη Παραγγελιών",
+        "totalOrders": "Συνολικές",
+        "lastOrder": "Τελευταία",
+        "recentOrders": "Πρόσφατες Παραγγελίες",
+        "tableCols": {
+            "orderNum": "Αριθμός",
+            "status": "Κατάσταση",
+            "date": "Ημερομηνία"
+        },
+        "deleteTitle": "Διαγραφή Πελάτη",
+        "deleteMessage1": "Είστε βέβαιοι ότι θέλετε να διαγράψετε το ",
+        "deleteMessage2": "; Δεν μπορεί να αναιρεθεί.",
+        "cancel": "Ακύρωση",
+        "deleting": "Διαγραφή...",
+        "deleteConfirm": "Διαγραφή"
+    },
+    "form": {
+        "basicInfo": "Βασικές Πληροφορίες",
+        "name": "Όνομα Πελάτη *",
+        "vat": "ΑΦΜ",
+        "phone": "Τηλέφωνο",
+        "email": "Email",
+        "contact": "Άτομο Επικοινωνίας",
+        "billingCo": "Εταιρεία Τιμολόγησης",
+        "addressTitle": "Διεύθυνση",
+        "street": "Οδός",
+        "city": "Πόλη",
+        "state": "Πολιτεία / Επαρχία",
+        "postalCode": "Τ.Κ.",
+        "country": "Χώρα",
+        "shippingTitle": "Αποστολή",
+        "defaultCarrier": "Προεπιλεγμένη Μεταφορική",
+        "preferredCarrier": "Προτιμώμενη Μεταφορική",
+        "selectCarrier": "Επιλογή",
+        "notes": "Σημειώσεις",
+        "notesPlaceholder": "Εσωτερικές σημειώσεις...",
+        "save": "Αποθήκευση",
+        "create": "Δημιουργία Πελάτη",
+        "carriers": {
+            "other": "Άλλο",
+            "pickup": "Παραλαβή",
+            "poste_italiane": "Poste Italiane"
+        }
+    },
+    "quickCreate": {
+        "btn": "Νέος",
+        "title": "Γρήγορη Δημιουργία Πελάτη",
+        "name": "Όνομα *",
+        "phone": "Τηλέφωνο",
+        "shippingCo": "Μεταφορική",
+        "selectCarrier": "Επιλογή",
+        "creating": "Δημιουργία...",
+        "create": "Δημιουργία"
+    }
+}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
     Package,
@@ -52,56 +53,56 @@ function isGroup(entry: NavEntry): entry is NavGroup {
 
 const navigation: NavEntry[] = [
     {
-        label: "Dashboard",
+        label: "dashboard",
         href: "/",
         icon: LayoutDashboard,
     },
     {
-        label: "Orders",
+        label: "orders",
         icon: ShoppingCart,
         items: [
-            { label: "All Orders", href: "/orders", icon: ClipboardList },
-            { label: "Picking", href: "/picking", icon: ScanBarcode },
-            { label: "Shipping", href: "/shipping", icon: Truck, disabled: true },
-            { label: "Unshipped Items", href: "/unshipped", icon: AlertTriangle, disabled: true },
-            { label: "Quality", href: "/quality", icon: AlertTriangle, disabled: true },
+            { label: "allOrders", href: "/orders", icon: ClipboardList },
+            { label: "picking", href: "/picking", icon: ScanBarcode },
+            { label: "shipping", href: "/shipping", icon: Truck, disabled: true },
+            { label: "unshippedItems", href: "/unshipped", icon: AlertTriangle, disabled: true },
+            { label: "quality", href: "/quality", icon: AlertTriangle, disabled: true },
         ],
     },
     {
-        label: "Inventory",
+        label: "inventory",
         icon: Package,
         items: [
-            { label: "Products", href: "/products", icon: Archive },
-            { label: "Categories", href: "/categories", icon: Tags, disabled: true },
-            { label: "Stock Changes", href: "/inventory-changes", icon: BarChart3, disabled: true },
+            { label: "products", href: "/products", icon: Archive },
+            { label: "categories", href: "/categories", icon: Tags, disabled: true },
+            { label: "stockChanges", href: "/inventory-changes", icon: BarChart3, disabled: true },
         ],
     },
     {
-        label: "Sales",
+        label: "sales",
         icon: BarChart3,
         items: [
-            { label: "Customers", href: "/customers", icon: Users },
+            { label: "customers", href: "/customers", icon: Users },
         ],
     },
     {
-        label: "Manufacturing",
+        label: "manufacturing",
         icon: Factory,
         items: [
-            { label: "Production Home", href: "/production", icon: LayoutDashboard },
-            { label: "Raw Materials", href: "/production/materials", icon: Package },
-            { label: "Recipes", href: "/production/recipes", icon: ClipboardList },
-            { label: "Batches", href: "/production/batches", icon: Layers },
+            { label: "productionHome", href: "/production", icon: LayoutDashboard },
+            { label: "rawMaterials", href: "/production/materials", icon: Package },
+            { label: "recipes", href: "/production/recipes", icon: ClipboardList },
+            { label: "batches", href: "/production/batches", icon: Layers },
         ],
     },
     {
-        label: "Purchasing",
+        label: "purchasing",
         icon: ShoppingCart,
         items: [
-            { label: "Suppliers", href: "/suppliers", icon: Users },
+            { label: "suppliers", href: "/suppliers", icon: Users },
         ],
     },
     {
-        label: "Settings",
+        label: "settings",
         href: "/settings",
         icon: Settings,
         roles: ["admin"],
@@ -200,11 +201,12 @@ interface NavLinkItemProps {
 function NavLinkItem({ item, collapsed, currentPath }: NavLinkItemProps) {
     const isActive = currentPath === item.href;
     const Icon = item.icon;
+    const { t } = useTranslation("nav");
 
     const inner = (
         <>
             <Icon className="h-5 w-5 shrink-0" />
-            {!collapsed && <span>{item.label}</span>}
+            {!collapsed && <span>{t(item.label)}</span>}
         </>
     );
 
@@ -215,7 +217,7 @@ function NavLinkItem({ item, collapsed, currentPath }: NavLinkItemProps) {
                     "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors opacity-40 cursor-not-allowed select-none",
                     collapsed && "justify-center px-2"
                 )}
-                title="Coming Soon"
+                title={t("comingSoon")}
             >
                 {inner}
             </span>
@@ -242,7 +244,7 @@ function NavLinkItem({ item, collapsed, currentPath }: NavLinkItemProps) {
             <Tooltip>
                 <TooltipTrigger asChild>{link}</TooltipTrigger>
                 <TooltipContent side="right" sideOffset={8}>
-                    {item.label}
+                    {t(item.label)}
                 </TooltipContent>
             </Tooltip>
         );
@@ -273,6 +275,7 @@ function NavGroupItem({
         (item) => currentPath === item.href
     );
     const [isOpen, setIsOpen] = useState(isAnyChildActive);
+    const { t } = useTranslation("nav");
 
     const Icon = group.icon;
 
@@ -295,9 +298,9 @@ function NavGroupItem({
                     </li>
                 </TooltipTrigger>
                 <TooltipContent side="right" sideOffset={8} className="p-0">
-                    <div className="min-w-[160px] rounded-md border border-gray-200 bg-white py-1 shadow-lg">
+                    <div className="min-w-[200px] rounded-md border border-gray-200 bg-white py-1 shadow-lg">
                         <p className="px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase">
-                            {group.label}
+                            {t(group.label)}
                         </p>
                         {visibleItems.map((item) => {
                             if (item.disabled) {
@@ -305,10 +308,10 @@ function NavGroupItem({
                                     <span
                                         key={item.href}
                                         className="flex items-center gap-2 px-3 py-1.5 text-sm transition-colors text-gray-400 opacity-50 cursor-not-allowed select-none"
-                                        title="Coming Soon"
+                                        title={t("comingSoon")}
                                     >
                                         <item.icon className="h-4 w-4" />
-                                        {item.label}
+                                        <span className="truncate max-w-[220px]">{t(item.label)}</span>
                                     </span>
                                 );
                             }
@@ -324,7 +327,7 @@ function NavGroupItem({
                                     )}
                                 >
                                     <item.icon className="h-4 w-4" />
-                                    {item.label}
+                                    <span className="truncate max-w-[220px]">{item.label}</span>
                                 </Link>
                             );
                         })}
@@ -347,7 +350,7 @@ function NavGroupItem({
                 )}
             >
                 <Icon className="h-5 w-5 shrink-0" />
-                <span className="flex-1 text-left">{group.label}</span>
+                <span className="flex-1 text-left">{t(group.label)}</span>
                 <ChevronDown
                     className={cn(
                         "h-4 w-4 transition-transform",
@@ -364,10 +367,10 @@ function NavGroupItem({
                             <li key={item.href}>
                                 <span
                                     className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors text-gray-500 opacity-40 cursor-not-allowed select-none"
-                                    title="Coming Soon"
+                                    title={t("comingSoon")}
                                 >
                                     <item.icon className="h-4 w-4 shrink-0" />
-                                    <span>{item.label}</span>
+                                    <span>{t(item.label)}</span>
                                 </span>
                             </li>
                         ) : (
@@ -382,7 +385,7 @@ function NavGroupItem({
                                     )}
                                 >
                                     <item.icon className="h-4 w-4 shrink-0" />
-                                    <span>{item.label}</span>
+                                    <span>{t(item.label)}</span>
                                 </Link>
                             </li>
                         );

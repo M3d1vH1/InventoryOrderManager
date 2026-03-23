@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
@@ -70,6 +71,7 @@ interface CustomerFormProps {
 
 export function CustomerForm({ initialData, onSubmitSuccess }: CustomerFormProps) {
     const isEditing = !!initialData?.id;
+    const { t } = useTranslation("customers");
 
     const form = useForm<CustomerFormValues>({
         resolver: zodResolver(customerSchema),
@@ -132,67 +134,67 @@ export function CustomerForm({ initialData, onSubmitSuccess }: CustomerFormProps
 
                     <div>
                         <h3 className="font-semibold text-sm text-gray-500 uppercase tracking-wide mb-3">
-                            Basic Info
+                            {t("form.basicInfo")}
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {field("name", "Customer Name *")}
-                            {field("vatNumber", "VAT Number")}
-                            {field("phone", "Phone")}
-                            {field("email", "Email")}
-                            {field("contactPerson", "Contact Person")}
-                            {field("billingCompany", "Billing Company")}
+                            {field("name", t("form.name"))}
+                            {field("vatNumber", t("form.vat"))}
+                            {field("phone", t("form.phone"))}
+                            {field("email", t("form.email"))}
+                            {field("contactPerson", t("form.contact"))}
+                            {field("billingCompany", t("form.billingCo"))}
                         </div>
                     </div>
 
                     <div>
                         <h3 className="font-semibold text-sm text-gray-500 uppercase tracking-wide mb-3">
-                            Address
+                            {t("form.addressTitle")}
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {field("address", "Street Address")}
-                            {field("city", "City")}
-                            {field("state", "State / Province")}
-                            {field("postalCode", "Postal Code")}
-                            {field("country", "Country")}
+                            {field("address", t("form.street"))}
+                            {field("city", t("form.city"))}
+                            {field("state", t("form.state"))}
+                            {field("postalCode", t("form.postalCode"))}
+                            {field("country", t("form.country"))}
                         </div>
                     </div>
 
                     <div>
                         <h3 className="font-semibold text-sm text-gray-500 uppercase tracking-wide mb-3">
-                            Shipping
+                            {t("form.shippingTitle")}
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                                <Label>Default Shipping Company</Label>
+                                <Label>{t("form.defaultCarrier")}</Label>
                                 <Select
                                     defaultValue={form.getValues("shippingCompany")}
                                     onValueChange={(v) => form.setValue("shippingCompany", v as any)}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select carrier" />
+                                        <SelectValue placeholder={t("form.selectCarrier")} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {SHIPPING_COMPANIES.map((c) => (
                                             <SelectItem key={c.value} value={c.value}>
-                                                {c.label}
+                                                {t(`form.carriers.${c.value}`, c.label)}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-1.5">
-                                <Label>Preferred Shipping Company</Label>
+                                <Label>{t("form.preferredCarrier")}</Label>
                                 <Select
                                     defaultValue={form.getValues("preferredShippingCompany")}
                                     onValueChange={(v) => form.setValue("preferredShippingCompany", v as any)}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select carrier" />
+                                        <SelectValue placeholder={t("form.selectCarrier")} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {SHIPPING_COMPANIES.map((c) => (
                                             <SelectItem key={c.value} value={c.value}>
-                                                {c.label}
+                                                {t(`form.carriers.${c.value}`, c.label)}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -202,20 +204,20 @@ export function CustomerForm({ initialData, onSubmitSuccess }: CustomerFormProps
                     </div>
 
                     <div className="space-y-1.5">
-                        <Label htmlFor="notes">Notes</Label>
+                        <Label htmlFor="notes">{t("form.notes")}</Label>
                         <textarea
                             id="notes"
                             {...form.register("notes")}
                             rows={3}
                             className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                            placeholder="Internal notes..."
+                            placeholder={t("form.notesPlaceholder")}
                         />
                     </div>
 
                     <div className="flex justify-end pt-2">
                         <Button type="submit" disabled={isPending}>
                             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {isEditing ? "Save Changes" : "Create Customer"}
+                            {isEditing ? t("form.save") : t("form.create")}
                         </Button>
                     </div>
                 </form>

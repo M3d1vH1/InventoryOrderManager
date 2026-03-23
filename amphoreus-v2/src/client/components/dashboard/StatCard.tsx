@@ -26,7 +26,7 @@ export function StatCard({ title, value, icon: Icon, variant = "default", href }
                     <Icon className="h-6 w-6" />
                 </div>
                 <div>
-                    <p className="text-sm font-medium text-muted-foreground">{title}</p>
+                    <p className="text-sm font-medium text-muted-foreground leading-tight">{title}</p>
                     <p className="text-2xl font-bold tracking-tight">{value}</p>
                 </div>
             </CardContent>

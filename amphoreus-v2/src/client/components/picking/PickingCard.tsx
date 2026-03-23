@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { trpc } from "../../lib/trpc";
+import { useTranslation } from "react-i18next";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Card, CardHeader, CardContent } from "../ui/card";
@@ -29,6 +30,7 @@ export function PickingCard({ order }: { order: PickingOrder }) {
 
     const utils = trpc.useUtils();
     const barcodeInputRef = useRef<HTMLInputElement>(null);
+    const { t } = useTranslation("picking");
 
     const pickItemMutation = trpc.picking.pickItem.useMutation({
         onSuccess: (_, variables) => {
@@ -141,7 +143,7 @@ export function PickingCard({ order }: { order: PickingOrder }) {
                     </div>
                     <div className="flex flex-col items-end gap-1.5 shrink-0">
                         <span className="text-sm font-semibold bg-muted px-2.5 py-1 rounded-md text-foreground">
-                            {currentPickedCount} / {order.totalItems} picked
+                            {t("card.pickedRatio", { current: currentPickedCount, total: order.totalItems })}
                         </span>
                         <div className="text-muted-foreground mt-1 bg-muted/50 p-1.5 rounded-full">
                             {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -158,7 +160,7 @@ export function PickingCard({ order }: { order: PickingOrder }) {
                         {/* Barcode scanner promotion */}
                         <div className="mb-5">
                             <label className="block text-sm font-semibold text-foreground mb-1.5">
-                                Scan barcode to find item
+                                {t("card.scanPrompt")}
                             </label>
                             <div className="relative shadow-sm rounded-xl">
                                 <Barcode className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -166,7 +168,7 @@ export function PickingCard({ order }: { order: PickingOrder }) {
                                     ref={barcodeInputRef}
                                     type="text"
                                     inputMode="none"
-                                    placeholder="Scan item barcode..."
+                                    placeholder={t("card.scanPlaceholder")}
                                     className="w-full h-12 pl-10 pr-4 rounded-xl border border-input focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-base bg-background transition-colors"
                                     onChange={handleBarcodeInput}
                                 />
@@ -180,7 +182,7 @@ export function PickingCard({ order }: { order: PickingOrder }) {
                                     key={item.id}
                                     item={{
                                         id: item.id,
-                                        productName: item.product?.name ?? "Unknown Product",
+                                        productName: item.product?.name ?? t("card.unknownProduct"),
                                         sku: item.product?.sku,
                                         quantity: item.quantity,
                                         location: undefined, // Add location to schema if needed
@@ -206,7 +208,7 @@ export function PickingCard({ order }: { order: PickingOrder }) {
                                     ) : (
                                         <CheckCircle className="w-5 h-5 mr-2" />
                                     )}
-                                    Complete Order #{order.orderNumber}
+                                    {t("card.completeOrderBtn", { order: order.orderNumber })}
                                 </Button>
                             </div>
                         </div>

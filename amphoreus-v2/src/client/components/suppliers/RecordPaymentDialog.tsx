@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { trpc } from "../../lib/trpc";
 import { AlertTriangle, X } from "lucide-react";
 
@@ -21,6 +22,7 @@ export function RecordPaymentDialog({
         notes: "",
     });
     const [error, setError] = useState("");
+    const { t } = useTranslation("suppliers");
 
     const utils = trpc.useUtils();
     const create = trpc.suppliers.payments.create.useMutation({
@@ -53,8 +55,8 @@ export function RecordPaymentDialog({
             <div className="w-full max-w-md rounded-xl border bg-card p-6 shadow-xl">
                 <div className="mb-4 flex items-center justify-between">
                     <div>
-                        <h2 className="text-lg font-bold">Record Payment</h2>
-                        <p className="text-sm text-muted-foreground">Invoice {invoiceNumber} · Remaining: €{remainingBalance.toFixed(2)}</p>
+                        <h2 className="text-lg font-bold">{t("payment.title")}</h2>
+                        <p className="text-sm text-muted-foreground">{t("payment.subtitle", { number: invoiceNumber, remaining: remainingBalance.toFixed(2) })}</p>
                     </div>
                     <button onClick={onClose} className="rounded-lg p-1 hover:bg-muted transition-colors">
                         <X className="h-5 w-5" />
@@ -69,48 +71,48 @@ export function RecordPaymentDialog({
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-1">
-                        <label className="text-sm font-medium">Amount (€) *</label>
+                        <label className="text-sm font-medium">{t("payment.amount")}</label>
                         <input type="number" step="0.01" min="0.01" max={remainingBalance}
                             value={form.amount}
                             onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
                             className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary ${exceedsBalance ? "border-destructive" : ""}`} />
-                        {exceedsBalance && <p className="text-xs text-destructive">Exceeds remaining balance of €{remainingBalance.toFixed(2)}</p>}
+                        {exceedsBalance && <p className="text-xs text-destructive">{t("payment.exceeds", { remaining: remainingBalance.toFixed(2) })}</p>}
                     </div>
 
                     <div className="space-y-1">
-                        <label className="text-sm font-medium">Payment Method *</label>
+                        <label className="text-sm font-medium">{t("payment.method")}</label>
                         <select value={form.paymentMethod} onChange={(e) => setForm((f) => ({ ...f, paymentMethod: e.target.value as typeof form.paymentMethod }))}
                             className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-                            <option value="bank_transfer">Bank Transfer</option>
-                            <option value="cash">Cash</option>
-                            <option value="check">Check</option>
-                            <option value="other">Other</option>
+                            <option value="bank_transfer">{t("payment.bank")}</option>
+                            <option value="cash">{t("payment.cash")}</option>
+                            <option value="check">{t("payment.check")}</option>
+                            <option value="other">{t("payment.other")}</option>
                         </select>
                     </div>
 
                     <div className="space-y-1">
-                        <label className="text-sm font-medium">Payment Date *</label>
+                        <label className="text-sm font-medium">{t("payment.date")}</label>
                         <input type="date" value={form.paymentDate}
                             onChange={(e) => setForm((f) => ({ ...f, paymentDate: e.target.value }))}
                             className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
                     </div>
 
                     <div className="space-y-1">
-                        <label className="text-sm font-medium">Reference Number</label>
+                        <label className="text-sm font-medium">{t("payment.ref")}</label>
                         <input type="text" value={form.referenceNumber}
                             onChange={(e) => setForm((f) => ({ ...f, referenceNumber: e.target.value }))}
-                            placeholder="Bank ref, check no., etc."
+                            placeholder={t("payment.refPlaceholder")}
                             className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
                     </div>
 
                     <div className="flex gap-3 pt-2">
                         <button type="submit" disabled={create.isPending || !amount || exceedsBalance}
                             className="flex-1 rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
-                            {create.isPending ? "Saving…" : "Record Payment"}
+                            {create.isPending ? t("form.saving") : t("payment.recordBtn")}
                         </button>
                         <button type="button" onClick={onClose}
                             className="rounded-lg border px-4 py-2 text-sm hover:bg-muted transition-colors">
-                            Cancel
+                            {t("form.cancel")}
                         </button>
                     </div>
                 </form>

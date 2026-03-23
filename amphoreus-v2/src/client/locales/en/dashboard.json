@@ -1,0 +1,14 @@
+{
+    "title": "Dashboard",
+    "errorTitle": "Failed to load dashboard data",
+    "errorMessage": "Please check your connection and try refreshing the page.",
+    "ordersToday": "Orders Today",
+    "shippedToday": "Shipped Today",
+    "pickingQueue": "Picking Queue",
+    "itemsPickedToday": "Items Picked Today",
+    "pendingOrders": "Pending Orders",
+    "lowStockAlerts": "Low Stock Alerts",
+    "totalProducts": "Total Products",
+    "totalCustomers": "Total Customers",
+    "updating": "Updating..."
+}

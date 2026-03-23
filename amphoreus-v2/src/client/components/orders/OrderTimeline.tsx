@@ -1,4 +1,5 @@
 import { formatDistanceToNow } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 interface ChangelogEntry {
     id: number;
@@ -8,13 +9,15 @@ interface ChangelogEntry {
 }
 
 export function OrderTimeline({ entries }: { entries: ChangelogEntry[] }) {
+    const { t } = useTranslation("orders");
+
     if (entries.length === 0) {
-        return <p className="text-sm text-muted-foreground">No activity recorded.</p>;
+        return <p className="text-sm text-muted-foreground">{t("components.timelineNone")}</p>;
     }
 
     return (
         <div className="space-y-2">
-            <h3 className="font-semibold text-base">Activity Log</h3>
+            <h3 className="font-semibold text-base">{t("components.timelineTitle")}</h3>
             <div className="relative border-l-2 border-muted ml-2 pl-5 space-y-4">
                 {entries.map((entry) => (
                     <div key={entry.id} className="relative">

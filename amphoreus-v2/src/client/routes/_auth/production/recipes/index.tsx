@@ -8,12 +8,14 @@ import {
     FlaskConical,
     Beaker
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_auth/production/recipes/")({
     component: RecipesPage,
 });
 
 function RecipesPage() {
+    const { t } = useTranslation("production");
     const { data: recipes, isLoading } = trpc.production.recipes.list.useQuery();
 
     return (
@@ -21,14 +23,14 @@ function RecipesPage() {
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold flex items-center gap-2">
                     <ClipboardCheck className="w-6 h-6 text-primary" />
-                    Manufacturing Recipes
+                    {t("recipes.title")}
                 </h1>
                 <Link
                     to="/production/recipes/new"
                     className="bg-primary text-primary-foreground px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-primary/90 transition-colors shadow-sm"
                 >
                     <Plus className="w-4 h-4" />
-                    Configure Recipe
+                    {t("recipes.configureRecipe")}
                 </Link>
             </div>
 
@@ -40,7 +42,7 @@ function RecipesPage() {
                 ) : recipes?.length === 0 ? (
                     <div className="col-span-full py-12 text-center text-muted-foreground border-2 border-dashed rounded-xl">
                         <FlaskConical className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                        <p className="italic">No recipes configured. Link a finished product to raw materials to begin.</p>
+                        <p className="italic">{t("recipes.noRecipesConfigured")}</p>
                     </div>
                 ) : (
                     recipes?.map((recipe) => (
@@ -51,21 +53,21 @@ function RecipesPage() {
                                         <Beaker className="w-5 h-5 text-primary" />
                                     </div>
                                     <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-muted rounded text-muted-foreground">
-                                        Yield: {recipe.yieldQuantity} Units
+                                        {t("recipes.yieldUnits", { yield: recipe.yieldQuantity })}
                                     </span>
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors">{recipe.name}</h3>
-                                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{recipe.description || "No description provided."}</p>
+                                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{recipe.description || t("recipes.noDescription")}</p>
                                 </div>
                             </div>
 
                             <div className="pt-4 border-t flex items-center justify-between">
                                 <p className="text-[10px] text-muted-foreground font-medium">
-                                    {recipe.ingredients.length} Ingredients
+                                    {t("recipes.ingredientsCount", { count: recipe.ingredients.length })}
                                 </p>
                                 <div className="flex items-center gap-1 text-xs font-semibold text-primary">
-                                    Configure <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                                    {t("recipes.configure")} <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                                 </div>
                             </div>
                         </div>

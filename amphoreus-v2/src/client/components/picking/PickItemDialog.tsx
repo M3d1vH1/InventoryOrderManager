@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { trpc } from "../../lib/trpc";
 import {
     Dialog,
@@ -25,6 +26,7 @@ export function PickItemDialog({
     const [pickedQuantity, setPickedQuantity] = useState<number | undefined>(defaultQuantity);
     const [hasQualityIssues, setHasQualityIssues] = useState(false);
     const utils = trpc.useUtils();
+    const { t } = useTranslation("picking");
 
     const mutation = trpc.picking.pickItem.useMutation({
         onSuccess: () => {
@@ -49,22 +51,22 @@ export function PickItemDialog({
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Confirm Pick</DialogTitle>
+                    <DialogTitle>{t("dialog.title")}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-6 pt-2">
                     <div className="space-y-2">
-                        <Label>Actual Quantity Picked</Label>
+                        <Label>{t("dialog.actualQuantity")}</Label>
                         <Input
                             type="number"
                             min={0}
                             max={defaultQuantity * 2}
                             value={pickedQuantity ?? ""}
                             onChange={(e) => setPickedQuantity(parseInt(e.target.value) || 0)}
-                            placeholder="Enter quantity physically picked"
+                            placeholder={t("dialog.quantityPlaceholder")}
                         />
                         {pickedQuantity !== undefined && pickedQuantity < defaultQuantity && (
                             <p className="text-xs text-amber-600">
-                                Warning: Picking fewer items than requested ({defaultQuantity}).
+                                {t("dialog.warningUnderPick", { default: defaultQuantity })}
                             </p>
                         )}
                     </div>
@@ -79,9 +81,9 @@ export function PickItemDialog({
                             htmlFor="quality-issue"
                             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
                         >
-                            Item has quality issues
+                            {t("dialog.qualityIssue")}
                             <p className="text-xs text-muted-foreground mt-1 font-normal">
-                                Check this if the item is damaged, mislabelled, or otherwise unfit.
+                                {t("dialog.qualityDesc")}
                             </p>
                         </Label>
                     </div>
@@ -99,7 +101,7 @@ export function PickItemDialog({
                             }
                             disabled={mutation.isPending || pickedQuantity === undefined}
                         >
-                            {mutation.isPending ? "Confirming..." : "Confirm Pick"}
+                            {mutation.isPending ? t("dialog.confirming") : t("dialog.confirmBtn")}
                         </Button>
                         {mutation.error && (
                             <p className="text-red-600 text-sm mt-2 text-center">

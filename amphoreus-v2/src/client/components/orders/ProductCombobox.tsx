@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { trpc } from "../../lib/trpc";
 import { Button } from "../ui/button";
@@ -25,6 +26,7 @@ interface Props {
 export function ProductCombobox({ onSelect, excludeIds = [] }: Props) {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
+    const { t } = useTranslation("orders");
 
     const { data, isLoading } = trpc.products.list.useQuery({
         search: search || undefined,
@@ -36,14 +38,14 @@ export function ProductCombobox({ onSelect, excludeIds = [] }: Props) {
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full justify-between font-normal" type="button">
-                    Add product...
+                    {t("components.productAdd")}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-96 p-0">
+            <PopoverContent className="w-[28rem] p-0">
                 <div className="p-2 border-b">
                     <Input
-                        placeholder="Search products..."
+                        placeholder={t("components.productSearch")}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="h-8"
@@ -51,10 +53,10 @@ export function ProductCombobox({ onSelect, excludeIds = [] }: Props) {
                 </div>
                 <div className="max-h-60 overflow-y-auto">
                     {isLoading && (
-                        <p className="text-sm text-muted-foreground p-3">Loading...</p>
+                        <p className="text-sm text-muted-foreground p-3">{t("components.productLoading")}</p>
                     )}
                     {!isLoading && data?.items.length === 0 && (
-                        <p className="text-sm text-muted-foreground p-3">No products found.</p>
+                        <p className="text-sm text-muted-foreground p-3">{t("components.productNone")}</p>
                     )}
                     {data?.items
                         .filter((p) => !excludeIds.includes(p.id))
@@ -82,7 +84,7 @@ export function ProductCombobox({ onSelect, excludeIds = [] }: Props) {
                                     variant={p.availableStock > 0 ? "default" : "destructive"}
                                     className="text-xs"
                                 >
-                                    {p.availableStock} avail.
+                                    {t("components.productAvail", { avail: p.availableStock })}
                                 </Badge>
                             </button>
                         ))}

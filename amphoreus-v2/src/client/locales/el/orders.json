@@ -1,0 +1,111 @@
+{
+    "title": "Παραγγελίες",
+    "newOrder": "Νέα Παραγγελία",
+    "statusTabs": {
+        "all": "Όλα",
+        "pending": "Σε Εκκρεμότητα",
+        "picked": "Συλλέγονται",
+        "partiallyShipped": "Μερικώς Απεσταλμένα",
+        "shipped": "Απεσταλμένα",
+        "cancelled": "Ακυρωμένα"
+    },
+    "searchPlaceholder": "Αναζήτηση με αριθμό παραγγελίας ή πελάτη...",
+    "tableCols": {
+        "orderNum": "Αριθμός Παρ.",
+        "customer": "Πελάτης",
+        "status": "Κατάσταση",
+        "priority": "Προτεραιότητα",
+        "items": "Είδη",
+        "date": "Ημερομηνία",
+        "estShip": "Εκτιμ. Αποστολή",
+        "product": "Προϊόν",
+        "qty": "Ποσ.",
+        "picked": "Συλλογή"
+    },
+    "noOrders": "Δεν βρέθηκαν παραγγελίες.",
+    "pageCount": "Σελίδα {{page}} από {{total}}",
+    "previous": "Προηγούμενο",
+    "next": "Επόμενο",
+    "back": "Πίσω",
+    "form": {
+        "customer": "Πελάτης *",
+        "priority": "Προτεραιότητα",
+        "priorities": {
+            "normal": "Κανονική",
+            "high": "Υψηλή",
+            "urgent": "Επείγουσα"
+        },
+        "items": "Είδη *",
+        "estShipDate": "Εκτιμώμενη Ημερομηνία Αποστολής",
+        "notes": "Σημειώσεις",
+        "notesPlaceholder": "Εσωτερικές σημειώσεις...",
+        "creating": "Δημιουργία Παραγγελίας...",
+        "create": "Δημιουργία"
+    },
+    "detail": {
+        "loading": "Φόρτωση...",
+        "notFoundTitle": "Η παραγγελία δεν βρέθηκε",
+        "notFoundMessage": "Αυτή η παραγγελία δεν μπόρεσε να βρεθεί.",
+        "return": "Επιστροφή στις Παραγγελίες",
+        "cancelAction": "Ακύρωση Παραγγελίας",
+        "created": "Δημιουργήθηκε",
+        "estimatedShip": "Εκτιμώμενη Αποστολή",
+        "lineItems": "Είδη Παραγγελίας",
+        "pickedTrue": "✓ Έχει συλλεχθεί",
+        "remove": "Αφαίρεση",
+        "cancelDialogTitle": "Ακύρωση Παραγγελίας",
+        "cancelMessage1": "Ακύρωση ",
+        "cancelMessage2": "; Όλο το μη συλλεγόμενο απόθεμα θα αποδεσμευτεί.",
+        "keepOrder": "Διατήρηση Παραγγελίας",
+        "cancelling": "Ακύρωση...",
+        "yesCancel": "Ναι, Ακύρωση",
+        "transitions": {
+            "markPicked": "Σήμανση ως Συλλεγμένο",
+            "markPartiallyShipped": "Σήμανση ως Μερικώς Απεσταλμένο",
+            "markShipped": "Σήμανση ως Απεσταλμένο"
+        }
+    },
+    "components": {
+        "customerSelect": "Επιλογή πελάτη...",
+        "customerSearch": "Αναζήτηση πελατών...",
+        "customerLoading": "Φόρτωση...",
+        "customerNone": "Δεν βρέθηκαν πελάτες.",
+        "productAdd": "Προσθήκη προϊόντος...",
+        "productSearch": "Αναζήτηση προϊόντων...",
+        "productLoading": "Φόρτωση...",
+        "productNone": "Δεν βρέθηκαν προϊόντα.",
+        "productAvail": "{{avail}} διαθ.",
+        "timelineNone": "Δεν καταγράφηκε δραστηριότητα.",
+        "timelineTitle": "Αρχείο Δραστηριότητας",
+        "shipDialogTitle": "Αποστολή & Δημιουργία Ετικέτας",
+        "shipTrackingLabel": "Αριθμός Παρακολούθησης",
+        "shipTrackingPlaceholder": "π.χ. 1Z... (Προαιρετικό)",
+        "shipFormatLabel": "Μορφή Ετικέτας",
+        "shipPdf": "PDF (A4)",
+        "shipZpl": "ZPL (Θερμική)",
+        "shipNotesLabel": "Σημειώσεις Αποστολής",
+        "shipNotesPlaceholder": "π.χ. Αφέθηκε στη ρεσεψιόν (Προαιρετικό)",
+        "shipGenerating": "Δημιουργία...",
+        "shipGenerateBtn": "Δημιουργία & Αποστολή",
+        "lineItemExceeds": "Υπερβαίνει το διαθέσιμο ({{qty}})",
+        "lineItemAvail": "Διαθ",
+        "lineItemNone": "Δεν προστέθηκαν είδη. Χρησιμοποιήστε την παραπάνω αναζήτηση.",
+        "badgeStatus": {
+            "pending": "Σε Εκκρεμότητα",
+            "confirmed": "Επιβεβαιωμένη",
+            "processing": "Επεξεργασία",
+            "picking": "Συλλέγεται",
+            "picked": "Συλλέχθηκε",
+            "partially_shipped": "Μερικώς Απεσταλμένη",
+            "shipped": "Απεσταλμένη",
+            "delivered": "Παραδόθηκε",
+            "cancelled": "Ακυρωμένη",
+            "on_hold": "Σε Αναμονή"
+        },
+        "badgePriority": {
+            "normal": "Κανονική",
+            "high": "Υψηλή",
+            "urgent": "Επείγουσα"
+        }
+    }
+}

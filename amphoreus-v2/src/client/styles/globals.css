@@ -21,6 +21,7 @@
 
   /* ── Typography ─────────────────────────────────────────────── */
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", "DejaVu Sans Mono", "Liberation Mono", ui-monospace, monospace;
 
   /* ── Spacing scale ──────────────────────────────────────────── */
   --spacing-page: 24px;

@@ -1,5 +1,6 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { trpc } from "../lib/trpc";
 
 export const Route = createFileRoute("/login")({
@@ -11,6 +12,7 @@ function LoginPage() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState<string | null>(null);
+    const { t } = useTranslation("auth");
 
     const loginMutation = trpc.auth.login.useMutation({
         onSuccess: () => {
@@ -32,9 +34,9 @@ function LoginPage() {
             <div className="w-full max-w-sm">
                 {/* Logo / Brand */}
                 <div className="mb-8 text-center">
-                    <h1 className="text-2xl font-bold text-gray-900">Amphoreus</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
                     <p className="mt-1 text-sm text-gray-500">
-                        Warehouse Management System
+                        {t("subtitle")}
                     </p>
                 </div>
 
@@ -54,7 +56,7 @@ function LoginPage() {
                                 htmlFor="username"
                                 className="block text-sm font-medium text-gray-700"
                             >
-                                Username
+                                {t("usernameLabel")}
                             </label>
                             <input
                                 id="username"
@@ -67,7 +69,7 @@ function LoginPage() {
                                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm
                            placeholder-gray-400 shadow-sm
                            focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                placeholder="Enter your username"
+                                placeholder={t("usernamePlaceholder")}
                             />
                         </div>
 
@@ -77,7 +79,7 @@ function LoginPage() {
                                 htmlFor="password"
                                 className="block text-sm font-medium text-gray-700"
                             >
-                                Password
+                                {t("passwordLabel")}
                             </label>
                             <input
                                 id="password"
@@ -89,7 +91,7 @@ function LoginPage() {
                                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm
                            placeholder-gray-400 shadow-sm
                            focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                placeholder="Enter your password"
+                                placeholder={t("passwordPlaceholder")}
                             />
                         </div>
 
@@ -102,7 +104,7 @@ function LoginPage() {
                          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
                          disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            {loginMutation.isPending ? "Signing in..." : "Sign in"}
+                            {loginMutation.isPending ? t("signingInButton") : t("signInButton")}
                         </button>
                     </form>
                 </div>

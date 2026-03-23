@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, Box } from "lucide-react";
 import { trpc } from "../../../lib/trpc";
 import { PageShell } from "../../../components/layout/PageShell";
@@ -18,6 +19,7 @@ function ProductDetailPage() {
     const numericId = Number(productId);
     const navigate = useNavigate();
     const [adjustmentOpen, setAdjustmentOpen] = useState(false);
+    const { t } = useTranslation("products");
 
     const { data: product, isLoading } = trpc.products.getById.useQuery({
         id: numericId,
@@ -25,7 +27,7 @@ function ProductDetailPage() {
 
     if (isLoading) {
         return (
-            <PageShell title="Loading Product...">
+            <PageShell title={t("detail.loading")}>
                 <div className="space-y-6 max-w-5xl">
                     <Skeleton className="h-40 w-full rounded-lg" />
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -41,10 +43,10 @@ function ProductDetailPage() {
 
     if (!product) {
         return (
-            <PageShell title="Product Not Found">
-                <p className="text-gray-500">The requested product could not be located.</p>
+            <PageShell title={t("detail.notFoundTitle")}>
+                <p className="text-gray-500">{t("detail.notFoundMessage")}</p>
                 <Button className="mt-4" onClick={() => navigate({ to: "/products" })}>
-                    Return to Products
+                    {t("detail.return")}
                 </Button>
             </PageShell>
         );
@@ -55,7 +57,7 @@ function ProductDetailPage() {
             title={product.name}
             actions={
                 <Button variant="outline" onClick={() => navigate({ to: "/products" })}>
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
+                    <ArrowLeft className="mr-2 h-4 w-4" /> {t("detail.back")}
                 </Button>
             }
         >
@@ -74,22 +76,22 @@ function ProductDetailPage() {
                 <div className="space-y-6">
                     <div className="bg-white border rounded-xl p-6 shadow-sm">
                         <h3 className="font-semibold text-lg border-b pb-4 mb-4 flex items-center">
-                            <Box className="w-5 h-5 mr-2 text-blue-600" /> Inventory Status
+                            <Box className="w-5 h-5 mr-2 text-blue-600" /> {t("detail.inventoryTitle")}
                         </h3>
 
                         <div className="space-y-4">
                             <div className="flex justify-between items-center">
-                                <span className="text-gray-600">Available Stock</span>
+                                <span className="text-gray-600">{t("detail.availableStock")}</span>
                                 <span className="text-2xl font-bold">
                                     {product.availableStock}
                                 </span>
                             </div>
                             <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500">Current On Hand</span>
+                                <span className="text-gray-500">{t("detail.currentOnHand")}</span>
                                 <span className="font-medium">{product.currentStock}</span>
                             </div>
                             <div className="flex justify-between items-center text-sm border-b pb-4">
-                                <span className="text-gray-500">Reserved (Orders)</span>
+                                <span className="text-gray-500">{t("detail.reservedOrders")}</span>
                                 <span className="font-medium text-amber-600">
                                     {product.reservedStock}
                                 </span>
@@ -101,7 +103,7 @@ function ProductDetailPage() {
                                     variant="secondary"
                                     onClick={() => setAdjustmentOpen(true)}
                                 >
-                                    Adjust Stock...
+                                    {t("detail.adjustStockBtn")}
                                 </Button>
                             </div>
                         </div>

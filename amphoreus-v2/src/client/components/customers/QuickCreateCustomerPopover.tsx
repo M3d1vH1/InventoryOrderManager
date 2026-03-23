@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -49,6 +50,7 @@ const CARRIERS = [
 
 export function QuickCreateCustomerPopover({ onCreated }: Props) {
     const [open, setOpen] = useState(false);
+    const { t } = useTranslation("customers");
     const form = useForm<QuickCustomerData>({
         resolver: zodResolver(quickSchema),
     });
@@ -67,45 +69,45 @@ export function QuickCreateCustomerPopover({ onCreated }: Props) {
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" type="button">
-                    <UserPlus className="mr-1 h-4 w-4" /> New Customer
+                    <UserPlus className="mr-1 h-4 w-4" /> {t("quickCreate.btn")}
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80">
-                <p className="font-semibold mb-3">Quick Create Customer</p>
+                <p className="font-semibold mb-3">{t("quickCreate.title")}</p>
                 <form
                     onSubmit={form.handleSubmit((data) => mutation.mutate(data))}
                     className="space-y-3"
                 >
                     <div className="space-y-1">
-                        <Label htmlFor="qc-name">Name *</Label>
+                        <Label htmlFor="qc-name">{t("quickCreate.name")}</Label>
                         <Input id="qc-name" {...form.register("name")} />
                         {form.formState.errors.name && (
                             <p className="text-red-600 text-xs">{form.formState.errors.name.message}</p>
                         )}
                     </div>
                     <div className="space-y-1">
-                        <Label htmlFor="qc-phone">Phone</Label>
+                        <Label htmlFor="qc-phone">{t("quickCreate.phone")}</Label>
                         <Input id="qc-phone" {...form.register("phone")} />
                     </div>
                     <div className="space-y-1">
-                        <Label>Shipping Company</Label>
+                        <Label>{t("quickCreate.shippingCo")}</Label>
                         <Select
                             onValueChange={(v) => form.setValue("shippingCompany", v as any)}
                         >
                             <SelectTrigger>
-                                <SelectValue placeholder="Select carrier" />
+                                <SelectValue placeholder={t("quickCreate.selectCarrier")} />
                             </SelectTrigger>
                             <SelectContent>
                                 {CARRIERS.map((c) => (
                                     <SelectItem key={c.value} value={c.value}>
-                                        {c.label}
+                                        {t(`form.carriers.${c.value}`, c.label)}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
                     </div>
                     <Button type="submit" className="w-full" disabled={mutation.isPending}>
-                        {mutation.isPending ? "Creating..." : "Create Customer"}
+                        {mutation.isPending ? t("quickCreate.creating") : t("quickCreate.create")}
                     </Button>
                     {mutation.error && (
                         <p className="text-red-600 text-sm">{mutation.error.message}</p>

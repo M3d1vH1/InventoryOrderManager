@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { trpc } from "../../../lib/trpc";
 import { PageShell } from "../../../components/layout/PageShell";
 import { Input } from "../../../components/ui/input";
@@ -25,6 +26,7 @@ function CustomersPage() {
     const [page, setPage] = useState(1);
     const [sortBy, setSortBy] = useState<"name" | "city" | "createdAt">("name");
     const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+    const { t, i18n } = useTranslation("customers");
 
     const { data, isLoading } = trpc.customers.list.useQuery({
         page,
@@ -41,17 +43,17 @@ function CustomersPage() {
 
     return (
         <PageShell
-            title="Customers"
+            title={t("title")}
             actions={
                 <Button asChild>
                     <Link to="/customers/new">
-                        <Plus className="mr-2 h-4 w-4" /> Add Customer
+                        <Plus className="mr-2 h-4 w-4" /> {t("addCustomer")}
                     </Link>
                 </Button>
             }
         >
             <Input
-                placeholder="Search by name, phone, or email..."
+                placeholder={t("searchPlaceholder")}
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 className="max-w-sm mb-4"
@@ -72,22 +74,22 @@ function CustomersPage() {
                                     onClick={() => toggleSort("name")}
                                     className="cursor-pointer select-none"
                                 >
-                                    Name <ArrowUpDown className="inline h-3 w-3 ml-1" />
+                                    {t("tableCols.name")} <ArrowUpDown className="inline h-3 w-3 ml-1" />
                                 </TableHead>
-                                <TableHead>Phone</TableHead>
-                                <TableHead>Email</TableHead>
+                                <TableHead>{t("tableCols.phone")}</TableHead>
+                                <TableHead>{t("tableCols.email")}</TableHead>
                                 <TableHead
                                     onClick={() => toggleSort("city")}
                                     className="cursor-pointer select-none"
                                 >
-                                    City <ArrowUpDown className="inline h-3 w-3 ml-1" />
+                                    {t("tableCols.city")} <ArrowUpDown className="inline h-3 w-3 ml-1" />
                                 </TableHead>
-                                <TableHead>Shipping Co.</TableHead>
+                                <TableHead>{t("tableCols.shippingCo")}</TableHead>
                                 <TableHead
                                     onClick={() => toggleSort("createdAt")}
                                     className="cursor-pointer select-none"
                                 >
-                                    Added <ArrowUpDown className="inline h-3 w-3 ml-1" />
+                                    {t("tableCols.added")} <ArrowUpDown className="inline h-3 w-3 ml-1" />
                                 </TableHead>
                             </TableRow>
                         </TableHeader>
@@ -95,7 +97,7 @@ function CustomersPage() {
                             {data?.items.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
-                                        No customers found.
+                                        {t("noCustomers")}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -119,7 +121,7 @@ function CustomersPage() {
                                         ) : "—"}
                                     </TableCell>
                                     <TableCell className="text-muted-foreground text-sm">
-                                        {new Date(c.createdAt).toLocaleDateString()}
+                                        {new Date(c.createdAt).toLocaleDateString(i18n.language === "el" ? "el-GR" : "en-GB")}
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -131,17 +133,17 @@ function CustomersPage() {
             {data && data.total > 0 && (
                 <div className="flex justify-center items-center gap-4 mt-6">
                     <Button variant="outline" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                        Previous
+                        {t("previous")}
                     </Button>
                     <span className="text-sm text-muted-foreground">
-                        Page {page} of {Math.ceil(data.total / data.perPage)}
+                        {t("pageCount", { page, total: Math.ceil(data.total / data.perPage) })}
                     </span>
                     <Button
                         variant="outline"
                         disabled={page * data.perPage >= data.total}
                         onClick={() => setPage(page + 1)}
                     >
-                        Next
+                        {t("next")}
                     </Button>
                 </div>
             )}

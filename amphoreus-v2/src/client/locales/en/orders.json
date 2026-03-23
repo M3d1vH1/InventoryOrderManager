@@ -1,0 +1,111 @@
+{
+    "title": "Orders",
+    "newOrder": "New Order",
+    "statusTabs": {
+        "all": "All",
+        "pending": "Pending",
+        "picked": "Picked",
+        "partiallyShipped": "Partially Shipped",
+        "shipped": "Shipped",
+        "cancelled": "Cancelled"
+    },
+    "searchPlaceholder": "Search by order number or customer...",
+    "tableCols": {
+        "orderNum": "Order #",
+        "customer": "Customer",
+        "status": "Status",
+        "priority": "Priority",
+        "items": "Items",
+        "date": "Date",
+        "estShip": "Est. Ship",
+        "product": "Product",
+        "qty": "Qty",
+        "picked": "Picked"
+    },
+    "noOrders": "No orders found.",
+    "pageCount": "Page {{page}} of {{total}}",
+    "previous": "Previous",
+    "next": "Next",
+    "back": "Back",
+    "form": {
+        "customer": "Customer *",
+        "priority": "Priority",
+        "priorities": {
+            "normal": "Normal",
+            "high": "High",
+            "urgent": "Urgent"
+        },
+        "items": "Items *",
+        "estShipDate": "Estimated Shipping Date",
+        "notes": "Notes",
+        "notesPlaceholder": "Internal notes...",
+        "creating": "Creating Order...",
+        "create": "Create Order"
+    },
+    "detail": {
+        "loading": "Loading...",
+        "notFoundTitle": "Order Not Found",
+        "notFoundMessage": "This order could not be found.",
+        "return": "Return to Orders",
+        "cancelAction": "Cancel Order",
+        "created": "Created",
+        "estimatedShip": "Estimated Ship",
+        "lineItems": "Line Items",
+        "pickedTrue": "✓ Picked",
+        "remove": "Remove",
+        "cancelDialogTitle": "Cancel Order",
+        "cancelMessage1": "Cancel ",
+        "cancelMessage2": "? All non-picked reserved stock will be released.",
+        "keepOrder": "Keep Order",
+        "cancelling": "Cancelling...",
+        "yesCancel": "Yes, Cancel",
+        "transitions": {
+            "markPicked": "Mark as Picked",
+            "markPartiallyShipped": "Mark Partially Shipped",
+            "markShipped": "Mark as Shipped"
+        }
+    },
+    "components": {
+        "customerSelect": "Select customer...",
+        "customerSearch": "Search customers...",
+        "customerLoading": "Loading...",
+        "customerNone": "No customers found.",
+        "productAdd": "Add product...",
+        "productSearch": "Search products...",
+        "productLoading": "Loading...",
+        "productNone": "No products found.",
+        "productAvail": "{{avail}} avail.",
+        "timelineNone": "No activity recorded.",
+        "timelineTitle": "Activity Log",
+        "shipDialogTitle": "Ship Order & Generate Label",
+        "shipTrackingLabel": "Tracking Number",
+        "shipTrackingPlaceholder": "e.g. 1Z9999999999999999 (Optional)",
+        "shipFormatLabel": "Label Format",
+        "shipPdf": "PDF (A4)",
+        "shipZpl": "ZPL (Thermal)",
+        "shipNotesLabel": "Shipping Notes",
+        "shipNotesPlaceholder": "Any specifics... (Optional)",
+        "shipGenerating": "Generating...",
+        "shipGenerateBtn": "Generate Label & Ship",
+        "lineItemExceeds": "Exceeds available ({{qty}})",
+        "lineItemAvail": "Avail",
+        "lineItemNone": "No items added. Use the picker above to add products.",
+        "badgeStatus": {
+            "pending": "Pending",
+            "confirmed": "Confirmed",
+            "processing": "Processing",
+            "picking": "Picking",
+            "picked": "Picked",
+            "partially_shipped": "Partially Shipped",
+            "shipped": "Shipped",
+            "delivered": "Delivered",
+            "cancelled": "Cancelled",
+            "on_hold": "On Hold"
+        },
+        "badgePriority": {
+            "normal": "Normal",
+            "high": "High",
+            "urgent": "Urgent"
+        }
+    }
+}

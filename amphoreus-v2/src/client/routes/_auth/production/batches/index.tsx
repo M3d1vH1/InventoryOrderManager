@@ -11,12 +11,14 @@ import {
     PlayCircle
 } from "lucide-react";
 import { format } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_auth/production/batches/")({
     component: BatchesPage,
 });
 
 function BatchesPage() {
+    const { t } = useTranslation("production");
     const { data: batches, isLoading } = trpc.production.batches.list.useQuery();
 
     const getStatusIcon = (status: string) => {
@@ -45,14 +47,14 @@ function BatchesPage() {
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold flex items-center gap-2">
                     <Layers className="w-6 h-6 text-primary" />
-                    Production Batches
+                    {t("batches.title")}
                 </h1>
                 <Link
                     to="/production/batches/new"
                     className="bg-primary text-primary-foreground px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-primary/90 transition-colors shadow-sm"
                 >
                     <Plus className="w-4 h-4" />
-                    Schedule Batch
+                    {t("batches.scheduleBatch")}
                 </Link>
             </div>
 
@@ -61,25 +63,25 @@ function BatchesPage() {
                     <table className="w-full text-left text-sm">
                         <thead className="bg-muted/50 border-b text-muted-foreground">
                             <tr>
-                                <th className="px-6 py-4 font-semibold uppercase tracking-wider text-[10px]">Batch Number</th>
-                                <th className="px-6 py-4 font-semibold uppercase tracking-wider text-[10px]">Recipe / Product</th>
-                                <th className="px-6 py-4 font-semibold uppercase tracking-wider text-[10px]">Quantity</th>
-                                <th className="px-6 py-4 font-semibold uppercase tracking-wider text-[10px]">Status</th>
-                                <th className="px-6 py-4 font-semibold uppercase tracking-wider text-[10px]">Started</th>
-                                <th className="px-6 py-4 font-semibold uppercase tracking-wider text-[10px] text-right">Action</th>
+                                <th className="px-6 py-4 font-semibold uppercase tracking-wider text-[10px]">{t("batches.batchNumber")}</th>
+                                <th className="px-6 py-4 font-semibold uppercase tracking-wider text-[10px]">{t("batches.recipeProduct")}</th>
+                                <th className="px-6 py-4 font-semibold uppercase tracking-wider text-[10px]">{t("batches.quantity")}</th>
+                                <th className="px-6 py-4 font-semibold uppercase tracking-wider text-[10px]">{t("batches.status")}</th>
+                                <th className="px-6 py-4 font-semibold uppercase tracking-wider text-[10px]">{t("batches.started")}</th>
+                                <th className="px-6 py-4 font-semibold uppercase tracking-wider text-[10px] text-right">{t("batches.action")}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y">
                             {isLoading ? (
-                                <tr><td colSpan={6} className="px-6 py-12 text-center text-muted-foreground animate-pulse">Retrieving batch data...</td></tr>
+                                <tr><td colSpan={6} className="px-6 py-12 text-center text-muted-foreground animate-pulse">{t("batches.retrievingData")}</td></tr>
                             ) : batches?.length === 0 ? (
-                                <tr><td colSpan={6} className="px-6 py-12 text-center text-muted-foreground italic">No production batches scheduled</td></tr>
+                                <tr><td colSpan={6} className="px-6 py-12 text-center text-muted-foreground italic">{t("batches.noBatchesScheduled")}</td></tr>
                             ) : (
                                 batches?.map((batch) => (
                                     <tr key={batch.id} className="hover:bg-muted/30 transition-colors group">
                                         <td className="px-6 py-4">
                                             <p className="font-bold text-foreground group-hover:text-primary transition-colors">{batch.batchNumber}</p>
-                                            <p className="text-[10px] text-muted-foreground">ID: {batch.id.slice(0, 8)}</p>
+                                            <p className="text-[10px] text-muted-foreground">{t("batches.id", { id: batch.id.slice(0, 8) })}</p>
                                         </td>
                                         <td className="px-6 py-4">
                                             <p className="font-medium">{batch.recipe.name}</p>
@@ -87,8 +89,8 @@ function BatchesPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="space-y-0.5">
-                                                <p className="font-bold">{batch.plannedQuantity} <span className="text-[10px] text-muted-foreground font-normal uppercase">Planned</span></p>
-                                                {batch.actualQuantity && <p className="text-[10px] text-green-600 font-bold italic">{batch.actualQuantity} Produced</p>}
+                                                <p className="font-bold">{batch.plannedQuantity} <span className="text-[10px] text-muted-foreground font-normal uppercase">{t("batches.planned")}</span></p>
+                                                {batch.actualQuantity && <p className="text-[10px] text-green-600 font-bold italic">{t("batches.produced", { actual: batch.actualQuantity })}</p>}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">

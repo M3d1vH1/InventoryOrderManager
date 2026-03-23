@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "../../lib/trpc";
+import { useTranslation } from "react-i18next";
 import {
     Dialog,
     DialogContent,
@@ -25,6 +26,7 @@ export function ShipOrderDialog({
     const [notes, setNotes] = useState("");
     const [format, setFormat] = useState<"pdf" | "zpl">("pdf");
     const utils = trpc.useUtils();
+    const { t } = useTranslation("orders");
 
     const generateMutation = trpc.shipping.generateLabel.useMutation({
         onSuccess: () => {
@@ -38,44 +40,44 @@ export function ShipOrderDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Ship Order & Generate Label</DialogTitle>
+                    <DialogTitle>{t("components.shipDialogTitle")}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 pt-4">
                     <div className="space-y-2">
-                        <Label>Tracking Number</Label>
+                        <Label>{t("components.shipTrackingLabel")}</Label>
                         <Input
                             value={tracking}
                             onChange={(e) => setTracking(e.target.value)}
-                            placeholder="e.g. 1Z9999999999999999 (Optional)"
+                            placeholder={t("components.shipTrackingPlaceholder")}
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Label Format</Label>
+                        <Label>{t("components.shipFormatLabel")}</Label>
                         <div className="flex gap-3 mt-1">
                             <Button
                                 variant={format === "pdf" ? "default" : "outline"}
                                 onClick={() => setFormat("pdf")}
                                 className="w-1/2"
                             >
-                                <FileText className="h-4 w-4 mr-2" /> PDF (A4)
+                                <FileText className="h-4 w-4 mr-2" /> {t("components.shipPdf")}
                             </Button>
                             <Button
                                 variant={format === "zpl" ? "default" : "outline"}
                                 onClick={() => setFormat("zpl")}
                                 className="w-1/2"
                             >
-                                <Printer className="h-4 w-4 mr-2" /> ZPL (Thermal)
+                                <Printer className="h-4 w-4 mr-2" /> {t("components.shipZpl")}
                             </Button>
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Shipping Notes</Label>
+                        <Label>{t("components.shipNotesLabel")}</Label>
                         <Textarea
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
-                            placeholder="Any specifics, e.g. Courier name, left at front desk... (Optional)"
+                            placeholder={t("components.shipNotesPlaceholder")}
                             rows={2}
                         />
                     </div>
@@ -93,8 +95,8 @@ export function ShipOrderDialog({
                         disabled={generateMutation.isPending}
                     >
                         {generateMutation.isPending
-                            ? "Generating..."
-                            : "Generate Label & Ship"}
+                            ? t("components.shipGenerating")
+                            : t("components.shipGenerateBtn")}
                     </Button>
 
                     {generateMutation.error && (
