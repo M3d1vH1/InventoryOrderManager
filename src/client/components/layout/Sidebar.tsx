@@ -74,7 +74,7 @@ const navigation: NavEntry[] = [
         items: [
             { label: "products", href: "/products", icon: Archive },
             { label: "categories", href: "/categories", icon: Tags },
-            { label: "stockChanges", href: "/inventory-changes", icon: BarChart3, disabled: true },
+            { label: "stockChanges", href: "/inventory-changes", icon: BarChart3 },
         ],
     },
     {

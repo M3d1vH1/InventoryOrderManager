@@ -3,10 +3,12 @@ import { db } from "../db/index.js";
 import {
     orders,
     orderItems,
+    products,
+    inventoryChanges,
     shippingDocuments,
     orderChangelogs,
 } from "../db/schema.js";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import fs from "fs/promises";
 import { createWriteStream } from "fs";
@@ -78,42 +80,98 @@ export async function generateShippingLabel(input: GenerateLabelInput) {
         })
         .returning();
 
-    // Transition order status
-    const isFullyPicked = order.items.every((i) => i.pickedAt !== null);
-    const newStatus = isFullyPicked ? "shipped" : "partially_shipped";
+    // Auto-pick any items that weren't explicitly picked (bypass scenario)
+    // This runs in a transaction to guarantee inventory consistency
+    await db.transaction(async (tx) => {
+        for (const item of order.items) {
+            if (item.pickedAt === null) {
+                // Lock the product row for this transaction
+                const [product] = await tx
+                    .select()
+                    .from(products)
+                    .where(eq(products.id, item.productId))
+                    .for("update");
 
-    await db
-        .update(orders)
-        .set({
-            status: newStatus,
-            shippingCompany: input.carrier,
-            trackingNumber: input.trackingNumber
-        })
-        .where(eq(orders.id, input.orderId));
+                if (!product) continue;
 
-    // Update shippedQuantity for items that were picked
-    for (const item of order.items) {
-        if (item.picked || item.pickedAt !== null) {
-            await db
-                .update(orderItems)
-                .set({
-                    shippedQuantity: item.quantity,
-                    shippingStatus: "shipped"
-                })
-                .where(eq(orderItems.id, item.id));
+                const qty = item.quantity;
+
+                // Deduct stock and release reservation
+                await tx
+                    .update(products)
+                    .set({
+                        currentStock: sql`GREATEST(${products.currentStock} - ${qty}, 0)`,
+                        reservedStock: sql`GREATEST(${products.reservedStock} - ${qty}, 0)`,
+                        lastStockUpdate: new Date(),
+                    })
+                    .where(eq(products.id, item.productId));
+
+                // Record inventory change
+                await tx.insert(inventoryChanges).values({
+                    productId: item.productId,
+                    quantityChanged: -qty,
+                    previousQuantity: product.currentStock,
+                    newQuantity: Math.max(product.currentStock - qty, 0),
+                    changeType: "reservation_released",
+                    userId: input.userId,
+                    notes: `Auto-picked for shipment — Order ${order.orderNumber}`,
+                });
+
+                // Mark item as picked
+                await tx
+                    .update(orderItems)
+                    .set({
+                        picked: true,
+                        pickedAt: new Date(),
+                        pickedById: input.userId,
+                        actualQuantity: qty,
+                    })
+                    .where(eq(orderItems.id, item.id));
+            }
         }
-    }
 
-    await db.insert(orderChangelogs).values({
-        orderId: input.orderId,
-        action: "status_changed",
-        notes: `Shipping label generated (${input.labelFormat.toUpperCase()}).${input.trackingNumber ? ` Tracking: ${input.trackingNumber}` : ""
-            }`,
-        userId: input.userId,
+        // Determine order status — reload to get fresh pick state
+        const refetchedItems = await tx
+            .select()
+            .from(orderItems)
+            .where(eq(orderItems.orderId, input.orderId));
+
+        const allPicked = refetchedItems.every((i) => i.pickedAt !== null);
+        const newStatus = allPicked ? "shipped" : "partially_shipped";
+
+        await tx
+            .update(orders)
+            .set({
+                status: newStatus,
+                shippingCompany: input.carrier,
+                trackingNumber: input.trackingNumber,
+            })
+            .where(eq(orders.id, input.orderId));
+
+        // Mark picked items as shipped
+        for (const item of refetchedItems) {
+            if (item.pickedAt !== null) {
+                await tx
+                    .update(orderItems)
+                    .set({
+                        shippedQuantity: item.quantity,
+                        shippingStatus: "shipped",
+                    })
+                    .where(eq(orderItems.id, item.id));
+            }
+        }
+
+        await tx.insert(orderChangelogs).values({
+            orderId: input.orderId,
+            action: "status_changed",
+            notes: `Shipping label generated (${input.labelFormat.toUpperCase()}).${input.trackingNumber ? ` Tracking: ${input.trackingNumber}` : ""}`,
+            userId: input.userId,
+        });
     });
 
     return doc;
 }
+
 
 async function generatePdfLabel(
     order: any, // Typed loosely here since Drizzle inference is complex

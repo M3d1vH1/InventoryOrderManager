@@ -21,6 +21,7 @@ import { Route as AuthProductsIndexRouteImport } from './routes/_auth/products/i
 import { Route as AuthProductionIndexRouteImport } from './routes/_auth/production/index'
 import { Route as AuthPickingIndexRouteImport } from './routes/_auth/picking/index'
 import { Route as AuthOrdersIndexRouteImport } from './routes/_auth/orders/index'
+import { Route as AuthInventoryChangesIndexRouteImport } from './routes/_auth/inventory-changes/index'
 import { Route as AuthCustomersIndexRouteImport } from './routes/_auth/customers/index'
 import { Route as AuthCalendarIndexRouteImport } from './routes/_auth/calendar/index'
 import { Route as AuthSuppliersNewRouteImport } from './routes/_auth/suppliers/new'
@@ -104,6 +105,12 @@ const AuthOrdersIndexRoute = AuthOrdersIndexRouteImport.update({
   path: '/orders/',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthInventoryChangesIndexRoute =
+  AuthInventoryChangesIndexRouteImport.update({
+    id: '/inventory-changes/',
+    path: '/inventory-changes/',
+    getParentRoute: () => AuthRoute,
+  } as any)
 const AuthCustomersIndexRoute = AuthCustomersIndexRouteImport.update({
   id: '/customers/',
   path: '/customers/',
@@ -251,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/suppliers/new': typeof AuthSuppliersNewRoute
   '/calendar/': typeof AuthCalendarIndexRoute
   '/customers/': typeof AuthCustomersIndexRoute
+  '/inventory-changes/': typeof AuthInventoryChangesIndexRoute
   '/orders/': typeof AuthOrdersIndexRoute
   '/picking/': typeof AuthPickingIndexRoute
   '/production/': typeof AuthProductionIndexRoute
@@ -286,6 +294,7 @@ export interface FileRoutesByTo {
   '/suppliers/new': typeof AuthSuppliersNewRoute
   '/calendar': typeof AuthCalendarIndexRoute
   '/customers': typeof AuthCustomersIndexRoute
+  '/inventory-changes': typeof AuthInventoryChangesIndexRoute
   '/orders': typeof AuthOrdersIndexRoute
   '/picking': typeof AuthPickingIndexRoute
   '/production': typeof AuthProductionIndexRoute
@@ -324,6 +333,7 @@ export interface FileRoutesById {
   '/_auth/suppliers/new': typeof AuthSuppliersNewRoute
   '/_auth/calendar/': typeof AuthCalendarIndexRoute
   '/_auth/customers/': typeof AuthCustomersIndexRoute
+  '/_auth/inventory-changes/': typeof AuthInventoryChangesIndexRoute
   '/_auth/orders/': typeof AuthOrdersIndexRoute
   '/_auth/picking/': typeof AuthPickingIndexRoute
   '/_auth/production/': typeof AuthProductionIndexRoute
@@ -362,6 +372,7 @@ export interface FileRouteTypes {
     | '/suppliers/new'
     | '/calendar/'
     | '/customers/'
+    | '/inventory-changes/'
     | '/orders/'
     | '/picking/'
     | '/production/'
@@ -397,6 +408,7 @@ export interface FileRouteTypes {
     | '/suppliers/new'
     | '/calendar'
     | '/customers'
+    | '/inventory-changes'
     | '/orders'
     | '/picking'
     | '/production'
@@ -434,6 +446,7 @@ export interface FileRouteTypes {
     | '/_auth/suppliers/new'
     | '/_auth/calendar/'
     | '/_auth/customers/'
+    | '/_auth/inventory-changes/'
     | '/_auth/orders/'
     | '/_auth/picking/'
     | '/_auth/production/'
@@ -537,6 +550,13 @@ declare module '@tanstack/react-router' {
       path: '/orders'
       fullPath: '/orders/'
       preLoaderRoute: typeof AuthOrdersIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/inventory-changes/': {
+      id: '/_auth/inventory-changes/'
+      path: '/inventory-changes'
+      fullPath: '/inventory-changes/'
+      preLoaderRoute: typeof AuthInventoryChangesIndexRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/customers/': {
@@ -741,6 +761,7 @@ interface AuthRouteChildren {
   AuthSuppliersNewRoute: typeof AuthSuppliersNewRoute
   AuthCalendarIndexRoute: typeof AuthCalendarIndexRoute
   AuthCustomersIndexRoute: typeof AuthCustomersIndexRoute
+  AuthInventoryChangesIndexRoute: typeof AuthInventoryChangesIndexRoute
   AuthOrdersIndexRoute: typeof AuthOrdersIndexRoute
   AuthPickingIndexRoute: typeof AuthPickingIndexRoute
   AuthProductionIndexRoute: typeof AuthProductionIndexRoute
@@ -771,6 +792,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthSuppliersNewRoute: AuthSuppliersNewRoute,
   AuthCalendarIndexRoute: AuthCalendarIndexRoute,
   AuthCustomersIndexRoute: AuthCustomersIndexRoute,
+  AuthInventoryChangesIndexRoute: AuthInventoryChangesIndexRoute,
   AuthOrdersIndexRoute: AuthOrdersIndexRoute,
   AuthPickingIndexRoute: AuthPickingIndexRoute,
   AuthProductionIndexRoute: AuthProductionIndexRoute,

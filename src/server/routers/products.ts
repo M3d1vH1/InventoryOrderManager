@@ -137,6 +137,73 @@ export const productsRouter = router({
         }, { ttl: 120, tags: ["products"] });
     }),
 
+    listHistory: protectedProcedure
+        .input(
+            z.object({
+                page: z.number().int().min(1).default(1),
+                perPage: z.number().int().min(1).max(100).default(20),
+                search: z.string().optional(),
+                productId: z.number().int().optional(),
+                changeType: z.string().optional(),
+            })
+        )
+        .query(async ({ input }) => {
+            const { page, perPage, search, productId, changeType } = input;
+            const offset = (page - 1) * perPage;
+
+            const conditions = [];
+            if (productId) conditions.push(eq(inventoryChanges.productId, productId));
+            if (changeType && changeType !== "all") {
+                conditions.push(eq(inventoryChanges.changeType, changeType as any));
+            }
+            if (search) {
+                conditions.push(
+                    or(
+                        sql`similarity(${products.name}, ${search}) > 0.3`,
+                        ilike(products.sku, `%${search}%`)
+                    )!
+                );
+            }
+
+            const where = conditions.length ? and(...conditions) : undefined;
+
+            const [rows, countResult] = await Promise.all([
+                db
+                    .select({
+                        id: inventoryChanges.id,
+                        quantityChanged: inventoryChanges.quantityChanged,
+                        previousQuantity: inventoryChanges.previousQuantity,
+                        newQuantity: inventoryChanges.newQuantity,
+                        changeType: inventoryChanges.changeType,
+                        timestamp: inventoryChanges.timestamp,
+                        notes: inventoryChanges.notes,
+                        product: {
+                            id: products.id,
+                            name: products.name,
+                            sku: products.sku,
+                        },
+                    })
+                    .from(inventoryChanges)
+                    .innerJoin(products, eq(inventoryChanges.productId, products.id))
+                    .where(where)
+                    .orderBy(desc(inventoryChanges.timestamp))
+                    .limit(perPage)
+                    .offset(offset),
+                db
+                    .select({ count: sql<number>`count(*)` })
+                    .from(inventoryChanges)
+                    .innerJoin(products, eq(inventoryChanges.productId, products.id))
+                    .where(where),
+            ]);
+
+            return {
+                items: rows,
+                total: Number(countResult[0].count),
+                page,
+                perPage,
+            };
+        }),
+
     getById: protectedProcedure
         .input(z.object({ id: z.number().int() }))
         .query(async ({ input }) => {
