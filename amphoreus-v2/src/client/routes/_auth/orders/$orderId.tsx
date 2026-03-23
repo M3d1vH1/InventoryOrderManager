@@ -14,7 +14,9 @@ import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "../../../components/ui/dialog";
 import { ShipOrderDialog } from "../../../components/orders/ShipOrderDialog";
-import { ArrowLeft, XCircle, ChevronRight } from "lucide-react";
+import { UnshippedSuggestions } from "../../../components/orders/UnshippedSuggestions";
+import { ArrowLeft, XCircle, ChevronRight, AlertCircle } from "lucide-react";
+import { Badge } from "../../../components/ui/badge";
 
 export const Route = createFileRoute("/_auth/orders/$orderId")({
     component: OrderDetailPage,
@@ -57,6 +59,10 @@ function OrderDetailPage() {
             utils.orders.list.invalidate();
         },
         onError: (err) => setCancelError(err.message),
+    });
+
+    const addItemMutation = trpc.orders.addItem.useMutation({
+        onSuccess: () => refetch(),
     });
 
     const removeItemMutation = trpc.orders.removeItem.useMutation({
@@ -191,12 +197,21 @@ function OrderDetailPage() {
 
                     {/* Line items */}
                     <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
-                        <div className="px-5 py-3 border-b font-semibold text-sm">{t("detail.lineItems")}</div>
+                        <div className="px-5 py-3 border-b flex items-center justify-between">
+                            <span className="font-semibold text-sm">{t("detail.lineItems")}</span>
+                            {order.status === "partially_shipped" && (
+                                <Badge variant="outline" className="text-amber-600 bg-amber-50 border-amber-200">
+                                    <AlertCircle className="h-3 w-3 mr-1" />
+                                    {t("detail.partialShipment", "Partial Shipment")}
+                                </Badge>
+                            )}
+                        </div>
                         <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>{t("tableCols.product")}</TableHead>
-                                    <TableHead className="text-center">{t("tableCols.qty")}</TableHead>
+                                    <TableHead className="text-center">{t("tableCols.ordered", "Ordered")}</TableHead>
+                                    <TableHead className="text-center">{t("tableCols.shipped", "Shipped")}</TableHead>
                                     <TableHead className="text-center">{t("tableCols.picked")}</TableHead>
                                     {order.status === "pending" && <TableHead />}
                                 </TableRow>
@@ -208,9 +223,14 @@ function OrderDetailPage() {
                                             <p className="font-medium text-sm">{item.product?.name ?? `Product #${item.productId}`}</p>
                                             <p className="text-xs text-muted-foreground">{item.product?.sku}</p>
                                         </TableCell>
-                                        <TableCell className="text-center">{item.quantity}</TableCell>
+                                        <TableCell className="text-center font-medium">{item.quantity}</TableCell>
                                         <TableCell className="text-center">
-                                            {item.picked ? (
+                                            <span className={item.shippedQuantity < item.quantity && (order.status === "shipped" || order.status === "partially_shipped") ? "text-amber-600 font-bold" : ""}>
+                                                {item.shippedQuantity}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            {item.picked || item.pickedAt ? (
                                                 <span className="text-green-600 text-xs font-medium">{t("detail.pickedTrue")}</span>
                                             ) : (
                                                 <span className="text-muted-foreground text-xs">—</span>
@@ -234,6 +254,21 @@ function OrderDetailPage() {
                             </TableBody>
                         </Table>
                     </div>
+
+                    {/* Unshipped Suggestions for this customer */}
+                    {(order.status === "pending" || order.status === "confirmed" || order.status === "processing") && (
+                        <UnshippedSuggestions
+                            customerId={order.customerId}
+                            alreadyAddedIds={order.items.map(i => i.productId)}
+                            onAdd={(product, qty) => {
+                                addItemMutation.mutate({
+                                    orderId: numericId,
+                                    productId: product.id,
+                                    quantity: qty
+                                });
+                            }}
+                        />
+                    )}
                 </div>
 
                 {/* Sidebar: Timeline */}

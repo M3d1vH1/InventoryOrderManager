@@ -392,6 +392,7 @@ export const ordersRouter = router({
                     shippedQuantity: orderItems.shippedQuantity,
                     remainingQuantity: sql<number>`${orderItems.quantity} - ${orderItems.shippedQuantity}`,
                     customerName: customers.name,
+                    customerId: orders.customerId,
                     orderDate: orders.orderDate,
                 })
                 .from(orderItems)
@@ -428,7 +429,8 @@ export const ordersRouter = router({
                     quantity: orderItems.quantity,
                     shippedQuantity: orderItems.shippedQuantity,
                     remainingQuantity: sql<number>`${orderItems.quantity} - ${orderItems.shippedQuantity}`,
-                    availableStock: products.availableStock,
+                    availableStock: sql<number>`${products.currentStock} - ${products.reservedStock}`,
+                    customerId: orders.customerId,
                     orderDate: orders.orderDate,
                 })
                 .from(orderItems)
@@ -449,5 +451,32 @@ export const ordersRouter = router({
                     )
                 )
                 .orderBy(asc(orders.orderDate));
+        }),
+
+    dismissUnshippedItem: protectedProcedure
+        .input(z.object({ id: z.number().int() }))
+        .mutation(async ({ input, ctx }) => {
+            const [item] = await db
+                .select()
+                .from(orderItems)
+                .where(eq(orderItems.id, input.id));
+            if (!item) throw new TRPCError({ code: "NOT_FOUND" });
+
+            await db
+                .update(orderItems)
+                .set({
+                    shippedQuantity: item.quantity,
+                    shippingStatus: "dismissed"
+                })
+                .where(eq(orderItems.id, input.id));
+
+            await db.insert(orderChangelogs).values({
+                orderId: item.orderId,
+                action: "note_added",
+                notes: `Unshipped item (product #${item.productId}) dismissed by user`,
+                userId: ctx.user.id,
+            });
+
+            return { success: true };
         }),
 });

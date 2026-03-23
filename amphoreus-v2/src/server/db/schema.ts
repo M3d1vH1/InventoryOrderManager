@@ -253,6 +253,7 @@ export const orders = pgTable(
     priority: orderPriorityEnum("priority").notNull().default("normal"),
     area: varchar("area", { length: 100 }),
     shippingCompany: varchar("shipping_company", { length: 255 }),
+    trackingNumber: varchar("tracking_number", { length: 100 }),
     notes: text("notes"),
     hasShippingDocument: boolean("has_shipping_document")
       .notNull()
