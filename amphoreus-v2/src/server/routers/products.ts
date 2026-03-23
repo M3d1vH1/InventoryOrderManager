@@ -16,6 +16,7 @@ import {
     inventoryChanges,
 } from "../db/schema.js";
 import { cached, invalidateTag } from "../lib/cache.js";
+import { deleteProductImage } from "../services/imageService.js";
 
 /* ── Zod Schemas ────────────────────────────────────── */
 
@@ -193,6 +194,13 @@ export const productsRouter = router({
             const { id, tagIds, imageUrl, ...data } = input;
 
             const result = await db.transaction(async (tx) => {
+                const [existing] = await tx.select().from(products).where(eq(products.id, id));
+                if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
+
+                if (imageUrl !== undefined && existing.imagePath && existing.imagePath !== imageUrl) {
+                    deleteProductImage(existing.imagePath).catch(() => { });
+                }
+
                 const updateData: any = { ...data };
                 if (imageUrl !== undefined) {
                     updateData.imagePath = imageUrl;
@@ -224,7 +232,10 @@ export const productsRouter = router({
     delete: adminProcedure
         .input(z.object({ id: z.number().int() }))
         .mutation(async ({ input }) => {
-            await db.delete(products).where(eq(products.id, input.id));
+            const [deletedProduct] = await db.delete(products).where(eq(products.id, input.id)).returning();
+            if (deletedProduct?.imagePath) {
+                deleteProductImage(deletedProduct.imagePath).catch(() => { });
+            }
             await invalidateTag("products");
             return { success: true };
         }),

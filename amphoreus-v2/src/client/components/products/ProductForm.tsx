@@ -1,5 +1,6 @@
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { ImageUploadField } from "./ImageUploadField";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
@@ -24,7 +25,7 @@ const productSchema = z.object({
     description: z.string().optional(),
     currentStock: z.number().int().min(0),
     minStockLevel: z.number().int().min(0),
-    imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+    imageUrl: z.string().url().nullable().optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -56,7 +57,7 @@ export function ProductForm({ initialData, onSubmitSuccess }: ProductFormProps) 
             description: initialData?.description || "",
             currentStock: initialData?.currentStock || 0,
             minStockLevel: initialData?.minStockLevel || 0,
-            imageUrl: initialData?.imageUrl || "",
+            imageUrl: initialData?.imageUrl ?? null,
         },
     });
 
@@ -71,10 +72,10 @@ export function ProductForm({ initialData, onSubmitSuccess }: ProductFormProps) 
     const isPending = createMutation.isPending || updateMutation.isPending;
 
     function onSubmit(data: ProductFormValues) {
-        // Convert empty string back to undefined for zod
+        // Convert null back to undefined for zod
         const payload = {
             ...data,
-            imageUrl: data.imageUrl === "" ? undefined : data.imageUrl,
+            imageUrl: data.imageUrl ?? undefined,
         };
 
         if (isEditing) {
@@ -178,9 +179,18 @@ export function ProductForm({ initialData, onSubmitSuccess }: ProductFormProps) 
                         </div>
 
                         {/* Image URL */}
-                        <div className="space-y-2">
-                            <Label htmlFor="imageUrl">{t("form.imageUrl")}</Label>
-                            <Input id="imageUrl" {...form.register("imageUrl")} />
+                        <div className="space-y-2 md:col-span-2">
+                            <Label>Product Image</Label>
+                            <Controller
+                                control={form.control}
+                                name="imageUrl"
+                                render={({ field }) => (
+                                    <ImageUploadField
+                                        value={field.value ?? null}
+                                        onChange={field.onChange}
+                                    />
+                                )}
+                            />
                             {form.formState.errors.imageUrl && (
                                 <p className="text-red-600 text-sm">
                                     {form.formState.errors.imageUrl.message}
