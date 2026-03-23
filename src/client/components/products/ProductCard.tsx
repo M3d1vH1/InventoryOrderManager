@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Badge } from "../../components/ui/badge";
 import { cn } from "../../lib/utils";
+import { useTranslation } from "react-i18next";
 
 // Assuming a simplified Product interface matches the output of the query
 interface Product {
@@ -28,6 +29,7 @@ export function ProductCard({
     viewMode: "grid" | "list";
 }) {
     const available = product.currentStock - product.reservedStock;
+    const { t } = useTranslation("products");
 
     return (
         <Link
@@ -75,7 +77,7 @@ export function ProductCard({
                         stockColor(available, product.minStockLevel)
                     )}
                 >
-                    {available} available
+                    {t("card.available", { avail: available })}
                 </Badge>
             </div>
         </Link>

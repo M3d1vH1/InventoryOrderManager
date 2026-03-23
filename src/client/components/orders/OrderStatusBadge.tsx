@@ -1,4 +1,5 @@
 import { Badge } from "../ui/badge";
+import { useTranslation } from "react-i18next";
 
 const statusStyles: Record<string, string> = {
     pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -20,17 +21,19 @@ const priorityStyles: Record<string, string> = {
 };
 
 export function OrderStatusBadge({ status }: { status: string }) {
+    const { t } = useTranslation("orders");
     return (
         <Badge className={statusStyles[status] ?? "bg-gray-100"}>
-            {status.replace(/_/g, " ")}
+            {t(`components.badgeStatus.${status}`, status.replace(/_/g, " "))}
         </Badge>
     );
 }
 
 export function OrderPriorityBadge({ priority }: { priority: string }) {
+    const { t } = useTranslation("orders");
     return (
         <Badge variant="outline" className={priorityStyles[priority] ?? ""}>
-            {priority}
+            {t(`components.badgePriority.${priority}`, priority)}
         </Badge>
     );
 }

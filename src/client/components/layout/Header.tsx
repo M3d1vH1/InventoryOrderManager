@@ -3,6 +3,7 @@ import { trpc } from "../../lib/trpc";
 import { cn } from "../../lib/utils";
 import type { SafeUser } from "../../../shared/types";
 import { NotificationBell } from "./NotificationBell";
+import { LanguageSwitcher } from "../shared/LanguageSwitcher";
 
 interface HeaderProps {
     user: Omit<SafeUser, "createdAt" | "lastLogin"> & {
@@ -39,6 +40,7 @@ export function Header({ user, sidebarCollapsed }: HeaderProps) {
 
             {/* Right: User info + logout */}
             <div className="flex items-center gap-4">
+                <LanguageSwitcher />
                 <NotificationBell />
 
                 {/* Role badge */}

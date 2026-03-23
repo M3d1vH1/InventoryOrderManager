@@ -1,4 +1,5 @@
 import { AlertTriangle, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { ProductCombobox } from "./ProductCombobox";
@@ -17,6 +18,8 @@ interface Props {
 }
 
 export function LineItemEditor({ items, onChange }: Props) {
+    const { t } = useTranslation("orders");
+
     const addItem = (product: { id: number; name: string; sku: string; availableStock: number }) => {
         if (items.some((i) => i.productId === product.id)) return; // no dupes
         onChange([
@@ -58,13 +61,13 @@ export function LineItemEditor({ items, onChange }: Props) {
                                 {item.quantity > item.available && (
                                     <span className="text-red-600 text-xs flex items-center gap-1 mt-0.5">
                                         <AlertTriangle className="h-3 w-3" />
-                                        Exceeds available ({item.available})
+                                        {t("components.lineItemExceeds", { qty: item.available })}
                                     </span>
                                 )}
                             </div>
                             <div className="flex items-center gap-2">
-                                <p className="text-xs text-muted-foreground whitespace-nowrap">
-                                    Avail: <span className="font-medium">{item.available}</span>
+                                <p className="text-xs text-muted-foreground">
+                                    {t("components.lineItemAvail")}: <span className="font-medium">{item.available}</span>
                                 </p>
                                 <Input
                                     type="number"
@@ -90,7 +93,7 @@ export function LineItemEditor({ items, onChange }: Props) {
 
             {items.length === 0 && (
                 <p className="text-sm text-muted-foreground py-2">
-                    No items added. Use the picker above to add products.
+                    {t("components.lineItemNone")}
                 </p>
             )}
         </div>

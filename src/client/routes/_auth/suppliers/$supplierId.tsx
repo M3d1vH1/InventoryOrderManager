@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { trpc } from "../../../lib/trpc";
 import { InvoiceList } from "../../../components/suppliers/InvoiceList";
@@ -17,6 +18,7 @@ export const Route = createFileRoute("/_auth/suppliers/$supplierId")({
 });
 
 function SupplierDetailPage() {
+    const { t } = useTranslation("suppliers");
     const { supplierId } = Route.useParams();
     const navigate = useNavigate();
     const [showAddInvoice, setShowAddInvoice] = useState(false);
@@ -71,15 +73,15 @@ function SupplierDetailPage() {
             {/* Balance Cards */}
             <div className="grid grid-cols-3 gap-4">
                 <div className="rounded-xl border bg-card p-4">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Invoiced</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("detail.totalInvoiced")}</p>
                     <p className="mt-1 text-2xl font-bold">€{data.totalInvoiced.toFixed(2)}</p>
                 </div>
                 <div className="rounded-xl border bg-card p-4">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Paid</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("detail.totalPaid")}</p>
                     <p className="mt-1 text-2xl font-bold text-green-600">€{data.totalPaid.toFixed(2)}</p>
                 </div>
                 <div className={`rounded-xl border p-4 ${data.outstandingBalance > 0 ? "bg-destructive/10 border-destructive/30" : "bg-card"}`}>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Outstanding</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("detail.outstanding")}</p>
                     <p className={`mt-1 text-2xl font-bold ${data.outstandingBalance > 0 ? "text-destructive" : "text-muted-foreground"}`}>
                         €{data.outstandingBalance.toFixed(2)}
                     </p>
@@ -89,20 +91,20 @@ function SupplierDetailPage() {
             {/* Supplier Info */}
             {(data.email || data.phone || data.taxId || data.contactPerson) && (
                 <div className="rounded-xl border bg-card p-4 grid grid-cols-2 gap-3 text-sm">
-                    {data.contactPerson && <div><span className="text-muted-foreground">Contact: </span>{data.contactPerson}</div>}
-                    {data.email && <div><span className="text-muted-foreground">Email: </span><a href={`mailto:${data.email}`} className="text-primary hover:underline">{data.email}</a></div>}
-                    {data.phone && <div><span className="text-muted-foreground">Phone: </span>{data.phone}</div>}
-                    {data.taxId && <div><span className="text-muted-foreground">Tax ID: </span><code>{data.taxId}</code></div>}
+                    {data.contactPerson && <div><span className="text-muted-foreground">{t("detail.contactLabel")}</span>{data.contactPerson}</div>}
+                    {data.email && <div><span className="text-muted-foreground">{t("detail.emailLabel")}</span><a href={`mailto:${data.email}`} className="text-primary hover:underline">{data.email}</a></div>}
+                    {data.phone && <div><span className="text-muted-foreground">{t("detail.phoneLabel")}</span>{data.phone}</div>}
+                    {data.taxId && <div><span className="text-muted-foreground">{t("detail.taxIdLabel")}</span><code>{data.taxId}</code></div>}
                 </div>
             )}
 
             {/* Invoices */}
             <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold flex items-center gap-2"><Receipt className="h-5 w-5" /> Invoices</h2>
+                    <h2 className="text-lg font-semibold flex items-center gap-2"><Receipt className="h-5 w-5" /> {t("detail.invoicesTitle")}</h2>
                     <button onClick={() => setShowAddInvoice(!showAddInvoice)}
                         className="flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm hover:bg-muted transition-colors">
-                        <Plus className="h-4 w-4" /> Add Invoice
+                        <Plus className="h-4 w-4" /> {t("detail.addInvoiceBtn")}
                     </button>
                 </div>
 
@@ -122,27 +124,27 @@ function SupplierDetailPage() {
                     }} className="rounded-xl border bg-card p-4 space-y-3">
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">
-                                <label className="text-xs font-medium text-muted-foreground">Invoice Number *</label>
+                                <label className="text-xs font-medium text-muted-foreground">{t("detail.invNumber")}</label>
                                 <input value={invoiceForm.invoiceNumber} onChange={(e) => setInvoiceForm((f) => ({ ...f, invoiceNumber: e.target.value }))}
                                     required className="w-full rounded border bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
                             </div>
                             <div className="space-y-1">
-                                <label className="text-xs font-medium text-muted-foreground">Amount (€) *</label>
+                                <label className="text-xs font-medium text-muted-foreground">{t("detail.invAmount")}</label>
                                 <input type="number" step="0.01" min="0" value={invoiceForm.amount} onChange={(e) => setInvoiceForm((f) => ({ ...f, amount: e.target.value }))}
                                     required className="w-full rounded border bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
                             </div>
                             <div className="space-y-1">
-                                <label className="text-xs font-medium text-muted-foreground">Tax Amount (€)</label>
+                                <label className="text-xs font-medium text-muted-foreground">{t("detail.invTax")}</label>
                                 <input type="number" step="0.01" min="0" value={invoiceForm.taxAmount} onChange={(e) => setInvoiceForm((f) => ({ ...f, taxAmount: e.target.value }))}
                                     className="w-full rounded border bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
                             </div>
                             <div className="space-y-1">
-                                <label className="text-xs font-medium text-muted-foreground">Invoice Date *</label>
+                                <label className="text-xs font-medium text-muted-foreground">{t("detail.invDate")}</label>
                                 <input type="date" value={invoiceForm.invoiceDate} onChange={(e) => setInvoiceForm((f) => ({ ...f, invoiceDate: e.target.value }))}
                                     required className="w-full rounded border bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
                             </div>
                             <div className="space-y-1">
-                                <label className="text-xs font-medium text-muted-foreground">Due Date</label>
+                                <label className="text-xs font-medium text-muted-foreground">{t("detail.invDue")}</label>
                                 <input type="date" value={invoiceForm.dueDate} onChange={(e) => setInvoiceForm((f) => ({ ...f, dueDate: e.target.value }))}
                                     className="w-full rounded border bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
                             </div>
@@ -150,10 +152,10 @@ function SupplierDetailPage() {
                         <div className="flex gap-2">
                             <button type="submit" disabled={addInvoice.isPending}
                                 className="rounded-lg bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
-                                {addInvoice.isPending ? "Saving…" : "Add Invoice"}
+                                {addInvoice.isPending ? t("form.saving") : t("detail.addInvoiceBtn")}
                             </button>
                             <button type="button" onClick={() => setShowAddInvoice(false)}
-                                className="rounded-lg border px-4 py-1.5 text-sm hover:bg-muted transition-colors">Cancel</button>
+                                className="rounded-lg border px-4 py-1.5 text-sm hover:bg-muted transition-colors">{t("form.cancel")}</button>
                         </div>
                     </form>
                 )}

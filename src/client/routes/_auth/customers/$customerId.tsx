@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, Trash2, ClipboardList } from "lucide-react";
 import { trpc } from "../../../lib/trpc";
 import { PageShell } from "../../../components/layout/PageShell";
@@ -42,6 +43,7 @@ function CustomerDetailPage() {
     const navigate = useNavigate();
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
+    const { t, i18n } = useTranslation("customers");
 
     const { data: customer, isLoading } = trpc.customers.getById.useQuery({ id: numericId });
     const utils = trpc.useUtils();
@@ -56,7 +58,7 @@ function CustomerDetailPage() {
 
     if (isLoading) {
         return (
-            <PageShell title="Loading...">
+            <PageShell title={t("detail.loading")}>
                 <div className="space-y-4 max-w-5xl">
                     <Skeleton className="h-10 w-48" />
                     <Skeleton className="h-64 w-full rounded-lg" />
@@ -68,10 +70,10 @@ function CustomerDetailPage() {
 
     if (!customer) {
         return (
-            <PageShell title="Customer Not Found">
-                <p className="text-muted-foreground">This customer could not be found.</p>
+            <PageShell title={t("detail.notFoundTitle")}>
+                <p className="text-muted-foreground">{t("detail.notFoundMessage")}</p>
                 <Button className="mt-4" onClick={() => navigate({ to: "/customers" })}>
-                    Return to Customers
+                    {t("detail.return")}
                 </Button>
             </PageShell>
         );
@@ -83,13 +85,13 @@ function CustomerDetailPage() {
             actions={
                 <div className="flex gap-2">
                     <Button variant="outline" onClick={() => navigate({ to: "/customers" })}>
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                        <ArrowLeft className="mr-2 h-4 w-4" /> {t("detail.back")}
                     </Button>
                     <Button
                         variant="destructive"
                         onClick={() => { setDeleteError(null); setDeleteOpen(true); }}
                     >
-                        <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        <Trash2 className="mr-2 h-4 w-4" /> {t("detail.delete")}
                     </Button>
                 </div>
             }
@@ -109,18 +111,18 @@ function CustomerDetailPage() {
                 <div className="space-y-4">
                     <div className="bg-white border rounded-xl p-5 shadow-sm">
                         <h3 className="font-semibold text-base flex items-center gap-2 mb-4">
-                            <ClipboardList className="h-4 w-4 text-blue-600" /> Order Summary
+                            <ClipboardList className="h-4 w-4 text-blue-600" /> {t("detail.summaryTitle")}
                         </h3>
                         <div className="space-y-3">
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground text-sm">Total Orders</span>
+                                <span className="text-muted-foreground text-sm">{t("detail.totalOrders")}</span>
                                 <span className="font-bold text-lg">{customer.orderCount}</span>
                             </div>
                             {customer.lastOrderDate && (
                                 <div className="flex justify-between">
-                                    <span className="text-muted-foreground text-sm">Last Order</span>
+                                    <span className="text-muted-foreground text-sm">{t("detail.lastOrder")}</span>
                                     <span className="text-sm font-medium">
-                                        {new Date(customer.lastOrderDate).toLocaleDateString()}
+                                        {new Date(customer.lastOrderDate).toLocaleDateString(i18n.language === "el" ? "el-GR" : "en-GB")}
                                     </span>
                                 </div>
                             )}
@@ -130,14 +132,14 @@ function CustomerDetailPage() {
                     {customer.recentOrders.length > 0 && (
                         <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
                             <div className="px-5 py-3 border-b">
-                                <h3 className="font-semibold text-sm">Recent Orders</h3>
+                                <h3 className="font-semibold text-sm">{t("detail.recentOrders")}</h3>
                             </div>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead className="text-xs">Order #</TableHead>
-                                        <TableHead className="text-xs">Status</TableHead>
-                                        <TableHead className="text-xs">Date</TableHead>
+                                        <TableHead className="text-xs">{t("detail.tableCols.orderNum")}</TableHead>
+                                        <TableHead className="text-xs">{t("detail.tableCols.status")}</TableHead>
+                                        <TableHead className="text-xs">{t("detail.tableCols.date")}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -155,7 +157,7 @@ function CustomerDetailPage() {
                                                 </span>
                                             </TableCell>
                                             <TableCell className="text-xs text-muted-foreground">
-                                                {new Date(order.createdAt).toLocaleDateString()}
+                                                {new Date(order.createdAt).toLocaleDateString(i18n.language === "el" ? "el-GR" : "en-GB")}
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -170,9 +172,9 @@ function CustomerDetailPage() {
             <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Delete Customer</DialogTitle>
+                        <DialogTitle>{t("detail.deleteTitle")}</DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to delete <strong>{customer.name}</strong>? This cannot be undone.
+                            {t("detail.deleteMessage1")}<strong>{customer.name}</strong>{t("detail.deleteMessage2")}
                         </DialogDescription>
                     </DialogHeader>
                     {deleteError && (
@@ -182,14 +184,14 @@ function CustomerDetailPage() {
                     )}
                     <div className="flex justify-end gap-2 mt-2">
                         <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-                            Cancel
+                            {t("detail.cancel")}
                         </Button>
                         <Button
                             variant="destructive"
                             disabled={deleteMutation.isPending}
                             onClick={() => deleteMutation.mutate({ id: numericId })}
                         >
-                            {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                            {deleteMutation.isPending ? t("detail.deleting") : t("detail.deleteConfirm")}
                         </Button>
                     </div>
                 </DialogContent>

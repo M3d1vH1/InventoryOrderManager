@@ -1,4 +1,5 @@
 import { MapPin, CheckCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export interface PickItemCardProps {
     item: {
@@ -13,6 +14,7 @@ export interface PickItemCardProps {
 }
 
 export function PickItemCard({ item, onPick }: PickItemCardProps) {
+    const { t } = useTranslation("picking");
     return (
         <div
             id={`pick-item-${item.id}`}
@@ -31,12 +33,12 @@ export function PickItemCard({ item, onPick }: PickItemCardProps) {
                         {item.productName}
                     </p>
                     {item.sku && (
-                        <p className="text-xs text-muted-foreground mt-0.5">SKU: {item.sku}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{t("item.sku", { sku: item.sku })}</p>
                     )}
                 </div>
                 <div className="shrink-0 text-right">
                     <span className="text-2xl font-bold text-foreground">{item.quantity}</span>
-                    <span className="text-xs text-muted-foreground block">pcs</span>
+                    <span className="text-xs text-muted-foreground block">{t("item.pcs")}</span>
                 </div>
             </div>
 
@@ -66,10 +68,10 @@ export function PickItemCard({ item, onPick }: PickItemCardProps) {
             >
                 {item.isPicked ? (
                     <span className="flex items-center justify-center gap-2">
-                        <CheckCircle className="w-5 h-5" /> Picked ✓
+                        <CheckCircle className="w-5 h-5" /> {t("item.picked")}
                     </span>
                 ) : (
-                    "Mark as Picked"
+                    t("item.markPickedBtn")
                 )}
             </button>
         </div>

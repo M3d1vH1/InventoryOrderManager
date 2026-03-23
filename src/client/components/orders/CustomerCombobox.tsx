@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { trpc } from "../../lib/trpc";
 import { Button } from "../ui/button";
@@ -17,6 +18,7 @@ interface Props {
 export function CustomerCombobox({ value, onChange }: Props) {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
+    const { t } = useTranslation("orders");
 
     const { data, isLoading } = trpc.customers.list.useQuery({
         search: search || undefined,
@@ -32,16 +34,16 @@ export function CustomerCombobox({ value, onChange }: Props) {
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-72 justify-between font-normal"
+                    className="w-80 justify-between font-normal"
                 >
-                    {currentCustomer ? currentCustomer.name : "Select customer..."}
+                    {currentCustomer ? currentCustomer.name : t("components.customerSelect")}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-72 p-0">
+            <PopoverContent className="w-80 p-0">
                 <div className="p-2 border-b">
                     <Input
-                        placeholder="Search customers..."
+                        placeholder={t("components.customerSearch")}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="h-8"
@@ -49,10 +51,10 @@ export function CustomerCombobox({ value, onChange }: Props) {
                 </div>
                 <div className="max-h-60 overflow-y-auto">
                     {isLoading && (
-                        <p className="text-sm text-muted-foreground p-3">Loading...</p>
+                        <p className="text-sm text-muted-foreground p-3">{t("components.customerLoading")}</p>
                     )}
                     {!isLoading && data?.items.length === 0 && (
-                        <p className="text-sm text-muted-foreground p-3">No customers found.</p>
+                        <p className="text-sm text-muted-foreground p-3">{t("components.customerNone")}</p>
                     )}
                     {data?.items.map((c) => (
                         <button

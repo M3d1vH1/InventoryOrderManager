@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { trpc } from "../../../lib/trpc";
 import { PageShell } from "../../../components/layout/PageShell";
 import { Button } from "../../../components/ui/button";
@@ -16,18 +17,19 @@ export const Route = createFileRoute("/_auth/orders/")({
 });
 
 const STATUS_TABS = [
-    { label: "All", value: undefined },
-    { label: "Pending", value: "pending" },
-    { label: "Picked", value: "picked" },
-    { label: "Partially Shipped", value: "partially_shipped" },
-    { label: "Shipped", value: "shipped" },
-    { label: "Cancelled", value: "cancelled" },
+    { labelKey: "statusTabs.all", value: undefined },
+    { labelKey: "statusTabs.pending", value: "pending" },
+    { labelKey: "statusTabs.picked", value: "picked" },
+    { labelKey: "statusTabs.partiallyShipped", value: "partially_shipped" },
+    { labelKey: "statusTabs.shipped", value: "shipped" },
+    { labelKey: "statusTabs.cancelled", value: "cancelled" },
 ] as const;
 
 function OrdersPage() {
     const [search, setSearch] = useState("");
     const [status, setStatus] = useState<string | undefined>(undefined);
     const [page, setPage] = useState(1);
+    const { t, i18n } = useTranslation("orders");
 
     const { data, isLoading } = trpc.orders.list.useQuery({
         page,
@@ -38,11 +40,11 @@ function OrdersPage() {
 
     return (
         <PageShell
-            title="Orders"
+            title={t("title")}
             actions={
                 <Button asChild>
                     <Link to="/orders/new">
-                        <Plus className="mr-2 h-4 w-4" /> New Order
+                        <Plus className="mr-2 h-4 w-4" /> {t("newOrder")}
                     </Link>
                 </Button>
             }
@@ -51,21 +53,21 @@ function OrdersPage() {
             <div className="flex gap-1 flex-wrap mb-4 border-b">
                 {STATUS_TABS.map((tab) => (
                     <button
-                        key={tab.label}
+                        key={tab.labelKey}
                         className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${status === tab.value
-                                ? "border-primary text-primary"
-                                : "border-transparent text-muted-foreground hover:text-foreground"
+                            ? "border-primary text-primary"
+                            : "border-transparent text-muted-foreground hover:text-foreground"
                             }`}
                         onClick={() => { setStatus(tab.value); setPage(1); }}
                     >
-                        {tab.label}
+                        {t(tab.labelKey)}
                     </button>
                 ))}
             </div>
 
             {/* Search */}
             <Input
-                placeholder="Search by order number or customer..."
+                placeholder={t("searchPlaceholder")}
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 className="max-w-sm mb-4"
@@ -82,20 +84,20 @@ function OrdersPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Order #</TableHead>
-                                <TableHead>Customer</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Priority</TableHead>
-                                <TableHead>Items</TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Est. Ship</TableHead>
+                                <TableHead>{t("tableCols.orderNum")}</TableHead>
+                                <TableHead>{t("tableCols.customer")}</TableHead>
+                                <TableHead>{t("tableCols.status")}</TableHead>
+                                <TableHead>{t("tableCols.priority")}</TableHead>
+                                <TableHead>{t("tableCols.items")}</TableHead>
+                                <TableHead>{t("tableCols.date")}</TableHead>
+                                <TableHead>{t("tableCols.estShip")}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {data?.items.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
-                                        No orders found.
+                                        {t("noOrders")}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -115,11 +117,11 @@ function OrdersPage() {
                                     <TableCell><OrderPriorityBadge priority={order.priority} /></TableCell>
                                     <TableCell className="text-sm text-muted-foreground">{order.itemCount}</TableCell>
                                     <TableCell className="text-sm text-muted-foreground">
-                                        {new Date(order.createdAt).toLocaleDateString()}
+                                        {new Date(order.createdAt).toLocaleDateString(i18n.language === "el" ? "el-GR" : "en-GB")}
                                     </TableCell>
                                     <TableCell className="text-sm text-muted-foreground">
                                         {order.estimatedShippingDate
-                                            ? new Date(order.estimatedShippingDate).toLocaleDateString()
+                                            ? new Date(order.estimatedShippingDate).toLocaleDateString(i18n.language === "el" ? "el-GR" : "en-GB")
                                             : "—"}
                                     </TableCell>
                                 </TableRow>
@@ -132,17 +134,17 @@ function OrdersPage() {
             {data && data.total > 0 && (
                 <div className="flex justify-center items-center gap-4 mt-6">
                     <Button variant="outline" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                        Previous
+                        {t("previous")}
                     </Button>
                     <span className="text-sm text-muted-foreground">
-                        Page {page} of {Math.ceil(data.total / data.perPage)}
+                        {t("pageCount", { page, total: Math.ceil(data.total / data.perPage) })}
                     </span>
                     <Button
                         variant="outline"
                         disabled={page * data.perPage >= data.total}
                         onClick={() => setPage(page + 1)}
                     >
-                        Next
+                        {t("next")}
                     </Button>
                 </div>
             )}

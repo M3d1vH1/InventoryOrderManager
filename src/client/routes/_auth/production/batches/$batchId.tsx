@@ -17,12 +17,14 @@ import {
     Plus
 } from "lucide-react";
 import { format } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_auth/production/batches/$batchId")({
     component: BatchDetailPage,
 });
 
 function BatchDetailPage() {
+    const { t } = useTranslation("production");
     const { batchId } = Route.useParams();
     const navigate = useNavigate();
     const utils = trpc.useUtils();
@@ -48,8 +50,8 @@ function BatchDetailPage() {
         }
     });
 
-    if (isLoading) return <div className="p-8 text-center animate-pulse">Loading batch details...</div>;
-    if (!batch) return <div className="p-8 text-center text-destructive">Batch not found</div>;
+    if (isLoading) return <div className="p-8 text-center animate-pulse">{t("batches.detail.loading")}</div>;
+    if (!batch) return <div className="p-8 text-center text-destructive">{t("batches.detail.notFound")}</div>;
 
     const isPlanned = batch.status === "planned";
     const isInProgress = batch.status === "in_progress";
@@ -84,7 +86,7 @@ function BatchDetailPage() {
                             disabled={startBatch.isPending}
                         >
                             <PlayCircle className="w-4 h-4" />
-                            Start Production
+                            {t("batches.detail.startProduction")}
                         </button>
                     )}
                     {isInProgress && (
@@ -94,7 +96,7 @@ function BatchDetailPage() {
                                 value={actualQuantity || batch.plannedQuantity}
                                 onChange={(e) => setActualQuantity(Number(e.target.value))}
                                 className="w-32 border rounded-xl px-3 bg-background outline-none focus:ring-2 focus:ring-primary text-sm font-bold"
-                                placeholder="Final Qty"
+                                placeholder={t("batches.detail.finalQtyPlaceholder")}
                             />
                             <button
                                 onClick={() => completeBatch.mutate({ batchId, actualQuantity: actualQuantity || batch.plannedQuantity })}
@@ -102,7 +104,7 @@ function BatchDetailPage() {
                                 disabled={completeBatch.isPending}
                             >
                                 <CheckCircle2 className="w-4 h-4" />
-                                Complete Batch
+                                {t("batches.detail.completeBatch")}
                             </button>
                         </div>
                     )}
@@ -115,23 +117,23 @@ function BatchDetailPage() {
                     <div className="bg-card border rounded-2xl shadow-sm p-6 space-y-6">
                         <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 border-b pb-2 text-primary">
                             <ClipboardList className="w-4 h-4" />
-                            Material Consumption Ledger
+                            {t("batches.detail.materialConsumptionLedger")}
                         </h2>
                         <div className="divide-y">
                             {batch.consumptions.length === 0 ? (
                                 <div className="py-8 text-center text-muted-foreground italic text-sm">
-                                    Materials will be logged once production starts.
+                                    {t("batches.detail.materialsLoggedOnceStarted")}
                                 </div>
                             ) : (
                                 batch.consumptions.map((cons) => (
                                     <div key={cons.id} className="py-4 flex justify-between items-center group">
                                         <div className="space-y-0.5">
                                             <p className="font-semibold text-sm">{cons.rawMaterial.name}</p>
-                                            <p className="text-[10px] text-muted-foreground tabular-nums">Logged: {format(new Date(cons.consumedAt), "MMM d, HH:mm")}</p>
+                                            <p className="text-[10px] text-muted-foreground tabular-nums">{t("batches.detail.loggedDate", { date: format(new Date(cons.consumedAt), "MMM d, HH:mm") })}</p>
                                         </div>
                                         <div className="text-right">
                                             <p className="font-bold">{cons.actualQuantity} {cons.rawMaterial.unit}</p>
-                                            <p className="text-[10px] text-muted-foreground uppercase font-medium italic">Consumption Verified</p>
+                                            <p className="text-[10px] text-muted-foreground uppercase font-medium italic">{t("batches.detail.consumptionVerified")}</p>
                                         </div>
                                     </div>
                                 ))
@@ -145,14 +147,14 @@ function BatchDetailPage() {
                             <div className="flex justify-between items-center">
                                 <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                                     <FlaskConical className="w-4 h-4 text-purple-600" />
-                                    Quality Control Logs
+                                    {t("batches.detail.qualityControlLogs")}
                                 </h2>
                                 {!isCompleted && (
                                     <button
                                         onClick={() => setShowQaForm(!showQaForm)}
                                         className="text-xs font-bold bg-muted hover:bg-primary/10 hover:text-primary transition-all px-3 py-1.5 rounded-lg flex items-center gap-1.5 border"
                                     >
-                                        <Plus className="w-3 h-3" /> Add Check
+                                        <Plus className="w-3 h-3" /> {t("batches.detail.addCheck")}
                                     </button>
                                 )}
                             </div>
@@ -161,7 +163,7 @@ function BatchDetailPage() {
                                 <div className="p-4 bg-muted/20 border rounded-xl space-y-4 animate-in slide-in-from-top-2 duration-300">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1">
-                                            <label className="text-[10px] font-bold uppercase tracking-widest ml-1 opacity-60 text-primary">Test Type</label>
+                                            <label className="text-[10px] font-bold uppercase tracking-widest ml-1 opacity-60 text-primary">{t("batches.detail.testType")}</label>
                                             <select
                                                 value={qaForm.checkType}
                                                 onChange={(e) => setQaForm({ ...qaForm, checkType: e.target.value })}
@@ -171,7 +173,7 @@ function BatchDetailPage() {
                                             </select>
                                         </div>
                                         <div className="space-y-1">
-                                            <label className="text-[10px] font-bold uppercase tracking-widest ml-1 opacity-60 text-primary">Result</label>
+                                            <label className="text-[10px] font-bold uppercase tracking-widest ml-1 opacity-60 text-primary">{t("batches.detail.result")}</label>
                                             <select
                                                 value={qaForm.result}
                                                 onChange={(e) => setQaForm({ ...qaForm, result: e.target.value })}
@@ -183,25 +185,25 @@ function BatchDetailPage() {
                                     </div>
                                     <div className="space-y-1">
                                         <textarea
-                                            placeholder="Detailed QA findings..."
+                                            placeholder={t("batches.detail.detailedQaFindings")}
                                             value={qaForm.notes}
                                             onChange={(e) => setQaForm({ ...qaForm, notes: e.target.value })}
                                             className="w-full p-3 border rounded-lg bg-background text-xs h-20 outline-none"
                                         />
                                     </div>
                                     <div className="flex justify-end gap-2">
-                                        <button onClick={() => setShowQaForm(false)} className="text-xs px-4 py-2 border rounded-lg">Cancel</button>
+                                        <button onClick={() => setShowQaForm(false)} className="text-xs px-4 py-2 border rounded-lg">{t("batches.detail.cancel")}</button>
                                         <button
                                             onClick={() => addQaCheck.mutate({ batchId, ...qaForm, checkType: qaForm.checkType as any, result: qaForm.result as any })}
                                             className="text-xs px-4 py-2 bg-primary text-primary-foreground font-bold rounded-lg shadow-sm"
-                                        >Log Assessment</button>
+                                        >{t("batches.detail.logAssessment")}</button>
                                     </div>
                                 </div>
                             )}
 
                             <div className="space-y-3">
                                 {batch.qualityChecks.length === 0 ? (
-                                    <p className="text-xs text-muted-foreground italic py-4 text-center">No quality checks recorded for this batch yet.</p>
+                                    <p className="text-xs text-muted-foreground italic py-4 text-center">{t("batches.detail.noQualityChecks")}</p>
                                 ) : (
                                     batch.qualityChecks.map((check) => (
                                         <div key={check.id} className="p-4 border rounded-xl flex gap-4 items-start bg-muted/10 group">
@@ -215,7 +217,7 @@ function BatchDetailPage() {
                                             </div>
                                             <div className="flex-1 space-y-1">
                                                 <div className="flex justify-between items-center">
-                                                    <h4 className="font-bold text-xs uppercase tracking-wider">{check.checkType} Test</h4>
+                                                    <h4 className="font-bold text-xs uppercase tracking-wider">{t("batches.detail.test", { type: check.checkType })}</h4>
                                                     <p className="text-[9px] font-medium text-muted-foreground">{format(new Date(check.createdAt), "MMM d, HH:mm")}</p>
                                                 </div>
                                                 <p className="text-xs leading-relaxed text-muted-foreground">{check.notes}</p>
@@ -233,25 +235,25 @@ function BatchDetailPage() {
                     <div className="bg-card border rounded-2xl p-6 shadow-sm space-y-5">
                         <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 border-b pb-2">
                             <History className="w-3.5 h-3.5" />
-                            Lifecycle Timeline
+                            {t("batches.detail.lifecycleTimeline")}
                         </h3>
                         <div className="space-y-6 relative ml-2 before:absolute before:left-0 before:top-1 before:bottom-1 before:w-[1px] before:bg-muted-foreground/20">
                             <div className="relative pl-6">
                                 <span className="absolute left-[-4.5px] top-1.5 w-2 h-2 rounded-full bg-primary ring-4 ring-primary/10"></span>
-                                <p className="text-xs font-bold">Batch Created</p>
+                                <p className="text-xs font-bold">{t("batches.detail.batchCreated")}</p>
                                 <p className="text-[10px] text-muted-foreground">{format(new Date(batch.createdAt), "MMM d, HH:mm")}</p>
                             </div>
                             {batch.startedAt && (
                                 <div className="relative pl-6 animate-in slide-in-from-left-2 transition-all">
                                     <span className="absolute left-[-4.5px] top-1.5 w-2 h-2 rounded-full bg-orange-500 ring-4 ring-orange-500/10"></span>
-                                    <p className="text-xs font-bold">Production Started</p>
+                                    <p className="text-xs font-bold">{t("batches.detail.productionStarted")}</p>
                                     <p className="text-[10px] text-muted-foreground">{format(new Date(batch.startedAt), "MMM d, HH:mm")}</p>
                                 </div>
                             )}
                             {batch.completedAt && (
                                 <div className="relative pl-6 animate-in slide-in-from-left-2 transition-all">
                                     <span className="absolute left-[-4.5px] top-1.5 w-2 h-2 rounded-full bg-green-500 ring-4 ring-green-500/10"></span>
-                                    <p className="text-xs font-bold">Production Completed</p>
+                                    <p className="text-xs font-bold">{t("batches.detail.productionCompleted")}</p>
                                     <p className="text-[10px] text-muted-foreground">{format(new Date(batch.completedAt), "MMM d, HH:mm")}</p>
                                 </div>
                             )}
@@ -261,11 +263,11 @@ function BatchDetailPage() {
                     <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 space-y-4">
                         <h3 className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
                             <Beaker className="w-3.5 h-3.5" />
-                            Recipe Reference
+                            {t("batches.detail.recipeReference")}
                         </h3>
                         <div className="space-y-1">
                             <p className="text-sm font-bold leading-tight">{batch.recipe.name}</p>
-                            <p className="text-[10px] text-muted-foreground font-mono italic">Product ID: {batch.recipe.productId}</p>
+                            <p className="text-[10px] text-muted-foreground font-mono italic">{t("batches.detail.productId", { id: batch.recipe.productId })}</p>
                         </div>
                     </div>
                 </div>

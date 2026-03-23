@@ -9,12 +9,14 @@ import {
     AlertTriangle,
     Info
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_auth/production/batches/new")({
     component: ScheduleBatchPage,
 });
 
 function ScheduleBatchPage() {
+    const { t } = useTranslation("production");
     const navigate = useNavigate();
     const [recipeId, setRecipeId] = useState("");
     const [plannedQuantity, setPlannedQuantity] = useState<number>(0);
@@ -43,7 +45,7 @@ function ScheduleBatchPage() {
                 <button onClick={() => navigate({ to: "/production/batches" })} className="p-2 border rounded-xl hover:bg-muted transition-colors">
                     <ArrowLeft className="w-4 h-4" />
                 </button>
-                <h1 className="text-2xl font-bold">Schedule Production Batch</h1>
+                <h1 className="text-2xl font-bold">{t("batches.new.title")}</h1>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -52,7 +54,7 @@ function ScheduleBatchPage() {
                         <div className="space-y-2">
                             <label className="text-sm font-bold flex items-center gap-2">
                                 <Calendar className="w-4 h-4 text-primary" />
-                                Select Recipe
+                                {t("batches.new.selectRecipe")}
                             </label>
                             <select
                                 required
@@ -60,9 +62,9 @@ function ScheduleBatchPage() {
                                 onChange={(e) => setRecipeId(e.target.value)}
                                 className="w-full p-3 border rounded-xl bg-background focus:ring-2 focus:ring-primary outline-none text-sm transition-all appearance-none"
                             >
-                                <option value="">Select a manufacturing recipe...</option>
+                                <option value="">{t("batches.new.selectRecipePlaceholder")}</option>
                                 {recipes?.map(r => (
-                                    <option key={r.id} value={r.id}>{r.name} (Yield: {r.yieldQuantity})</option>
+                                    <option key={r.id} value={r.id}>{t("batches.new.recipeOption", { name: r.name, yield: r.yieldQuantity })}</option>
                                 ))}
                             </select>
                         </div>
@@ -70,7 +72,7 @@ function ScheduleBatchPage() {
                         <div className="space-y-2">
                             <label className="text-sm font-bold flex items-center gap-2">
                                 <Layers className="w-4 h-4 text-primary" />
-                                Planned Output Quantity
+                                {t("batches.new.plannedOutputQuantity")}
                             </label>
                             <div className="relative">
                                 <input
@@ -81,7 +83,7 @@ function ScheduleBatchPage() {
                                     onChange={(e) => setPlannedQuantity(Number(e.target.value))}
                                     className="w-full p-3 border rounded-xl bg-background focus:ring-2 focus:ring-primary outline-none text-sm transition-all"
                                 />
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground uppercase italic px-2 bg-muted/50 rounded">Units</span>
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground uppercase italic px-2 bg-muted/50 rounded">{t("batches.new.units")}</span>
                             </div>
                         </div>
 
@@ -89,7 +91,7 @@ function ScheduleBatchPage() {
                             <div className="p-4 bg-muted/30 border rounded-xl animate-in zoom-in-95 fade-in duration-200">
                                 <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
                                     <Info className="w-3 h-3" />
-                                    Estimated Material Consumption
+                                    {t("batches.new.estimatedMaterialConsumption")}
                                 </h3>
                                 <div className="space-y-2">
                                     {selectedRecipe.ingredients.map(ing => {
@@ -110,12 +112,12 @@ function ScheduleBatchPage() {
                         )}
 
                         <div className="space-y-2">
-                            <label className="text-sm font-bold">Notes / Instructions</label>
+                            <label className="text-sm font-bold">{t("batches.new.notesInstructions")}</label>
                             <textarea
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
                                 rows={3}
-                                placeholder="Specific batch instructions..."
+                                placeholder={t("batches.new.notesPlaceholder")}
                                 className="w-full p-3 border rounded-xl bg-background focus:ring-2 focus:ring-primary outline-none text-sm transition-all resize-none shadow-inner"
                             />
                         </div>
@@ -128,7 +130,7 @@ function ScheduleBatchPage() {
                             className="bg-primary text-primary-foreground font-bold px-8 py-3 rounded-xl hover:bg-primary/90 transition-all flex items-center gap-2 shadow-lg hover:-translate-y-0.5 active:translate-y-0"
                         >
                             <PlayCircle className="w-4 h-4" />
-                            {createBatch.isPending ? "Scheduling..." : "Create Batch"}
+                            {createBatch.isPending ? t("batches.new.buttonScheduling") : t("batches.new.buttonCreateBatch")}
                         </button>
                     </div>
                 </div>

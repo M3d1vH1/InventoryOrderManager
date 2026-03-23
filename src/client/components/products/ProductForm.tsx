@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
@@ -41,6 +42,7 @@ interface ProductFormProps {
 
 export function ProductForm({ initialData, onSubmitSuccess }: ProductFormProps) {
     const isEditing = !!initialData?.id;
+    const { t } = useTranslation("products");
     const { data: categories, isLoading: loadingCategories } =
         trpc.products.categories.list.useQuery();
 
@@ -97,7 +99,7 @@ export function ProductForm({ initialData, onSubmitSuccess }: ProductFormProps) 
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         {/* Name */}
                         <div className="space-y-2">
-                            <Label htmlFor="name">Product Name *</Label>
+                            <Label htmlFor="name">{t("form.name")}</Label>
                             <Input id="name" {...form.register("name")} />
                             {form.formState.errors.name && (
                                 <p className="text-red-600 text-sm">
@@ -108,7 +110,7 @@ export function ProductForm({ initialData, onSubmitSuccess }: ProductFormProps) 
 
                         {/* SKU */}
                         <div className="space-y-2">
-                            <Label htmlFor="sku">SKU *</Label>
+                            <Label htmlFor="sku">{t("form.sku")}</Label>
                             <Input id="sku" {...form.register("sku")} />
                             {form.formState.errors.sku && (
                                 <p className="text-red-600 text-sm">
@@ -119,14 +121,14 @@ export function ProductForm({ initialData, onSubmitSuccess }: ProductFormProps) 
 
                         {/* Category */}
                         <div className="space-y-2">
-                            <Label>Category</Label>
+                            <Label>{t("form.category")}</Label>
                             <Select
                                 disabled={loadingCategories}
                                 defaultValue={form.getValues("categoryId")?.toString()}
                                 onValueChange={(val) => form.setValue("categoryId", Number(val))}
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select a category" />
+                                    <SelectValue placeholder={t("form.selectCategory")} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {categories?.map((cat) => (
@@ -140,13 +142,13 @@ export function ProductForm({ initialData, onSubmitSuccess }: ProductFormProps) 
 
                         {/* Barcode */}
                         <div className="space-y-2">
-                            <Label htmlFor="barcode">Barcode (Optional)</Label>
+                            <Label htmlFor="barcode">{t("form.barcode")}</Label>
                             <Input id="barcode" {...form.register("barcode")} />
                         </div>
 
                         {/* Current Stock (Initial setup) */}
                         <div className="space-y-2">
-                            <Label htmlFor="currentStock">Current Stock</Label>
+                            <Label htmlFor="currentStock">{t("form.currentStock")}</Label>
                             <Input
                                 id="currentStock"
                                 type="number"
@@ -155,7 +157,7 @@ export function ProductForm({ initialData, onSubmitSuccess }: ProductFormProps) 
                             />
                             {isEditing && (
                                 <p className="text-xs text-gray-500">
-                                    Use the stock adjustment UI to alter quantities.
+                                    {t("form.stockWarning")}
                                 </p>
                             )}
                             {form.formState.errors.currentStock && (
@@ -167,7 +169,7 @@ export function ProductForm({ initialData, onSubmitSuccess }: ProductFormProps) 
 
                         {/* Min Stock Level */}
                         <div className="space-y-2">
-                            <Label htmlFor="minStockLevel">Low Stock Warning Threshold</Label>
+                            <Label htmlFor="minStockLevel">{t("form.minStockLevel")}</Label>
                             <Input
                                 id="minStockLevel"
                                 type="number"
@@ -177,7 +179,7 @@ export function ProductForm({ initialData, onSubmitSuccess }: ProductFormProps) 
 
                         {/* Image URL */}
                         <div className="space-y-2">
-                            <Label htmlFor="imageUrl">Image URL (Optional)</Label>
+                            <Label htmlFor="imageUrl">{t("form.imageUrl")}</Label>
                             <Input id="imageUrl" {...form.register("imageUrl")} />
                             {form.formState.errors.imageUrl && (
                                 <p className="text-red-600 text-sm">
@@ -190,7 +192,7 @@ export function ProductForm({ initialData, onSubmitSuccess }: ProductFormProps) 
                     <div className="flex justify-end pt-4">
                         <Button type="submit" disabled={isPending}>
                             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {isEditing ? "Save Changes" : "Create Product"}
+                            {isEditing ? t("form.save") : t("form.create")}
                         </Button>
                     </div>
                 </form>

@@ -1,5 +1,6 @@
 import React from "react";
 import { format } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 type Invoice = {
     id: string;
@@ -15,18 +16,21 @@ interface InvoiceListProps {
     onSelect: (id: string) => void;
 }
 
-const statusConfig: Record<Invoice["status"], { label: string; className: string }> = {
-    pending: { label: "Pending", className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400" },
-    partially_paid: { label: "Partial", className: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" },
-    paid: { label: "Paid", className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" },
-    overdue: { label: "Overdue", className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400" },
-};
+const getStatusConfig = (t: any) => ({
+    pending: { label: t("list.statusPending"), className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400" },
+    partially_paid: { label: t("list.statusPartial"), className: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" },
+    paid: { label: t("list.statusPaid"), className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" },
+    overdue: { label: t("list.statusOverdue"), className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400" },
+});
 
 export function InvoiceList({ invoices, onSelect }: InvoiceListProps) {
+    const { t } = useTranslation("suppliers");
+    const statusConfig = getStatusConfig(t);
+
     if (invoices.length === 0) {
         return (
             <div className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
-                No invoices yet. Add the first invoice for this supplier.
+                {t("list.empty")}
             </div>
         );
     }
@@ -36,11 +40,11 @@ export function InvoiceList({ invoices, onSelect }: InvoiceListProps) {
             <table className="w-full text-sm">
                 <thead className="bg-muted/50 text-muted-foreground">
                     <tr>
-                        <th className="px-4 py-3 text-left font-medium">Invoice #</th>
-                        <th className="px-4 py-3 text-left font-medium">Date</th>
-                        <th className="px-4 py-3 text-left font-medium">Due</th>
-                        <th className="px-4 py-3 text-right font-medium">Total</th>
-                        <th className="px-4 py-3 text-left font-medium">Status</th>
+                        <th className="px-4 py-3 text-left font-medium">{t("list.thInv")}</th>
+                        <th className="px-4 py-3 text-left font-medium">{t("list.thDate")}</th>
+                        <th className="px-4 py-3 text-left font-medium">{t("list.thDue")}</th>
+                        <th className="px-4 py-3 text-right font-medium">{t("list.thTotal")}</th>
+                        <th className="px-4 py-3 text-left font-medium">{t("list.thStatus")}</th>
                         <th className="px-4 py-3" />
                     </tr>
                 </thead>
@@ -54,7 +58,7 @@ export function InvoiceList({ invoices, onSelect }: InvoiceListProps) {
                                     {format(new Date(inv.invoiceDate), "dd MMM yyyy")}
                                 </td>
                                 <td className="px-4 py-3 text-muted-foreground">
-                                    {inv.dueDate ? format(new Date(inv.dueDate), "dd MMM yyyy") : "—"}
+                                    {inv.dueDate ? format(new Date(inv.dueDate), "dd MMM yyyy") : t("index.empty")}
                                 </td>
                                 <td className="px-4 py-3 text-right font-medium">
                                     €{Number(inv.totalAmount).toFixed(2)}
@@ -67,7 +71,7 @@ export function InvoiceList({ invoices, onSelect }: InvoiceListProps) {
                                 <td className="px-4 py-3 text-right">
                                     <button onClick={() => onSelect(inv.id)}
                                         className="text-xs text-primary hover:underline">
-                                        View
+                                        {t("list.view")}
                                     </button>
                                 </td>
                             </tr>

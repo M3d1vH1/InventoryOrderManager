@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { trpc } from "../../../lib/trpc";
 import { PageShell } from "../../../components/layout/PageShell";
 import { Button } from "../../../components/ui/button";
@@ -32,6 +33,7 @@ function NewOrderPage() {
     const [notes, setNotes] = useState("");
     const [estimatedDate, setEstimatedDate] = useState("");
     const [items, setItems] = useState<LineItem[]>([]);
+    const { t } = useTranslation("orders");
 
     const createMutation = trpc.orders.create.useMutation({
         onSuccess: (order) => {
@@ -58,17 +60,17 @@ function NewOrderPage() {
 
     return (
         <PageShell
-            title="New Order"
+            title={t("newOrder")}
             actions={
                 <Button variant="outline" onClick={() => navigate({ to: "/orders" })}>
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                    <ArrowLeft className="mr-2 h-4 w-4" /> {t("back")}
                 </Button>
             }
         >
             <div className="max-w-3xl space-y-6">
                 {/* Customer */}
                 <div className="space-y-2">
-                    <Label>Customer *</Label>
+                    <Label>{t("form.customer")}</Label>
                     <div className="flex items-center gap-2">
                         <CustomerCombobox
                             value={customerId}
@@ -82,28 +84,28 @@ function NewOrderPage() {
 
                 {/* Priority */}
                 <div className="space-y-2">
-                    <Label>Priority</Label>
+                    <Label>{t("form.priority")}</Label>
                     <Select value={priority} onValueChange={(v) => setPriority(v as any)}>
                         <SelectTrigger className="w-48">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="normal">Normal</SelectItem>
-                            <SelectItem value="high">High</SelectItem>
-                            <SelectItem value="urgent">Urgent</SelectItem>
+                            <SelectItem value="normal">{t("form.priorities.normal")}</SelectItem>
+                            <SelectItem value="high">{t("form.priorities.high")}</SelectItem>
+                            <SelectItem value="urgent">{t("form.priorities.urgent")}</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
 
                 {/* Line items */}
                 <div className="space-y-2">
-                    <Label>Items *</Label>
+                    <Label>{t("form.items")}</Label>
                     <LineItemEditor items={items} onChange={setItems} />
                 </div>
 
                 {/* Estimated shipping date */}
                 <div className="space-y-2">
-                    <Label>Estimated Shipping Date</Label>
+                    <Label>{t("form.estShipDate")}</Label>
                     <Input
                         type="date"
                         value={estimatedDate}
@@ -114,13 +116,13 @@ function NewOrderPage() {
 
                 {/* Notes */}
                 <div className="space-y-2">
-                    <Label>Notes</Label>
+                    <Label>{t("form.notes")}</Label>
                     <textarea
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                         rows={3}
                         className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                        placeholder="Internal notes..."
+                        placeholder={t("form.notesPlaceholder")}
                     />
                 </div>
 
@@ -134,7 +136,7 @@ function NewOrderPage() {
                 {/* Submit */}
                 <div className="flex justify-end">
                     <Button onClick={handleSubmit} disabled={!canSubmit} size="lg">
-                        {createMutation.isPending ? "Creating Order..." : "Create Order"}
+                        {createMutation.isPending ? t("form.creating") : t("form.create")}
                     </Button>
                 </div>
             </div>

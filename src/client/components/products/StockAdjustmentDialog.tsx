@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { trpc } from "../../lib/trpc";
@@ -43,6 +44,7 @@ export function StockAdjustmentDialog({
     onOpenChange: (v: boolean) => void;
 }) {
     const utils = trpc.useUtils();
+    const { t } = useTranslation("products");
     const form = useForm<FormValues>({
         resolver: zodResolver(schema),
         defaultValues: { quantity: 0, reason: "manual_adjustment" as const, notes: "" },
@@ -65,16 +67,16 @@ export function StockAdjustmentDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Adjust Stock</DialogTitle>
+                    <DialogTitle>{t("adjustment.title")}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
                     <div className="space-y-2">
-                        <Label htmlFor="quantity">Quantity Adjustment</Label>
+                        <Label htmlFor="quantity">{t("adjustment.quantityLabel")}</Label>
                         <Input
                             id="quantity"
                             type="number"
                             {...form.register("quantity", { valueAsNumber: true })}
-                            placeholder="+10 or -5"
+                            placeholder={t("adjustment.quantityPlaceholder")}
                         />
                         {form.formState.errors.quantity && (
                             <p className="text-red-600 text-sm">
@@ -84,20 +86,20 @@ export function StockAdjustmentDialog({
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Reason</Label>
+                        <Label>{t("adjustment.reasonLabel")}</Label>
                         <Select
                             onValueChange={(v) => form.setValue("reason", v as any)}
                             defaultValue={form.getValues("reason")}
                         >
                             <SelectTrigger>
-                                <SelectValue placeholder="Select a reason" />
+                                <SelectValue placeholder={t("adjustment.reasonSelect")} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="manual_adjustment">Manual Adjustment</SelectItem>
-                                <SelectItem value="damaged">Damaged</SelectItem>
-                                <SelectItem value="return_received">Returned Item</SelectItem>
-                                <SelectItem value="stock_received">Stock Received</SelectItem>
-                                <SelectItem value="cycle_count">Cycle Count</SelectItem>
+                                <SelectItem value="manual_adjustment">{t("adjustment.reasons.manual_adjustment")}</SelectItem>
+                                <SelectItem value="damaged">{t("adjustment.reasons.damaged")}</SelectItem>
+                                <SelectItem value="return_received">{t("adjustment.reasons.return_received")}</SelectItem>
+                                <SelectItem value="stock_received">{t("adjustment.reasons.stock_received")}</SelectItem>
+                                <SelectItem value="cycle_count">{t("adjustment.reasons.cycle_count")}</SelectItem>
                             </SelectContent>
                         </Select>
                         {form.formState.errors.reason && (
@@ -108,11 +110,11 @@ export function StockAdjustmentDialog({
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="notes">Notes (optional)</Label>
+                        <Label htmlFor="notes">{t("adjustment.notesLabel")}</Label>
                         <Input
                             id="notes"
                             {...form.register("notes")}
-                            placeholder="e.g. Found during Q3 audit"
+                            placeholder={t("adjustment.notesPlaceholder")}
                         />
                     </div>
 
@@ -127,7 +129,7 @@ export function StockAdjustmentDialog({
                         disabled={mutation.isPending}
                         className="w-full mt-2"
                     >
-                        {mutation.isPending ? "Applying..." : "Apply Adjustment"}
+                        {mutation.isPending ? t("adjustment.applying") : t("adjustment.applyBtn")}
                     </Button>
                 </form>
             </DialogContent>

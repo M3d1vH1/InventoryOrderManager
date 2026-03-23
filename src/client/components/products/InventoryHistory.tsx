@@ -1,5 +1,6 @@
 import { formatDistanceToNow } from "date-fns";
 import { Badge } from "../../components/ui/badge";
+import { useTranslation } from "react-i18next";
 
 interface InventoryChange {
     id: number;
@@ -14,13 +15,14 @@ export function InventoryHistory({
 }: {
     changes: InventoryChange[];
 }) {
+    const { t, i18n } = useTranslation("products");
     if (changes.length === 0) {
-        return <p className="text-sm text-muted-foreground">No history recorded.</p>;
+        return <p className="text-sm text-muted-foreground">{t("history.empty")}</p>;
     }
 
     return (
         <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Inventory History</h3>
+            <h3 className="font-semibold text-lg">{t("history.title")}</h3>
             <div className="border-l-2 border-gray-100 ml-3 space-y-4">
                 {changes.map((c) => {
                     const isPositive = c.quantityChanged > 0;
@@ -39,7 +41,7 @@ export function InventoryHistory({
                                         {c.quantityChanged}
                                     </Badge>
                                     <span className="text-sm font-medium text-gray-700 capitalize">
-                                        {c.changeType.replace(/_/g, " ")}
+                                        {t(`history.types.${c.changeType}`, c.changeType.replace(/_/g, " "))}
                                     </span>
                                 </div>
                                 {c.notes && (
