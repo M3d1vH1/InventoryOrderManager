@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { eq, and, gte, lte, sql, desc, asc, ilike, or } from "drizzle-orm";
 import { router, protectedProcedure } from "../trpc.js";
 import { db } from "../db/index.js";
-import { orders, orderItems, orderChangelogs, products, customers, users } from "../db/schema.js";
+import { orders, orderItems, orderChangelogs, products, inventoryChanges, customers, users } from "../db/schema.js";
 import { createOrder, cancelOrder } from "../services/orderService.js";
 import { notifyNewOrder, notifyOrderShipped } from "../services/slackService.js";
 import { createNotification } from "./notifications.js";
@@ -235,17 +235,91 @@ export const ordersRouter = router({
                 return cancelOrder(input.id, ctx.user.id);
             }
 
-            await db
-                .update(orders)
-                .set({ status: input.status })
-                .where(eq(orders.id, input.id));
+            // When manually transitioning to 'shipped' or 'picked', auto-pick any remaining unpicked items
+            if (input.status === "shipped" || input.status === "picked") {
+                await db.transaction(async (tx) => {
+                    const items = await tx
+                        .select()
+                        .from(orderItems)
+                        .where(eq(orderItems.orderId, input.id));
 
-            await db.insert(orderChangelogs).values({
-                orderId: input.id,
-                action: "status_changed",
-                notes: `Status changed from "${order.status}" to "${input.status}"`,
-                userId: ctx.user.id,
-            });
+                    for (const item of items) {
+                        if (!item.pickedAt) {
+                            const [product] = await tx
+                                .select()
+                                .from(products)
+                                .where(eq(products.id, item.productId))
+                                .for("update");
+
+                            if (!product) continue;
+
+                            const qty = item.quantity;
+
+                            await tx
+                                .update(products)
+                                .set({
+                                    currentStock: sql`GREATEST(${products.currentStock} - ${qty}, 0)`,
+                                    reservedStock: sql`GREATEST(${products.reservedStock} - ${qty}, 0)`,
+                                    lastStockUpdate: new Date(),
+                                })
+                                .where(eq(products.id, item.productId));
+
+                            await tx.insert(inventoryChanges).values({
+                                productId: item.productId,
+                                quantityChanged: -qty,
+                                previousQuantity: product.currentStock,
+                                newQuantity: Math.max(product.currentStock - qty, 0),
+                                changeType: "reservation_released",
+                                userId: ctx.user.id,
+                                notes: `Auto-picked on status change to "${input.status}" — Order ${order.orderNumber}`,
+                            });
+
+                            await tx
+                                .update(orderItems)
+                                .set({
+                                    picked: true,
+                                    pickedAt: new Date(),
+                                    pickedById: ctx.user.id,
+                                    actualQuantity: qty,
+                                    shippedQuantity: input.status === "shipped" ? qty : item.shippedQuantity,
+                                    shippingStatus: input.status === "shipped" ? "shipped" : item.shippingStatus,
+                                })
+                                .where(eq(orderItems.id, item.id));
+                        } else if (input.status === "shipped" && item.shippedQuantity < item.quantity) {
+                            // Item was previously picked but shippedQuantity not yet set
+                            await tx
+                                .update(orderItems)
+                                .set({ shippedQuantity: item.quantity, shippingStatus: "shipped" })
+                                .where(eq(orderItems.id, item.id));
+                        }
+                    }
+
+                    await tx
+                        .update(orders)
+                        .set({ status: input.status })
+                        .where(eq(orders.id, input.id));
+
+                    await tx.insert(orderChangelogs).values({
+                        orderId: input.id,
+                        action: "status_changed",
+                        notes: `Status changed from "${order.status}" to "${input.status}"`,
+                        userId: ctx.user.id,
+                    });
+                });
+            } else {
+                await db
+                    .update(orders)
+                    .set({ status: input.status })
+                    .where(eq(orders.id, input.id));
+
+                await db.insert(orderChangelogs).values({
+                    orderId: input.id,
+                    action: "status_changed",
+                    notes: `Status changed from "${order.status}" to "${input.status}"`,
+                    userId: ctx.user.id,
+                });
+            }
+
 
             if (input.status === "shipped") {
                 (async () => {
