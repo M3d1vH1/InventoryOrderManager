@@ -153,9 +153,23 @@ async function generatePdfLabel(
         doc.fontSize(12).font("Helvetica-Bold").text("Items:");
         doc.moveDown(0.3);
         doc.fontSize(10).font("Helvetica");
+
+        const isPartial = order.status === "partially_shipped";
+
         for (const item of order.items) {
-            doc.text(`  ${item.quantity}x  ${item.product?.name ?? "Unknown"}  (${item.product?.sku ?? "N/A"})`);
+            const partPicked = item.picked || item.pickedAt !== null;
+            if (isPartial) {
+                // If partial, show what's actually being shipped (picked items)
+                if (partPicked) {
+                    doc.fillColor("black").font("Helvetica").text(`  [OK] ${item.quantity}x  ${item.product?.name ?? "Unknown"}  (${item.product?.sku ?? "N/A"})`);
+                } else {
+                    doc.fillColor("gray").font("Helvetica-Oblique").text(`  [MISSING] 0/${item.quantity}x  ${item.product?.name ?? "Unknown"}  (${item.product?.sku ?? "N/A"})`);
+                }
+            } else {
+                doc.fillColor("black").font("Helvetica").text(`  ${item.quantity}x  ${item.product?.name ?? "Unknown"}  (${item.product?.sku ?? "N/A"})`);
+            }
         }
+        doc.fillColor("black").font("Helvetica"); // Reset for future text
 
         doc.end();
         stream.on("finish", resolve);
