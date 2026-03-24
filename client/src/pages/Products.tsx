@@ -364,12 +364,31 @@ export default function Products() {
 
   const updateProductMutation = useMutation({
     mutationFn: async ({ id, values }: { id: number; values: ProductFormValues }) => {
-      // Add default categoryId=1 for compatibility and ensure tags is always an array
-      const productData = { 
-        ...values, 
-        categoryId: 1,
+      // Resolve categoryName → categoryId
+      let resolvedCategoryId: number = 1;
+      if (values.categoryName) {
+        const existingCategory = categories.find(
+          (cat: any) => cat.name.toLowerCase() === values.categoryName.toLowerCase()
+        );
+        if (existingCategory) {
+          resolvedCategoryId = existingCategory.id;
+        } else {
+          const newCategory = await createCategoryMutation.mutateAsync({
+            name: values.categoryName.trim(),
+            description: `Created during product update: ${values.name}`,
+          });
+          resolvedCategoryId = newCategory.data.id;
+        }
+      }
+
+      const productData: any = {
+        ...values,
+        categoryId: resolvedCategoryId,
         tags: Array.isArray(values.tags) ? values.tags : []
       };
+
+      // Remove categoryName from product data since backend expects categoryId
+      delete productData.categoryName;
       
       // If there's an image file, don't send it via JSON
       // The server expects multipart form data for file uploads
@@ -495,6 +514,7 @@ export default function Products() {
       unitsPerBox: product.unitsPerBox || 1,
       imagePath: product.imagePath || "",
       tags: product.tags || [],
+      categoryName: (categories as any[]).find((c: any) => c.id === product.categoryId)?.name || "",
     });
     
     setIsDialogOpen(true);

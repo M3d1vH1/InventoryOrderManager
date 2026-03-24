@@ -281,14 +281,14 @@ export class DatabaseStorage implements IStorage {
     // but the database still has a NOT NULL constraint on it
     
     try {
-      // Always set default categoryId of 1 (for 'widgets')
+      // Use provided categoryId, fall back to 1 if not supplied
       const productWithCategory = {
         ...insertProduct,
-        categoryId: 1 // Set default categoryId to 1
+        categoryId: insertProduct.categoryId || 1
       };
-      
+
       console.log('Attempting to create product with data:', JSON.stringify(productWithCategory, null, 2));
-      
+
       // Use the Drizzle ORM's built-in insert method instead of raw SQL
       // This handles arrays and all special types automatically
       const [insertedProduct] = await this.db

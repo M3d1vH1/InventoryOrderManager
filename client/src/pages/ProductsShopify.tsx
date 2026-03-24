@@ -88,7 +88,7 @@ interface Product {
   name: string;
   sku: string;
   barcode?: string;
-  // category field removed as part of simplification
+  categoryId?: number;
   description?: string;
   minStockLevel: number;
   currentStock: number;
@@ -242,7 +242,7 @@ const Products = () => {
         unitsPerBox: editingProduct.unitsPerBox || 0,
         imagePath: editingProduct.imagePath || "",
         tags: editingProduct.tags || [],
-        categoryName: "" // For existing products, leave empty as we'll need to lookup category
+        categoryName: categories.find(c => c.id === editingProduct.categoryId)?.name || ""
       });
     } else {
       form.reset({
@@ -393,9 +393,27 @@ const Products = () => {
 
   const updateProductMutation = useMutation({
     mutationFn: async ({ id, values }: { id: number; values: ProductFormValues }) => {
+      // Resolve categoryName → categoryId
+      let resolvedCategoryId: number | undefined;
+      if (values.categoryName) {
+        const existingCategory = categories.find(
+          cat => cat.name.toLowerCase() === values.categoryName.toLowerCase()
+        );
+        if (existingCategory) {
+          resolvedCategoryId = existingCategory.id;
+        } else {
+          const newCategory = await createCategoryMutation.mutateAsync({
+            name: values.categoryName.trim(),
+            description: `Created during product update: ${values.name}`,
+          });
+          resolvedCategoryId = newCategory.data.id;
+        }
+      }
+
       // Sanitize form data - convert empty strings to undefined for optional fields
-      const productData = {
+      const productData: any = {
         ...values,
+        ...(resolvedCategoryId !== undefined ? { categoryId: resolvedCategoryId } : {}),
         barcode: values.barcode?.trim() || undefined,
         description: values.description?.trim() || undefined,
         location: values.location?.trim() || undefined,
@@ -405,6 +423,9 @@ const Products = () => {
         currentStock: Number(values.currentStock) || 0,
         tags: Array.isArray(values.tags) ? values.tags : []
       };
+
+      // Remove categoryName from product data since backend expects categoryId
+      delete productData.categoryName;
       
       // If there's an image file, use FormData to handle multipart/form-data
       if (imageFile) {
