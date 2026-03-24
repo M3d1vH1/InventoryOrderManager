@@ -1,0 +1,37 @@
+{
+    "title": "Picking Queue",
+    "errorLoading": "Error loading queue: {{message}}",
+    "urgentBadge": "{{count}} URGENT",
+    "urgentPlural": "orders require immediate attention",
+    "urgentSingular": "order requires immediate attention",
+    "emptySearchTitle": "Queue is empty",
+    "emptySearchDesc": "There are no orders waiting to be picked.",
+    "card": {
+        "pickedRatio": "{{current}} / {{total}} picked",
+        "scanPrompt": "Scan barcode to find item",
+        "scanPlaceholder": "Scan item barcode...",
+        "unknownProduct": "Unknown Product",
+        "completeOrderBtn": "Complete Order #{{order}}"
+    },
+    "dialog": {
+        "title": "Confirm Pick",
+        "actualQuantity": "Actual Quantity Picked",
+        "quantityPlaceholder": "Enter quantity physically picked",
+        "warningUnderPick": "Warning: Picking fewer items than requested ({{default}}).",
+        "qualityIssue": "Item has quality issues",
+        "qualityDesc": "Check this if the item is damaged, mislabelled, or otherwise unfit.",
+        "confirming": "Confirming...",
+        "confirmBtn": "Confirm Pick"
+    },
+    "item": {
+        "sku": "SKU: {{sku}}",
+        "pcs": "pcs",
+        "picked": "Picked ✓",
+        "markPickedBtn": "Mark as Picked"
+    },
+    "progress": {
+        "title": "Picking Progress",
+        "ratioText": "{{picked}} / {{total}} items",
+        "allPicked": "All items picked! ✓"
+    }
+}

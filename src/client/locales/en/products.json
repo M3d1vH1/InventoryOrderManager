@@ -1,0 +1,79 @@
+{
+    "title": "Products",
+    "addProduct": "Add Product",
+    "searchPlaceholder": "Search products...",
+    "stockStatus": {
+        "all": "All",
+        "in_stock": "In Stock",
+        "low_stock": "Low Stock",
+        "out_of_stock": "Out of Stock"
+    },
+    "noProducts": "No products found matching your generic criteria.",
+    "pageCount": "Page {{page}} of {{total}}",
+    "previous": "Previous",
+    "next": "Next",
+    "new": {
+        "title": "Add New Product",
+        "back": "Back to Products"
+    },
+    "detail": {
+        "loading": "Loading Product...",
+        "notFoundTitle": "Product Not Found",
+        "notFoundMessage": "The requested product could not be located.",
+        "return": "Return to Products",
+        "back": "Back to Products",
+        "inventoryTitle": "Inventory Status",
+        "availableStock": "Available Stock",
+        "currentOnHand": "Current On Hand",
+        "reservedOrders": "Reserved (Orders)",
+        "adjustStockBtn": "Adjust Stock..."
+    },
+    "adjustment": {
+        "title": "Adjust Stock",
+        "quantityLabel": "Quantity Adjustment",
+        "quantityPlaceholder": "+10 or -5",
+        "reasonLabel": "Reason",
+        "reasonSelect": "Select a reason",
+        "reasons": {
+            "manual_adjustment": "Manual Adjustment",
+            "damaged": "Damaged",
+            "return_received": "Returned Item",
+            "stock_received": "Stock Received",
+            "cycle_count": "Cycle Count"
+        },
+        "notesLabel": "Notes (optional)",
+        "notesPlaceholder": "e.g. Found during Q3 audit",
+        "applying": "Applying...",
+        "applyBtn": "Apply Adjustment"
+    },
+    "card": {
+        "available": "{{avail}} available"
+    },
+    "history": {
+        "title": "Inventory History",
+        "empty": "No history recorded.",
+        "types": {
+            "manual_adjustment": "Manual Adjustment",
+            "damaged": "Damaged",
+            "return_received": "Return Received",
+            "stock_received": "Stock Received",
+            "cycle_count": "Cycle Count",
+            "picking": "Picking",
+            "shipped": "Shipped",
+            "order_cancelled": "Order Cancelled"
+        }
+    },
+    "form": {
+        "name": "Product Name *",
+        "sku": "SKU *",
+        "category": "Category",
+        "selectCategory": "Select a category",
+        "barcode": "Barcode (Optional)",
+        "currentStock": "Current Stock",
+        "stockWarning": "Use the stock adjustment UI to alter quantities.",
+        "minStockLevel": "Low Stock Warning Threshold",
+        "imageUrl": "Image URL (Optional)",
+        "save": "Save Changes",
+        "create": "Create Product"
+    }
+}

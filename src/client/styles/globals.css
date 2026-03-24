@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Colors ─────────────────────────────────────────────────── */
+  --color-sidebar: #111827;
+  --color-sidebar-hover: #1f2937;
+  --color-sidebar-active: #374151;
+  --color-sidebar-text: #9ca3af;
+  --color-sidebar-text-active: #ffffff;
+
+  --color-brand: #3b82f6;
+  --color-brand-hover: #2563eb;
+
+  --color-surface: #ffffff;
+  --color-surface-secondary: #f9fafb;
+  --color-border: #e5e7eb;
+
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+
+  /* ── Typography ─────────────────────────────────────────────── */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", "DejaVu Sans Mono", "Liberation Mono", ui-monospace, monospace;
+
+  /* ── Spacing scale ──────────────────────────────────────────── */
+  --spacing-page: 24px;
+  --spacing-section: 16px;
+  --spacing-element: 8px;
+  --spacing-tight: 4px;
+
+  /* ── Sidebar ────────────────────────────────────────────────── */
+  --sidebar-width: 256px;
+  --sidebar-collapsed-width: 64px;
+  --header-height: 56px;
+
+  /* ── Transitions ────────────────────────────────────────────── */
+  --transition-sidebar: width 200ms ease;
+}
+
+/* ── Base ──────────────────────────────────────────────────────── */
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}

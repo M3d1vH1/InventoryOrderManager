@@ -1,0 +1,82 @@
+{
+    "title": "Customers",
+    "addCustomer": "Add Customer",
+    "searchPlaceholder": "Search by name, phone, or email...",
+    "tableCols": {
+        "name": "Name",
+        "phone": "Phone",
+        "email": "Email",
+        "city": "City",
+        "shippingCo": "Shipping Co.",
+        "added": "Added"
+    },
+    "noCustomers": "No customers found.",
+    "pageCount": "Page {{page}} of {{total}}",
+    "previous": "Previous",
+    "next": "Next",
+    "new": {
+        "title": "Add New Customer",
+        "back": "Back to Customers"
+    },
+    "detail": {
+        "loading": "Loading...",
+        "notFoundTitle": "Customer Not Found",
+        "notFoundMessage": "This customer could not be found.",
+        "return": "Return to Customers",
+        "back": "Back",
+        "delete": "Delete",
+        "summaryTitle": "Order Summary",
+        "totalOrders": "Total Orders",
+        "lastOrder": "Last Order",
+        "recentOrders": "Recent Orders",
+        "tableCols": {
+            "orderNum": "Order #",
+            "status": "Status",
+            "date": "Date"
+        },
+        "deleteTitle": "Delete Customer",
+        "deleteMessage1": "Are you sure you want to delete ",
+        "deleteMessage2": "? This cannot be undone.",
+        "cancel": "Cancel",
+        "deleting": "Deleting...",
+        "deleteConfirm": "Delete"
+    },
+    "form": {
+        "basicInfo": "Basic Info",
+        "name": "Customer Name *",
+        "vat": "VAT Number",
+        "phone": "Phone",
+        "email": "Email",
+        "contact": "Contact Person",
+        "billingCo": "Billing Company",
+        "addressTitle": "Address",
+        "street": "Street Address",
+        "city": "City",
+        "state": "State / Province",
+        "postalCode": "Postal Code",
+        "country": "Country",
+        "shippingTitle": "Shipping",
+        "defaultCarrier": "Default Shipping Company",
+        "preferredCarrier": "Preferred Shipping Company",
+        "selectCarrier": "Select carrier",
+        "notes": "Notes",
+        "notesPlaceholder": "Internal notes...",
+        "save": "Save Changes",
+        "create": "Create Customer",
+        "carriers": {
+            "other": "Other",
+            "pickup": "Pickup",
+            "poste_italiane": "Poste Italiane"
+        }
+    },
+    "quickCreate": {
+        "btn": "New Customer",
+        "title": "Quick Create Customer",
+        "name": "Name *",
+        "phone": "Phone",
+        "shippingCo": "Shipping Company",
+        "selectCarrier": "Select carrier",
+        "creating": "Creating...",
+        "create": "Create Customer"
+    }
+}
