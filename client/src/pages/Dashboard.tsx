@@ -13,15 +13,19 @@ const Dashboard = () => {
   }, [setCurrentPage]);
 
   return (
-    <div>
+    <div className="space-y-6">
       <QuickStats />
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <RecentOrders />
-        <InventoryAlerts />
+
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className="lg:col-span-3">
+          <RecentOrders />
+        </div>
+        <div className="lg:col-span-2">
+          <InventoryAlerts />
+        </div>
       </div>
-      
-      <div className="mb-6">
+
+      <div className="card-floating p-5 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'backwards' }}>
         <SlowMovingItems />
       </div>
     </div>

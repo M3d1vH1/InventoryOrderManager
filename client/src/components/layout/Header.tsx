@@ -3,7 +3,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/context/NotificationContext";
 import { apiRequest } from "@/lib/queryClient";
-import { Menu, Bell, PlusCircle, PhoneCall, MoreVertical, Barcode, Search } from "lucide-react";
+import { Menu, Bell, PlusCircle, PhoneCall, MoreVertical, Barcode, Search, LogOut, Settings, User } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,46 +50,47 @@ const Header = () => {
 
   return (
     <>
-      <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 flex-shrink-0 relative z-50">
-        <div className="flex items-center">
-          <Button 
+      <header className="h-16 flex items-center justify-between px-4 md:px-6 flex-shrink-0 relative z-50 bg-white/60 backdrop-blur-xl border-b border-slate-200/60">
+        <div className="flex items-center gap-3">
+          <Button
             variant="ghost"
             size="icon"
             onClick={toggleSidebar}
-            className="text-slate-800 rounded-md hover:bg-slate-100"
+            className="text-slate-600 rounded-xl hover:bg-slate-100/80 h-9 w-9"
             title="Toggle sidebar"
           >
-            <Menu />
+            <Menu size={18} />
           </Button>
-          <h2 className="text-xl font-semibold ml-2 truncate max-w-[150px] sm:max-w-xs md:max-w-md">{currentPage}</h2>
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 truncate max-w-[150px] sm:max-w-xs md:max-w-md tracking-tight">{currentPage}</h2>
+          </div>
         </div>
-        
-        {/* Responsive actions section */}
-        <div className="flex items-center gap-2 md:gap-4">
-          {/* Buttons for larger screens with responsive text */}
+
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          {/* Desktop action buttons */}
           <div className="hidden md:flex items-center gap-2">
             <Button
-              variant="default"
               size="sm"
               onClick={() => setShowOrderForm(true)}
-              className="flex items-center gap-1 bg-green-600 hover:bg-green-700 whitespace-nowrap"
+              className="flex items-center gap-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white shadow-md shadow-teal-500/20 rounded-xl h-9 px-4 font-medium text-sm transition-all duration-200 hover:shadow-lg hover:shadow-teal-500/30"
             >
-              <PlusCircle className="h-4 w-4 flex-shrink-0" />
+              <PlusCircle className="h-4 w-4" />
               <span>{t('orders.new')}</span>
             </Button>
-            
+
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowCallLogForm(true)}
-              className="flex items-center gap-1 whitespace-nowrap"
+              className="flex items-center gap-2 rounded-xl h-9 px-4 border-slate-200/80 hover:bg-slate-50 font-medium text-sm"
             >
-              <PhoneCall className="h-4 w-4 flex-shrink-0" />
+              <PhoneCall className="h-4 w-4 text-slate-500" />
               <span>{t('callLogs.new')}</span>
             </Button>
 
             <div className="ml-1">
-              <EnhancedBarcodeScanner 
+              <EnhancedBarcodeScanner
                 buttonVariant="secondary"
                 buttonSize="sm"
                 showInHeader={true}
@@ -100,60 +101,57 @@ const Header = () => {
                   setScanMode(mode);
                   setShowProductLookup(true);
                 }}
-                // Add data attribute for mobile menu to target
                 data-scanner-trigger
               />
             </div>
           </div>
-          
-          {/* Language toggle button removed - now in settings */}
 
-          {/* Notifications dropdown */}
+          {/* Notification bell */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="relative rounded-xl h-9 w-9 hover:bg-slate-100/80">
+                <Bell className="h-[18px] w-[18px] text-slate-500" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-[10px] font-bold rounded-full h-4.5 w-4.5 min-w-[18px] flex items-center justify-center shadow-md shadow-rose-500/30 pulse-dot">
                     {unreadCount}
                   </span>
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuLabel className="flex justify-between items-center">
-                <span>Notifications</span>
+            <DropdownMenuContent align="end" className="w-80 rounded-xl shadow-xl shadow-black/10 border-slate-200/80 p-0 overflow-hidden">
+              <div className="p-3 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 flex justify-between items-center">
+                <span className="font-semibold text-sm text-slate-900">Notifications</span>
                 {notifications.length > 0 && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={markAllAsRead}
-                    className="text-xs text-blue-500 hover:text-blue-700"
+                    className="text-xs text-teal-600 hover:text-teal-700 h-7 px-2 rounded-lg"
                   >
                     Mark all as read
                   </Button>
                 )}
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
+              </div>
               <ScrollArea className="h-[300px]">
                 {notifications.length === 0 ? (
-                  <div className="py-4 px-2 text-center text-sm text-gray-500">
+                  <div className="py-8 px-4 text-center text-sm text-slate-400">
+                    <Bell className="h-8 w-8 mx-auto mb-2 text-slate-300" />
                     No notifications
                   </div>
                 ) : (
                   notifications.map(notification => (
-                    <div 
-                      key={notification.id} 
-                      className={`p-3 border-b border-gray-100 ${notification.read ? 'bg-white' : 'bg-blue-50'} hover:bg-gray-50 cursor-pointer`}
+                    <div
+                      key={notification.id}
+                      className={`p-3 border-b border-slate-50 ${notification.read ? 'bg-white' : 'bg-teal-50/40'} hover:bg-slate-50 cursor-pointer transition-colors`}
                       onClick={() => markAsRead(notification.id)}
                     >
                       <div className="flex justify-between items-start mb-1">
-                        <h5 className="font-medium text-sm">{notification.title}</h5>
-                        <span className="text-[10px] text-gray-500">{format(new Date(notification.timestamp), 'HH:mm')}</span>
+                        <h5 className="font-medium text-sm text-slate-900">{notification.title}</h5>
+                        <span className="text-[10px] text-slate-400 ml-2 whitespace-nowrap">{format(new Date(notification.timestamp), 'HH:mm')}</span>
                       </div>
-                      <p className="text-sm text-gray-600 mb-1">{notification.message}</p>
+                      <p className="text-xs text-slate-500 mb-1">{notification.message}</p>
                       {notification.orderNumber && (
-                        <div className="text-xs text-blue-500">Order: {notification.orderNumber}</div>
+                        <div className="text-xs text-teal-600 font-medium">Order: {notification.orderNumber}</div>
                       )}
                     </div>
                   ))
@@ -161,80 +159,82 @@ const Header = () => {
               </ScrollArea>
             </DropdownMenuContent>
           </DropdownMenu>
-          
-          {/* User profile dropdown */}
+
+          {/* User profile */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <div className="flex items-center gap-2 cursor-pointer p-1 rounded-md hover:bg-slate-100">
-                <div className="w-8 h-8 bg-slate-300 rounded-full flex items-center justify-center text-slate-600">
-                  <i className="fas fa-user"></i>
+              <button className="flex items-center gap-2.5 cursor-pointer p-1.5 rounded-xl hover:bg-slate-100/80 transition-colors">
+                <div className="w-8 h-8 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-md shadow-teal-500/20">
+                  {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
                 </div>
-                <span className="hidden md:inline text-sm">{user?.fullName || "User"}</span>
-              </div>
+                <span className="hidden md:inline text-sm font-medium text-slate-700">{user?.fullName || "User"}</span>
+              </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>
-                {user?.fullName}
-                <div className="text-xs text-muted-foreground">
+            <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-xl shadow-black/10 border-slate-200/80">
+              <DropdownMenuLabel className="pb-0">
+                <div className="font-semibold text-slate-900">{user?.fullName}</div>
+                <div className="text-xs text-slate-400 font-normal mt-0.5">
                   {user?.role === 'admin' && 'Administrator'}
                   {user?.role === 'front_office' && 'Front Office'}
                   {user?.role === 'warehouse' && 'Warehouse Staff'}
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer" onClick={() => window.location.href = "/settings"}>
+              <DropdownMenuItem className="cursor-pointer rounded-lg mx-1 gap-2" onClick={() => window.location.href = "/settings"}>
+                <Settings size={14} className="text-slate-400" />
                 Settings
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer text-red-500" onClick={handleLogout}>
+              <DropdownMenuItem className="cursor-pointer text-rose-500 hover:text-rose-600 rounded-lg mx-1 gap-2" onClick={handleLogout}>
+                <LogOut size={14} />
                 Logout
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          
-          {/* Mobile actions dropdown (only for small screens) */}
+
+          {/* Mobile actions dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon" className="flex md:hidden">
-                <MoreVertical className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="flex md:hidden rounded-xl h-9 w-9">
+                <MoreVertical className="h-[18px] w-[18px] text-slate-500" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setShowOrderForm(true)}>
-                <PlusCircle className="h-4 w-4 mr-2" />
+            <DropdownMenuContent align="end" className="rounded-xl shadow-xl">
+              <DropdownMenuItem onClick={() => setShowOrderForm(true)} className="gap-2">
+                <PlusCircle className="h-4 w-4 text-teal-500" />
                 <span>{t('orders.createNew')}</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowCallLogForm(true)}>
-                <PhoneCall className="h-4 w-4 mr-2" />
+              <DropdownMenuItem onClick={() => setShowCallLogForm(true)} className="gap-2">
+                <PhoneCall className="h-4 w-4 text-slate-500" />
                 <span>{t('callLogs.addNewCall')}</span>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
                 const scanner = document.querySelector('[data-scanner-trigger]') as HTMLButtonElement;
                 if (scanner) scanner.click();
-              }}>
-                <Barcode className="h-4 w-4 mr-2" />
+              }} className="gap-2">
+                <Barcode className="h-4 w-4 text-slate-500" />
                 <span>{t('scanner.scanBarcode')}</span>
               </DropdownMenuItem>
-              {/* Language toggle removed - now in settings */}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </header>
 
       {showOrderForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-background rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="p-4 border-b flex justify-between items-center">
-              <h2 className="text-xl font-semibold">{t('orders.createNew')}</h2>
-              <Button 
-                variant="ghost" 
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl shadow-black/20 w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-slate-200/60">
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-slate-900">{t('orders.createNew')}</h2>
+              <Button
+                variant="ghost"
                 size="sm"
                 onClick={() => setShowOrderForm(false)}
+                className="rounded-xl"
               >
                 {t('app.close')}
               </Button>
             </div>
-            <div className="p-4">
-              <OrderForm 
+            <div className="p-5">
+              <OrderForm
                 onSuccess={() => setShowOrderForm(false)}
                 onCancel={() => setShowOrderForm(false)}
               />
@@ -248,8 +248,7 @@ const Header = () => {
         onOpenChange={setShowCallLogForm}
         mode="create"
       />
-      
-      {/* Product Lookup Component */}
+
       <ProductLookup
         isOpen={showProductLookup}
         onClose={() => setShowProductLookup(false)}
