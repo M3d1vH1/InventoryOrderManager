@@ -10,30 +10,31 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 // Loading component for Suspense fallbacks
 const PageLoadingFallback = () => (
-  <div className="p-6 space-y-6">
-    {/* Page header skeleton */}
-    <div className="space-y-2">
-      <Skeleton className="h-8 w-64" />
-      <Skeleton className="h-4 w-96" />
-    </div>
-    
-    {/* Content area skeleton */}
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2 space-y-4">
-        <Skeleton className="h-64 w-full" />
-        <Skeleton className="h-32 w-full" />
-      </div>
-      <div className="space-y-4">
-        <Skeleton className="h-48 w-full" />
-        <Skeleton className="h-24 w-full" />
-      </div>
-    </div>
-    
-    {/* Additional content skeleton */}
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {[...Array(4)].map((_, i) => (
-        <Skeleton key={i} className="h-32 w-full" />
+  <div className="p-6 space-y-6 animate-fade-in-up">
+    {/* Stat cards skeleton */}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      {[...Array(6)].map((_, i) => (
+        <div key={i} className="card-floating p-5 h-[120px]">
+          <div className="flex items-start justify-between mb-3">
+            <Skeleton className="h-10 w-10 rounded-xl" />
+            <Skeleton className="h-5 w-12 rounded-lg" />
+          </div>
+          <Skeleton className="h-3 w-20 rounded-lg mb-2" />
+          <Skeleton className="h-6 w-14 rounded-lg" />
+        </div>
       ))}
+    </div>
+
+    {/* Content area skeleton */}
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className="lg:col-span-3 card-floating p-5 space-y-4">
+        <Skeleton className="h-5 w-40 rounded-lg" />
+        <Skeleton className="h-48 w-full rounded-xl" />
+      </div>
+      <div className="lg:col-span-2 card-floating p-5 space-y-4">
+        <Skeleton className="h-5 w-32 rounded-lg" />
+        <Skeleton className="h-48 w-full rounded-xl" />
+      </div>
     </div>
   </div>
 );
@@ -67,6 +68,7 @@ const LoggingTest = React.lazy(() => import("@/pages/LoggingTest"));
 const Login = React.lazy(() => import("@/pages/Login"));
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
+import PageTransition from "@/components/layout/PageTransition";
 import { SidebarProvider } from "@/context/SidebarContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { NotificationProvider } from "@/context/NotificationContext";
@@ -81,7 +83,16 @@ function AuthenticatedRouter() {
 
   // If still loading auth state, show nothing (could add a loading spinner)
   if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen bg-mesh-gradient">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center shadow-lg shadow-teal-500/20 animate-float">
+            <span className="text-white font-bold text-sm">W</span>
+          </div>
+          <div className="w-5 h-5 border-2 border-teal-400/30 border-t-teal-500 rounded-full animate-spin" />
+        </div>
+      </div>
+    );
   }
 
   // Show warehouse staff access to dashboard, orders, products, inventory, and production
@@ -154,13 +165,22 @@ function Router() {
 
   // If loading auth state, show minimal loading indicator
   if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen bg-mesh-gradient">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center shadow-lg shadow-teal-500/20 animate-float">
+            <span className="text-white font-bold text-sm">W</span>
+          </div>
+          <div className="w-5 h-5 border-2 border-teal-400/30 border-t-teal-500 rounded-full animate-spin" />
+        </div>
+      </div>
+    );
   }
 
   // Handle special routes that don't need authentication
   if (location === '/login') {
     return (
-      <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+      <Suspense fallback={<div className="flex items-center justify-center h-screen bg-mesh-gradient"><div className="w-5 h-5 border-2 border-teal-400/30 border-t-teal-500 rounded-full animate-spin" /></div>}>
         <Login />
       </Suspense>
     );
@@ -169,7 +189,7 @@ function Router() {
   // Print template and other printing pages don't need authentication
   if (location === '/print-template') {
     return (
-      <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+      <Suspense fallback={<div className="flex items-center justify-center h-screen bg-mesh-gradient"><div className="w-5 h-5 border-2 border-teal-400/30 border-t-teal-500 rounded-full animate-spin" /></div>}>
         <PrintTemplate />
       </Suspense>
     );
@@ -177,7 +197,7 @@ function Router() {
   
   if (location.startsWith('/shipping-label/')) {
     return (
-      <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+      <Suspense fallback={<div className="flex items-center justify-center h-screen bg-mesh-gradient"><div className="w-5 h-5 border-2 border-teal-400/30 border-t-teal-500 rounded-full animate-spin" /></div>}>
         <ShippingLabel />
       </Suspense>
     );
@@ -187,7 +207,7 @@ function Router() {
   const printLabelsMatch = location.match(/\/print-labels\/(\d+)\/(\d+)/);
   if (printLabelsMatch) {
     return (
-      <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+      <Suspense fallback={<div className="flex items-center justify-center h-screen bg-mesh-gradient"><div className="w-5 h-5 border-2 border-teal-400/30 border-t-teal-500 rounded-full animate-spin" /></div>}>
         <MultiLabelPrintView />
       </Suspense>
     );
@@ -214,12 +234,14 @@ function Layout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-mesh-gradient bg-dot-pattern">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden md:ml-0">
         <Header />
-        <main className="flex-1 overflow-auto p-4 bg-slate-50">
-          <Router />
+        <main className="flex-1 overflow-auto p-4 md:p-6 scrollbar-thin">
+          <PageTransition>
+            <Router />
+          </PageTransition>
         </main>
       </div>
     </div>
