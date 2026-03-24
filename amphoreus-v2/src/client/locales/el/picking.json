@@ -1,0 +1,37 @@
+{
+    "title": "Ουρά Συλλογής",
+    "errorLoading": "Σφάλμα φόρτωσης ουράς: {{message}}",
+    "urgentBadge": "{{count}} ΕΠΕΙΓΟΝ",
+    "urgentPlural": "παραγγελίες απαιτούν άμεση προσοχή",
+    "urgentSingular": "παραγγελία απαιτεί άμεση προσοχή",
+    "emptySearchTitle": "Η ουρά είναι άδεια",
+    "emptySearchDesc": "Δεν υπάρχουν παραγγελίες σε αναμονή συλλογής.",
+    "card": {
+        "pickedRatio": "{{current}} / {{total}} συλλέχθηκαν",
+        "scanPrompt": "Σαρώστε το barcode για να βρείτε το προϊόν",
+        "scanPlaceholder": "Σάρωση barcode προϊόντος...",
+        "unknownProduct": "Άγνωστο Προϊόν",
+        "completeOrderBtn": "Ολοκλήρωση Παραγγελίας #{{order}}"
+    },
+    "dialog": {
+        "title": "Επιβεβαίωση Συλλογής",
+        "actualQuantity": "Πραγματική Ποσότητα Συλλογής",
+        "quantityPlaceholder": "Εισάγετε τη φυσική ποσότητα",
+        "warningUnderPick": "Προειδοποίηση: Συλλέγετε λιγότερα τεμάχια από τα ζητούμενα ({{default}}).",
+        "qualityIssue": "Το προϊόν έχει πρόβλημα ποιότητας",
+        "qualityDesc": "Επιλέξτε το εάν το προϊόν είναι ελαττωματικό, με λάθος ετικέτα ή ακατάλληλο.",
+        "confirming": "Επιβεβαίωση...",
+        "confirmBtn": "Επιβεβαίωση Συλλογής"
+    },
+    "item": {
+        "sku": "Κωδικός: {{sku}}",
+        "pcs": "τεμ.",
+        "picked": "Συλλέχθηκε ✓",
+        "markPickedBtn": "Σημείωση ως Συλλεγμένο"
+    },
+    "progress": {
+        "title": "Πρόοδος Συλλογής",
+        "ratioText": "{{picked}} / {{total}} είδη",
+        "allPicked": "Όλα τα είδη συλλέχθηκαν! ✓"
+    }
+}

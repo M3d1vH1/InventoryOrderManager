@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+drizzle/meta/
+*.tsbuildinfo
+
+# Backup files — never commit database dumps to git
+backups/
+*.sql.gz
+
+# Data and reports
+data/
+playwright-report/
+test-results/
+.tanstack/
+backup.sql

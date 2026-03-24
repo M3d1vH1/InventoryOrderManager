@@ -1,0 +1,15 @@
+{
+  "cookies": [
+    {
+      "name": "amphoreus_session",
+      "value": "744etaekqq7vznzwdjplmjeajv5nsvhlaj5fou2g",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1776859953.953144,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}
